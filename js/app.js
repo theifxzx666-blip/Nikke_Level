@@ -185,7 +185,11 @@
     var mode = kind.indexOf("hard") >= 0 ? "hard" : "normal";
     var map = isFuture ? (mode === "hard" ? state.futureHardStages : state.futureNormalStages) : (mode === "hard" ? state.hardStages : state.normalStages);
     var opts = map[chSel.value] || [];
-    fillSelect(stSel, ["未选择"].concat(opts), stSel.value);
+    // 回填已保存的关卡值（修复刷新后关卡下拉重置）：优先当前下拉值，其次已保存值
+    var saved = state.form[kind === "normal" ? "normal_stage" : kind === "hard" ? "hard_stage" : kind === "future_normal" ? "future_normal_stage" : "future_hard_stage"];
+    var cur = stSel.value;
+    var selected = (cur && cur !== "") ? cur : (saved && opts.indexOf(saved) >= 0 ? saved : "未选择");
+    fillSelect(stSel, ["未选择"].concat(opts), selected);
   }
 
   /* ---------- 联动 ---------- */
@@ -310,12 +314,23 @@
         stage.core_dust += C.num(f.stage_clear_dust2, 0);
       }
     }
+    // 升级消耗：手动填了某项则覆盖该项，未填的项回退到阶梯表对应档位（避免未填项成本为 0 导致升级虚高）
+    function tierValue(tiers, level) {
+      if (!tiers || !tiers.length) return null;
+      var chosen = tiers[0];
+      for (var i = 0; i < tiers.length; i++) {
+        if (tiers[i].level <= level) chosen = tiers[i];
+        else break;
+      }
+      return { credit: chosen.credit * 1000, battle_data: chosen.battle_data * 1000, core_dust: Number(chosen.core_dust) };
+    }
     var perLevel = { credit: 0, battle_data: 0, core_dust: 0 };
     var hasManual = f.cost_credit || f.cost_battle || f.cost_dust;
     if (hasManual) {
-      perLevel.credit = C.num(f.cost_credit, 0);
-      perLevel.battle_data = C.num(f.cost_battle, 0);
-      perLevel.core_dust = C.num(f.cost_dust, 0);
+      var t = tierValue(COST_TIERS, parseInt(f.current, 10) || 0);
+      perLevel.credit = f.cost_credit ? C.num(f.cost_credit, 0) : (t ? t.credit : 0);
+      perLevel.battle_data = f.cost_battle ? C.num(f.cost_battle, 0) : (t ? t.battle_data : 0);
+      perLevel.core_dust = f.cost_dust ? C.num(f.cost_dust, 0) : (t ? t.core_dust : 0);
     }
     var rangeStart = f.range_start ? parseInt(f.range_start, 10) : null;
     var rangeEnd = f.range_end ? parseInt(f.range_end, 10) : null;
@@ -530,21 +545,6 @@
   }
 
   /* ---------- 导出 ---------- */
-  function exportMarkdown(result) {
-    var L = ["# NIKKE 资源规划报告", "", "- 推荐路径：" + result.scenario_f.recommendation, "", "## 核心结论", "",
-      "| 场景 | 等级 | 天数 |", "|---|---:|---:|",
-      "| 现有同步器等级 | " + result.bare.level + " | - |",
-      "| 仅固定小时箱后 | " + result.fixed.level + " | - |",
-      "| 全箱梭哈后 | " + result.selectable.level + " | - |",
-      "| 不开箱到目标 " + result.no_box.target + " | - | " + result.no_box.days.toFixed(2) + " |",
-      "", "## 到目标等级的三种方案", "", "| 方案 | 预计等级 | 日期 | 天数 | 可行 |", "|---|---:|---:|---:|---|"];
-    result.scenario_f.rows.forEach(function (r) {
-      L.push("| " + r.name + " | " + r.level + " | " + (r.date ? r.date.slice(0, 10) : "-") + " | " + (typeof r.days === "number" ? r.days.toFixed(1) : "-") + " | " + (r.feasible ? "是" : "否") + " |");
-    });
-    L.push("", "## 主要结论", "", "- 现有资源最高等级：" + result.bare.level, "- 固定小时箱后最高等级：" + result.fixed.level, "- 自选箱优化后最高等级：" + result.selectable.level, "- 不开箱到目标天数：" + result.no_box.days.toFixed(2));
-    return L.join("\n");
-  }
-
   function download(name, content, mime) {
     var blob = new Blob([content], { type: mime || "text/plain;charset=utf-8" });
     var a = document.createElement("a");
@@ -557,8 +557,8 @@
   /* ---------- XLSX 导入/导出 ---------- */
   function buildXlsxTemplate() {
     var f = collectForm();
-    var ws = {};
-    var rows = [
+    var aoa = [
+      ["字段", "值"],
       ["数据日期", f.recorded], ["当前同步器等级", f.current], ["目标同步器等级", f.target], ["备用目标等级", f.alternate],
       ["普通主线进度", f.normal_stage], ["困难主线进度", f.hard_stage], ["基地防御等级", f.base], ["战术学院满级", f.tactics],
       ["信用点收益", f.credit_rate], ["战斗数据收益", f.battle_rate], ["红球收益", f.dust_rate],
@@ -571,8 +571,10 @@
       ["方舟箱", f.ark], ["30天箱", f.growth], ["挑战者箱", f.challenger],
       ["预计新主线开放日", f.future_open], ["预计普通进度", f.future_normal_stage], ["预计困难进度", f.future_hard_stage], ["预计基地等级", f.future_base],
     ];
-    rows.forEach(function (r, i) { ws["A" + (i + 1)] = { t: "s", v: String(r[0]) }; ws["B" + (i + 1)] = { t: "s", v: String(r[1] == null ? "" : r[1]) }; });
-    var wb = { SheetNames: ["账号评估"], Sheets: { "账号评估": ws } };
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 24 }, { wch: 20 }];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "账号评估");
     return XLSX.write(wb, { bookType: "xlsx", type: "array" });
   }
 
@@ -695,15 +697,8 @@
 
     $("btnCalc").addEventListener("click", calculate);
     $("btnSave").addEventListener("click", function () { saveForm(); tip("已保存当前表单"); });
-    $("btnExportJson").addEventListener("click", function () {
-      download("nikke_form.json", JSON.stringify(collectForm(), null, 2), "application/json");
-    });
-    $("btnExportMd").addEventListener("click", function () {
-      if (!state.lastResult) calculate();
-      download("nikke_resource_report.md", exportMarkdown(state.lastResult), "text/markdown");
-    });
     $("btnTemplate").addEventListener("click", function () {
-      if (typeof XLSX === "undefined") { alert("XLSX 库未加载（需联网），可直接导出 JSON 快照代替。"); return; }
+      if (typeof XLSX === "undefined") { alert("XLSX 库未加载（需联网），暂无法下载模板。"); return; }
       download("账号评估表单.xlsx", buildXlsxTemplate(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     });
     $("btnImport").addEventListener("click", function () { $("fileXlsx").click(); });
