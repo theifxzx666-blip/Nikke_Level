@@ -1,0 +1,16 @@
+{
+  "kind": "stage_clear_resources",
+  "unit": "一次性资源（普通通关 / 困难通关）",
+  "chapters": {
+    "38": {
+      "note": "37-38 章实测数据（屯箱子计算器来源）",
+      "credit": "25864",
+      "battle": "74096",
+      "dust": "630",
+      "credit_hard": "2615",
+      "battle_hard": "73446",
+      "dust_hard": "1630",
+      "source": "observed"
+    }
+  }
+}

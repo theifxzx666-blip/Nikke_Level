@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIKKE 资源规划计算器</title>
+<meta name="theme-color" content="#1d9e75">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>NIKKE 资源规划计算器</h1>
+  <p class="subtitle">嗷润吉倾情制作</p>
+</header>
+
+<div class="toolbar">
+  <button id="btnSave" class="btn btn-primary">💾 保存当前表单</button>
+  <button id="btnExportJson" class="btn">导出 JSON 快照</button>
+  <button id="btnExportMd" class="btn">导出 Markdown 报告</button>
+  <button id="btnTemplate" class="btn">下载 XLSX 模板</button>
+  <input type="file" id="fileXlsx" accept=".xlsx" style="display:none">
+  <button id="btnImport" class="btn">导入 XLSX</button>
+  <span id="saveTip" class="save-tip"></span>
+</div>
+
+<div class="layout">
+  <!-- ============ 表单区 ============ -->
+  <section id="formSection" class="form-panel">
+    <fieldset>
+      <legend>账号状态</legend>
+      <div class="grid g4">
+        <label>数据日期<input type="date" id="f_recorded"></label>
+        <label>当前同步器等级<input type="number" id="f_current" min="1" step="1"></label>
+        <label>目标同步器等级<input type="number" id="f_target" min="1" step="1" value="481"></label>
+        <label>备用目标等级<input type="number" id="f_alternate" min="1" step="1" value="501"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>关卡进度（前置，决定基地等级与收益）</legend>
+      <div class="grid g2">
+        <div>
+          <label>普通主线关卡</label>
+          <select id="f_normal_chapter"></select>
+          <select id="f_normal_stage"></select>
+        </div>
+        <div>
+          <label>困难主线关卡</label>
+          <select id="f_hard_chapter"></select>
+          <select id="f_hard_stage"></select>
+        </div>
+      </div>
+      <div class="grid g2">
+        <label>当前基地防御等级<input type="number" id="f_base" min="1" step="1"></label>
+        <label>战术学院是否满级
+          <select id="f_tactics"><option>是</option><option>否</option></select>
+        </label>
+      </div>
+      <p class="hint" id="baseHint"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>当前收益与每日收益</legend>
+      <div class="grid g3">
+        <label>信用点收益<input id="f_credit_rate" placeholder="57240/h"></label>
+        <label>战斗数据辑收益<input id="f_battle_rate" placeholder="570180/h"></label>
+        <label>红球收益<input id="f_dust_rate" placeholder="88/h"></label>
+      </div>
+      <div class="grid g3">
+        <label>每日一举歼灭次数<input type="number" id="f_wipeouts" min="0" step="1" value="3"></label>
+        <label>每次等价小时数<input type="number" id="f_wipeout_hours" min="0" step="0.5" value="2"></label>
+        <label>今天已完成歼灭次数<input type="number" id="f_completed" min="0" step="1" value="3"></label>
+      </div>
+      <div class="grid g3">
+        <label>后续是否每天完成全部次数<select id="f_daily_full"><option>是</option><option>否</option></select></label>
+        <label>服务器每日重置时间<input type="time" id="f_reset_time" value="04:00"></label>
+        <label>其他固定日常资源<input id="f_extra_daily" placeholder="信用点,战斗数据,红球（可空）"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="future-block">
+      <legend>预计新主线（独立大项）</legend>
+      <div class="grid g2">
+        <label>预计新主线开放日期<input type="date" id="f_future_open"></label>
+        <label>是否确认开放后可打到预计进度<select id="f_future_confirm"><option>是</option><option>否</option></select></label>
+      </div>
+      <div class="grid g2">
+        <div><label>预计普通主线关卡</label><select id="f_future_normal_chapter"></select><select id="f_future_normal_stage"></select></div>
+        <div><label>预计困难主线关卡</label><select id="f_future_hard_chapter"></select><select id="f_future_hard_stage"></select></div>
+      </div>
+      <div class="grid g4">
+        <label>预计新基地等级<input type="number" id="f_future_base" min="1" step="1"></label>
+        <label>预计新信用点收益<input id="f_future_credit" placeholder="58530/h"></label>
+        <label>预计新战斗数据收益<input id="f_future_battle" placeholder="584950/h"></label>
+        <label>预计新红球收益<input id="f_future_dust" placeholder="90.02/h"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>现有资源</legend>
+      <div class="grid g3">
+        <label>信用点<input id="f_bare_credit" placeholder="25169K"></label>
+        <label>战斗数据辑<input id="f_bare_battle" placeholder="274M"></label>
+        <label>红球<input id="f_bare_dust" placeholder="12181"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend id="stageClearTitle">推图资源（37-38 章一次性）</legend>
+      <p class="hint">新主线推图通关给的一次性资源；标题与默认值随预计新主线进度联动，其他章节暂无实测数据时沿用 37-38 章数值。</p>
+      <div class="grid g3">
+        <label>计入范围<select id="f_stage_mode"><option>不计算</option><option>只计普通</option><option>普通+困难</option></select></label>
+      </div>
+      <div class="grid g3">
+        <label>推图信用点（普通）<input id="f_stage_credit"></label>
+        <label>推图战斗数据（普通）<input id="f_stage_battle"></label>
+        <label>推图红球（普通）<input id="f_stage_dust"></label>
+      </div>
+      <div class="grid g3" id="stageHardRow">
+        <label>推图信用点（困难）<input id="f_stage_credit2"></label>
+        <label>推图战斗数据（困难）<input id="f_stage_battle2"></label>
+        <label>推图红球（困难）<input id="f_stage_dust2"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>升级消耗（默认阶梯表，可手动覆盖）</legend>
+      <div class="grid g3">
+        <label>手动每级信用点（可空，空则用阶梯表）<input id="f_cost_credit" placeholder="空 = 用阶梯表"></label>
+        <label>手动每级战斗数据（可空）<input id="f_cost_battle" placeholder="空 = 用阶梯表"></label>
+        <label>手动每级红球（可空）<input id="f_cost_dust" placeholder="空 = 用阶梯表"></label>
+      </div>
+      <div class="grid g3">
+        <label>区间起始等级（可选）<input type="number" id="f_range_start" min="1"></label>
+        <label>区间目标等级（可选）<input type="number" id="f_range_end" min="1"></label>
+      </div>
+      <div class="grid g3">
+        <label>区间信用点总需求<input id="f_range_credit" placeholder="可空"></label>
+        <label>区间战斗数据总需求<input id="f_range_battle" placeholder="可空"></label>
+        <label>区间红球总需求<input id="f_range_dust" placeholder="可空"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>固定小时箱数量</legend>
+      <table class="fixed-table">
+        <thead><tr><th>箱子 \ 小时</th><th>24h</th><th>12h</th><th>8h</th><th>4h</th><th>2h</th><th>1h</th></tr></thead>
+        <tbody>
+          <tr><td>芯尘盒</td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="1" min="0"></td></tr>
+          <tr><td>信用点盒</td><td><input type="number" class="fixed" data-label="信用点盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="1" min="0"></td></tr>
+          <tr><td>战斗数据辑盒</td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="1" min="0"></td></tr>
+          <tr><td>成长套组</td><td><input type="number" class="fixed" data-label="成长套组" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="1" min="0"></td></tr>
+        </tbody>
+      </table>
+    </fieldset>
+
+    <fieldset>
+      <legend>自选箱数量</legend>
+      <div class="grid g3">
+        <label>方舟官方补给物资Ⅰ<input type="number" id="f_ark" min="0" step="1" value="870"></label>
+        <label>30天成长补给箱<input type="number" id="f_growth" min="0" step="1" value="27"></label>
+        <label>挑战者成长宝箱<input type="number" id="f_challenger" min="0" step="1" value="340"></label>
+      </div>
+      <p class="hint">挑战者成长宝箱为固定数值奖励，默认全部消耗（不受基地等级影响）。</p>
+    </fieldset>
+
+    <button id="btnCalc" class="btn btn-primary btn-big">重新计算</button>
+  </section>
+
+  <!-- ============ 结果区 ============ -->
+  <section id="resultSection" class="result-panel" style="display:none">
+    <nav class="tabs">
+      <button class="tab active" data-tab="tabResult">计算结果</button>
+      <button class="tab" data-tab="tabBox">箱子方案</button>
+      <button class="tab" data-tab="tab501">到 501 的三种方案</button>
+      <button class="tab" data-tab="tabRaw">原始 JSON</button>
+    </nav>
+    <div id="tabResult" class="tab-panel active"></div>
+    <div id="tabBox" class="tab-panel"></div>
+    <div id="tab501" class="tab-panel"></div>
+    <div id="tabRaw" class="tab-panel"></div>
+  </section>
+</div>
+
+<div id="progressFab" class="progress-fab" title="表单填写进度">
+  <svg viewBox="0 0 60 60" width="60" height="60">
+    <circle cx="30" cy="30" r="26" fill="none" stroke="#ddd" stroke-width="6"/>
+    <circle id="progressRing" cx="30" cy="30" r="26" fill="none" stroke="#1d9e75" stroke-width="6"
+      stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="0" transform="rotate(-90 30 30)"/>
+    <text id="progressText" x="30" y="31" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="600" fill="#333">0%</text>
+  </svg>
+</div>
+<div id="progressPanel" class="progress-panel" style="display:none">
+  <div class="pp-head">表单填写进度 <span id="ppCount"></span><button id="ppClose" class="pp-close">✕</button></div>
+  <ul id="ppList"></ul>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/core.js"></script>
+<script src="js/outpost.js"></script>
+<script src="js/boxes.js"></script>
+<script src="js/scenarios.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

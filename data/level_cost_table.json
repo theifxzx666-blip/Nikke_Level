@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "source": "user_excel_屯箱子计算器",
+  "kind": "tiered_per_level",
+  "tiers": [
+    {
+      "level": 301,
+      "credit": 3809.0,
+      "battle_data": 50478.0,
+      "core_dust": 10000.0
+    },
+    {
+      "level": 351,
+      "credit": 4762.0,
+      "battle_data": 56536.0,
+      "core_dust": 11000.0
+    },
+    {
+      "level": 401,
+      "credit": 5952.0,
+      "battle_data": 61624.0,
+      "core_dust": 12000.0
+    },
+    {
+      "level": 451,
+      "credit": 7441.0,
+      "battle_data": 67170.0,
+      "core_dust": 13000.0
+    },
+    {
+      "level": 501,
+      "credit": 8185.0,
+      "battle_data": 72544.0,
+      "core_dust": 14000.0
+    },
+    {
+      "level": 551,
+      "credit": 9003.0,
+      "battle_data": 78347.0,
+      "core_dust": 15000.0
+    },
+    {
+      "level": 601,
+      "credit": 9453.0,
+      "battle_data": 83832.0,
+      "core_dust": 16000.0
+    },
+    {
+      "level": 651,
+      "credit": 9926.0,
+      "battle_data": 89700.0,
+      "core_dust": 17000.0
+    },
+    {
+      "level": 701,
+      "credit": 10422.0,
+      "battle_data": 95082.0,
+      "core_dust": 18000.0
+    }
+  ],
+  "stage_clear_resources": {
+    "37-38_normal": {
+      "credit": 25864.0,
+      "battle_data": 74096.0,
+      "core_dust": 630.0
+    },
+    "37-38_hard": {
+      "credit": 2615.0,
+      "battle_data": 73446.0,
+      "core_dust": 1630.0
+    }
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "方舟官方补给物资Ⅰ": {"selection_mode": "select_one", "options": [{"resource": "core_dust", "hours": 1}, {"resource": "credit", "hours": 3}, {"resource": "battle_data", "hours": 1}]},
+  "30天成长补给箱": {"selection_mode": "select_one", "options": [{"resource": "core_dust", "hours": 10}, {"resource": "credit", "hours": 30}, {"resource": "battle_data", "hours": 10}]}
+}
