@@ -122,3 +122,64 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 .cost-preview tr.rise { background: #fdf6ec; }
 .cost-preview tr.rise td { color: #b97a12; font-weight: 600; }
 .cost-preview .hint { margin-top: 6px; }
+
+/* ============================================================
+   移动端适配（手机浏览器）
+   ============================================================ */
+/* 通用：阻止 iOS Safari 聚焦输入框时自动放大页面 */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+@media (max-width: 700px) {
+  /* 布局留白收窄 */
+  .app-header { padding: 14px 14px 4px; }
+  .app-header h1 { font-size: 20px; }
+  .subtitle { font-size: 12px; }
+  .toolbar { padding: 8px 14px; gap: 6px; }
+  .layout { padding: 6px 12px 80px; gap: 12px; }
+  .form-panel, .result-panel { padding: 10px; }
+  fieldset { padding: 8px 9px; margin-bottom: 10px; }
+
+  /* 触控目标放大：输入框/下拉更高、字号 16px 防 iOS 聚焦缩放 */
+  label { font-size: 13px; }
+  input, select {
+    padding: 11px 10px; font-size: 16px; border-radius: 8px;
+    min-height: 40px; -webkit-appearance: none; appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23667' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
+  }
+
+  /* 表格横向滚动（结果表用 .tbl-scroll 容器；固定箱表 / 分档预览用 display:block） */
+  .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .fixed-table, .cost-preview table {
+    display: block; width: 100%; overflow-x: auto;
+    white-space: nowrap; -webkit-overflow-scrolling: touch;
+  }
+  .fixed-table input { width: 52px; }
+
+  /* 按钮 / 页签触控面积 */
+  .btn { padding: 10px 12px; font-size: 14px; }
+  .btn-big { padding: 13px; font-size: 15px; }
+  .tab { padding: 10px 10px; font-size: 13px; flex: 1 1 auto; text-align: center; }
+  .tabs { gap: 2px; }
+
+  /* 核心结论卡片 2 列 */
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .card .num { font-size: 22px; }
+  .card .lbl { font-size: 12px; }
+  h3.sec { font-size: 15px; }
+
+  /* 悬浮进度球缩小、贴边 */
+  .progress-fab { width: 48px; height: 48px; right: 12px; bottom: 12px; }
+  .progress-fab svg { width: 40px; height: 40px; }
+  .progress-panel { right: 12px; bottom: 68px; width: 280px; }
+}
+
+/* 超小屏（≤420px）：字段全部单列，避免 2 列挤压 */
+@media (max-width: 420px) {
+  .g2, .g3, .g4 { grid-template-columns: 1fr; }
+  .toolbar .btn { flex: 1 1 40%; }
+  .compare .col { padding: 8px; }
+  .cost-preview { padding: 8px; }
+}

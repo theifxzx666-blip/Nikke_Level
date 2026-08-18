@@ -447,7 +447,10 @@
     var thead = "<tr>" + headers.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>";
     var body = rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>"; }).join("");
     t.innerHTML = thead + body;
-    return t;
+    // 包一层滚动容器：手机端表格超出屏幕宽度时可左右滑动
+    var wrap = el("div", "", "tbl-scroll");
+    wrap.appendChild(t);
+    return wrap;
   }
 
   /* 以凌晨4点为日界的自然日差 */
@@ -654,7 +657,9 @@
       renderBox(state.lastResult, snap);
       renderRaw(state.lastResult);
       saveForm();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // 滚动到结果区（手机小屏下"回到顶部"会让用户看不到结果）
+      var rs = $("resultSection");
+      rs.scrollIntoView({ behavior: "smooth", block: "start" });
       tip("计算完成");
     } catch (e) {
       alert("计算失败：" + e.message);
