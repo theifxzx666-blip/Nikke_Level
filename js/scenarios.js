@@ -125,8 +125,8 @@
     };
   }
 
-  function scenarioF(snapshot) {
-    var target = snapshot.alternate_target_level;
+  function scenarioF(snapshot, target) {
+    target = target || snapshot.alternate_target_level;
     var start = new Date(snapshot.recorded_at.getTime());
     var currentIncome = snapshot.income_per_hour;
     var futureIncome = snapshot.future_income_per_hour || currentIncome;
@@ -219,7 +219,11 @@
     });
     return {
       no_box: noBox, bare: bare, fixed: fixed, selectable: selectable,
-      future_main_story: future, scenario_f: scenarioF(snapshot), per_resource: perResource,
+      future_main_story: future,
+      scenario_f: scenarioF(snapshot, snapshot.alternate_target_level),
+      scenario_f_target: scenarioF(snapshot, snapshot.target_sync_level),
+      scenario_f_alt: scenarioF(snapshot, snapshot.alternate_target_level),
+      per_resource: perResource,
     };
   }
 

@@ -24,17 +24,26 @@
 <div class="layout">
   <!-- ============ 表单区 ============ -->
   <section id="formSection" class="form-panel">
-    <fieldset>
+    <fieldset class="grp-a">
       <legend>账号状态</legend>
       <div class="grid g4">
         <label>数据日期<input type="date" id="f_recorded"></label>
         <label>当前同步器等级<input type="number" id="f_current" min="1" step="1"></label>
         <label>目标同步器等级<input type="number" id="f_target" min="1" step="1" value="481"></label>
-        <label>备用目标等级<input type="number" id="f_alternate" min="1" step="1" value="501"></label>
+        <label>后续追求目标等级<input type="number" id="f_alternate" min="1" step="1" value="501"></label>
       </div>
     </fieldset>
 
-    <fieldset>
+    <fieldset class="grp-a">
+      <legend>现有资源</legend>
+      <div class="grid g3">
+        <label>信用点<input id="f_bare_credit" placeholder="25169K"></label>
+        <label>战斗数据辑<input id="f_bare_battle" placeholder="274M"></label>
+        <label>红球<input id="f_bare_dust" placeholder="12181"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-b">
       <legend>关卡进度（前置，决定基地等级与收益）</legend>
       <div class="grid g2">
         <div>
@@ -57,7 +66,7 @@
       <p class="hint" id="baseHint"></p>
     </fieldset>
 
-    <fieldset>
+    <fieldset class="grp-b">
       <legend>当前收益与每日收益</legend>
       <div class="grid g3">
         <label>信用点收益<input id="f_credit_rate" placeholder="57240/h"></label>
@@ -76,7 +85,7 @@
       </div>
     </fieldset>
 
-    <fieldset class="future-block">
+    <fieldset class="grp-c">
       <legend>预计新主线进度</legend>
       <div class="grid g2">
         <label>预计新主线开放日期<input type="date" id="f_future_open"></label>
@@ -94,18 +103,10 @@
       </div>
     </fieldset>
 
-    <fieldset>
-      <legend>现有资源</legend>
-      <div class="grid g3">
-        <label>信用点<input id="f_bare_credit" placeholder="25169K"></label>
-        <label>战斗数据辑<input id="f_bare_battle" placeholder="274M"></label>
-        <label>红球<input id="f_bare_dust" placeholder="12181"></label>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend id="stageClearTitle">推图资源（37-38 章一次性）</legend>
-      <p class="hint">新主线推图通关给的一次性资源；标题与默认值随预计新主线进度联动，其他章节暂无实测数据时沿用 37-38 章数值。</p>
+    <fieldset class="grp-c">
+      <legend id="stageClearTitle">预计新主线推图收益（37-38 章）</legend>
+      <p class="hint">新主线推图通关给的一次性资源；标题与默认值随预计新主线进度联动。</p>
+      <p class="hint note">暂无公开的章节通关收益统计表，目前使用 37~38 章实测数据预估（来源：屯箱子计算器），可按实机修改。</p>
       <div class="grid g3">
         <label>计入范围<select id="f_stage_mode"><option>不计算</option><option>只计普通</option><option>普通+困难</option></select></label>
       </div>
@@ -121,8 +122,9 @@
       </div>
     </fieldset>
 
-    <fieldset>
-      <legend>升级消耗（默认阶梯表，可手动覆盖）</legend>
+    <fieldset class="grp-d">
+      <legend>升级消耗素材量</legend>
+      <p class="hint">默认阶梯表（每 50 级一档），可手动覆盖；填写当前同步器等级后自动预填当前档位消耗。</p>
       <div class="grid g3">
         <label>当前升1级所需信用点<input id="f_cost_credit" placeholder="空 = 用阶梯表"></label>
         <label>当前升1级所需战斗数据<input id="f_cost_battle" placeholder="空 = 用阶梯表"></label>
@@ -137,9 +139,10 @@
         <label>区间战斗数据总需求<input id="f_range_battle" placeholder="可空"></label>
         <label>区间红球总需求<input id="f_range_dust" placeholder="可空"></label>
       </div>
+      <div id="costPreviewWrap"></div>
     </fieldset>
 
-    <fieldset>
+    <fieldset class="grp-d">
       <legend>固定小时箱数量</legend>
       <table class="fixed-table">
         <thead><tr><th>箱子 \ 小时</th><th>24h</th><th>12h</th><th>8h</th><th>4h</th><th>2h</th><th>1h</th></tr></thead>
@@ -152,7 +155,7 @@
       </table>
     </fieldset>
 
-    <fieldset>
+    <fieldset class="grp-d">
       <legend>自选箱数量</legend>
       <div class="grid g3">
         <label>方舟官方补给物资Ⅰ<input type="number" id="f_ark" min="0" step="1" value="870"></label>
@@ -170,12 +173,10 @@
     <nav class="tabs">
       <button class="tab active" data-tab="tabResult">计算结果</button>
       <button class="tab" data-tab="tabBox">箱子方案</button>
-      <button class="tab" data-tab="tab501">到 501 的三种方案</button>
       <button class="tab" data-tab="tabRaw">原始 JSON</button>
     </nav>
     <div id="tabResult" class="tab-panel active"></div>
     <div id="tabBox" class="tab-panel"></div>
-    <div id="tab501" class="tab-panel"></div>
     <div id="tabRaw" class="tab-panel"></div>
   </section>
 </div>

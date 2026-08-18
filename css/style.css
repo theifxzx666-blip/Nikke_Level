@@ -95,3 +95,26 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 #ppList li { padding: 2px 0; }
 .ok-item { color: #0f6e56; }
 .no-item { color: #a0a6a3; }
+
+/* ===== 分组配色（2026-08-18） ===== */
+.grp-a legend { color: #0f6e56; }
+.grp-a { border-color: #9fe1cb; }
+.grp-b legend { color: #185fa5; }
+.grp-b { border-color: #b5d4f4; }
+.grp-c legend { color: #534ab7; }
+.grp-c { border-color: #cecbf6; }
+.grp-d legend { color: #b97a12; }
+.grp-d { border-color: #f3dcb2; }
+
+.hint.note { color: #888; font-style: italic; }
+
+/* 核心结论说明分点换行 */
+.cards-caption { font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.7; }
+
+/* 升级消耗分档预览 */
+.cost-preview { border: 1px dashed var(--border); border-radius: 10px; padding: 8px 10px; margin-top: 10px; }
+.cost-preview h4 { margin: 0 0 6px; font-size: 13px; color: var(--primary-dark); }
+.cost-preview table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cost-preview th, .cost-preview td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; }
+.cost-preview tr.rise { background: #fdf6ec; }
+.cost-preview tr.rise td { color: #b97a12; font-weight: 600; }
