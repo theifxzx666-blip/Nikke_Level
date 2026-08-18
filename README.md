@@ -10,6 +10,8 @@
 - 浮动进度球 + 12 项明细
 - localStorage 自动记忆 + 💾 手动保存按钮，刷新/重启自动回填
 - 完整结果展示：4 大数字卡片、最大等级表（单资源 vs 三资源同时）、开箱达成统计、开主线前后对比、501 三方案
+- 顶部 NIKKE 主题 banner + body 模糊背景图（`assets/bg/hero.webp` 一键换图，**卡片白底不透明不影响阅读**）
+- 移动端全面优化：触控目标 ≥40px、表格横滚容器、超小屏单列、悬浮球贴边、计算后自动定位结果区
 - 导出 JSON 快照、Markdown 报告；下载/导入 XLSX（SheetJS CDN）
 - 无任何后端、无任何外部登录、无数据上传，**所有数据都存在浏览器本地**
 
@@ -18,7 +20,7 @@
 ```
 nikke-planner-web/
   index.html          # 单页入口（顺序加载 js/* + CDN xlsx）
-  css/style.css       # 样式
+  css/style.css       # 样式（含 4 组配色、移动端适配、背景图层）
   js/
     core.js           # 解析、消耗、每日收益（自 calculator/{parsing,level_cost,income} 移植）
     outpost.js        # 关卡→基地等级换算 + 收益表（自 outpost_level 移植）
@@ -31,9 +33,32 @@ nikke-planner-web/
     level_cost_table.json    # 每 50 级一档的升级消耗
     box_definitions.json     # 箱子定义
     stage_clear_resources.json  # 推图资源（37-38 章实测）
+  assets/
+    bg/hero.webp            # 顶部 banner + body 模糊底图的背景图（355KB，**换图改这一个文件**）
   test_golden.js            # Node 金标准回归（与 Python 版对比）
   README.md
 ```
+
+## 更换背景图
+
+背景图支持定期更换，只需替换**一个文件**：
+
+```bash
+# 准备一张 1920x1080 左右的高清图（webp/jpg/png 均可，文件 ≤ 5MB）
+# 替换 assets/bg/hero.webp，git commit + push 即可
+cp /path/to/new-hero.webp nikke-planner-web/assets/bg/hero.webp
+git add assets/bg/hero.webp && git commit -m "更换背景图" && git push
+```
+
+**无需改任何代码**——`css/style.css` 通过 CSS 变量 `--hero-bg` 引用唯一文件。
+
+**显示规则**：
+- 顶部 banner 区：图作为清晰 banner（200px 高，居中顶部对齐，白字叠加）
+- body 背景：图模糊 14px 缩放 1.08 倍 + 半透明白色遮罩，作为氛围底色
+- 移动端自动去模糊改用更强遮罩，避免低端机卡顿
+- 卡片保持白色不透明，**不影响阅读**
+
+**推荐规格**：横版 16:9 或 16:10（人像图建议裁剪为横版，否则会上下黑边），人物图最佳（能呼应 NIKKE 主题）。
 
 ## 本地开发/验证
 
