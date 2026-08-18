@@ -332,15 +332,23 @@
       segments.push({ start: cursor, end: segEnd, count: segEnd - cursor, tier: t });
       cursor = segEnd;
     }
-    var html = "<div class='cost-preview'><h4>升级消耗分档预览（" + lvl + " → " + tgt + "）</h4><table><tr><th>等级段</th><th>单级消耗（信用点/战斗数据/红球）</th><th>级数</th><th>段内总消耗</th></tr>";
+    // 千分位整数展示（用于阶梯消耗表这种"个"级数字）
+    function numFmt(v) {
+      if (v === null || v === undefined || isNaN(v)) return "-";
+      return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    var html = "<div class='cost-preview'><h4>升级消耗分档预览（同步器 " + lvl + " → " + tgt + "）</h4>";
+    html += "<table><tr><th>等级段</th><th>信用点/级</th><th>战斗数据/级</th><th>红球/级</th><th>级数</th><th>段内总消耗（信用点/战斗数据/红球）</th></tr>";
     segments.forEach(function (seg, idx) {
       var rise = idx > 0 ? " class='rise'" : "";
       var tc = seg.tier.credit * seg.count, tb = seg.tier.battle_data * seg.count, td = seg.tier.core_dust * seg.count;
-      html += "<tr" + rise + "><td>" + seg.start + "-" + seg.end + (idx > 0 ? " ⬆ 消耗提升" : "") + "</td><td>" +
-        fmtK(seg.tier.credit) + " / " + fmtK(seg.tier.battle_data) + " / " + Math.round(seg.tier.core_dust) + "</td><td>" +
-        seg.count + "</td><td>" + fmtK(tc) + " / " + fmtK(tb) + " / " + Math.round(td) + "</td></tr>";
+      var segLbl = seg.start + "–" + seg.end + (idx > 0 ? " ⬆" : "");
+      var totalTxt = numFmt(tc) + " / " + numFmt(tb) + " / " + numFmt(td);
+      var perTxt = numFmt(seg.tier.credit) + " / " + numFmt(seg.tier.battle_data) + " / " + numFmt(seg.tier.core_dust);
+      html += "<tr" + rise + "><td>" + segLbl + "</td><td>" + numFmt(seg.tier.credit) + "</td><td>" + numFmt(seg.tier.battle_data) + "</td><td>" + numFmt(seg.tier.core_dust) + "</td><td>" + seg.count + "</td><td>" + totalTxt + "</td></tr>";
     });
-    html += "</table><p class='hint'>按内置阶梯表估算；手动填写三项消耗后以手动值为准。</p></div>";
+    html += "</table>";
+    html += "<p class='hint'>按内置阶梯表（每 50 级一档）估算；⬆ 表示该段消耗相比上一档提升。手动填写三项消耗后以手动值为准。</p></div>";
     wrap.innerHTML = html;
   }
 
@@ -566,6 +574,11 @@
       c2.appendChild(resourceTable(result.future_main_story.natural_before_open));
       cmp.appendChild(c1); cmp.appendChild(c2);
       box.appendChild(cmp);
+      var futIncome = snap.future_income_per_hour || {};
+      var hasFutIncome = (futIncome.credit || 0) > 0 || (futIncome.battle_data || 0) > 0 || (futIncome.core_dust || 0) > 0;
+      if (!hasFutIncome) {
+        box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
+      }
       box.appendChild(el("p", "左侧 = 现在就用现有箱子按当前收益开；右侧 = 箱子留到新主线开放后按新收益开（等待期自然积累：当前收益 + 每日歼灭，到开放日一并计入，再做全箱梭哈）。", "caption"));
     } else {
       box.appendChild(el("p", result.future_main_story.reason + "；可在「预计新主线进度」中填写后重新计算。"));
@@ -596,7 +609,7 @@
     // B. 达到后续追求目标等级的三方案
     box.appendChild(scenarioTable(result.scenario_f_alt));
     // C. 自选箱分配
-    box.appendChild(el("h3", "自选箱分配方案", "sec"));
+    box.appendChild(el("h3", "自选箱分配方案（全箱梭哈 → 同步器 " + result.selectable.level + "）", "sec"));
     var plan = result.selectable.selectable;
     var rows = [];
     if (plan && plan.selectable && plan.selectable.length) {
@@ -610,7 +623,7 @@
       box.appendChild(el("p", "自选箱未产生分配方案（现有资源可能已足够）。"));
     }
     if (rows.length) box.appendChild(table(["箱子", "使用", "保留", "分配明细", "备注"], rows));
-    box.appendChild(el("p", "分配按目标资源缺口优化；同等级方案优先保留更多箱子。", "caption"));
+    box.appendChild(el("p", "本方案对应全箱梭哈（固定小时箱 + 资源自选箱全部使用）后可达到的等级：同步器 " + result.selectable.level + "；分配按目标资源缺口优化，同等级方案优先保留更多箱子。", "caption"));
     // D. 固定小时箱收益折算（含差值换算）
     box.appendChild(el("h3", "固定小时箱收益折算（开主线前 vs 开主线后）", "sec"));
     var before = result.fixed.fixed || {};
