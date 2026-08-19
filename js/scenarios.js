@@ -225,6 +225,7 @@
     }
     // 按「目标同步器等级」优化的自选箱分配（新主线开放后，未来收益 + 等待期自然积累）
     var targetPlanFuture = null;
+    var futureIncome = snapshot.future_income_per_hour || snapshot.income_per_hour;
     if (targetSteps > 0 && future.available) {
       var openAt = new Date(snapshot.main_story_open_at.getTime());
       var startAt = new Date(snapshot.recorded_at.getTime());
@@ -234,8 +235,36 @@
       var d2 = Math.max(0, Math.round((openAt.getTime() - startAt.getTime()) / 86400000));
       RESOURCES.forEach(function (r) { natural2[r] += (snapshot.income_per_hour[r] || 0.0) * wHours * d2; });
       futSnap.bare_resources = addRes(snapshot.bare_resources, natural2);
-      futSnap.income_per_hour = snapshot.future_income_per_hour || snapshot.income_per_hour;
+      futSnap.income_per_hour = futureIncome;
       targetPlanFuture = B.optimizeSelectableForTarget(futSnap, futSnap.bare_resources, targetSteps, futSnap.income_per_hour);
+    }
+    // 各类资源最大等级（开启后 / future 三档）：按未来收益 + 等待期自然积累
+    if (future.available) {
+      var fBare = addRes(future.bare_resources, snapshot.stage_clear_resources || {});
+      var fFixed = addRes(fBare, B.fixedBoxResources(snapshot, futureIncome));
+      var fSel = {};
+      RESOURCES.forEach(function (r) {
+        var rv = fFixed[r] || 0;
+        (snapshot.selectable_boxes || []).forEach(function (box) {
+          if (!box.options || !box.options.length) return;
+          var best = 0;
+          box.options.forEach(function (opt) {
+            var v = (opt.rewards && opt.rewards[r]) || 0;
+            if (opt.mode === "units") best = Math.max(best, v);
+            else best = Math.max(best, v * (futureIncome[r] || 0));
+          });
+          rv += best * box.quantity;
+        });
+        fSel[r] = rv;
+      });
+      perResource.future_bare = {};
+      perResource.future_fixed = {};
+      perResource.future_selectable = {};
+      RESOURCES.forEach(function (r) {
+        perResource.future_bare[r] = snapshot.current_sync_level + C.affordableLevelsSingle(fBare, snapshot, snapshot.current_sync_level, r);
+        perResource.future_fixed[r] = snapshot.current_sync_level + C.affordableLevelsSingle(fFixed, snapshot, snapshot.current_sync_level, r);
+        perResource.future_selectable[r] = snapshot.current_sync_level + C.affordableLevelsSingle(fSel, snapshot, snapshot.current_sync_level, r);
+      });
     }
     return {
       no_box: noBox, bare: bare, fixed: fixed, selectable: selectable,

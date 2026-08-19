@@ -526,25 +526,30 @@
     ];
     box.appendChild(el("div", capLines.join("<br>"), "cards-caption"));
 
-    // 2. 各类资源可达到的最大等级
+    // 2. 各类资源可达到的最大等级（开启前 / 开启后）
     box.appendChild(el("h3", "各类资源可达到的最大等级", "sec"));
     var prRows = [];
-    [["bare", "现有资源"], ["fixed", "仅使用固定小时箱"], ["selectable", "固定小时箱 + 资源自选箱"]].forEach(function (pair) {
+    var scenes = [["bare", "现有资源"], ["fixed", "仅使用固定小时箱"], ["selectable", "固定小时箱 + 资源自选箱"]];
+    var hasFuturePR = result.per_resource.future_bare && result.per_resource.future_fixed && result.per_resource.future_selectable;
+    scenes.forEach(function (pair) {
       C.RESOURCES.forEach(function (r) {
-        prRows.push([pair[1], resLabels[r], "同步器 " + result.per_resource[pair[0]][r]]);
+        var before = result.per_resource[pair[0]][r];
+        var after = hasFuturePR ? result.per_resource["future_" + pair[0]][r] : null;
+        prRows.push([pair[1], resLabels[r], "同步器 " + before, after !== null ? "同步器 " + after : "-"]);
       });
     });
-    box.appendChild(table(["场景", "资源", "可达等级"], prRows));
-    box.appendChild(el("p", "每个场景下三类资源各自单独计算能升到多少级（只看单资源）；三项取最小值 = 三资源同时约束，即核心结论的等级。", "caption"));
+    box.appendChild(table(["场景", "资源", "开启前最大等级", "开启后最大等级"], prRows));
+    box.appendChild(el("p", "每个场景下三类资源各自单独计算能升到多少级（只看单资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。两列各取最小值。", "caption"));
 
-    // 3. 开箱达成目标统计
+    // 3. 开箱达成目标统计（开箱方案按「目标等级」优化，非全箱梭哈）
     box.appendChild(el("h3", "开箱达成目标统计", "sec"));
     var targets = [result.no_box.target, snap.alternate_target_level];
     var okRows = [];
     var futureAvail = result.future_main_story.available;
+    var nowPlan = result.target_selectable_now ? result.target_selectable_now.selectable : (result.selectable.selectable || []);
+    var fPlan = result.target_selectable_future ? result.target_selectable_future.selectable : (futureAvail && result.future_main_story.result.selectable ? result.future_main_story.result.selectable.selectable : []);
     targets.forEach(function (tgt) {
       var nowOk = result.selectable.level >= tgt;
-      var nowPlan = result.selectable.selectable;
       var nowRow = [tgt, "未开新主线", "同步器 " + result.selectable.level, nowOk ? "✅" : "❌"];
       if (nowOk) {
         nowRow.push("0", "立即可达（今天）");
@@ -567,14 +572,14 @@
         var fRow = [tgt, "开放新主线后", "同步器 " + fLevel, fOk ? "✅" : "❌"];
         fRow.push(fOk ? String(Math.max(0, fDays)) : (naturalDaysOf(result, tgt) !== null ? fmtDays(naturalDaysOf(result, tgt)) : "-"));
         fRow.push(fOk ? ("开放日即达（" + result.future_main_story.open_at.slice(0, 10) + "）") : ("自然增长 " + fmtDays(naturalDaysOf(result, tgt)) + " 天后"));
-        fRow.push(boxPlanText(result.future_main_story.result.selectable));
+        fRow.push(boxPlanText(fPlan));
         okRows.push(fRow);
       } else {
         okRows.push([tgt, "开放新主线后", "-", "❌", "-", "未填写新主线预测", "-"]);
       }
     });
-    box.appendChild(table(["目标", "场景", "全箱梭哈后", "是否达成", "预计天数", "预计达成日期", "开箱方案"], okRows));
-    box.appendChild(el("p", "预计天数 = 预计达成日期 − 数据日期（以凌晨 4 点为日界）；未开新主线 = 按当前基地收益开箱（达成则当天完成、0 天）；开放新主线后 = 先按当前收益自然积累到开放日，再按新基地收益开箱。", "caption"));
+    box.appendChild(table(["目标", "场景", "全箱梭哈后", "是否达成", "预计天数", "预计达成日期", "开箱方案（达成目标）"], okRows));
+    box.appendChild(el("p", "开箱方案 = 按「目标同步器等级」缺口优化的自选箱分配（最小化开箱达成目标），不是全箱梭哈；挑战者成长宝箱为固定数值奖励，默认全部使用；红球（芯尘）按防御基地等级取整（例：收益 91.5/h × 1h = 91 个）。", "caption"));
 
     // 4. 自然升级到 N（不开箱）
     box.appendChild(el("h3", "自然升级到" + result.no_box.target + "（不开箱）", "sec"));
@@ -646,7 +651,7 @@
       return [C.RESOURCE_LABELS[r], fmtNum(bv), after ? fmtNum(av) : "-", after ? fmtNum(diff) : "-", diff > 0 ? ("≈" + diffLevels + " 级（" + C.RESOURCE_LABELS[r] + "单资源）") : "-"];
     });
     box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], fixRows));
-    box.appendChild(el("p", "固定小时箱按开启时的基地收益折算：开主线前用当前收益、开主线后用新基地收益。注意：固定箱数量固定（等待期不会自动增加），差值仅来自「存量固定箱 × 新老收益差」，若收益提升不大则差值较小属正常；等待期每日任务/活动新获得的固定箱可手动在表单中补充后重新计算。差值≈可升等级为单资源视角的粗略换算。", "caption"));
+    box.appendChild(el("p", "固定小时箱指「固定小时箱数量」中的 4 种（芯尘盒 / 信用点盒 / 战斗数据辑盒 / 成长套组），按开启时的基地收益折算：开主线前用当前收益、开主线后用新基地收益。挑战者成长宝箱属于自选箱（不计入此处）。注意：固定箱数量固定（等待期不会自动增加），差值仅来自「存量固定箱 × 新老收益差」，若收益提升不大则差值较小属正常；等待期每日任务/活动新获得的固定箱可手动在表单中补充后重新计算。差值≈可升等级为单资源视角的粗略换算。", "caption"));
     // E. 全资源梭哈收益折算（模板同 D：前/后/差值≈可升等级）
     box.appendChild(el("h3", "全资源梭哈收益折算", "sec"));
     if (result.future_main_story.available) {
