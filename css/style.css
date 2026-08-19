@@ -1,4 +1,14 @@
 /* NIKKE 资源规划计算器 — 样式 */
+/* Toast 弹窗提示 */
+.toast {
+  position: fixed; left: 50%; bottom: 42px; z-index: 9999;
+  transform: translate(-50%, 18px); opacity: 0; pointer-events: none;
+  background: rgba(24, 32, 29, 0.95); color: #fff;
+  padding: 12px 24px; border-radius: 10px; font-size: 14px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
 :root {
   --primary: #1d9e75;
   --primary-dark: #0f6e56;

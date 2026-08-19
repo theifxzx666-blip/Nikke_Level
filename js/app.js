@@ -126,7 +126,18 @@
     try { localStorage.setItem(LS_KEY, JSON.stringify(state.form)); } catch (e) {}
   }
 
-  function tip(msg) { var t = $("saveTip"); t.textContent = msg; setTimeout(function () { t.textContent = ""; }, 2500); }
+  /* Toast 弹窗提示（底部居中，淡入淡出 + 上浮） */
+  function tip(msg) {
+    var t = $("toast");
+    if (!t) { t = el("div", "", "toast"); t.id = "toast"; document.body.appendChild(t); }
+    t.textContent = msg;
+    // 强制重排以重启动画
+    t.classList.remove("show");
+    void t.offsetWidth;
+    t.classList.add("show");
+    clearTimeout(tip._t);
+    tip._t = setTimeout(function () { t.classList.remove("show"); }, 2600);
+  }
 
   /* ---------- 渲染表单 ---------- */
   function fillSelect(sel, options, selected) {
