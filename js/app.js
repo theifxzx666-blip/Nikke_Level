@@ -703,16 +703,10 @@
     panels.forEach(function (p) { prev.push(p.style.display); p.style.display = (p.id === "tabRaw") ? "none" : ""; });
     html2canvas(rs, {
       backgroundColor: "#ffffff", scale: 2, useCORS: true,
-      // 在克隆 DOM 上：①加 export-mode（隐藏 tabs + 大字号）②注入顶部 banner 图
+      // 在克隆 DOM 上加 export-mode（隐藏 tabs + 大字号 + 图作整体背景），不影响真实页面
       onclone: function (clonedDoc) {
         var panel = clonedDoc.getElementById("resultSection");
-        if (panel) {
-          panel.classList.add("export-mode");
-          var banner = clonedDoc.createElement("img");
-          banner.src = "assets/bg/export_bg.webp";
-          banner.className = "export-banner";
-          panel.insertBefore(banner, panel.firstChild);
-        }
+        if (panel) panel.classList.add("export-mode");
       },
     })
       .then(function (canvas) {
