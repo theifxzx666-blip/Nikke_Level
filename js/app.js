@@ -578,8 +578,8 @@
 
   /* 全资源梭哈后剩余资源：现有 + 推图 + 固定小时箱 + 自选箱全值 - 升级到 level 的消耗 */
   function allInRemaining(snap, income, level) {
-    var res = addRes(snap.bare_resources, snap.stage_clear_resources || {});
-    res = addRes(res, B.fixedBoxResources(snap, income));
+    var res = C.addRes(snap.bare_resources, snap.stage_clear_resources || {});
+    res = C.addRes(res, B.fixedBoxResources(snap, income));
     C.RESOURCES.forEach(function (r) {
       var best = 0;
       (snap.selectable_boxes || []).forEach(function (b) {
