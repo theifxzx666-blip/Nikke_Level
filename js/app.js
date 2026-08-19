@@ -703,10 +703,20 @@
     panels.forEach(function (p) { prev.push(p.style.display); p.style.display = (p.id === "tabRaw") ? "none" : ""; });
     html2canvas(rs, {
       backgroundColor: "#ffffff", scale: 2, useCORS: true,
-      // 在克隆 DOM 上加 export-mode（隐藏 tabs + 大字号 + 图作整体背景），不影响真实页面
+      // 克隆 DOM 上：①加 export-mode ②inline 强制隐藏 tabs ③注入标题块（class 后加可能不被 html2canvas 应用，用 inline/style 最稳）
       onclone: function (clonedDoc) {
         var panel = clonedDoc.getElementById("resultSection");
-        if (panel) panel.classList.add("export-mode");
+        if (panel) {
+          panel.classList.add("export-mode");
+          // 强制隐藏 tabs（不进入导出图）
+          var tabs = panel.querySelector("nav.tabs");
+          if (tabs) tabs.style.display = "none";
+          // 注入顶部标题块
+          var title = clonedDoc.createElement("div");
+          title.className = "export-title";
+          title.innerHTML = '<h1 class="export-title-main">NIKKE 资源规划计算结果</h1><p class="export-title-sub">GODDESS OF VICTORY · 嗷润吉-DORO 制作</p>';
+          panel.insertBefore(title, panel.firstChild);
+        }
       },
     })
       .then(function (canvas) {

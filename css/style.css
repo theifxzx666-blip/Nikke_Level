@@ -154,6 +154,10 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 /* ===== 一图流导出模式（html2canvas 截图时 onclone 触发） ===== */
 /* 隐藏 tabs 栏（不进入导出图） */
 .result-panel.export-mode nav.tabs { display: none !important; }
+/* 顶部标题块（onclone 注入） */
+.result-panel.export-mode .export-title { background: rgba(255,255,255,0.94) !important; border-radius: 12px; padding: 14px 20px; margin: 0 0 14px; text-align: center; }
+.result-panel.export-mode .export-title-main { margin: 0 !important; font-size: 24px !important; font-weight: 700 !important; color: #0f6e56 !important; letter-spacing: 1px; }
+.result-panel.export-mode .export-title-sub { margin: 6px 0 0 !important; font-size: 12px !important; color: #667 !important; letter-spacing: 0.5px; }
 /* 图作为整体背景直接可见（不加白色蒙版、不做顶图）；文字各自带白色底板保证可读 */
 .result-panel.export-mode {
   padding: 22px 24px !important;
