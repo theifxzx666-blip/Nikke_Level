@@ -1,7 +1,7 @@
 /* app.js — NIKKE 资源规划计算器前端逻辑 */
 (function () {
   "use strict";
-  var C = window.NikkeCore, O = window.NikkeOutpost, S = window.NikkeScenarios;
+  var C = window.NikkeCore, O = window.NikkeOutpost, S = window.NikkeScenarios, B = window.NikkeBoxes;
   var LS_KEY = "nikke_planner_form_v1";
   var DEFAULT_FIXED = {
     "芯尘盒": { 24: 30, 12: 26, 8: 7, 4: 1, 2: 315, 1: 1432 },
@@ -575,29 +575,58 @@
     box.appendChild(table(["资源", "总需求", "现有余额", "缺口", "每日收益", "需要天数", "是否瓶颈"], nbRows));
     box.appendChild(el("p", "瓶颈资源：" + resLabels[nb.bottleneck] + "；预计日期：" + nb.estimated_at + "；需 " + nb.steps + " 级。", "caption"));
 
-    // 5. 开主线前 vs 开主线后方案对比
+    // 5. 开主线前 vs 开主线后方案对比（全资源梭哈口径）
     box.appendChild(el("h3", "开主线前 vs 开主线后方案对比", "sec"));
     if (futureAvail) {
       var cmp = el("div", "", "compare");
+      // 左侧：现在（当前收益）全资源梭哈
       var c1 = el("div", "", "col");
       c1.appendChild(el("h4", "开主线前（当前基地收益）"));
       c1.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>"));
-      c1.appendChild(resourceTable(result.selectable.resources_before_selectable));
+      c1.appendChild(resourceTable(allInRemaining(snap, snap.income_per_hour, result.selectable.level)));
+      c1.appendChild(el("p", "全资源梭哈后剩余：现有资源 + 推图 + 固定小时箱（按当前收益）+ 自选箱全部 — 升到 " + result.selectable.level + " 级所需消耗", "caption"));
+      // 右侧：新主线开放后（未来收益 + 等待期自然积累）全资源梭哈
+      var futIncome = snap.future_income_per_hour || snap.income_per_hour;
+      var futSnap = JSON.parse(JSON.stringify(snap));
+      futSnap.bare_resources = result.future_main_story.projected_bare;
       var c2 = el("div", "", "col");
       c2.appendChild(el("h4", "开主线后（" + result.future_main_story.open_at.slice(0, 10) + " 起新基地收益）"));
       c2.appendChild(el("p", "等到开放日再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>"));
-      c2.appendChild(resourceTable(result.future_main_story.result.resources_before_selectable));
+      c2.appendChild(resourceTable(allInRemaining(futSnap, futIncome, result.future_main_story.result.level)));
+      c2.appendChild(el("p", "全资源梭哈后剩余：现有资源 + 推图 + 等待期自然积累 + 固定小时箱（按未来收益）+ 自选箱全部 — 升到 " + result.future_main_story.result.level + " 级所需消耗", "caption"));
       cmp.appendChild(c1); cmp.appendChild(c2);
       box.appendChild(cmp);
-      var futIncome = snap.future_income_per_hour || {};
       var hasFutIncome = (futIncome.credit || 0) > 0 || (futIncome.battle_data || 0) > 0 || (futIncome.core_dust || 0) > 0;
       if (!hasFutIncome) {
         box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
       }
-      box.appendChild(el("p", "左侧 = 现在就用现有箱子按当前收益开；右侧 = 箱子留到新主线开放后按新收益开（等待期自然积累：当前收益 + 每日歼灭，到开放日一并计入，再做全箱梭哈）。", "caption"));
+      box.appendChild(el("p", "左右两侧均为「全资源梭哈」（现有 + 推图 + 固定小时箱 + 自选箱全部）后的剩余资源对比：左侧按当前收益、右侧按未来收益（含等待期自然积累）。右侧等级更高（多升 " + (result.future_main_story.result.level - result.selectable.level) + " 级），升级消耗更多，剩余资源相应更少；等新主线的核心收益是等级提升。", "caption"));
     } else {
       box.appendChild(el("p", result.future_main_story.reason + "；可在「预计新主线进度」中填写后重新计算。"));
     }
+  }
+
+  /* 全资源梭哈后剩余资源：现有 + 推图 + 固定小时箱 + 自选箱全值 - 升级到 level 的消耗 */
+  function allInRemaining(snap, income, level) {
+    var res = addRes(snap.bare_resources, snap.stage_clear_resources || {});
+    res = addRes(res, B.fixedBoxResources(snap, income));
+    C.RESOURCES.forEach(function (r) {
+      var best = 0;
+      (snap.selectable_boxes || []).forEach(function (b) {
+        if (!b.options || !b.options.length) return;
+        var bv = 0;
+        b.options.forEach(function (opt) {
+          var v = (opt.rewards && opt.rewards[r]) || 0;
+          bv = Math.max(bv, opt.mode === "units" ? v : v * (income[r] || 0));
+        });
+        best += bv * b.quantity;
+      });
+      res[r] += best;
+    });
+    var cost = C.costForLevels(snap, snap.current_sync_level, Math.max(0, level - snap.current_sync_level));
+    var remain = {};
+    C.RESOURCES.forEach(function (r) { remain[r] = Math.max(0, (res[r] || 0) - (cost[r] || 0)); });
+    return remain;
   }
 
   function resourceTable(res) {
