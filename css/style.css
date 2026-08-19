@@ -33,10 +33,11 @@ body::after {
 .app-header h1 { margin: 0; font-size: 24px; color: var(--primary-dark); }
 .subtitle { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 
-/* 顶部 hero banner（背景图主显位置） */
+/* 顶部 hero banner：固定尺寸居中展示（不随窗口拉伸乱裁切） */
 .hero-banner {
   position: relative; overflow: hidden;
-  margin: 8px 20px 0; border-radius: 14px; min-height: 360px;
+  margin: 8px auto 0; max-width: 1100px; height: 300px;
+  border-radius: 14px;
   background-image: var(--hero-bg);
   background-size: cover; background-position: center 32%;
   background-repeat: no-repeat;
@@ -50,7 +51,7 @@ body::after {
 }
 .hero-inner {
   position: relative; z-index: 1; padding: 32px 36px; color: #fff;
-  display: flex; flex-direction: column; justify-content: center; min-height: 360px;
+  display: flex; flex-direction: column; justify-content: center; height: 300px;
 }
 .hero-title { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 .hero-sub { margin: 0 0 8px; font-size: 14px; opacity: 0.95; text-shadow: 0 1px 4px rgba(0,0,0,0.5); max-width: 60%; }
@@ -181,8 +182,8 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   fieldset { padding: 8px 9px; margin-bottom: 10px; }
 
   /* hero banner 移动端缩小 */
-  .hero-banner { margin: 6px 12px 0; min-height: 220px; border-radius: 10px; background-position: center 30%; }
-  .hero-inner { padding: 20px 22px; min-height: 220px; }
+  .hero-banner { margin: 6px 12px 0; max-width: none; height: 200px; border-radius: 10px; background-position: center 30%; }
+  .hero-inner { padding: 20px 22px; height: 200px; }
   .hero-title { font-size: 20px; }
   .hero-sub { font-size: 12px; max-width: 75%; }
   .hero-cred { font-size: 11px; }
