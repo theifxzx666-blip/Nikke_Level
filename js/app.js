@@ -289,6 +289,18 @@
     collectForm();
     saveForm();
     updateProgress();
+    // 表单发生变化 -> 计算结果已过时，按钮还原为"开始计算"初始状态
+    resetCalcButton();
+  }
+
+  /* 计算按钮状态：初始绿色"开始计算" / 计算后紫色"重新计算" */
+  function resetCalcButton() {
+    var b = $("btnCalc");
+    if (b) { b.classList.remove("btn-accent"); b.classList.add("btn-primary"); b.textContent = "开始计算"; }
+  }
+  function markCalculated() {
+    var b = $("btnCalc");
+    if (b) { b.classList.remove("btn-primary"); b.classList.add("btn-accent"); b.textContent = "重新计算"; }
   }
 
   /* ---------- 升级消耗联动（当前等级 -> 预填 + 梯度预览） ---------- */
@@ -657,8 +669,10 @@
       renderBox(state.lastResult, snap);
       renderRaw(state.lastResult);
       saveForm();
-      // 计算结果出现后切到双列布局（结果在右侧）
+      // 计算结果出现后切到双列布局（结果在右侧）+ hero 与左表单等宽对齐
       $("layout").classList.add("has-result");
+      document.body.classList.add("has-result");
+      markCalculated();
       // 滚动到结果区（手机小屏下"回到顶部"会让用户看不到结果）
       var rs = $("resultSection");
       rs.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -676,6 +690,33 @@
     a.download = name;
     a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  /* ---------- 导出一图流（结果区截图 PNG） ---------- */
+  function exportResultImage() {
+    if (!state.lastResult) { alert("请先点击「开始计算」生成结果后再导出。"); return; }
+    if (typeof html2canvas === "undefined") { alert("图片库未加载（需联网首次访问），请刷新重试。"); return; }
+    var rs = $("resultSection");
+    // 临时展开 tabResult + tabBox（"怎么开箱子才够"），排除 tabRaw（原始 JSON 长文本）
+    var panels = document.querySelectorAll(".tab-panel");
+    var prev = [];
+    panels.forEach(function (p) { prev.push(p.style.display); p.style.display = (p.id === "tabRaw") ? "none" : ""; });
+    html2canvas(rs, { backgroundColor: "#ffffff", scale: 2, useCORS: true })
+      .then(function (canvas) {
+        panels.forEach(function (p, i) { p.style.display = prev[i]; });
+        canvas.toBlob(function (blob) {
+          if (!blob) { alert("导出失败，请重试。"); return; }
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "NIKKE计算结果_" + new Date().toISOString().slice(0, 10) + ".png";
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+        });
+      })
+      .catch(function (e) {
+        panels.forEach(function (p, i) { p.style.display = prev[i]; });
+        alert("导出失败：" + e.message);
+      });
   }
 
   /* ---------- XLSX 导入/导出 ---------- */
@@ -823,6 +864,7 @@
     });
 
     $("btnCalc").addEventListener("click", calculate);
+    $("btnExportImg").addEventListener("click", exportResultImage);
     $("btnSave").addEventListener("click", function () { saveForm(); tip("已保存当前表单"); });
     $("btnTemplate").addEventListener("click", function () {
       if (typeof XLSX === "undefined") { alert("XLSX 库未加载（需联网），暂无法下载模板。"); return; }

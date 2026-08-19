@@ -71,11 +71,16 @@ body::after {
 }
 .btn:hover { border-color: var(--primary); }
 .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-accent { background: #534ab7; color: #fff; border-color: #534ab7; }
+.btn-accent:hover { background: #3d3682; border-color: #3d3682; }
 .btn-big { width: 100%; padding: 14px; font-size: 16px; margin-top: 6px; }
+/* 结果区导出图片按钮（tabs 右侧） */
+.btn-export { margin-left: auto; padding: 7px 14px; font-size: 13px; }
 
 .layout { padding: 8px 20px 90px; max-width: 880px; margin: 0 auto; }
-/* 计算结果出现后切回双列布局（结果区在表单右侧） */
+/* 计算结果出现后切回双列布局（结果区在表单右侧），hero 与左表单等宽对齐 */
 .layout.has-result { max-width: none; display: grid; grid-template-columns: minmax(0, 760px) minmax(0, 1fr); gap: 16px; }
+body.has-result .hero-banner { max-width: 760px; }
 @media (max-width: 900px) { .layout, .layout.has-result { display: block; max-width: none; } }
 
 .form-panel, .result-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }

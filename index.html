@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
 <link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <section class="hero-banner" aria-label="NIKKE 主题 banner">
@@ -170,7 +171,7 @@
       <p class="hint">挑战者成长宝箱为固定数值奖励，默认全部消耗（不受基地等级影响）。</p>
     </fieldset>
 
-    <button id="btnCalc" class="btn btn-primary btn-big">重新计算</button>
+    <button id="btnCalc" class="btn btn-primary btn-big">开始计算</button>
   </section>
 
   <!-- ============ 结果区 ============ -->
@@ -179,6 +180,7 @@
       <button class="tab active" data-tab="tabResult">计算结果</button>
       <button class="tab" data-tab="tabBox">箱子方案</button>
       <button class="tab" data-tab="tabRaw">原始 JSON</button>
+      <button id="btnExportImg" class="btn btn-export">📷 导出图片</button>
     </nav>
     <div id="tabResult" class="tab-panel active"></div>
     <div id="tabBox" class="tab-panel"></div>
