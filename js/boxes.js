@@ -144,25 +144,16 @@
           contrib[o.resource] += combos[i] * o.value;
           labels3[o.label] = combos[i];
         }
-        for (var twoCount = 0; twoCount <= two.box.quantity; twoCount++) {
-          var contrib2 = { credit: contrib.credit, battle_data: contrib.battle_data, core_dust: contrib.core_dust };
-          var labels2 = {};
-          for (var idx = 0; idx < 2; idx++) {
-            var o2 = twoOptions[idx];
-            var cnt = 0;
-            if (idx === 0) cnt = twoCount;
-            else {
-              var deficit = Math.max(0.0, shortage[o2.resource] - contrib2[o2.resource]);
-              cnt = o2.value ? Math.min(two.box.quantity - twoCount, Math.ceil(deficit / o2.value)) : 0;
-            }
-            contrib2[o2.resource] += cnt * o2.value;
-            labels2[o2.label] = cnt;
-          }
-          var usedTwo = 0;
-          Object.keys(labels2).forEach(function (k) { usedTwo += labels2[k]; });
-          if (usedTwo > two.box.quantity) continue;
-          var remaining = {};
-          RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, shortage[r] - contrib2[r]); });
+        // 挑战者箱（two，二选一 units）：单位数值奖励、无分配损耗，应该全消耗
+        // 简化：全选第一个选项（battle_data，挑战者主收益方向）
+        var contrib2 = { credit: contrib.credit, battle_data: contrib.battle_data, core_dust: contrib.core_dust };
+        var labels2 = {};
+        for (var idx = 0; idx < 2; idx++) labels2[twoOptions[idx].label] = 0;
+        labels2[twoOptions[0].label] = two.box.quantity;
+        var usedTwo = two.box.quantity;
+        contrib2[twoOptions[0].resource] += two.box.quantity * twoOptions[0].value;
+        var remaining = {};
+        RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, shortage[r] - contrib2[r]); });
           var flexCounts = {};
           var flexUsed = 0;
           var possible = true;
@@ -193,7 +184,6 @@
           }
         }
       }
-    }
     return best;
   }
 
