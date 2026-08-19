@@ -17,6 +17,7 @@
   src: url("../assets/fonts/maiyuan.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 body {
   margin: 0; font-family: "MaiYuan", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -101,6 +102,8 @@ legend { font-weight: 600; color: var(--primary-dark); padding: 2px 8px; border-
 .g4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 @media (max-width: 600px) { .g2, .g3, .g4 { grid-template-columns: 1fr 1fr; } }
 label { font-size: 13px; color: #444; display: flex; flex-direction: column; gap: 3px; }
+/* 表单控件默认不继承 body 字体，统一继承（卖圆体） */
+button, input, select, textarea { font-family: inherit; }
 input, select {
   padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #fff;
 }
@@ -138,7 +141,7 @@ table.data th { background: #f2f6f4; }
 @media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
 .compare .col { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
 .compare .col h4 { margin: 0 0 6px; color: var(--primary-dark); }
-pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; overflow-x: auto; max-height: 480px; }
+pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; font-family: inherit; overflow-x: auto; max-height: 480px; }
 
 /* 悬浮进度球 */
 .progress-fab {
