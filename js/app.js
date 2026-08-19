@@ -623,22 +623,12 @@
     box.appendChild(scenarioTable(result.scenario_f_target));
     // B. 达到后续追求目标等级的三方案
     box.appendChild(scenarioTable(result.scenario_f_alt));
-    // C. 自选箱分配
-    box.appendChild(el("h3", "自选箱分配方案（全箱梭哈 → 同步器 " + result.selectable.level + "）", "sec"));
-    var plan = result.selectable.selectable;
-    var rows = [];
-    if (plan && plan.selectable && plan.selectable.length) {
-      plan.selectable.forEach(function (p) {
-        var detail = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
-          .map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
-        var note = p.name.indexOf("挑战者") >= 0 ? "固定数值奖励，默认全部消耗（不受基地等级影响）" : "";
-        rows.push([p.name, p.used, p.keep, detail, note]);
-      });
-    } else {
-      box.appendChild(el("p", "自选箱未产生分配方案（现有资源可能已足够）。"));
-    }
-    if (rows.length) box.appendChild(table(["箱子", "使用", "保留", "分配明细", "备注"], rows));
-    box.appendChild(el("p", "本方案对应全箱梭哈（固定小时箱 + 资源自选箱全部使用）后可达到的等级：同步器 " + result.selectable.level + "；分配按目标资源缺口优化，同等级方案优先保留更多箱子。", "caption"));
+    // C. 自选箱分配（按「目标同步器等级」优化：当前收益 / 新主线开放后）
+    var targetLv = snap.target_sync_level;
+    box.appendChild(el("h3", "自选箱分配方案（全箱梭哈 → 目标同步器 " + targetLv + "）", "sec"));
+    box.appendChild(selectablePlanTable(result.target_selectable_now, "未开新主线（当前收益）"));
+    box.appendChild(selectablePlanTable(result.target_selectable_future, "新主线开放后（未来收益 + 等待期积累）"));
+    box.appendChild(el("p", "以上方案按「目标同步器等级 " + targetLv + "」的资源缺口优化自选箱分配；挑战者成长宝箱为固定数值奖励，默认全部消耗。", "caption"));
     // D. 固定小时箱收益折算（含差值换算）
     box.appendChild(el("h3", "固定小时箱收益折算（开主线前 vs 开主线后）", "sec"));
     var before = result.fixed.fixed || {};
@@ -650,6 +640,25 @@
     });
     box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], fixRows));
     box.appendChild(el("p", "固定小时箱按开启时的基地收益折算：开主线前用当前收益、开主线后用新基地收益。差值 = 等新主线再开箱多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
+  }
+
+  /* 渲染一组自选箱分配方案表（含"当前/新主线后"标签） */
+  function selectablePlanTable(plan, label) {
+    var wrap = el("div", "");
+    wrap.appendChild(el("h4", label, "sec"));
+    var rows = [];
+    if (plan && plan.selectable && plan.selectable.length) {
+      plan.selectable.forEach(function (p) {
+        var detail = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
+          .map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
+        var note = p.name.indexOf("挑战者") >= 0 ? "固定数值奖励，默认全部消耗（不受基地等级影响）" : "";
+        rows.push([p.name, p.used, p.keep, detail, note]);
+      });
+    } else {
+      wrap.appendChild(el("p", "无分配方案（现有资源 + 固定小时箱已满足目标）。"));
+    }
+    if (rows.length) wrap.appendChild(table(["箱子", "使用", "保留", "分配明细", "备注"], rows));
+    return wrap;
   }
 
   function renderRaw(result) {

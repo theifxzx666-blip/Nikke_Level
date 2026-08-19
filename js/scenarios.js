@@ -217,6 +217,26 @@
       perResource.fixed[r] = snapshot.current_sync_level + C.affordableLevelsSingle(fixedRes, snapshot, snapshot.current_sync_level, r);
       perResource.selectable[r] = snapshot.current_sync_level + C.affordableLevelsSingle(selRes, snapshot, snapshot.current_sync_level, r);
     });
+    // 按「目标同步器等级」优化的自选箱分配（当前收益）：到 target 需要怎么开箱
+    var targetSteps = Math.max(0, snapshot.target_sync_level - snapshot.current_sync_level);
+    var targetPlanNow = null;
+    if (targetSteps > 0) {
+      targetPlanNow = B.optimizeSelectableForTarget(snapshot, bareRes, targetSteps, snapshot.income_per_hour);
+    }
+    // 按「目标同步器等级」优化的自选箱分配（新主线开放后，未来收益 + 等待期自然积累）
+    var targetPlanFuture = null;
+    if (targetSteps > 0 && future.available) {
+      var openAt = new Date(snapshot.main_story_open_at.getTime());
+      var startAt = new Date(snapshot.recorded_at.getTime());
+      var futSnap = JSON.parse(JSON.stringify(snapshot));
+      var natural2 = C.incomeBetween(snapshot, startAt, openAt);
+      var wHours = snapshot.daily_wipeout_count * snapshot.wipeout_hours_each;
+      var d2 = Math.max(0, Math.round((openAt.getTime() - startAt.getTime()) / 86400000));
+      RESOURCES.forEach(function (r) { natural2[r] += (snapshot.income_per_hour[r] || 0.0) * wHours * d2; });
+      futSnap.bare_resources = addRes(snapshot.bare_resources, natural2);
+      futSnap.income_per_hour = snapshot.future_income_per_hour || snapshot.income_per_hour;
+      targetPlanFuture = B.optimizeSelectableForTarget(futSnap, futSnap.bare_resources, targetSteps, futSnap.income_per_hour);
+    }
     return {
       no_box: noBox, bare: bare, fixed: fixed, selectable: selectable,
       future_main_story: future,
@@ -224,6 +244,9 @@
       scenario_f_target: scenarioF(snapshot, snapshot.target_sync_level),
       scenario_f_alt: scenarioF(snapshot, snapshot.alternate_target_level),
       per_resource: perResource,
+      // 目标等级口径的自选箱分配（当前收益 / 新主线后）
+      target_selectable_now: targetPlanNow,
+      target_selectable_future: targetPlanFuture,
     };
   }
 
