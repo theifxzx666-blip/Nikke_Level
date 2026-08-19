@@ -11,8 +11,15 @@
   --hero-bg: url("../assets/bg/hero.webp");
 }
 * { box-sizing: border-box; }
+/* 自定义字体：卖圆体（测试用，不满意随时回滚 body 的 font-family 即可） */
+@font-face {
+  font-family: "MaiYuan";
+  src: url("../assets/fonts/maiyuan.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
 body {
-  margin: 0; font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  margin: 0; font-family: "MaiYuan", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   background: var(--bg); color: var(--text); line-height: 1.55;
   position: relative; min-height: 100vh;
 }
