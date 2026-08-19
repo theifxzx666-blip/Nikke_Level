@@ -38,7 +38,7 @@ body::after {
   position: relative; overflow: hidden;
   margin: 8px 20px 0; border-radius: 14px; min-height: 200px;
   background-image: var(--hero-bg);
-  background-size: cover; background-position: center 25%;
+  background-size: cover; background-position: center 38%;
   background-repeat: no-repeat;
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
 }
@@ -63,8 +63,10 @@ body::after {
 .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
 .btn-big { width: 100%; padding: 14px; font-size: 16px; margin-top: 6px; }
 
-.layout { display: grid; grid-template-columns: minmax(0, 760px) minmax(0, 1fr); gap: 16px; padding: 8px 20px 90px; }
-@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+.layout { padding: 8px 20px 90px; max-width: 880px; margin: 0 auto; }
+/* 计算结果出现后切回双列布局（结果区在表单右侧） */
+.layout.has-result { max-width: none; display: grid; grid-template-columns: minmax(0, 760px) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .layout, .layout.has-result { display: block; max-width: none; } }
 
 .form-panel, .result-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
 fieldset { border: 1px solid var(--border); border-radius: 10px; margin: 0 0 14px; padding: 10px 12px; }

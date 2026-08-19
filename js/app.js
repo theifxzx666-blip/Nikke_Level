@@ -657,6 +657,8 @@
       renderBox(state.lastResult, snap);
       renderRaw(state.lastResult);
       saveForm();
+      // 计算结果出现后切到双列布局（结果在右侧）
+      $("layout").classList.add("has-result");
       // 滚动到结果区（手机小屏下"回到顶部"会让用户看不到结果）
       var rs = $("resultSection");
       rs.scrollIntoView({ behavior: "smooth", block: "start" });
