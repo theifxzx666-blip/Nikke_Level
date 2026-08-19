@@ -586,7 +586,7 @@
       var c2 = el("div", "", "col");
       c2.appendChild(el("h4", "开主线后（" + result.future_main_story.open_at.slice(0, 10) + " 起新基地收益）"));
       c2.appendChild(el("p", "等到开放日再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>"));
-      c2.appendChild(resourceTable(result.future_main_story.natural_before_open));
+      c2.appendChild(resourceTable(result.future_main_story.result.resources_before_selectable));
       cmp.appendChild(c1); cmp.appendChild(c2);
       box.appendChild(cmp);
       var futIncome = snap.future_income_per_hour || {};
