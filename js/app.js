@@ -493,17 +493,19 @@
   }
 
   /* 开箱方案文本（固定箱全部使用 + 自选箱分配） */
-  function boxPlanText(plan) {
+  function boxPlanText(plan, reached) {
+    // 目标已达成或无开箱方案：显示「无需开箱」+ 原因
+    if (!plan || !plan.length || plan.every(function (p) { return !p.used; })) {
+      return reached ? "无需开箱（资源已足够）" : "无需开箱（等待自然增长）";
+    }
     var parts = ["固定小时箱全部使用"];
-    if (plan && plan.length) {
-      plan.forEach(function (p) {
-        if (p.used > 0) {
-          var det = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
-            .map(function (k) { return k + " x" + p.choices[k]; }).join("+");
-          parts.push(p.name + " x" + p.used + (det ? "（" + det + "）" : ""));
+    plan.forEach(function (p) {
+      if (p.used > 0) {
+        var det = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
+          .map(function (k) { return k + " x" + p.choices[k]; }).join("+");
+        parts.push(p.name + " x" + p.used + (det ? "（" + det + "）" : ""));
         }
       });
-    }
     return parts.join("；");
   }
 
@@ -550,8 +552,9 @@
     var targets = [result.no_box.target, snap.alternate_target_level];
     var okRows = [];
     var futureAvail = result.future_main_story.available;
-    var nowPlan = result.target_selectable_now ? result.target_selectable_now.selectable : (result.selectable.selectable || []);
-    var fPlan = result.target_selectable_future ? result.target_selectable_future.selectable : (futureAvail && result.future_main_story.result.selectable ? result.future_main_story.result.selectable.selectable : []);
+    // 已达成的目标（current >= target）显示「无需开箱」，不再回退到全箱梭哈方案
+    var nowPlan = result.target_selectable_now ? result.target_selectable_now.selectable : [];
+    var fPlan = result.target_selectable_future ? result.target_selectable_future.selectable : [];
     targets.forEach(function (tgt) {
       var nowOk = result.selectable.level >= tgt;
       var nowRow = [tgt, "未开新主线", "同步器 " + result.selectable.level, nowOk ? "✅" : "❌"];
@@ -566,7 +569,7 @@
           nowRow.push("-", "不可达");
         }
       }
-      nowRow.push(boxPlanText(nowPlan));
+      nowRow.push(boxPlanText(nowPlan, nowOk));
       okRows.push(nowRow);
       if (futureAvail) {
         var fLevel = result.future_main_story.result.level;
@@ -576,7 +579,7 @@
         var fRow = [tgt, "开放新主线后", "同步器 " + fLevel, fOk ? "✅" : "❌"];
         fRow.push(fOk ? String(Math.max(0, fDays)) : (naturalDaysOf(result, tgt) !== null ? fmtDays(naturalDaysOf(result, tgt)) : "-"));
         fRow.push(fOk ? ("开放日即达（" + result.future_main_story.open_at.slice(0, 10) + "）") : ("自然增长 " + fmtDays(naturalDaysOf(result, tgt)) + " 天后"));
-        fRow.push(boxPlanText(fPlan));
+        fRow.push(boxPlanText(fPlan, fOk));
         okRows.push(fRow);
       } else {
         okRows.push([tgt, "开放新主线后", "-", "❌", "-", "未填写新主线预测", "-"]);
@@ -686,17 +689,21 @@
     var wrap = el("div", "");
     wrap.appendChild(el("h4", label, "sec"));
     var rows = [];
+    var hasUsed = false;
     if (plan && plan.selectable && plan.selectable.length) {
       plan.selectable.forEach(function (p) {
+        if (p.used > 0) hasUsed = true;
         var detail = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
           .map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
         var note = p.name.indexOf("挑战者") >= 0 ? "固定数值奖励，默认全部消耗（不受基地等级影响）" : "";
         rows.push([p.name, p.used, p.keep, detail, note]);
       });
-    } else {
-      wrap.appendChild(el("p", "无分配方案（现有资源 + 固定小时箱已满足目标）。"));
     }
-    if (rows.length) wrap.appendChild(table(["箱子", "使用", "保留", "分配明细", "备注"], rows));
+    if (!plan || !plan.selectable || !plan.selectable.length || !hasUsed) {
+      wrap.appendChild(el("p", "无需开箱（现有资源 + 固定小时箱已满足目标）。", "caption"));
+      return wrap;
+    }
+    wrap.appendChild(table(["箱子", "使用", "保留", "分配明细", "备注"], rows));
     return wrap;
   }
 
