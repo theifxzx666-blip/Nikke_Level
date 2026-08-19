@@ -29,14 +29,11 @@ body::after {
   content: ""; position: fixed; inset: 0; z-index: -1;
   background: linear-gradient(180deg, rgba(245,247,246,0.78) 0%, rgba(245,247,246,0.88) 100%);
 }
-.app-header { padding: 18px 20px 6px; }
-.app-header h1 { margin: 0; font-size: 24px; color: var(--primary-dark); }
-.subtitle { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 
 /* 顶部 hero banner：固定尺寸居中展示（不随窗口拉伸乱裁切） */
 .hero-banner {
   position: relative; overflow: hidden;
-  margin: 8px auto 0; max-width: 1100px; height: 300px;
+  margin: 8px auto 0; max-width: 880px; height: 300px;
   border-radius: 14px;
   background-image: var(--hero-bg);
   background-size: cover; background-position: center 32%;
@@ -50,14 +47,24 @@ body::after {
     linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.5) 100%);
 }
 .hero-inner {
-  position: relative; z-index: 1; padding: 32px 36px; color: #fff;
-  display: flex; flex-direction: column; justify-content: center; height: 300px;
+  position: relative; z-index: 1; padding: 28px 32px; color: #fff;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  height: 300px;
 }
-.hero-title { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-.hero-sub { margin: 0 0 8px; font-size: 14px; opacity: 0.95; text-shadow: 0 1px 4px rgba(0,0,0,0.5); max-width: 60%; }
-.hero-cred { margin: 0; font-size: 12px; opacity: 0.75; letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
-.toolbar { padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.save-tip { color: var(--primary-dark); font-size: 13px; }
+.hero-text { flex: 1 1 auto; min-width: 0; }
+.hero-title { margin: 0 0 6px; font-size: 24px; font-weight: 700; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+.hero-sub { margin: 0 0 8px; font-size: 13px; opacity: 0.95; text-shadow: 0 1px 4px rgba(0,0,0,0.5); max-width: 95%; }
+.hero-cred { margin: 0; font-size: 11px; opacity: 0.75; letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+.hero-toolbar { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
+.hero-toolbar .btn {
+  padding: 7px 14px; border: 1px solid rgba(255,255,255,0.4); border-radius: 8px;
+  background: rgba(255,255,255,0.92); color: #222; cursor: pointer; font-size: 13px; white-space: nowrap;
+  transition: background .15s, border-color .15s;
+}
+.hero-toolbar .btn:hover { background: #fff; border-color: #fff; }
+.hero-toolbar .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.hero-toolbar .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+.hero-toolbar .save-tip { color: #fff; font-size: 12px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
 .btn {
   padding: 7px 14px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--card); cursor: pointer; font-size: 14px;
@@ -173,20 +180,18 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 @media (max-width: 700px) {
   /* 布局留白收窄 */
-  .app-header { padding: 14px 14px 4px; }
-  .app-header h1 { font-size: 20px; }
-  .subtitle { font-size: 12px; }
-  .toolbar { padding: 8px 14px; gap: 6px; }
   .layout { padding: 6px 12px 80px; gap: 12px; }
   .form-panel, .result-panel { padding: 10px; }
   fieldset { padding: 8px 9px; margin-bottom: 10px; }
 
   /* hero banner 移动端缩小 */
-  .hero-banner { margin: 6px 12px 0; max-width: none; height: 200px; border-radius: 10px; background-position: center 30%; }
-  .hero-inner { padding: 20px 22px; height: 200px; }
-  .hero-title { font-size: 20px; }
-  .hero-sub { font-size: 12px; max-width: 75%; }
-  .hero-cred { font-size: 11px; }
+  .hero-banner { margin: 6px 12px 0; max-width: none; height: auto; min-height: 240px; border-radius: 10px; background-position: center 30%; }
+  .hero-inner { padding: 16px 18px; height: auto; min-height: 240px; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .hero-toolbar { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .hero-toolbar .btn { padding: 8px 10px; font-size: 12px; }
+  .hero-title { font-size: 19px; }
+  .hero-sub { font-size: 12px; }
+  .hero-cred { font-size: 10px; }
 
   /* 触控目标放大：输入框/下拉更高、字号 16px 防 iOS 聚焦缩放 */
   label { font-size: 13px; }
@@ -228,7 +233,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* 超小屏（≤420px）：字段全部单列，避免 2 列挤压 */
 @media (max-width: 420px) {
   .g2, .g3, .g4 { grid-template-columns: 1fr; }
-  .toolbar .btn { flex: 1 1 40%; }
+  .hero-toolbar .btn { flex: 1 1 40%; }
   .compare .col { padding: 8px; }
   .cost-preview { padding: 8px; }
 }
