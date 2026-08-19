@@ -151,18 +151,18 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 .ok-item { color: #0f6e56; }
 .no-item { color: #a0a6a3; }
 
-/* ===== 一图流导出模式（html2canvas 截图时启用 onclone 触发） ===== */
-.result-panel.export-mode { padding: 28px 30px !important; }
-.result-panel.export-mode {
-  background-image: linear-gradient(rgba(255,255,255,0.86), rgba(255,255,255,0.92)), url("../assets/bg/export_bg.webp") !important;
-  background-size: cover, cover !important;
-  background-position: center, center !important;
-  background-repeat: no-repeat, no-repeat !important;
-}
+/* ===== 一图流导出模式（html2canvas 截图时 onclone 触发） ===== */
+/* 隐藏 tabs 栏（不进入导出图） */
+.result-panel.export-mode nav.tabs { display: none !important; }
+/* 顶部 banner 图（onclone 动态注入） */
+.result-panel.export-mode .export-banner { display: block; width: 100%; height: 220px; object-fit: cover; border-radius: 12px; margin: 0 0 18px; }
+.result-panel.export-mode { padding: 22px 24px !important; background: #fff !important; }
 .result-panel.export-mode h3.sec { font-size: 22px !important; margin: 22px 0 12px !important; color: #0f6e56 !important; }
 .result-panel.export-mode table.data th { font-size: 16px !important; padding: 10px 12px !important; background: #eaf3ee !important; }
 .result-panel.export-mode table.data td { font-size: 15px !important; padding: 9px 12px !important; color: #1a1a1a !important; }
 .result-panel.export-mode .caption { font-size: 14px !important; color: #333 !important; margin: 6px 0 14px !important; line-height: 1.7 !important; }
+.result-panel.export-mode .card { background: #f7fcf9 !important; border: 1px solid #b7e0cd !important; }
+.result-panel.export-mode .card.warn { background: #fef6e8 !important; border-color: #f3dcb2 !important; }
 .result-panel.export-mode .card .num { font-size: 32px !important; }
 .result-panel.export-mode .card .lbl { font-size: 15px !important; color: #2a3a3a !important; }
 .result-panel.export-mode .badge { font-size: 14px !important; padding: 3px 10px !important; }
