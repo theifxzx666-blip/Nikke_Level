@@ -51,6 +51,12 @@
     var available = addRes(baseResources, fixed);
     var shortage = {};
     RESOURCES.forEach(function (r) { shortage[r] = Math.max(0.0, needed[r] - available[r]); });
+    // 裸资源 + 固定小时箱已满足目标：不开任何自选箱（挑战者也保留），无需优化
+    if (RESOURCES.every(function (r) { return shortage[r] <= 1e-6; })) {
+      var emptyPlan = (snapshot.selectable_boxes || []).filter(function (b) { return b.quantity > 0; })
+        .map(function (b) { return { name: b.name, used: 0, keep: b.quantity, choices: {} }; });
+      return { target_steps: targetSteps, needed: needed, fixed: fixed, selectable: emptyPlan, boxes_used: 0, remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 }, feasible: true };
+    }
     var remaining = {};
     RESOURCES.forEach(function (r) { remaining[r] = shortage[r]; });
 

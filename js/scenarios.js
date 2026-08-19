@@ -240,7 +240,7 @@
     }
     // 各类资源最大等级（开启后 / future 三档）：按未来收益 + 等待期自然积累
     if (future.available) {
-      var fBare = addRes(future.bare_resources, snapshot.stage_clear_resources || {});
+      var fBare = addRes(future.projected_bare, snapshot.stage_clear_resources || {});
       var fFixed = addRes(fBare, B.fixedBoxResources(snapshot, futureIncome));
       var fSel = {};
       RESOURCES.forEach(function (r) {
