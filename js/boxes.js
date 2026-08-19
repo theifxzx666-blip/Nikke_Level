@@ -148,7 +148,7 @@
     var q3 = three.box.quantity;
     for (var count0 = 0; count0 <= q3; count0++) {
       for (var count1 = 0; count1 <= q3 - count0; count1++) {
-        var count2 = q3 - count0 - count1;
+        for (var count2 = 0; count2 <= q3 - count0 - count1; count2++) {
         var contrib = C.zeroRes();
         var labels3 = {};
         var combos = [count0, count1, count2];
@@ -196,6 +196,7 @@
             };
           }
         }
+      }
       }
     return best;
   }
