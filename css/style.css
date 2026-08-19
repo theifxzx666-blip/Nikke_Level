@@ -249,13 +249,13 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .form-panel, .result-panel { padding: 10px; }
   fieldset { padding: 8px 9px; margin-bottom: 10px; }
 
-  /* hero banner 移动端缩小 */
-  .hero-banner { margin: 6px 12px 0; max-width: none; height: auto; min-height: 240px; border-radius: 10px; background-position: center 30%; }
-  .hero-inner { padding: 16px 18px; height: auto; min-height: 240px; flex-direction: column; align-items: flex-start; gap: 12px; }
+  /* hero banner 移动端紧凑 */
+  .hero-banner { margin: 6px 12px 0; max-width: none; height: auto; min-height: 180px; border-radius: 10px; background-position: center 30%; }
+  .hero-inner { padding: 14px 16px; height: auto; min-height: 180px; flex-direction: column; align-items: flex-start; gap: 10px; }
   .hero-toolbar { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 6px; }
   .hero-toolbar .btn { padding: 8px 10px; font-size: 12px; }
-  .hero-title { font-size: 19px; }
-  .hero-sub { font-size: 12px; }
+  .hero-title { font-size: 18px; }
+  .hero-sub { font-size: 12px; line-height: 1.4; }
   .hero-cred { font-size: 10px; }
 
   /* 触控目标放大：输入框/下拉更高、字号 16px 防 iOS 聚焦缩放 */
@@ -276,6 +276,10 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     white-space: nowrap; -webkit-overflow-scrolling: touch;
   }
   .fixed-table input { width: 52px; }
+  /* 结果区/对比区/方案区所有大表横向滚动，避免列被截断 */
+  .result-panel > div { max-width: 100%; }
+  .result-panel table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .result-panel table th, .result-panel table td { white-space: nowrap; }
 
   /* 按钮 / 页签触控面积 */
   .btn { padding: 10px 12px; font-size: 14px; }

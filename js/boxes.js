@@ -71,7 +71,20 @@
       return { target_steps: targetSteps, needed: needed, fixed: fixed, selectable: [], boxes_used: 0, remaining_shortage: shortage, feasible: false, error: "存在多资源同时奖励箱子，需扩展枚举规则" };
     }
 
-    var totalUsed = 0;
+    // 挑战者（units 模式二选一箱）全消耗（与 fast 路径一致：单位数值奖励无分配损耗）
+    boxes.forEach(function (item) {
+      var opts = item.box.options || [];
+      if (opts.length === 2 && opts.every(function (o) { return o.mode === "units"; })) {
+        var o0 = opts[0];
+        item.left = 0;
+        item.choices[o0.label] = item.box.quantity;
+        if (o0.rewards) {
+          RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, remaining[r] - (o0.rewards[r] || 0) * item.box.quantity); });
+        }
+      }
+    });
+
+    var totalUsed = boxes.reduce(function (s, it) { return s + (it.box.quantity - it.left); }, 0);
     while (Object.keys(remaining).some(function (r) { return remaining[r] > 1e-6; })) {
       var candidates = [];
       boxes.forEach(function (item) {
