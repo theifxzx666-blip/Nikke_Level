@@ -510,6 +510,38 @@
     return parts.join("；");
   }
 
+  /* 开箱达成目标统计方案：按资源储备层级判断（①裸资源够 ②固定箱按需够 ③固定箱+挑战者平替够 ④梭哈不够） */
+  function planByLevels(result, snap, tgt, future) {
+    var pr = result.per_resource;
+    var prefix = future ? "future_" : "";
+    function minL(p) { return Math.min(p.credit, p.battle_data, p.core_dust); }
+    var bare = pr[prefix + "bare"], fixed = pr[prefix + "fixed"];
+    var maxLv = future ? result.future_main_story.result.level : result.selectable.level;
+    var immediate = future ? ("开放日即达（" + result.future_main_story.open_at.slice(0, 10) + "）") : "立即可达（今天）";
+    // ① 当前资源储备已足够
+    if (minL(bare) >= tgt) return { days: "0", date: immediate, plan: "无需开箱（当前资源已足够）" };
+    // ② 固定小时箱按需开启即可达成
+    if (minL(fixed) >= tgt) {
+      var steps = Math.max(0, tgt - snap.current_sync_level);
+      var baseRes = future ? result.future_main_story.projected_bare : snap.bare_resources;
+      var income = future ? (snap.future_income_per_hour || snap.income_per_hour) : snap.income_per_hour;
+      var need = B.fixedBoxesNeeded(snap, baseRes, steps, income);
+      var n = 0;
+      Object.keys(need.used).forEach(function (nm) {
+        Object.keys(need.used[nm]).forEach(function (h) { n += need.used[nm][h]; });
+      });
+      return { days: "0", date: immediate, plan: "固定小时箱按需开启 " + n + " 个即可达成（无需开自选箱）" };
+    }
+    // ③ 全箱梭哈可达成：固定箱全部 + 挑战者优先平替（不足再开自选箱）
+    if (maxLv >= tgt) {
+      var plan = future ? result.target_selectable_future : result.target_selectable_now;
+      return { days: "0", date: immediate, plan: boxPlanText(plan ? plan.selectable : [], true) };
+    }
+    // ④ 全资源投入也无法达成
+    var gap = tgt - maxLv;
+    return { days: "-", date: "全箱梭哈也无法达成", plan: "全资源投入后仍差 " + gap + " 级（需补充资源）" };
+  }
+
   function renderResult(result, snap) {
     var box = $("tabResult"); box.innerHTML = "";
     var resLabels = { credit: "信用点", battle_data: "战斗数据辑", core_dust: "红球" };
@@ -548,41 +580,33 @@
     box.appendChild(table(["场景", "资源", "新主线开启前最大等级", "新主线开启后最大等级"], prRows));
     box.appendChild(el("p", "每个场景下三类资源各自单独计算能升到多少级（只看单资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。两列各取最小值。", "caption"));
 
-    // 3. 开箱达成目标统计（开箱方案按「目标等级」优化）
+    // 3. 开箱达成目标统计（按资源储备层级判断方案）
     box.appendChild(el("h3", "开箱达成目标统计", "sec"));
     var targets = [result.no_box.target, snap.alternate_target_level];
     var okRows = [];
     var futureAvail = result.future_main_story.available;
-    // 已达成的目标（current >= target）显示「无需开箱」，不再回退到全箱梭哈方案
-    var nowPlan = result.target_selectable_now ? result.target_selectable_now.selectable : [];
-    var fPlan = result.target_selectable_future ? result.target_selectable_future.selectable : [];
     targets.forEach(function (tgt) {
-      var nowOk = result.selectable.level >= tgt;
-      var nowRow = [tgt, "未开新主线", "同步器 " + result.selectable.level, nowOk ? "✅" : "❌"];
-      if (nowOk) {
-        nowRow.push("0", "立即可达（今天）");
-      } else {
-        // 全资源（全箱梭哈）投入也无法达成：明确告知，不再显示自然增长误导
-        nowRow.push("-", "全箱梭哈也无法达成");
-      }
-      nowRow.push(boxPlanText(nowPlan, nowOk));
+      // 未开新主线
+      var nowLevel = result.selectable.level;
+      var nowOk = nowLevel >= tgt;
+      var nowRow = [tgt, "未开新主线", "同步器 " + nowLevel, nowOk ? "✅" : "❌"];
+      var np = planByLevels(result, snap, tgt, false);
+      nowRow.push(np.days, np.date, np.plan);
       okRows.push(nowRow);
+      // 开放新主线后
       if (futureAvail) {
         var fLevel = result.future_main_story.result.level;
         var fOk = fLevel >= tgt;
-        var fOpenDate = new Date(result.future_main_story.open_at.slice(0, 10) + "T00:00:00");
-        var fDays = daysAnchor(recDate, fOpenDate);
         var fRow = [tgt, "开放新主线后", "同步器 " + fLevel, fOk ? "✅" : "❌"];
-        fRow.push(fOk ? String(Math.max(0, fDays)) : "-");
-        fRow.push(fOk ? ("开放日即达（" + result.future_main_story.open_at.slice(0, 10) + "）") : "全箱梭哈也无法达成");
-        fRow.push(boxPlanText(fPlan, fOk));
+        var fp = planByLevels(result, snap, tgt, true);
+        fRow.push(fp.days, fp.date, fp.plan);
         okRows.push(fRow);
       } else {
         okRows.push([tgt, "开放新主线后", "-", "❌", "-", "未填写新主线预测", "-"]);
       }
     });
     box.appendChild(table(["目标", "场景", "全箱梭哈后", "是否达成", "预计天数", "预计达成日期", "开箱方案"], okRows));
-    box.appendChild(el("p", "开箱方案 = 按「目标同步器等级」缺口优化的自选箱分配（最小化开箱达成目标），不是全箱梭哈；挑战者成长宝箱为固定数值奖励，默认全部使用；红球（芯尘）按防御基地等级取整。", "caption"));
+    box.appendChild(el("p", "开箱方案按资源储备层级判断：①当前资源已足够 → 无需开箱；②固定小时箱按需开启即可达成 → 只开固定小时箱；③固定小时箱 + 挑战者宝箱平替可达成 → 固定箱全部 + 挑战者优先（不足再开自选箱）；④全资源梭哈也无法达成 → 告知差额。挑战者成长宝箱为固定数值奖励；红球（芯尘）按防御基地等级取整。", "caption"));
 
     // 4. 自然升级到 N（不开箱）
     box.appendChild(el("h3", "自然升级到" + result.no_box.target + "（不开箱）", "sec"));

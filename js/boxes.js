@@ -32,6 +32,47 @@
     return result;
   }
 
+  /* 固定小时箱按需计算：从最大时长箱开始，开够「达到 target」所需的最少固定箱数量 */
+  function fixedBoxesNeeded(snapshot, baseResources, targetSteps, incomePerHour) {
+    var needed = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
+    var balance = addRes(baseResources, snapshot.stage_clear_resources || {});
+    var remaining = {};
+    RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, needed[r] - balance[r]); });
+    var used = {};
+    var names = { "芯尘盒": "core_dust", "信用点盒": "credit", "战斗数据辑盒": "battle_data" };
+    function boxVal(res, h) {
+      return res === "core_dust" ? Math.floor((incomePerHour[res] || 0.0) * h) : (incomePerHour[res] || 0.0) * h;
+    }
+    // 单资源箱：按资源缺口优先开对应类型，从大时长到小时长
+    ["芯尘盒", "信用点盒", "战斗数据辑盒"].forEach(function (name) {
+      var res = names[name];
+      var map = snapshot.fixed_boxes[name] || {};
+      Object.keys(map).map(Number).sort(function (a, b) { return b - a; }).forEach(function (h) {
+        if (remaining[res] <= 1e-6) return;
+        var val = boxVal(res, h);
+        if (val <= 0) return;
+        var take = Math.min(map[h], Math.ceil(remaining[res] / val));
+        if (take > 0) { used[name] = used[name] || {}; used[name][h] = take; }
+        remaining[res] = Math.max(0.0, remaining[res] - take * val);
+      });
+    });
+    // 成长套组：同时补齐三种资源的剩余缺口
+    var gmap = snapshot.fixed_boxes["成长套组"] || {};
+    Object.keys(gmap).map(Number).sort(function (a, b) { return b - a; }).forEach(function (h) {
+      var gv = {};
+      RESOURCES.forEach(function (r) { gv[r] = boxVal(r, h); });
+      var take = 0;
+      while (take < gmap[h] && RESOURCES.some(function (r) { return remaining[r] > 1e-6; })) {
+        var progressed = false;
+        RESOURCES.forEach(function (r) { if (remaining[r] > 1e-6 && gv[r] > 0) { remaining[r] = Math.max(0.0, remaining[r] - gv[r]); progressed = true; } });
+        if (!progressed) break;
+        take += 1;
+      }
+      if (take > 0) { used["成长套组"] = used["成长套组"] || {}; used["成长套组"][h] = take; }
+    });
+    return { used: used, remaining_shortage: remaining };
+  }
+
   function single(option) {
     var vals = [];
     Object.keys(option.rewards || {}).forEach(function (r) {
@@ -209,6 +250,7 @@
 
   global.NikkeBoxes = {
     fixedBoxResources: fixedBoxResources,
+    fixedBoxesNeeded: fixedBoxesNeeded,
     optionValue: optionValue,
     single: single,
     optimizeSelectableForTarget: optimizeSelectableForTarget,
