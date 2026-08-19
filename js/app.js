@@ -574,36 +574,6 @@
     });
     box.appendChild(table(["资源", "总需求", "现有余额", "缺口", "每日收益", "需要天数", "是否瓶颈"], nbRows));
     box.appendChild(el("p", "瓶颈资源：" + resLabels[nb.bottleneck] + "；预计日期：" + nb.estimated_at + "；需 " + nb.steps + " 级。", "caption"));
-
-    // 5. 开主线前 vs 开主线后方案对比（全资源梭哈口径）
-    box.appendChild(el("h3", "开主线前 vs 开主线后方案对比", "sec"));
-    if (futureAvail) {
-      var cmp = el("div", "", "compare");
-      // 左侧：现在（当前收益）全资源梭哈
-      var c1 = el("div", "", "col");
-      c1.appendChild(el("h4", "开主线前（当前基地收益）"));
-      c1.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>"));
-      c1.appendChild(resourceTable(allInRemaining(snap, snap.income_per_hour, result.selectable.level)));
-      c1.appendChild(el("p", "全资源梭哈后剩余：现有资源 + 推图 + 固定小时箱（按当前收益）+ 自选箱全部 — 升到 " + result.selectable.level + " 级所需消耗", "caption"));
-      // 右侧：新主线开放后（未来收益 + 等待期自然积累）全资源梭哈
-      var futIncome = snap.future_income_per_hour || snap.income_per_hour;
-      var futSnap = JSON.parse(JSON.stringify(snap));
-      futSnap.bare_resources = result.future_main_story.projected_bare;
-      var c2 = el("div", "", "col");
-      c2.appendChild(el("h4", "开主线后（" + result.future_main_story.open_at.slice(0, 10) + " 起新基地收益）"));
-      c2.appendChild(el("p", "等到开放日再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>"));
-      c2.appendChild(resourceTable(allInRemaining(futSnap, futIncome, result.future_main_story.result.level)));
-      c2.appendChild(el("p", "全资源梭哈后剩余：现有资源 + 推图 + 等待期自然积累 + 固定小时箱（按未来收益）+ 自选箱全部 — 升到 " + result.future_main_story.result.level + " 级所需消耗", "caption"));
-      cmp.appendChild(c1); cmp.appendChild(c2);
-      box.appendChild(cmp);
-      var hasFutIncome = (futIncome.credit || 0) > 0 || (futIncome.battle_data || 0) > 0 || (futIncome.core_dust || 0) > 0;
-      if (!hasFutIncome) {
-        box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
-      }
-      box.appendChild(el("p", "左右两侧均为「全资源梭哈」（现有 + 推图 + 固定小时箱 + 自选箱全部）后的剩余资源对比：左侧按当前收益、右侧按未来收益（含等待期自然积累）。右侧等级更高（多升 " + (result.future_main_story.result.level - result.selectable.level) + " 级），升级消耗更多，剩余资源相应更少；等新主线的核心收益是等级提升。", "caption"));
-    } else {
-      box.appendChild(el("p", result.future_main_story.reason + "；可在「预计新主线进度」中填写后重新计算。"));
-    }
   }
 
   /* 全资源梭哈后剩余资源：现有 + 推图 + 固定小时箱 + 自选箱全值 - 升级到 level 的消耗 */
@@ -669,6 +639,28 @@
     });
     box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], fixRows));
     box.appendChild(el("p", "固定小时箱按开启时的基地收益折算：开主线前用当前收益、开主线后用新基地收益。差值 = 等新主线再开箱多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
+    // E. 开主线前 vs 开主线后方案对比（全资源梭哈口径，模板同 D）
+    box.appendChild(el("h3", "开主线前 vs 开主线后方案对比（全资源梭哈）", "sec"));
+    if (result.future_main_story.available) {
+      var futIncome2 = snap.future_income_per_hour || snap.income_per_hour;
+      var futSnap2 = JSON.parse(JSON.stringify(snap));
+      futSnap2.bare_resources = result.future_main_story.projected_bare;
+      var nowRemain = allInRemaining(snap, snap.income_per_hour, result.selectable.level);
+      var futRemain = allInRemaining(futSnap2, futIncome2, result.future_main_story.result.level);
+      var cmpRows = C.RESOURCES.map(function (r) {
+        var nv = nowRemain[r] || 0, fv = futRemain[r] || 0, diff = fv - nv;
+        return [C.RESOURCE_LABELS[r], fmtNum(nv), fmtNum(fv), diff !== 0 ? ((diff > 0 ? "+" : "") + fmtNum(diff)) : "-"];
+      });
+      box.appendChild(table(["资源", "开主线前梭哈后剩余（当前收益）", "开主线后梭哈后剩余（未来收益）", "差值"], cmpRows));
+      var levelDiff = result.future_main_story.result.level - result.selectable.level;
+      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + result.future_main_story.open_at.slice(0, 10) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；差值 = 等新主线再梭哈多获得的剩余资源。", "caption"));
+      var hasFutIncome2 = (futIncome2.credit || 0) > 0 || (futIncome2.battle_data || 0) > 0 || (futIncome2.core_dust || 0) > 0;
+      if (!hasFutIncome2) {
+        box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
+      }
+    } else {
+      box.appendChild(el("p", result.future_main_story.reason + "；可在「预计新主线进度」中填写后重新计算。"));
+    }
   }
 
   /* 渲染一组自选箱分配方案表（含"当前/新主线后"标签） */
