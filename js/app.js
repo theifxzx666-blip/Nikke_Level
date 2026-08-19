@@ -639,8 +639,8 @@
     });
     box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], fixRows));
     box.appendChild(el("p", "固定小时箱按开启时的基地收益折算：开主线前用当前收益、开主线后用新基地收益。差值 = 等新主线再开箱多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
-    // E. 开主线前 vs 开主线后方案对比（全资源梭哈口径，模板同 D）
-    box.appendChild(el("h3", "开主线前 vs 开主线后方案对比（全资源梭哈）", "sec"));
+    // E. 全资源梭哈收益折算（模板同 D：前/后/差值≈可升等级）
+    box.appendChild(el("h3", "全资源梭哈收益折算", "sec"));
     if (result.future_main_story.available) {
       var futIncome2 = snap.future_income_per_hour || snap.income_per_hour;
       var futSnap2 = JSON.parse(JSON.stringify(snap));
@@ -649,11 +649,12 @@
       var futRemain = allInRemaining(futSnap2, futIncome2, result.future_main_story.result.level);
       var cmpRows = C.RESOURCES.map(function (r) {
         var nv = nowRemain[r] || 0, fv = futRemain[r] || 0, diff = fv - nv;
-        return [C.RESOURCE_LABELS[r], fmtNum(nv), fmtNum(fv), diff !== 0 ? ((diff > 0 ? "+" : "") + fmtNum(diff)) : "-"];
+        var diffLevels = diff > 0 ? C.affordableLevelsSingle({ credit: 0, battle_data: 0, core_dust: 0, [r]: diff }, snap, snap.current_sync_level, r) : 0;
+        return [C.RESOURCE_LABELS[r], fmtNum(nv), fmtNum(fv), diff > 0 ? ("≈" + diffLevels + " 级（" + C.RESOURCE_LABELS[r] + "单资源）") : "-"];
       });
-      box.appendChild(table(["资源", "开主线前梭哈后剩余（当前收益）", "开主线后梭哈后剩余（未来收益）", "差值"], cmpRows));
+      box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值≈可升等级"], cmpRows));
       var levelDiff = result.future_main_story.result.level - result.selectable.level;
-      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + result.future_main_story.open_at.slice(0, 10) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；差值 = 等新主线再梭哈多获得的剩余资源。", "caption"));
+      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + result.future_main_story.open_at.slice(0, 10) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
       var hasFutIncome2 = (futIncome2.credit || 0) > 0 || (futIncome2.battle_data || 0) > 0 || (futIncome2.core_dust || 0) > 0;
       if (!hasFutIncome2) {
         box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
