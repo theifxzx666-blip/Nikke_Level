@@ -706,10 +706,14 @@
     if (!state.lastResult) { alert("请先点击「开始计算」生成结果后再导出。"); return; }
     if (typeof html2canvas === "undefined") { alert("图片库未加载（需联网首次访问），请刷新重试。"); return; }
     var rs = $("resultSection");
-    // 临时展开 tabResult + tabBox（"怎么开箱子才够"），排除 tabRaw（原始 JSON 长文本）
+    // 临时展开 tabResult + tabBox（"怎么开箱子才够" + 自选箱方案），排除 tabRaw（原始 JSON 长文本）
+    // 注意：必须显式 display:"block"（空字符串会被 .tab-panel{display:none} 类规则重新隐藏，导致内容截不到）
     var panels = document.querySelectorAll(".tab-panel");
     var prev = [];
-    panels.forEach(function (p) { prev.push(p.style.display); p.style.display = (p.id === "tabRaw") ? "none" : ""; });
+    panels.forEach(function (p) {
+      prev.push(p.style.display);
+      p.style.display = (p.id === "tabRaw") ? "none" : "block";
+    });
     html2canvas(rs, {
       backgroundColor: "#ffffff", scale: 2, useCORS: true,
       // 克隆 DOM 上：①加 export-mode ②inline 强制隐藏 tabs ③注入标题块（class 后加可能不被 html2canvas 应用，用 inline/style 最稳）
