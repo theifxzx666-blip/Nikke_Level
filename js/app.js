@@ -701,7 +701,14 @@
     var panels = document.querySelectorAll(".tab-panel");
     var prev = [];
     panels.forEach(function (p) { prev.push(p.style.display); p.style.display = (p.id === "tabRaw") ? "none" : ""; });
-    html2canvas(rs, { backgroundColor: "#ffffff", scale: 2, useCORS: true })
+    html2canvas(rs, {
+      backgroundColor: "#ffffff", scale: 2, useCORS: true,
+      // 在克隆 DOM 上加 export-mode（截图用大字号+背景图+白蒙版），不影响真实页面
+      onclone: function (clonedDoc) {
+        var panel = clonedDoc.getElementById("resultSection");
+        if (panel) panel.classList.add("export-mode");
+      },
+    })
       .then(function (canvas) {
         panels.forEach(function (p, i) { p.style.display = prev[i]; });
         canvas.toBlob(function (blob) {

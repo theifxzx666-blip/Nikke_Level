@@ -151,6 +151,25 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 .ok-item { color: #0f6e56; }
 .no-item { color: #a0a6a3; }
 
+/* ===== 一图流导出模式（html2canvas 截图时启用 onclone 触发） ===== */
+.result-panel.export-mode { padding: 28px 30px !important; }
+.result-panel.export-mode {
+  background-image: linear-gradient(rgba(255,255,255,0.86), rgba(255,255,255,0.92)), url("../assets/bg/export_bg.webp") !important;
+  background-size: cover, cover !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat, no-repeat !important;
+}
+.result-panel.export-mode h3.sec { font-size: 22px !important; margin: 22px 0 12px !important; color: #0f6e56 !important; }
+.result-panel.export-mode table.data th { font-size: 16px !important; padding: 10px 12px !important; background: #eaf3ee !important; }
+.result-panel.export-mode table.data td { font-size: 15px !important; padding: 9px 12px !important; color: #1a1a1a !important; }
+.result-panel.export-mode .caption { font-size: 14px !important; color: #333 !important; margin: 6px 0 14px !important; line-height: 1.7 !important; }
+.result-panel.export-mode .card .num { font-size: 32px !important; }
+.result-panel.export-mode .card .lbl { font-size: 15px !important; color: #2a3a3a !important; }
+.result-panel.export-mode .badge { font-size: 14px !important; padding: 3px 10px !important; }
+.result-panel.export-mode .compare .col h4 { font-size: 17px !important; }
+.result-panel.export-mode .compare .col p { font-size: 15px !important; }
+.result-panel.export-mode pre.raw { font-size: 14px !important; max-height: none !important; }
+
 /* ===== 分组配色（2026-08-18） ===== */
 .grp-a legend { color: #0f6e56; background: #e2f5ee; }
 .grp-a { border-color: #9fe1cb; }
