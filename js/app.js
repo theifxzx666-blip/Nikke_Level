@@ -576,8 +576,8 @@
     box.appendChild(el("p", "瓶颈资源：" + resLabels[nb.bottleneck] + "；预计日期：" + nb.estimated_at + "；需 " + nb.steps + " 级。", "caption"));
   }
 
-  /* 全资源梭哈后剩余资源：现有 + 推图 + 固定小时箱 + 自选箱全值 - 升级到 level 的消耗 */
-  function allInRemaining(snap, income, level) {
+  /* 全资源总量：现有 + 推图 + 固定小时箱 + 自选箱全值（参考固定箱折算：只比资源获取量，不减升级消耗） */
+  function allInTotal(snap, income) {
     var res = C.addRes(snap.bare_resources, snap.stage_clear_resources || {});
     res = C.addRes(res, B.fixedBoxResources(snap, income));
     C.RESOURCES.forEach(function (r) {
@@ -593,10 +593,7 @@
       });
       res[r] += best;
     });
-    var cost = C.costForLevels(snap, snap.current_sync_level, Math.max(0, level - snap.current_sync_level));
-    var remain = {};
-    C.RESOURCES.forEach(function (r) { remain[r] = Math.max(0, (res[r] || 0) - (cost[r] || 0)); });
-    return remain;
+    return res;
   }
 
   function resourceTable(res) {
@@ -645,16 +642,16 @@
       var futIncome2 = snap.future_income_per_hour || snap.income_per_hour;
       var futSnap2 = JSON.parse(JSON.stringify(snap));
       futSnap2.bare_resources = result.future_main_story.projected_bare;
-      var nowRemain = allInRemaining(snap, snap.income_per_hour, result.selectable.level);
-      var futRemain = allInRemaining(futSnap2, futIncome2, result.future_main_story.result.level);
+      var nowTotal = allInTotal(snap, snap.income_per_hour);
+      var futTotal = allInTotal(futSnap2, futIncome2);
       var cmpRows = C.RESOURCES.map(function (r) {
-        var nv = nowRemain[r] || 0, fv = futRemain[r] || 0, diff = fv - nv;
+        var nv = nowTotal[r] || 0, fv = futTotal[r] || 0, diff = fv - nv;
         var diffLevels = diff > 0 ? C.affordableLevelsSingle({ credit: 0, battle_data: 0, core_dust: 0, [r]: diff }, snap, snap.current_sync_level, r) : 0;
         return [C.RESOURCE_LABELS[r], fmtNum(nv), fmtNum(fv), diff > 0 ? ("≈" + diffLevels + " 级（" + C.RESOURCE_LABELS[r] + "单资源）") : "-"];
       });
       box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值≈可升等级"], cmpRows));
       var levelDiff = result.future_main_story.result.level - result.selectable.level;
-      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + result.future_main_story.open_at.slice(0, 10) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
+      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + result.future_main_story.open_at.slice(0, 10) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
       var hasFutIncome2 = (futIncome2.credit || 0) > 0 || (futIncome2.battle_data || 0) > 0 || (futIncome2.core_dust || 0) > 0;
       if (!hasFutIncome2) {
         box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
