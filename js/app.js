@@ -491,6 +491,7 @@
     var d = s.rows[2].days;
     return (typeof d === "number" && isFinite(d)) ? d : null;
   }
+  // naturalDaysOf 当前未在渲染中使用（达成判断改为「全箱梭哈也无法达成」口径）；保留供后续扩展
 
   /* 开箱方案文本（固定箱全部使用 + 自选箱分配） */
   function boxPlanText(plan, reached) {
@@ -561,13 +562,8 @@
       if (nowOk) {
         nowRow.push("0", "立即可达（今天）");
       } else {
-        var nDays = naturalDaysOf(result, tgt);
-        if (nDays !== null) {
-          var nDate = new Date(recDate.getTime() + nDays * 86400000);
-          nowRow.push(fmtDays(nDays), "自然增长 " + fmtDays(nDays) + " 天后（" + nDate.toISOString().slice(0, 10) + "）");
-        } else {
-          nowRow.push("-", "不可达");
-        }
+        // 全资源（全箱梭哈）投入也无法达成：明确告知，不再显示自然增长误导
+        nowRow.push("-", "全箱梭哈也无法达成");
       }
       nowRow.push(boxPlanText(nowPlan, nowOk));
       okRows.push(nowRow);
@@ -577,8 +573,8 @@
         var fOpenDate = new Date(result.future_main_story.open_at.slice(0, 10) + "T00:00:00");
         var fDays = daysAnchor(recDate, fOpenDate);
         var fRow = [tgt, "开放新主线后", "同步器 " + fLevel, fOk ? "✅" : "❌"];
-        fRow.push(fOk ? String(Math.max(0, fDays)) : (naturalDaysOf(result, tgt) !== null ? fmtDays(naturalDaysOf(result, tgt)) : "-"));
-        fRow.push(fOk ? ("开放日即达（" + result.future_main_story.open_at.slice(0, 10) + "）") : ("自然增长 " + fmtDays(naturalDaysOf(result, tgt)) + " 天后"));
+        fRow.push(fOk ? String(Math.max(0, fDays)) : "-");
+        fRow.push(fOk ? ("开放日即达（" + result.future_main_story.open_at.slice(0, 10) + "）") : "全箱梭哈也无法达成");
         fRow.push(boxPlanText(fPlan, fOk));
         okRows.push(fRow);
       } else {
