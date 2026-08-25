@@ -253,9 +253,14 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
   /* hero banner 移动端紧凑 */
   .hero-banner { margin: 6px 12px 0; max-width: none; height: auto; min-height: 180px; border-radius: 10px; background-position: center 30%; }
-  .hero-inner { padding: 14px 16px; height: auto; min-height: 180px; flex-direction: column; align-items: flex-start; gap: 10px; }
-  .hero-toolbar { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .hero-toolbar .btn { padding: 8px 10px; font-size: 12px; }
+  .hero-inner { padding: 14px 16px; height: auto; min-height: 180px; flex-direction: column; align-items: flex-start; gap: 12px; }
+  /* hero 工具栏：移动端改为独立工具卡片，按钮竖排全宽，不再像孤立悬浮按钮 */
+  .hero-toolbar {
+    width: 100%; flex-direction: column; gap: 8px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .hero-toolbar .btn { padding: 10px 12px; font-size: 13px; width: 100%; justify-content: center; }
   .hero-title { font-size: 18px; }
   .hero-sub { font-size: 12px; line-height: 1.4; }
   .hero-cred { font-size: 10px; }
@@ -304,11 +309,25 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   /* 防止任何元素把页面撑出横向滚动（clip 不会破坏 fixed/sticky） */
   body { overflow-x: clip; }
 
-  /* ===== 结果表：移动端默认换行，避免必须横滑才能看 ===== */
-  .result-panel table th, .result-panel table td { white-space: normal; word-break: break-word; }
-  .result-panel table th:first-child, .result-panel table td:first-child { white-space: nowrap; min-width: 76px; }
-  /* 仍可能超宽的表留左右滑动余地（首列等关键列已固定不换行） */
-  .tbl-scroll { border-radius: 8px; }
+  /* ===== 结果表：移动端表格内横向滑动 + 首列固定 ===== */
+  /* 单元格默认不换行，由内容撑宽；超出后在 .tbl-scroll 容器内左右滑动（不整页横滑） */
+  .result-panel table th, .result-panel table td { white-space: nowrap; }
+  /* 长文本列（备注/说明/分配明细等，JS 渲染时对超长单元格加 .wrap）：限宽换行，避免单列过宽 */
+  .result-panel table td.wrap { white-space: normal; word-break: break-word; min-width: 140px; max-width: 56vw; }
+  /* 首列固定：横向滑动时行标签保持可见，便于逐行对应阅读 */
+  .result-panel table th:first-child, .result-panel table td:first-child {
+    position: sticky; left: 0; z-index: 2; white-space: nowrap; min-width: 84px;
+  }
+  .result-panel table th:first-child { z-index: 3; background: #f2f6f4; }
+  .result-panel table td:first-child { background: #fff; }
+  /* 可滑动容器：右缘渐隐提示（内容溢出时由 JS 加 .scrollable） */
+  .tbl-scroll { position: relative; border-radius: 8px; }
+  .tbl-scroll::after {
+    content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 26px; z-index: 1;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.92));
+    pointer-events: none; opacity: 0; transition: opacity .2s;
+  }
+  .tbl-scroll.scrollable::after { opacity: 1; }
 
   /* ===== 表单分组可折叠（仅移动端生效，由 JS 加 .collapsible） ===== */
   .form-panel.collapsible fieldset > legend {

@@ -468,12 +468,27 @@
   function table(headers, rows) {
     var t = el("table", "", "data");
     var thead = "<tr>" + headers.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>";
-    var body = rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>"; }).join("");
+    var body = rows.map(function (r) {
+      return "<tr>" + r.map(function (c) {
+        // 超长文本（备注/说明/分配明细等）加 .wrap：移动端限宽换行，其余列不换行撑宽后横滑
+        var w = (typeof c === "string" && c.length > 18) ? ' class="wrap"' : "";
+        return "<td" + w + ">" + c + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
     t.innerHTML = thead + body;
     // 包一层滚动容器：手机端表格超出屏幕宽度时可左右滑动
     var wrap = el("div", "", "tbl-scroll");
     wrap.appendChild(t);
     return wrap;
+  }
+
+  /* 结果表格可滑动标记：内容溢出时加 .scrollable（触发右缘渐隐提示） */
+  function markScrollableTables() {
+    var list = document.querySelectorAll(".tbl-scroll");
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      s.classList.toggle("scrollable", s.scrollWidth > s.clientWidth + 2);
+    }
   }
 
   /* 以凌晨4点为日界的自然日差 */
@@ -744,6 +759,8 @@
       renderBox(state.lastResult, snap);
       renderRaw(state.lastResult);
       saveForm();
+      // 标记可横向滑动的结果表（内容溢出时显示右缘渐隐提示）
+      markScrollableTables();
       // 计算结果出现后切到双列布局（结果在右侧）+ hero 与左表单等宽对齐
       $("layout").classList.add("has-result");
       document.body.classList.add("has-result");
@@ -1025,6 +1042,11 @@
     if (mq.addEventListener) mq.addEventListener("change", apply);
     else if (mq.addListener) mq.addListener(apply);
     apply();
+
+    // 窗口尺寸变化（如手机横竖屏旋转）后重新标记可滑动的结果表
+    window.addEventListener("resize", function () {
+      if (state.lastResult) markScrollableTables();
+    });
   }
 
   /* ---------- 初始化 ---------- */
