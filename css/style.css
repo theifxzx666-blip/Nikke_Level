@@ -329,6 +329,8 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     padding: 14px; font-size: 16px; border-radius: 999px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, .22);
   }
+  /* 移动端只保留底部悬浮按钮，隐藏表单底部原「开始计算」，避免出现两个计算按钮 */
+  #btnCalc { display: none; }
   /* 结果出来后，悬浮按钮文案提示可重算，且不要挡住结果底部操作 */
   body.has-result .btn-calc-fab { bottom: 14px; }
 }
