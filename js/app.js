@@ -991,6 +991,42 @@
     $("ppClose").addEventListener("click", function () { $("progressPanel").style.display = "none"; });
   }
 
+  /* ---------- 移动端表单增强：可折叠分组 + 悬浮「开始计算」 ---------- */
+  function setupMobileForm() {
+    var fab = $("btnCalcFab");
+    if (fab) fab.addEventListener("click", function () { calculate(); });
+
+    var mq = window.matchMedia("(max-width: 700px)");
+    function apply() {
+      var panel = $("formSection");
+      if (!panel) return;
+      if (mq.matches) {
+        panel.classList.add("collapsible");
+        panel.querySelectorAll("fieldset").forEach(function (fs) {
+          if (!fs.dataset.init) {
+            fs.dataset.init = "1";
+            // 默认折叠高级分组（grp-c 预计新主线 / grp-d 消耗与箱子），核心分组保持展开
+            if (fs.classList.contains("grp-c") || fs.classList.contains("grp-d")) fs.classList.add("collapsed");
+            var lg = fs.querySelector("legend");
+            if (lg && !fs._bound) {
+              fs._bound = true;
+              lg.addEventListener("click", function () {
+                if (!window.matchMedia("(max-width: 700px)").matches) return;
+                fs.classList.toggle("collapsed");
+              });
+            }
+          }
+        });
+      } else {
+        panel.classList.remove("collapsible");
+        panel.querySelectorAll("fieldset").forEach(function (fs) { fs.classList.remove("collapsed"); });
+      }
+    }
+    if (mq.addEventListener) mq.addEventListener("change", apply);
+    else if (mq.addListener) mq.addListener(apply);
+    apply();
+  }
+
   /* ---------- 初始化 ---------- */
   function init() {
     loadForm();
@@ -1018,6 +1054,7 @@
       .then(function () {
         renderForm();
         bindEvents();
+        setupMobileForm();
         syncCostFromLevel();
         updateProgress();
         tip("就绪");

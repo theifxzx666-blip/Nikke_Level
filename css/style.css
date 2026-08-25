@@ -270,16 +270,20 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   }
 
   /* 表格横向滚动（结果表用 .tbl-scroll 容器；固定箱表 / 分档预览用 display:block） */
-  .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
   .fixed-table, .cost-preview table {
-    display: block; width: 100%; overflow-x: auto;
+    display: block; width: 100%; max-width: 100%; overflow-x: auto;
     white-space: nowrap; -webkit-overflow-scrolling: touch;
   }
   .fixed-table input { width: 52px; }
   /* 结果区/对比区/方案区所有大表横向滚动，避免列被截断 */
   .result-panel > div { max-width: 100%; }
-  .result-panel table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .result-panel table th, .result-panel table td { white-space: nowrap; }
+  /* 不再强制所有 table 变 block（旧规则会造成嵌套滚动 + 必须横滑）；
+     改为由 .tbl-scroll 负责横向滚动，单元格在移动端自动换行（见下方媒体查询） */
+  .result-panel table { width: 100%; }
+
+  /* 移动端「开始计算」悬浮按钮（桌面隐藏，由 .btn-calc-fab 控制） */
+  .btn-calc-fab { display: none; }
 
   /* 按钮 / 页签触控面积 */
   .btn { padding: 10px 12px; font-size: 14px; }
@@ -297,6 +301,37 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .progress-fab { width: 48px; height: 48px; right: 12px; bottom: 12px; }
   .progress-fab svg { width: 40px; height: 40px; }
   .progress-panel { right: 12px; bottom: 68px; width: 280px; }
+
+  /* 防止任何元素把页面撑出横向滚动（clip 不会破坏 fixed/sticky） */
+  body { overflow-x: clip; }
+
+  /* ===== 结果表：移动端默认换行，避免必须横滑才能看 ===== */
+  .result-panel table th, .result-panel table td { white-space: normal; word-break: break-word; }
+  .result-panel table th:first-child, .result-panel table td:first-child { white-space: nowrap; min-width: 76px; }
+  /* 仍可能超宽的表留左右滑动余地（首列等关键列已固定不换行） */
+  .tbl-scroll { border-radius: 8px; }
+
+  /* ===== 表单分组可折叠（仅移动端生效，由 JS 加 .collapsible） ===== */
+  .form-panel.collapsible fieldset > legend {
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .form-panel.collapsible fieldset > legend::after {
+    content: "▾"; margin-left: 10px; font-size: 12px; color: var(--muted); flex: 0 0 auto;
+  }
+  .form-panel.collapsible fieldset.collapsed > legend::after { content: "▸"; }
+  .form-panel.collapsible fieldset.collapsed > *:not(legend) { display: none; }
+  .form-panel.collapsible fieldset.collapsed { margin-bottom: 8px; }
+
+  /* 移动端底部悬浮「开始计算」 */
+  .btn-calc-fab {
+    display: block; position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: 14px; z-index: 9000; width: min(92vw, 440px);
+    padding: 14px; font-size: 16px; border-radius: 999px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .22);
+  }
+  /* 结果出来后，悬浮按钮文案提示可重算，且不要挡住结果底部操作 */
+  body.has-result .btn-calc-fab { bottom: 14px; }
 }
 
 /* 超小屏（≤420px）：字段全部单列，避免 2 列挤压 */
