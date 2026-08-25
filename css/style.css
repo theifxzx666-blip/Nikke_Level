@@ -92,6 +92,8 @@ body::after {
 .btn-accent { background: #534ab7; color: #fff; border-color: #534ab7; }
 .btn-accent:hover { background: #3d3682; border-color: #3d3682; }
 .btn-big { width: 100%; padding: 14px; font-size: 16px; margin-top: 6px; }
+/* 移动端悬浮「开始计算」按钮：桌面默认隐藏（避免成为 grid 子项挤乱双列布局），移动端媒体查询内再显示 */
+.btn-calc-fab { display: none; }
 /* 结果区导出图片按钮（tabs 右侧） */
 .btn-export { margin-left: auto; padding: 7px 14px; font-size: 13px; }
 
@@ -281,9 +283,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   /* 不再强制所有 table 变 block（旧规则会造成嵌套滚动 + 必须横滑）；
      改为由 .tbl-scroll 负责横向滚动，单元格在移动端自动换行（见下方媒体查询） */
   .result-panel table { width: 100%; }
-
-  /* 移动端「开始计算」悬浮按钮（桌面隐藏，由 .btn-calc-fab 控制） */
-  .btn-calc-fab { display: none; }
 
   /* 按钮 / 页签触控面积 */
   .btn { padding: 10px 12px; font-size: 14px; }
