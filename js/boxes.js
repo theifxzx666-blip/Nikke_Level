@@ -16,13 +16,8 @@
     }
     Object.keys(snapshot.fixed_boxes || {}).forEach(function (name) {
       var hoursMap = snapshot.fixed_boxes[name] || {};
-      if (name === "成长套组") {
-        Object.keys(hoursMap).forEach(function (h) {
-          var count = hoursMap[h];
-          RESOURCES.forEach(function (r) { result[r] += boxValue(r, parseInt(h, 10)) * count; });
-        });
-        return;
-      }
+      // 成长套组不在固定小时箱中折算资源：游戏实测其不产出信用/战斗/芯尘三类升级材料
+      if (name === "成长套组") return;
       var resource = names[name];
       if (!resource) return;
       Object.keys(hoursMap).forEach(function (h) {
