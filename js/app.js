@@ -607,14 +607,13 @@
       }
       if (nowOk) {
         b.appendChild(el("div", "现状可达（" + np.date + "）", "sb-big"));
-        b.appendChild(el("div", "开箱方案：" + np.plan, "sb-plan"));
         var sel = (result.target_selectable_now || {}).selectable || null;
         var hasUsed = sel && sel.some(function (p) { return p.used > 0; });
         if (hasUsed) b.appendChild(selectableBoxTable(sel));
       } else {
-        // 现状不可达但未来可达：直接给未来方案（保留「开放日（预期日期）可达」格式）
+        // 现状不可达但未来可达：保留「开放日（预期日期）可达」+ 表格
         var futDate = result.future_main_story.open_at ? localDateStr(result.future_main_story.open_at) : "";
-        b.appendChild(el("div", "开放日（" + futDate + "）可达：" + fp.plan, "sb-big"));
+        b.appendChild(el("div", "开放日（" + futDate + "）可达", "sb-big"));
         var fsel = (result.target_selectable_future || {}).selectable || null;
         var fUsed = fsel && fsel.some(function (p) { return p.used > 0; });
         if (fUsed) b.appendChild(selectableBoxTable(fsel));
