@@ -583,48 +583,55 @@
     ];
     box.appendChild(el("div", capLines.join("<br>"), "cards-caption"));
 
-    // 2. 各类资源可达到的最大等级（新主线开启前 / 后）
-    box.appendChild(el("h3", "各类资源可达到的最大等级", "sec"));
+    // 2. 各类资源可达到的最大等级（全箱梭哈口径）
+    box.appendChild(el("h3", "各类资源可达到的最大等级（全箱梭哈）", "sec"));
     var prRows = [];
-    var scenes = [["bare", "现有资源"], ["fixed", "仅使用固定小时箱"], ["selectable", "固定小时箱 + 资源自选箱"]];
     var hasFuturePR = result.per_resource.future_bare && result.per_resource.future_fixed && result.per_resource.future_selectable;
-    scenes.forEach(function (pair) {
-      C.RESOURCES.forEach(function (r) {
-        var before = result.per_resource[pair[0]][r];
-        var after = hasFuturePR ? result.per_resource["future_" + pair[0]][r] : null;
-        prRows.push([pair[1], resLabels[r], "同步器 " + before, after !== null ? "同步器 " + after : "-"]);
-      });
+    C.RESOURCES.forEach(function (r) {
+      var before = result.per_resource.selectable[r];
+      var after = hasFuturePR ? result.per_resource.future_selectable[r] : null;
+      prRows.push([resLabels[r], "同步器 " + before, after !== null ? "同步器 " + after : "-"]);
     });
-    box.appendChild(table(["场景", "资源", "新主线开启前最大等级", "新主线开启后最大等级"], prRows));
-    box.appendChild(el("p", "每个场景下三类资源各自单独计算能升到多少级（只看单资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。两列各取最小值。", "caption"));
+    box.appendChild(table(["资源", "新主线开启前最大等级", "新主线开启后最大等级"], prRows));
+    box.appendChild(el("p", "以上为「固定小时箱 + 资源自选箱」（全箱梭哈）口径下，三类资源各自单独计算能升到的最大等级（只看单资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。", "caption"));
 
-    // 3. 开箱达成目标统计（按资源储备层级判断方案）
+    // 3. 开箱达成目标统计（与开箱方案联动：无法达成的目标直接告知，不展示该目标）
     box.appendChild(el("h3", "开箱达成目标统计", "sec"));
     var targets = [result.no_box.target, snap.alternate_target_level];
     var okRows = [];
+    var failedList = [];
     var futureAvail = result.future_main_story.available;
     targets.forEach(function (tgt) {
-      // 未开新主线
-      var nowLevel = result.selectable.level;
-      var nowOk = nowLevel >= tgt;
-      var nowRow = [tgt, "未开新主线", "同步器 " + nowLevel, nowOk ? "✅" : "❌"];
       var np = planByLevels(result, snap, tgt, false);
-      nowRow.push(np.days, np.date, np.plan);
+      var nowOk = np.days !== "-";
+      var fOk = false, fp = null;
+      if (futureAvail) {
+        fp = planByLevels(result, snap, tgt, true);
+        fOk = fp.days !== "-";
+      }
+      // 现状与未来都无法达成 → 直接告知，不展示该目标的达成统计
+      if (!nowOk && !fOk) {
+        failedList.push({ tgt: tgt, plan: np.plan });
+        return;
+      }
+      // 未开新主线
+      var nowRow = [tgt, "未开新主线", "同步器 " + result.selectable.level, nowOk ? "✅" : "❌", np.days, np.date, np.plan];
       okRows.push(nowRow);
       // 开放新主线后
       if (futureAvail) {
-        var fLevel = result.future_main_story.result.level;
-        var fOk = fLevel >= tgt;
-        var fRow = [tgt, "开放新主线后", "同步器 " + fLevel, fOk ? "✅" : "❌"];
-        var fp = planByLevels(result, snap, tgt, true);
-        fRow.push(fp.days, fp.date, fp.plan);
+        var fRow = [tgt, "开放新主线后", "同步器 " + result.future_main_story.result.level, fOk ? "✅" : "❌", fp.days, fp.date, fp.plan];
         okRows.push(fRow);
       } else {
         okRows.push([tgt, "开放新主线后", "-", "❌", "-", "未填写新主线预测", "-"]);
       }
     });
-    box.appendChild(table(["目标", "场景", "全箱梭哈后", "是否达成", "预计天数", "预计达成日期", "开箱方案"], okRows));
-    box.appendChild(el("p", "开箱方案按资源储备层级判断：①当前资源已足够 → 无需开箱；②固定小时箱按需开启即可达成 → 只开固定小时箱；③固定小时箱 + 挑战者宝箱平替可达成 → 固定箱全部 + 挑战者优先（不足再开自选箱）；④全资源梭哈也无法达成 → 告知差额。挑战者成长宝箱为固定数值奖励；红球（芯尘）按防御基地等级取整。", "caption"));
+    if (okRows.length) {
+      box.appendChild(table(["目标", "场景", "全箱梭哈后", "是否达成", "预计天数", "预计达成日期", "开箱方案"], okRows));
+    }
+    failedList.forEach(function (f) {
+      box.appendChild(el("p", "❌ 目标 " + f.tgt + " 无法达成：" + f.plan + "。", "summary-warn"));
+    });
+    box.appendChild(el("p", "开箱方案按资源储备层级判断：①当前资源已足够 → 无需开箱；②固定小时箱按需开启即可达成 → 只开固定小时箱；③固定小时箱 + 挑战者宝箱平替可达成 → 固定箱全部 + 挑战者优先（不足再开自选箱）；④全资源梭哈也无法达成 → 直接提示无法达成。挑战者成长宝箱为固定数值奖励；红球（芯尘）按防御基地等级取整。", "caption"));
 
     // 4. 自然升级到 N（不开箱）
     box.appendChild(el("h3", "自然升级到" + result.no_box.target + "（不开箱）", "sec"));
