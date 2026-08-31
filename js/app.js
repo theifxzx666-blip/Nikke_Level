@@ -410,15 +410,25 @@
     var perLevel = { credit: 0, battle_data: 0, core_dust: 0 };
     var hasManual = f.cost_credit || f.cost_battle || f.cost_dust;
     if (hasManual) {
-      var t = tierValue(COST_TIERS, parseInt(f.current, 10) || 0);
+      var curLvl = parseInt(f.current, 10) || 0;
+      var t = tierValue(COST_TIERS, curLvl);
       perLevel.credit = f.cost_credit ? C.num(f.cost_credit, 0) : (t ? t.credit : 0);
       perLevel.battle_data = f.cost_battle ? C.num(f.cost_battle, 0) : (t ? t.battle_data : 0);
       perLevel.core_dust = f.cost_dust ? C.num(f.cost_dust, 0) : (t ? t.core_dust : 0);
+      // 手填仅覆盖当前等级所在档位（[档起点, 下一档起点)）；跨入更高档仍按内置档位表逐级递增，与游戏阶梯判定一致
+      var at = tierValueAt(COST_TIERS, curLvl);
+      if (at) {
+        perLevel.overrideStart = at.level;
+        perLevel.overrideEnd = Infinity;
+        for (var oi = 0; oi < COST_TIERS.length; oi++) {
+          if (COST_TIERS[oi].level > curLvl) { perLevel.overrideEnd = COST_TIERS[oi].level; break; }
+        }
+      }
     }
     var upgradeCost = {
       per_level: perLevel,
       range_start: null, range_end: null, range_total: null,
-      tiers: hasManual ? null : COST_TIERS,
+      tiers: COST_TIERS,
     };
     var fixed = {};
     Object.keys(DEFAULT_FIXED).forEach(function (label) {
@@ -660,7 +670,7 @@
       return [C.RESOURCE_LABELS[r], fmtNum(bv), after ? fmtNum(av) : "-", after ? fmtNum(diff) : "-", diff > 0 ? ("≈" + diffLevels + " 级（" + C.RESOURCE_LABELS[r] + "单资源）") : "-"];
     });
     box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], fixRows));
-    box.appendChild(el("p", "固定小时箱按开启时的基地收益折算：开主线前用当前收益、开主线后用新基地收益。挑战者成长宝箱属于自选箱（不计入此处）。", "caption"));
+    box.appendChild(el("p", "固定小时箱按开启时的基地收益折算：开主线前用当前收益、开主线后用新基地收益；其中「成长套组」计入固定小时箱折算（对信用/战斗/芯尘按小时收益×数量计）。挑战者成长宝箱属于自选箱（不计入此处）。", "caption"));
 
     // 4. 全资源梭哈收益折算（开主线前 vs 开主线后）
     box.appendChild(el("h3", "全资源梭哈收益折算（开主线前 vs 开主线后）", "sec"));

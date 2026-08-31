@@ -16,8 +16,14 @@
     }
     Object.keys(snapshot.fixed_boxes || {}).forEach(function (name) {
       var hoursMap = snapshot.fixed_boxes[name] || {};
-      // 成长套组不在固定小时箱中折算资源：游戏实测其不产出信用/战斗/芯尘三类升级材料
-      if (name === "成长套组") return;
+      if (name === "成长套组") {
+        // 成长套组计入固定箱折算：对信用/战斗/芯尘三类各按小时收益*数量叠加（纳入计算口径）
+        Object.keys(hoursMap).forEach(function (h) {
+          var count = hoursMap[h];
+          RESOURCES.forEach(function (r) { result[r] += boxValue(r, parseInt(h, 10)) * count; });
+        });
+        return;
+      }
       var resource = names[name];
       if (!resource) return;
       Object.keys(hoursMap).forEach(function (h) {

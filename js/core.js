@@ -68,6 +68,13 @@
         }
       }
     }
+    if (model.per_level && model.per_level.overrideEnd !== undefined) {
+      // 手填升级消耗仅覆盖当前等级所在档位：段内用 per_level，段外回落档位表，保证跨档仍逐级按阶梯
+      var pl0 = model.per_level;
+      if (level >= pl0.overrideStart && level < pl0.overrideEnd) {
+        return { credit: pl0.credit || 0.0, battle_data: pl0.battle_data || 0.0, core_dust: pl0.core_dust || 0.0 };
+      }
+    }
     if (model.tiers && model.tiers.length) {
       var chosen = model.tiers[0];
       for (var i = 0; i < model.tiers.length; i++) {
