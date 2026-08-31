@@ -46,6 +46,14 @@
     return v.toFixed(v % 1 ? 1 : 0);
   }
   function fmtDays(d) { return (typeof d === "number" && isFinite(d)) ? d.toFixed(1) : "-"; }
+  /* 把 UTC 的 isoMinutes 字符串（YYYY-MM-DDTHH:mm）转成本地日期 YYYY-MM-DD，避免 slice(0,10) 时区偏移一天 */
+  function localDateStr(s) {
+    if (!s) return "";
+    var d = new Date(s.length === 16 ? s + ":00Z" : s);
+    if (isNaN(d.getTime())) return s.slice(0, 10);
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day);
+  }
   function dateStr(d) { return d ? d.toISOString().slice(0, 10) : ""; }
 
   /* ---------- 状态 ---------- */
@@ -520,7 +528,7 @@
     function minL(p) { return Math.min(p.credit, p.battle_data, p.core_dust); }
     var bare = pr[prefix + "bare"], fixed = pr[prefix + "fixed"];
     var maxLv = future ? result.future_main_story.result.level : result.selectable.level;
-    var immediate = future ? ("开放日即达（" + result.future_main_story.open_at.slice(0, 10) + "）") : "立即可达（今天）";
+    var immediate = future ? ("开放日即达（" + localDateStr(result.future_main_story.open_at) + "）") : "立即可达（今天）";
     // ① 当前资源储备已足够
     if (minL(bare) >= tgt) return { days: "0", date: immediate, plan: "无需开箱（当前资源已足够）" };
     // ② 固定小时箱按需开启即可达成
@@ -604,8 +612,9 @@
         var hasUsed = sel && sel.some(function (p) { return p.used > 0; });
         if (hasUsed) b.appendChild(selectableBoxTable(sel));
       } else {
-        // 现状不可达但未来可达：直接给未来方案
-        b.appendChild(el("div", "开放日（" + fp.date + "）可达：" + fp.plan, "sb-big"));
+        // 现状不可达但未来可达：直接给未来方案（保留「开放日（预期日期）可达」格式）
+        var futDate = result.future_main_story.open_at ? localDateStr(result.future_main_story.open_at) : "";
+        b.appendChild(el("div", "开放日（" + futDate + "）可达：" + fp.plan, "sb-big"));
         var fsel = (result.target_selectable_future || {}).selectable || null;
         var fUsed = fsel && fsel.some(function (p) { return p.used > 0; });
         if (fUsed) b.appendChild(selectableBoxTable(fsel));
@@ -669,7 +678,7 @@
       });
       box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], cmpRows));
       var levelDiff = result.future_main_story.result.level - result.selectable.level;
-      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + result.future_main_story.open_at.slice(0, 10) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
+      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + localDateStr(result.future_main_story.open_at) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
       var hasFutIncome2 = (futIncome2.credit || 0) > 0 || (futIncome2.battle_data || 0) > 0 || (futIncome2.core_dust || 0) > 0;
       if (!hasFutIncome2) {
         box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
@@ -733,7 +742,7 @@
   /* ---------- 省流版结论（置顶摘要卡） ---------- */
   function renderSummary(result, snap) {
     var wrap = el("div", "", "summary-card");
-    wrap.appendChild(el("div", "省流版结论", "summary-title"));
+    wrap.appendChild(el("div", "即刻飞升（不做规划，直接梭哈）", "summary-title"));
     var target = snap.target_sync_level;
 
     // 全箱梭哈口径：现状 / 新主线开放后 的最高等级与配套方案
@@ -758,7 +767,7 @@
     var b2 = el("div", "", "summary-block");
     b2.appendChild(el("div", "② 考虑新主线（开放后按新基地收益开箱）", "sb-head"));
     if (hasFut) {
-      var date = fut.open_at ? fut.open_at.slice(0, 10) : "";
+      var date = fut.open_at ? localDateStr(fut.open_at) : "";
       var diff = futLv - nowLv;
       var big2 = "开放日（" + date + "）全箱梭哈最高可到 <b>同步器 " + futLv + "</b>";
       if (diff > 0) big2 += "（较现状多升 <b>" + diff + "</b> 级）";
