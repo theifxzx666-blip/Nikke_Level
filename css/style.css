@@ -381,3 +381,44 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body::before { filter: saturate(0.85); transform: scale(1.05); }
   body::after { background: linear-gradient(180deg, rgba(245,247,246,0.85) 0%, rgba(245,247,246,0.92) 100%); }
 }
+
+/* ---------- 省流版结论（置顶摘要卡） ---------- */
+.summary-card {
+  background: linear-gradient(180deg, #eefaf5 0%, #ffffff 60%);
+  border: 1px solid #b4e0ce;
+  border-left: 5px solid var(--primary);
+  border-radius: 12px;
+  padding: 12px 14px 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+}
+.summary-title {
+  margin: 0 0 8px; font-size: 15px; font-weight: 700; color: var(--primary-dark); letter-spacing: 0.5px;
+}
+.summary-block { padding: 7px 0; border-top: 1px dashed #d5e7df; }
+.summary-block:first-of-type { border-top: none; padding-top: 2px; }
+.sb-head { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 3px; }
+.sb-big { font-size: 15px; line-height: 1.6; }
+.sb-big b { color: var(--primary-dark); font-size: 17px; }
+.sb-big .ok-tag {
+  display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 9px;
+  background: #e1f5ee; color: #0f6e56; font-size: 11px; font-weight: 600; vertical-align: 1px;
+}
+.sb-plan { font-size: 13px; color: #334; margin-top: 4px; line-height: 1.6; }
+.sb-text { font-size: 13px; color: #334; line-height: 1.75; }
+.sb-text b { color: var(--primary-dark); }
+.summary-warn { font-size: 12px; color: #b97a12; margin-top: 4px; }
+.summary-note { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+@media (max-width: 600px) {
+  .summary-card { margin-bottom: 12px; }
+  .sb-big { font-size: 14px; }
+  .sb-big b { font-size: 16px; }
+}
+.result-panel.export-mode .summary-card { background: rgba(255,255,255,0.95) !important; border-color: #b4e0ce !important; }
+.result-panel.export-mode .summary-title { font-size: 20px !important; }
+.result-panel.export-mode .sb-head { font-size: 13px !important; color: #33584b !important; }
+.result-panel.export-mode .sb-big { font-size: 17px !important; }
+.result-panel.export-mode .sb-big b { font-size: 20px !important; }
+.result-panel.export-mode .sb-plan, .result-panel.export-mode .sb-text { font-size: 15px !important; color: #2a3a3a !important; }
+.result-panel.export-mode .summary-warn { font-size: 13px !important; }
+.result-panel.export-mode .summary-note { font-size: 13px !important; color: #2b2b2b !important; }

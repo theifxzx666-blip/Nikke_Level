@@ -562,6 +562,9 @@
     var resLabels = { credit: "信用点", battle_data: "战斗数据辑", core_dust: "红球" };
     var recDate = new Date(snap.recorded_at.getTime());
 
+    // 0. 省流版结论（置顶摘要卡）
+    box.appendChild(renderSummary(result, snap));
+
     // 1. 核心结论 4 卡片
     var cards = el("div", "", "cards");
     function card(num, lbl, warn) {
@@ -763,26 +766,101 @@
     }
   }
 
+  /* 自选箱分配表（无标题；供「箱子方案」tab 与省流卡复用，格式统一）
+     planArr = 开箱方案条目数组（含 name/used/keep/choices） */
+  function selectableBoxTable(planArr, note) {
+    note = note || "无需开箱（现有资源 + 固定小时箱已满足目标）";
+    var rows = [];
+    var hasUsed = false;
+    (planArr || []).forEach(function (p) {
+      if (p.used > 0) hasUsed = true;
+      var detail = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
+        .map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
+      var note2 = p.name.indexOf("挑战者") >= 0 ? "固定数值奖励，默认全部消耗（不受基地等级影响）" : "";
+      rows.push([p.name, p.used, p.keep, detail, note2]);
+    });
+    if (!planArr || !planArr.length || !hasUsed) return el("p", note, "caption");
+    return table(["箱子", "使用", "保留", "分配明细", "备注"], rows);
+  }
+
   /* 渲染一组自选箱分配方案表（含"当前/新主线后"标签） */
   function selectablePlanTable(plan, label) {
     var wrap = el("div", "");
     wrap.appendChild(el("h4", label, "sec"));
-    var rows = [];
-    var hasUsed = false;
-    if (plan && plan.selectable && plan.selectable.length) {
-      plan.selectable.forEach(function (p) {
-        if (p.used > 0) hasUsed = true;
-        var detail = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
-          .map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
-        var note = p.name.indexOf("挑战者") >= 0 ? "固定数值奖励，默认全部消耗（不受基地等级影响）" : "";
-        rows.push([p.name, p.used, p.keep, detail, note]);
-      });
+    wrap.appendChild(selectableBoxTable(plan ? plan.selectable : null));
+    return wrap;
+  }
+
+  /* 省流卡内的开箱方案：固定箱一句话 + 自选箱按需分配表格 */
+  function planSummary(boxArr) {
+    var wrap = el("div", "", "sb-plan");
+    var hasUsed = boxArr && boxArr.some(function (p) { return p.used > 0; });
+    if (hasUsed) {
+      wrap.appendChild(el("div", "开箱方案：固定小时箱全部使用；自选箱按需分配（开够即停）：", "sb-plan"));
+      wrap.appendChild(selectableBoxTable(boxArr));
+    } else {
+      wrap.appendChild(el("div", "开箱方案：固定小时箱全部使用（自选箱无需开启）", "sb-plan"));
     }
-    if (!plan || !plan.selectable || !plan.selectable.length || !hasUsed) {
-      wrap.appendChild(el("p", "无需开箱（现有资源 + 固定小时箱已满足目标）。", "caption"));
-      return wrap;
+    return wrap;
+  }
+
+  /* ---------- 省流版结论（置顶摘要卡） ---------- */
+  function renderSummary(result, snap) {
+    var wrap = el("div", "", "summary-card");
+    wrap.appendChild(el("div", "省流版结论", "summary-title"));
+    var target = snap.target_sync_level;
+    var sc = result.scenario_f_target || result.scenario_f || {};
+    var rows = sc.rows || [];
+    var imm = rows[0], post = rows[1], nat = rows[2];
+    var n1 = (imm && typeof imm.level === "number") ? imm.level : result.selectable.level;
+
+    // Block ① 现状（当前基地 · 不开新主线）
+    var b1 = el("div", "", "summary-block");
+    b1.appendChild(el("div", "① 现状（当前基地 · 不开新主线）", "sb-head"));
+    var big1 = "合理开箱（按需、开够即停）最高可到 <b>同步器 " + n1 + "</b>";
+    if (imm && imm.feasible && n1 >= target) big1 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
+    else if (imm && !imm.feasible) big1 += "（全资源梭哈最高 " + result.selectable.level + "，仍差 " + Math.max(0, target - n1) + " 级）";
+    b1.appendChild(el("div", big1, "sb-big"));
+    b1.appendChild(planSummary(imm ? imm.boxes : null));
+    wrap.appendChild(b1);
+
+    // Block ② 考虑新主线（开放后按新基地收益开箱）
+    var b2 = el("div", "", "summary-block");
+    b2.appendChild(el("div", "② 考虑新主线（开放后按新基地收益开箱）", "sb-head"));
+    if (post && Array.isArray(post.boxes)) {
+      var n2 = post.level, diff = n2 - n1;
+      var date = post.date ? post.date.slice(0, 10) : "";
+      var big2 = "开放日" + (date ? "（" + date + "）" : "") + "合理开箱最高可到 <b>同步器 " + n2 + "</b>";
+      if (diff > 0) big2 += "（较现状多升 <b>" + diff + "</b> 级）";
+      if (n2 >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
+      b2.appendChild(el("div", big2, "sb-big"));
+      b2.appendChild(planSummary(post.boxes));
+      var fIn = snap.future_income_per_hour || {};
+      var hasF = (fIn.credit || 0) > 0 || (fIn.battle_data || 0) > 0 || (fIn.core_dust || 0) > 0;
+      if (!hasF) b2.appendChild(el("div", "⚠ 未填写「预计新收益」，新主线口径暂按当前收益估算。", "summary-warn"));
+    } else {
+      b2.appendChild(el("div", "未填写新主线进度，无法评估该口径；可在「预计新主线进度」中填写后重新计算。", "sb-text"));
     }
-    wrap.appendChild(table(["箱子", "使用", "保留", "分配明细", "备注"], rows));
+    wrap.appendChild(b2);
+
+    // Block ③ 整合结论
+    var b3 = el("div", "", "summary-block");
+    b3.appendChild(el("div", "③ 整合结论", "sb-head"));
+    var rec = sc.recommendation || "";
+    var days = (nat && typeof nat.days === "number" && isFinite(nat.days)) ? nat.days : null;
+    var text3;
+    if (post && Array.isArray(post.boxes)) {
+      var diff3 = post.level - n1;
+      text3 = "建议「" + (rec || "先升级再自然增长") + "」。现在合理开箱最高可到 <b>同步器 " + n1 + "</b>；等新主线开放后再开箱最高可到 <b>同步器 " + post.level + "</b>，多 <b>" + diff3 + "</b> 级。";
+      if (rec === "等新主线开放后再开箱") text3 += " 建议先把新主线进度/收益填准，再决定是否开箱。";
+    } else {
+      text3 = "建议「" + (rec || "先升级再自然增长") + "」。当前合理开箱最高可到 <b>同步器 " + n1 + "</b>。";
+    }
+    if (days != null) text3 += " 完全不开箱，自然增长到目标 " + target + " 需 <b>" + fmtDays(days) + "</b> 天（见「先升级再自然增长」方案）。";
+    b3.appendChild(el("div", text3, "sb-text"));
+    wrap.appendChild(b3);
+
+    wrap.appendChild(el("div", "口径：合理开箱 = 只为最缺的资源开箱、开够即停（不浪费自选箱），此为按需口径下的等级，开箱方案供参考；全资源梭哈上限见卡片「全箱梭哈」。未达目标请按下述方案执行或补充资源。", "summary-note"));
     return wrap;
   }
 
