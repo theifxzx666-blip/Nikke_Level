@@ -376,7 +376,7 @@
       html += "<tr" + rise + "><td>" + segLbl + "</td><td>" + numFmt(seg.tier.credit) + "</td><td>" + numFmt(seg.tier.battle_data) + "</td><td>" + numFmt(seg.tier.core_dust) + "</td><td>" + seg.count + "</td><td>" + totalTxt + "</td></tr>";
     });
     html += "</table>";
-    html += "<p class='hint'>按内置阶梯表（每 50 级一档）估算；⬆ 表示该段消耗相比上一档提升。手动填写三项消耗后以手动值为准。</p></div>";
+    html += "<p class='hint'>按内置阶梯表（每 50 级一档）估算；⬆ 表示该段消耗相比上一档提升。手动填写的消耗仅覆盖当前等级所在档位，跨入更高档仍按内置阶梯表逐级递增；三项都留空时按内置阶梯表计算。</p></div>";
     wrap.innerHTML = html;
   }
 
@@ -580,7 +580,7 @@
     box.appendChild(cards);
     var capLines = [
       "① 当前同步器等级：只用现有资源（含推图资源）不开箱能达到的等级；",
-      "② 仅使用固定小时箱：只开固定小时箱能达到的等级；",
+      "② 仅使用固定小时箱：只开固定小时箱能达到的等级（已计入成长套组）；",
       "③ 全箱梭哈：固定小时箱 + 自选箱全部使用能达到的等级；",
       "④ 自然升级（不开箱）：完全不开箱，" + fmtDays(result.no_box.days) + " 天到目标 " + result.no_box.target + "。",
     ];
