@@ -6,7 +6,7 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="stylesheet" href="css/style.css?v=20260831c">
+<link rel="stylesheet" href="css/style.css?v=20260831d">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -84,10 +84,9 @@
         <label>每次等价小时数<input type="number" id="f_wipeout_hours" min="0" step="0.5" value="2"></label>
         <label>今天已完成歼灭次数<input type="number" id="f_completed" min="0" step="1" value="3"></label>
       </div>
-      <div class="grid g3">
+      <div class="grid g2">
         <label>后续是否每天完成全部次数<select id="f_daily_full"><option>是</option><option>否</option></select></label>
         <label>服务器每日重置时间<input type="time" id="f_reset_time" value="04:00"></label>
-        <label>其他固定日常资源<input id="f_extra_daily" placeholder="信用点,战斗数据,红球（可空）"></label>
       </div>
     </fieldset>
 
@@ -110,8 +109,8 @@
     </fieldset>
 
     <fieldset class="grp-c">
-      <legend id="stageClearTitle">预计新主线推图收益（37-38 章）</legend>
-      <p class="hint">新主线推图通关给的一次性资源；标题与默认值随预计新主线进度联动。</p>
+      <legend id="stageClearTitle">预计新主线推图收益（按37-38 章估算）</legend>
+      <p class="hint">新主线推图通关给的一次性资源；默认值随预计新主线进度联动。</p>
       <p class="hint note">暂无公开的章节通关收益统计表，目前使用 37~38 章实测数据预估（来源：屯箱子计算器），可按实机修改。</p>
       <div class="grid g3">
         <label>计入范围<select id="f_stage_mode"><option>不计算</option><option>只计普通</option><option>普通+困难</option></select></label>
@@ -130,20 +129,11 @@
 
     <fieldset class="grp-d">
       <legend>升级消耗素材量</legend>
-      <p class="hint">默认阶梯表（每 50 级一档），可手动覆盖；填写当前同步器等级后自动预填当前档位消耗。</p>
+      <p class="hint">默认按内置阶梯表（每 50 级一档）随「当前同步器等级」自动写入，可手动覆盖。</p>
       <div class="grid g3">
-        <label>当前升1级所需信用点<input id="f_cost_credit" placeholder="空 = 用阶梯表"></label>
-        <label>当前升1级所需战斗数据<input id="f_cost_battle" placeholder="空 = 用阶梯表"></label>
-        <label>当前升1级所需红球<input id="f_cost_dust" placeholder="空 = 用阶梯表"></label>
-      </div>
-      <div class="grid g3">
-        <label>区间起始等级（可选）<input type="number" id="f_range_start" min="1"></label>
-        <label>区间目标等级（可选）<input type="number" id="f_range_end" min="1"></label>
-      </div>
-      <div class="grid g3">
-        <label>区间信用点总需求<input id="f_range_credit" placeholder="可空"></label>
-        <label>区间战斗数据总需求<input id="f_range_battle" placeholder="可空"></label>
-        <label>区间红球总需求<input id="f_range_dust" placeholder="可空"></label>
+        <label>当前升1级所需信用点<input id="f_cost_credit" placeholder="随当前等级自动写入"></label>
+        <label>当前升1级所需战斗数据<input id="f_cost_battle" placeholder="随当前等级自动写入"></label>
+        <label>当前升1级所需红球<input id="f_cost_dust" placeholder="随当前等级自动写入"></label>
       </div>
       <div id="costPreviewWrap"></div>
     </fieldset>
@@ -205,10 +195,10 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/core.js?v=20260831c"></script>
-<script src="js/outpost.js?v=20260831c"></script>
-<script src="js/boxes.js?v=20260831c"></script>
-<script src="js/scenarios.js?v=20260831c"></script>
-<script src="js/app.js?v=20260831c"></script>
+<script src="js/core.js?v=20260831d"></script>
+<script src="js/outpost.js?v=20260831d"></script>
+<script src="js/boxes.js?v=20260831d"></script>
+<script src="js/scenarios.js?v=20260831d"></script>
+<script src="js/app.js?v=20260831d"></script>
 </body>
 </html>

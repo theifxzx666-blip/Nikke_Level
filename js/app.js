@@ -68,14 +68,13 @@
       recorded: today, current: "474", target: "481", alternate: "501",
       normal_stage: "", hard_stage: "", base: "483", tactics: "是",
       credit_rate: "57240/h", battle_rate: "570180/h", dust_rate: "88/h",
-      wipeouts: "3", wipeout_hours: "2", completed: "3", daily_full: "是", reset_time: "04:00", extra_daily: "",
+      wipeouts: "3", wipeout_hours: "2", completed: "3", daily_full: "是", reset_time: "04:00",
       future_open: "2026-08-31", future_normal_stage: "", future_hard_stage: "", future_base: "500",
       future_credit: "58530/h", future_battle: "584950/h", future_dust: "90.02/h",
       bare_credit: "25169K", bare_battle: "274M", bare_dust: "12181",
       stage_clear_mode: "只计普通", stage_clear_credit: "25864", stage_clear_battle: "74096", stage_clear_dust: "630",
       stage_clear_credit2: "2615", stage_clear_battle2: "73446", stage_clear_dust2: "1630",
       cost_credit: "", cost_battle: "", cost_dust: "",
-      range_start: "", range_end: "", range_credit: "", range_battle: "", range_dust: "",
       fixed: JSON.parse(JSON.stringify(DEFAULT_FIXED)),
       ark: "870", growth: "27", challenger: "340",
     };
@@ -103,14 +102,13 @@
     f.normal_stage = val("f_normal_stage"); f.hard_stage = val("f_hard_stage"); f.base = val("f_base"); f.tactics = val("f_tactics");
     f.credit_rate = val("f_credit_rate"); f.battle_rate = val("f_battle_rate"); f.dust_rate = val("f_dust_rate");
     f.wipeouts = val("f_wipeouts"); f.wipeout_hours = val("f_wipeout_hours"); f.completed = val("f_completed");
-    f.daily_full = val("f_daily_full"); f.reset_time = val("f_reset_time"); f.extra_daily = val("f_extra_daily");
+    f.daily_full = val("f_daily_full"); f.reset_time = val("f_reset_time");
     f.future_open = val("f_future_open"); f.future_normal_stage = val("f_future_normal_stage"); f.future_hard_stage = val("f_future_hard_stage");
     f.future_base = val("f_future_base"); f.future_credit = val("f_future_credit"); f.future_battle = val("f_future_battle"); f.future_dust = val("f_future_dust");
     f.bare_credit = val("f_bare_credit"); f.bare_battle = val("f_bare_battle"); f.bare_dust = val("f_bare_dust");
     f.stage_clear_mode = val("f_stage_mode"); f.stage_clear_credit = val("f_stage_credit"); f.stage_clear_battle = val("f_stage_battle"); f.stage_clear_dust = val("f_stage_dust");
     f.stage_clear_credit2 = val("f_stage_credit2"); f.stage_clear_battle2 = val("f_stage_battle2"); f.stage_clear_dust2 = val("f_stage_dust2");
     f.cost_credit = val("f_cost_credit"); f.cost_battle = val("f_cost_battle"); f.cost_dust = val("f_cost_dust");
-    f.range_start = val("f_range_start"); f.range_end = val("f_range_end"); f.range_credit = val("f_range_credit"); f.range_battle = val("f_range_battle"); f.range_dust = val("f_range_dust");
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
     f.fixed = {};
     document.querySelectorAll(".fixed").forEach(function (inp) {
@@ -156,14 +154,13 @@
     setVal("f_base", f.base); setVal("f_tactics", f.tactics);
     setVal("f_credit_rate", f.credit_rate); setVal("f_battle_rate", f.battle_rate); setVal("f_dust_rate", f.dust_rate);
     setVal("f_wipeouts", f.wipeouts); setVal("f_wipeout_hours", f.wipeout_hours); setVal("f_completed", f.completed);
-    setVal("f_daily_full", f.daily_full); setVal("f_reset_time", f.reset_time); setVal("f_extra_daily", f.extra_daily);
+    setVal("f_daily_full", f.daily_full); setVal("f_reset_time", f.reset_time);
     setVal("f_future_open", f.future_open); setVal("f_future_base", f.future_base);
     setVal("f_future_credit", f.future_credit); setVal("f_future_battle", f.future_battle); setVal("f_future_dust", f.future_dust);
     setVal("f_bare_credit", f.bare_credit); setVal("f_bare_battle", f.bare_battle); setVal("f_bare_dust", f.bare_dust);
     setVal("f_stage_mode", f.stage_clear_mode); setVal("f_stage_credit", f.stage_clear_credit); setVal("f_stage_battle", f.stage_clear_battle); setVal("f_stage_dust", f.stage_clear_dust);
     setVal("f_stage_credit2", f.stage_clear_credit2); setVal("f_stage_battle2", f.stage_clear_battle2); setVal("f_stage_dust2", f.stage_clear_dust2);
     setVal("f_cost_credit", f.cost_credit); setVal("f_cost_battle", f.cost_battle); setVal("f_cost_dust", f.cost_dust);
-    setVal("f_range_start", f.range_start); setVal("f_range_end", f.range_end); setVal("f_range_credit", f.range_credit); setVal("f_range_battle", f.range_battle); setVal("f_range_dust", f.range_dust);
     setVal("f_ark", f.ark); setVal("f_growth", f.growth); setVal("f_challenger", f.challenger);
     document.querySelectorAll(".fixed").forEach(function (inp) {
       var label = inp.dataset.label, h = inp.dataset.h;
@@ -250,12 +247,12 @@
 
   function syncFutureHard() {
     if (state.futureHardManual) return;
-    var h = chapterNum(val("f_hard_chapter"));
-    if (!h) return;
-    var target = targetChapter(h + 2, state.hardChapters);
-    setVal("f_future_hard_chapter", target);
+    var ch = val("f_hard_chapter");
+    if (!ch) return;
+    // 预计困难主线关卡默认跟随「关卡进度 - 困难主线关卡」当前选择（含 Chapter 0 等低位章节）
+    setVal("f_future_hard_chapter", ch);
     syncStageOptions("future_hard");
-    setVal("f_future_hard_stage", lastStage("hard", target));
+    setVal("f_future_hard_stage", lastStage("hard", ch));
     syncFutureBase();
   }
 
@@ -277,7 +274,6 @@
   function syncStageClearFromFuture() {
     var n = chapterNum(val("f_future_normal_chapter"));
     if (!n) return;
-    $("stageClearTitle").textContent = "预计新主线推图收益（" + (n - 1) + "-" + n + " 章）";
     var entry = state.stageClearEntries[String(n)] || state.stageClearEntries["38"] || {};
     var map = {
       f_stage_credit: entry.credit, f_stage_battle: entry.battle, f_stage_dust: entry.dust,
@@ -330,9 +326,10 @@
     var lvl = parseInt(val("f_current"), 10) || 0;
     var t = tierValueAt(COST_TIERS, lvl);
     if (t) {
-      if (!val("f_cost_credit")) setVal("f_cost_credit", fmtK(t.credit));
-      if (!val("f_cost_battle")) setVal("f_cost_battle", fmtK(t.battle_data));
-      if (!val("f_cost_dust")) setVal("f_cost_dust", Math.round(t.core_dust));
+      // 默认按当前同步器等级所在档位直接写入（可手动覆盖）
+      setVal("f_cost_credit", fmtK(t.credit));
+      setVal("f_cost_battle", fmtK(t.battle_data));
+      setVal("f_cost_dust", Math.round(t.core_dust));
     }
     renderCostPreview();
   }
@@ -381,12 +378,6 @@
     var income = { credit: C.parseRate(f.credit_rate), battle_data: C.parseRate(f.battle_rate), core_dust: C.parseRate(f.dust_rate) };
     var futureIncome = { credit: C.parseRate(f.future_credit), battle_data: C.parseRate(f.future_battle), core_dust: C.parseRate(f.future_dust) };
     var extra = { credit: 0, battle_data: 0, core_dust: 0 };
-    if (f.extra_daily && f.extra_daily.trim()) {
-      var parts = f.extra_daily.split(/[,，]/);
-      if (parts[0]) extra.credit = C.num(parts[0], 0);
-      if (parts[1]) extra.battle_data = C.num(parts[1], 0);
-      if (parts[2]) extra.core_dust = C.num(parts[2], 0);
-    }
     var stage = { credit: 0, battle_data: 0, core_dust: 0 };
     if (f.stage_clear_mode !== "不计算") {
       stage.credit = C.num(f.stage_clear_credit, 0);
@@ -416,12 +407,9 @@
       perLevel.battle_data = f.cost_battle ? C.num(f.cost_battle, 0) : (t ? t.battle_data : 0);
       perLevel.core_dust = f.cost_dust ? C.num(f.cost_dust, 0) : (t ? t.core_dust : 0);
     }
-    var rangeStart = f.range_start ? parseInt(f.range_start, 10) : null;
-    var rangeEnd = f.range_end ? parseInt(f.range_end, 10) : null;
     var upgradeCost = {
       per_level: perLevel,
-      range_start: rangeStart, range_end: rangeEnd,
-      range_total: rangeStart && rangeEnd ? { credit: C.num(f.range_credit, 0), battle_data: C.num(f.range_battle, 0), core_dust: C.num(f.range_dust, 0) } : null,
+      range_start: null, range_end: null, range_total: null,
       tiers: hasManual ? null : COST_TIERS,
     };
     var fixed = {};
@@ -632,7 +620,17 @@
     var box = $("tabExtra"); box.innerHTML = "";
     var resLabels = { credit: "信用点", battle_data: "战斗数据辑", core_dust: "红球" };
 
-    // 1. 各类资源可达到的最大等级（全箱梭哈口径）
+    // 1. 自然升级到 N（不开箱）
+    box.appendChild(el("h3", "自然升级到" + result.no_box.target + "（不开箱）", "sec"));
+    var nb = result.no_box;
+    var nbRows = C.RESOURCES.map(function (r) {
+      var isB = r === nb.bottleneck;
+      return [resLabels[r], fmtNum(nb.required[r]), fmtNum(snap.bare_resources[r]), fmtNum(nb.shortage[r]), fmtNum(nb.daily_income[r]), fmtDays(nb.days_by_resource[r]), isB ? "✅ 瓶颈" : ""];
+    });
+    box.appendChild(table(["资源", "总需求", "现有余额", "缺口", "每日收益", "需要天数", "是否瓶颈"], nbRows));
+    box.appendChild(el("p", "瓶颈资源：" + resLabels[nb.bottleneck] + "；预计日期：" + nb.estimated_at + "；需 " + nb.steps + " 级。", "caption"));
+
+    // 2. 各类资源可达到的最大等级（全箱梭哈口径）
     box.appendChild(el("h3", "各类资源可达到的最大等级（全箱梭哈）", "sec"));
     var prRows = [];
     var hasFuturePR = result.per_resource.future_bare && result.per_resource.future_fixed && result.per_resource.future_selectable;
@@ -644,7 +642,7 @@
     box.appendChild(table(["资源", "新主线开启前最大等级", "新主线开启后最大等级"], prRows));
     box.appendChild(el("p", "以上为「固定小时箱 + 资源自选箱」（全箱梭哈）口径下，三类资源各自单独计算能升到的最大等级（只看单资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。", "caption"));
 
-    // 2. 固定小时箱收益折算（含差值换算）
+    // 3. 固定小时箱收益折算（含差值换算）
     box.appendChild(el("h3", "固定小时箱收益折算（开主线前 vs 开主线后）", "sec"));
     var before = result.fixed.fixed || {};
     var after = result.future_main_story.available ? result.future_main_story.result.fixed || {} : null;
@@ -656,7 +654,7 @@
     box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], fixRows));
     box.appendChild(el("p", "固定小时箱按开启时的基地收益折算：开主线前用当前收益、开主线后用新基地收益。挑战者成长宝箱属于自选箱（不计入此处）。", "caption"));
 
-    // 3. 全资源梭哈收益折算（开主线前 vs 开主线后）
+    // 4. 全资源梭哈收益折算（开主线前 vs 开主线后）
     box.appendChild(el("h3", "全资源梭哈收益折算（开主线前 vs 开主线后）", "sec"));
     if (result.future_main_story.available) {
       var futIncome2 = snap.future_income_per_hour || snap.income_per_hour;
@@ -679,16 +677,6 @@
     } else {
       box.appendChild(el("p", result.future_main_story.reason + "；可在「预计新主线进度」中填写后重新计算。"));
     }
-
-    // 4. 自然升级到 N（不开箱）
-    box.appendChild(el("h3", "自然升级到" + result.no_box.target + "（不开箱）", "sec"));
-    var nb = result.no_box;
-    var nbRows = C.RESOURCES.map(function (r) {
-      var isB = r === nb.bottleneck;
-      return [resLabels[r], fmtNum(nb.required[r]), fmtNum(snap.bare_resources[r]), fmtNum(nb.shortage[r]), fmtNum(nb.daily_income[r]), fmtDays(nb.days_by_resource[r]), isB ? "✅ 瓶颈" : ""];
-    });
-    box.appendChild(table(["资源", "总需求", "现有余额", "缺口", "每日收益", "需要天数", "是否瓶颈"], nbRows));
-    box.appendChild(el("p", "瓶颈资源：" + resLabels[nb.bottleneck] + "；预计日期：" + nb.estimated_at + "；需 " + nb.steps + " 级。", "caption"));
   }
 
 
