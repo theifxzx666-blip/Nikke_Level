@@ -441,3 +441,30 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 @keyframes exportSpin { to { transform: rotate(360deg); } }
 .export-loading-text { font-size: 13px; color: var(--muted); }
+
+/* ===== 临时广告横幅（挂至 2026-09-10）===== */
+.ad-ad {
+  display: block; overflow: hidden;
+  border: 2px solid #ffd75e; border-radius: 10px;
+  background: linear-gradient(90deg, #0e5a41, #1d9e75 60%, #117a58);
+  color: #fff; font-size: 14px; font-weight: 600; line-height: 1.6;
+  text-align: center; margin: 0 0 12px; padding: 7px 10px;
+  box-shadow: 0 3px 10px rgba(13, 90, 60, 0.35);
+  cursor: pointer;
+}
+.ad-ad .ad-track { display: inline-block; white-space: nowrap; max-width: 100%; }
+.ad-ad .ad-text { margin-right: 3em; }
+.ad-ad em {
+  font-style: normal; color: #ffd75e; font-weight: 800;
+  text-shadow: 0 0 6px rgba(255, 215, 94, 0.7);
+}
+/* 溢出（内容显示不齐）时横向滚动展示全文 */
+.ad-ad.ad-roll { text-align: left; }
+.ad-ad.ad-roll .ad-track {
+  will-change: transform;
+  animation: adRoll 12s linear infinite;
+}
+@keyframes adRoll {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(-100%); }
+}

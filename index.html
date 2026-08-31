@@ -6,7 +6,7 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="stylesheet" href="css/style.css?v=20260831g">
+<link rel="stylesheet" href="css/style.css?v=20260901">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -30,6 +30,10 @@
 <div class="layout" id="layout">
   <!-- ============ 表单区 ============ -->
   <section id="formSection" class="form-panel">
+    <!-- 临时广告横幅（挂至 2026-09-10，到期自动隐藏） -->
+    <div id="adBanner" class="ad-ad" title="V区44，嗷润吉招3人，公会ID1788，欢迎加入~">
+      <span class="ad-track"><span class="ad-text">▶ V区44，嗷润吉招3人，公会ID<em>1788</em>，欢迎加入~</span></span>
+    </div>
     <fieldset class="grp-a">
       <legend>账号状态</legend>
       <div class="grid g4">
@@ -200,5 +204,21 @@
 <script src="js/boxes.js?v=20260831g"></script>
 <script src="js/scenarios.js?v=20260831g"></script>
 <script src="js/app.js?v=20260831g"></script>
+<script>
+(function () {
+  var ad = document.getElementById('adBanner');
+  if (!ad) return;
+  // 临时广告，挂至 2026-09-10 23:59:59（按访问者本地日期），到期自动隐藏
+  var until = new Date(2026, 8, 10, 23, 59, 59);
+  if (Date.now() > until.getTime()) { ad.style.display = 'none'; return; }
+  var track = ad.querySelector('.ad-track');
+  var fit = function () {
+    var overflow = (track && track.scrollWidth > ad.clientWidth + 1);
+    ad.classList.toggle('ad-roll', !!overflow);
+  };
+  fit();
+  window.addEventListener('resize', fit);
+})();
+</script>
 </body>
 </html>
