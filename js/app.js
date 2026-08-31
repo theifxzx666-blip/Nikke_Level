@@ -634,6 +634,50 @@
     box.appendChild(el("p", "瓶颈资源：" + resLabels[nb.bottleneck] + "；预计日期：" + nb.estimated_at + "；需 " + nb.steps + " 级。", "caption"));
   }
 
+  /* ---------- 省流版：当前资源能到的等级 + 怎么开箱子 ---------- */
+  function renderCheat(result, snap) {
+    var box = $("tabCheat"); box.innerHTML = "";
+    function card(num, lbl, warn) {
+      return el("div", "<div class='num'>" + num + "</div><div class='lbl'>" + lbl + "</div>", "card" + (warn ? " warn" : ""));
+    }
+
+    // 1. 当前资源量能到达的等级
+    var cards = el("div", "", "cards");
+    cards.appendChild(card("同步器 " + result.bare.level, "现有资源（不开箱）"));
+    cards.appendChild(card("同步器 " + result.fixed.level, "仅固定小时箱"));
+    cards.appendChild(card("同步器 " + result.selectable.level, "全箱梭哈"));
+    cards.appendChild(card(fmtDays(result.no_box.days) + " 天", "自然升级到 " + result.no_box.target, true));
+    box.appendChild(cards);
+    box.appendChild(el("p", "「现有资源」= 当前 + 推图资源，完全不开箱；「全箱梭哈」= 固定小时箱 + 自选箱全部使用。达到目标前的升级上限。", "caption"));
+
+    // 2. 怎么开箱子（按目标给出方案）
+    box.appendChild(el("h3", "怎么开箱子", "sec"));
+    var targets = [result.no_box.target, snap.alternate_target_level];
+    var targetNames = ["目标 " + result.no_box.target, "后续追求 " + snap.alternate_target_level];
+    var list = el("ul", "", "cheat-list");
+    targets.forEach(function (tgt, i) {
+      var p = planByLevels(result, snap, tgt, false);
+      var li = el("li", "");
+      li.innerHTML = "<b>" + esc(targetNames[i]) + "</b><span class='cheat-plan'>" + esc(p.plan) + "</span>";
+      list.appendChild(li);
+    });
+    box.appendChild(list);
+
+    // 3. 是否值得等新主线
+    var fut = result.future_main_story;
+    if (fut && fut.available) {
+      var lvDiff = fut.result.level - result.selectable.level;
+      var line = "现在全箱梭哈 → 同步器 " + result.selectable.level + "；等到 " + fut.open_at.slice(0, 10) + " 再全箱梭哈 → 同步器 " + fut.result.level + "（多 " + lvDiff + " 级）。";
+      if (lvDiff > 0) {
+        box.appendChild(el("p", "💰 <b>建议等新主线开放后再全箱梭哈</b>。" + line, "cheat-tip"));
+      } else {
+        box.appendChild(el("p", line, "caption"));
+      }
+    } else if (fut) {
+      box.appendChild(el("p", "未填写「预计新主线进度」，无法评估等待收益；可在表单中填写后重新计算。", "caption"));
+    }
+  }
+
   /* 全资源总量：现有 + 推图 + 固定小时箱 + 自选箱全值（参考固定箱折算：只比资源获取量，不减升级消耗） */
   function allInTotal(snap, income) {
     var res = C.addRes(snap.bare_resources, snap.stage_clear_resources || {});
@@ -756,6 +800,7 @@
       state.lastResult = S.evaluate(snap);
       $("resultSection").style.display = "";
       renderResult(state.lastResult, snap);
+      renderCheat(state.lastResult, snap);
       renderBox(state.lastResult, snap);
       renderRaw(state.lastResult);
       saveForm();
