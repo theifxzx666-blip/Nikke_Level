@@ -423,3 +423,21 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .result-panel.export-mode .sb-plan, .result-panel.export-mode .sb-text { font-size: 15px !important; color: #2a3a3a !important; }
 .result-panel.export-mode .summary-warn { font-size: 13px !important; }
 .result-panel.export-mode .summary-note { font-size: 13px !important; color: #2b2b2b !important; }
+
+/* ===== 导出图片 Loading 遮罩（html2canvas 期间主线程繁忙，纯 CSS 动画保证仍可播放） ===== */
+.export-loading {
+  position: fixed; inset: 0; z-index: 10000;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(245, 247, 246, 0.78);
+}
+.export-loading-box {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 24px 32px; text-align: center; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+.export-spinner {
+  width: 34px; height: 34px; margin: 0 auto 12px; border-radius: 50%;
+  border: 4px solid #dcebe5; border-top-color: var(--primary);
+  animation: exportSpin 0.9s linear infinite;
+}
+@keyframes exportSpin { to { transform: rotate(360deg); } }
+.export-loading-text { font-size: 13px; color: var(--muted); }

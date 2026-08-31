@@ -848,51 +848,75 @@
   }
 
   /* ---------- 导出一图流（结果区截图 PNG） ---------- */
+  /* 导出 loading 遮罩（纯 CSS 动画，html2canvas 期间主线程繁忙仍能转动） */
+  function showExportLoading() {
+    var l = $("exportLoading");
+    if (!l) {
+      l = el("div", "", "export-loading");
+      l.id = "exportLoading";
+      l.innerHTML = '<div class="export-loading-box"><div class="export-spinner"></div><div class="export-loading-text">正在生成图片，请稍候…</div></div>';
+      document.body.appendChild(l);
+    }
+    l.style.display = "flex";
+  }
+  function hideExportLoading() {
+    var l = $("exportLoading");
+    if (l) l.style.display = "none";
+  }
+
   function exportResultImage() {
     if (!state.lastResult) { alert("请先点击「开始计算」生成结果后再导出。"); return; }
     if (typeof html2canvas === "undefined") { alert("图片库未加载（需联网首次访问），请刷新重试。"); return; }
     var rs = $("resultSection");
-    // 临时展开所有 tab 面板（计算结果 + 补充信息），排除 tabRaw（原始 JSON 长文本）
+    // 仅导出「计算结果」内容：只展开 tabResult，补充信息 / 原始 JSON 不纳入
     // 注意：必须显式 display:"block"（空字符串会被 .tab-panel{display:none} 类规则重新隐藏，导致内容截不到）
     var panels = document.querySelectorAll(".tab-panel");
     var prev = [];
     panels.forEach(function (p) {
       prev.push(p.style.display);
-      p.style.display = (p.id === "tabRaw") ? "none" : "block";
+      p.style.display = (p.id === "tabResult") ? "block" : "none";
     });
-    html2canvas(rs, {
-      backgroundColor: "#ffffff", scale: 2, useCORS: true,
-      // 克隆 DOM 上：①加 export-mode ②inline 强制隐藏 tabs ③注入标题块（class 后加可能不被 html2canvas 应用，用 inline/style 最稳）
-      onclone: function (clonedDoc) {
-        var panel = clonedDoc.getElementById("resultSection");
-        if (panel) {
-          panel.classList.add("export-mode");
-          // 强制隐藏 tabs（不进入导出图）
-          var tabs = panel.querySelector("nav.tabs");
-          if (tabs) tabs.style.display = "none";
-          // 注入顶部标题块
-          var title = clonedDoc.createElement("div");
-          title.className = "export-title";
-          title.innerHTML = '<h1 class="export-title-main">NIKKE 资源规划计算结果</h1><p class="export-title-sub">GODDESS OF VICTORY · 嗷润吉-DORO 制作</p>';
-          panel.insertBefore(title, panel.firstChild);
-        }
-      },
-    })
-      .then(function (canvas) {
-        panels.forEach(function (p, i) { p.style.display = prev[i]; });
-        canvas.toBlob(function (blob) {
-          if (!blob) { alert("导出失败，请重试。"); return; }
-          var a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "NIKKE计算结果_" + new Date().toISOString().slice(0, 10) + ".png";
-          a.click();
-          setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-        });
+    showExportLoading();
+    // 先让 loading 渲染一帧再启动截图（避免首帧空白）；截图期间主线程繁忙，CSS 动画仍可播放
+    setTimeout(function () {
+      html2canvas(rs, {
+        backgroundColor: "#ffffff",
+        scale: 1.5,           // 降低 scale 显著减少生成耗时（原 2）
+        useCORS: true,
+        logging: false,
+        onclone: function (clonedDoc) {
+          var panel = clonedDoc.getElementById("resultSection");
+          if (panel) {
+            panel.classList.add("export-mode");
+            // 强制隐藏 tabs（不进入导出图）
+            var tabs = panel.querySelector("nav.tabs");
+            if (tabs) tabs.style.display = "none";
+            // 注入顶部标题块
+            var title = clonedDoc.createElement("div");
+            title.className = "export-title";
+            title.innerHTML = '<h1 class="export-title-main">NIKKE 资源规划计算结果</h1><p class="export-title-sub">GODDESS OF VICTORY · 嗷润吉-DORO 制作</p>';
+            panel.insertBefore(title, panel.firstChild);
+          }
+        },
       })
-      .catch(function (e) {
-        panels.forEach(function (p, i) { p.style.display = prev[i]; });
-        alert("导出失败：" + e.message);
-      });
+        .then(function (canvas) {
+          panels.forEach(function (p, i) { p.style.display = prev[i]; });
+          canvas.toBlob(function (blob) {
+            hideExportLoading();
+            if (!blob) { alert("导出失败，请重试。"); return; }
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "NIKKE计算结果_" + new Date().toISOString().slice(0, 10) + ".png";
+            a.click();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+          });
+        })
+        .catch(function (e) {
+          panels.forEach(function (p, i) { p.style.display = prev[i]; });
+          hideExportLoading();
+          alert("导出失败：" + e.message);
+        });
+    }, 60);
   }
 
   /* ---------- XLSX 导入/导出 ---------- */
