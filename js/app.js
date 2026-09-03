@@ -763,24 +763,6 @@
     return wrap;
   }
 
-  /* 全箱梭哈清单：所有自选箱按仓库持有数全部开启（对应「全箱梭哈」等级），保留=0 */
-  function fullSellSummary(snap) {
-    var rows = [], any = false;
-    (snap.selectable_boxes || []).forEach(function (b) {
-      if (!b.quantity) return;
-      any = true;
-      rows.push([b.name, b.quantity, 0, "全部开启", "全箱梭哈口径（不自选，只按持有全开）"]);
-    });
-    var wrap = el("div", "", "sb-plan");
-    if (!any) {
-      wrap.appendChild(el("div", "当前无自选箱（持有数为 0）。", "sb-text"));
-      return wrap;
-    }
-    wrap.appendChild(el("div", "开箱方案（全箱梭哈）：固定小时箱全部使用；自选箱按仓库持有数全部开启：", "sb-plan"));
-    wrap.appendChild(table(["箱子", "使用", "保留", "分配明细", "备注"], rows));
-    return wrap;
-  }
-
   /* 省流卡内的开箱方案：固定箱一句话 + 自选箱按需分配表格 */
   function planSummary(boxArr) {
     var wrap = el("div", "", "sb-plan");
@@ -815,7 +797,16 @@
     if (nowLv >= target) big1 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
     else big1 += "（目标 " + target + " 还差 " + Math.max(0, target - nowLv) + " 级）";
     b1.appendChild(el("div", big1, "sb-big"));
-    b1.appendChild(fullSellSummary(snap));
+    var selNode = (result.selectable && result.selectable.selectable) || null;
+    // selectable={level,...,selectable:<plan>}：逐箱分配数组在 <plan>.selectable 层
+    var sellArr = Array.isArray(selNode) ? selNode : (selNode && selNode.selectable) || null;
+    var sellUsed = sellArr && sellArr.some(function (p) { return p.used > 0; });
+    if (sellArr && sellUsed) {
+      b1.appendChild(el("div", "开箱方案（全箱梭哈＝固定小时箱全部使用，自选箱按下表逐箱开启）：", "sb-plan"));
+      b1.appendChild(selectableBoxTable(sellArr));
+    } else {
+      b1.appendChild(el("div", "无需开启自选箱（现有资源 + 固定小时箱已足够全箱梭哈）。", "sb-text"));
+    }
     wrap.appendChild(b1);
 
     // Block ② 考虑新主线（开放后按新基地收益全箱梭哈）
@@ -828,7 +819,14 @@
       if (diff > 0) big2 += "（较现状多升 <b>" + diff + "</b> 级）";
       if (futLv >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
       b2.appendChild(el("div", big2, "sb-big"));
-      b2.appendChild(fullSellSummary(snap));
+      var fsell = (result.target_selectable_future || {}).selectable || null;
+      var fSellUsed = fsell && fsell.some(function (p) { return p.used > 0; });
+      if (fsell && fSellUsed) {
+        b2.appendChild(el("div", "开箱方案（等新主线开放后，按新基地收益逐箱开启）：", "sb-plan"));
+        b2.appendChild(selectableBoxTable(fsell));
+      } else {
+        b2.appendChild(el("div", "未来方案暂无自选箱分配，可先按现状梭哈，或开放日后重算。", "sb-text"));
+      }
       var fIn = snap.future_income_per_hour || {};
       var hasF = (fIn.credit || 0) > 0 || (fIn.battle_data || 0) > 0 || (fIn.core_dust || 0) > 0;
       if (!hasF) b2.appendChild(el("div", "⚠ 未填写「预计新收益」，新主线口径暂按当前收益估算。", "summary-warn"));
@@ -856,7 +854,7 @@
     b3.appendChild(el("div", text3, "sb-text"));
     wrap.appendChild(b3);
 
-    wrap.appendChild(el("div", "口径：全箱梭哈 = 固定小时箱 + 自选箱全部使用；「配套方案」为按目标优化的自选箱分配（开够即停，不浪费）。未达目标请按下述方案执行或补充资源。", "summary-note"));
+    wrap.appendChild(el("div", "口径：全箱梭哈 = 固定小时箱 + 自选箱全部使用；上表自选箱分配由引擎按资源最优计算（含各资源数量），可照表逐箱开启；「使用」即需开启的箱子数，「保留」为不开启的余量。", "summary-note"));
     return wrap;
   }
 
