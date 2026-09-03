@@ -548,10 +548,10 @@
       var income = future ? (snap.future_income_per_hour || snap.income_per_hour) : snap.income_per_hour;
       var need = B.fixedBoxesNeeded(snap, baseRes, steps, income);
       var n = 0;
-      Object.keys(need.used).forEach(function (nm) {
+      Object.keys(need.used || {}).forEach(function (nm) {
         Object.keys(need.used[nm]).forEach(function (h) { n += need.used[nm][h]; });
       });
-      return { days: "0", date: immediate, plan: "固定小时箱按需开启 " + n + " 个即可达成（无需开自选箱）" };
+      return { days: "0", date: immediate, plan: "固定小时箱按需开启 " + n + " 个即可达成（无需开自选箱）", fixedNeed: need.used || {} };
     }
     // ③ 全箱梭哈可达成：固定箱全部 + 挑战者优先平替（不足再开自选箱）
     if (maxLv >= tgt) {
@@ -573,13 +573,13 @@
     function card(num, lbl, warn) {
       return el("div", "<div class='num'>" + num + "</div><div class='lbl'>" + lbl + "</div>", "card" + (warn ? " warn" : ""));
     }
-    cards.appendChild(card("同步器 " + result.bare.level, "当前同步器等级"));
+    cards.appendChild(card("同步器 " + snap.current_sync_level, "当前同步器等级"));
     cards.appendChild(card("同步器 " + result.fixed.level, "仅使用固定小时箱"));
     cards.appendChild(card("同步器 " + result.selectable.level, "全箱梭哈"));
     cards.appendChild(card(fmtDays(result.no_box.days) + " 天", "自然升级（不开箱）", true));
     box.appendChild(cards);
     var capLines = [
-      "① 当前同步器等级：只用现有资源（含推图资源）不开箱能达到的等级；",
+      "① 当前同步器等级：当前等级（" + snap.current_sync_level + "）；仅用现有资源（含推图·不开箱）还可升到 " + result.bare.level + "。",
       "② 仅使用固定小时箱：只开固定小时箱能达到的等级（已计入成长套组）；",
       "③ 全箱梭哈：固定小时箱 + 自选箱全部使用能达到的等级；",
       "④ 自然升级（不开箱）：完全不开箱，" + fmtDays(result.no_box.days) + " 天到目标 " + result.no_box.target + "。",
@@ -617,16 +617,26 @@
       }
       if (nowOk) {
         b.appendChild(el("div", "现状可达（" + np.date + "）", "sb-big"));
-        var sel = (result.target_selectable_now || {}).selectable || null;
-        var hasUsed = sel && sel.some(function (p) { return p.used > 0; });
-        if (hasUsed) b.appendChild(selectableBoxTable(sel));
+        if (np.fixedNeed && Object.keys(np.fixedNeed).length) {
+          b.appendChild(fixedPlanTable(np.fixedNeed));
+          if (np.plan) b.appendChild(el("div", np.plan, "caption"));
+        } else {
+          var sel = (result.target_selectable_now || {}).selectable || null;
+          var hasUsed = sel && sel.some(function (p) { return p.used > 0; });
+          if (hasUsed) b.appendChild(selectableBoxTable(sel));
+        }
       } else {
         // 现状不可达但未来可达：保留「开放日（预期日期）可达」+ 表格
         var futDate = result.future_main_story.open_at ? localDateStr(result.future_main_story.open_at) : "";
         b.appendChild(el("div", "开放日（" + futDate + "）可达", "sb-big"));
-        var fsel = (result.target_selectable_future || {}).selectable || null;
-        var fUsed = fsel && fsel.some(function (p) { return p.used > 0; });
-        if (fUsed) b.appendChild(selectableBoxTable(fsel));
+        if (fp && fp.fixedNeed && Object.keys(fp.fixedNeed).length) {
+          b.appendChild(fixedPlanTable(fp.fixedNeed));
+          if (fp.plan) b.appendChild(el("div", fp.plan, "caption"));
+        } else {
+          var fsel = (result.target_selectable_future || {}).selectable || null;
+          var fUsed = fsel && fsel.some(function (p) { return p.used > 0; });
+          if (fUsed) b.appendChild(selectableBoxTable(fsel));
+        }
       }
       wrap.appendChild(b);
     });
@@ -735,6 +745,42 @@
     return table(["箱子", "使用", "保留", "分配明细", "备注"], rows);
   }
 
+  /* 固定小时箱按需开启明细表：need.used[箱名][时长]=数量，输出 箱子/时长/数量 */
+  function fixedPlanTable(need) {
+    var rows = [], total = 0;
+    (need && Object.keys(need).forEach ? Object.keys(need) : []).forEach(function (nm) {
+      var map = need[nm] || {}, sub = 0;
+      [24, 12, 8, 4, 2, 1].forEach(function (h) {
+        var c = map[String(h)] || 0;
+        if (c > 0) { rows.push([nm, h + "h", c]); sub += c; total += c; }
+      });
+    });
+    var wrap = el("div", "", "sb-plan");
+    if (!rows.length) { wrap.appendChild(el("div", "无需开启固定小时箱（现有资源已足够）。", "sb-text")); return wrap; }
+    wrap.appendChild(el("div", "固定小时箱按需开启明细（无需开自选箱）：", "sb-plan"));
+    wrap.appendChild(table(["固定小时箱", "时长", "开启数量"], rows));
+    wrap.appendChild(el("div", "共需开启固定小时箱 <b>" + total + "</b> 个。", "caption"));
+    return wrap;
+  }
+
+  /* 全箱梭哈清单：所有自选箱按仓库持有数全部开启（对应「全箱梭哈」等级），保留=0 */
+  function fullSellSummary(snap) {
+    var rows = [], any = false;
+    (snap.selectable_boxes || []).forEach(function (b) {
+      if (!b.quantity) return;
+      any = true;
+      rows.push([b.name, b.quantity, 0, "全部开启", "全箱梭哈口径（不自选，只按持有全开）"]);
+    });
+    var wrap = el("div", "", "sb-plan");
+    if (!any) {
+      wrap.appendChild(el("div", "当前无自选箱（持有数为 0）。", "sb-text"));
+      return wrap;
+    }
+    wrap.appendChild(el("div", "开箱方案（全箱梭哈）：固定小时箱全部使用；自选箱按仓库持有数全部开启：", "sb-plan"));
+    wrap.appendChild(table(["箱子", "使用", "保留", "分配明细", "备注"], rows));
+    return wrap;
+  }
+
   /* 省流卡内的开箱方案：固定箱一句话 + 自选箱按需分配表格 */
   function planSummary(boxArr) {
     var wrap = el("div", "", "sb-plan");
@@ -769,7 +815,7 @@
     if (nowLv >= target) big1 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
     else big1 += "（目标 " + target + " 还差 " + Math.max(0, target - nowLv) + " 级）";
     b1.appendChild(el("div", big1, "sb-big"));
-    b1.appendChild(planSummary(nowPlan));
+    b1.appendChild(fullSellSummary(snap));
     wrap.appendChild(b1);
 
     // Block ② 考虑新主线（开放后按新基地收益全箱梭哈）
@@ -782,7 +828,7 @@
       if (diff > 0) big2 += "（较现状多升 <b>" + diff + "</b> 级）";
       if (futLv >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
       b2.appendChild(el("div", big2, "sb-big"));
-      b2.appendChild(planSummary(futPlan));
+      b2.appendChild(fullSellSummary(snap));
       var fIn = snap.future_income_per_hour || {};
       var hasF = (fIn.credit || 0) > 0 || (fIn.battle_data || 0) > 0 || (fIn.core_dust || 0) > 0;
       if (!hasF) b2.appendChild(el("div", "⚠ 未填写「预计新收益」，新主线口径暂按当前收益估算。", "summary-warn"));
@@ -873,10 +919,17 @@
     if (l) l.style.display = "none";
   }
 
+  function exportResultJson() {
+    if (!state.lastResult) { alert("请先点击「开始计算」生成结果后再导出。"); return; }
+    download("NIKKE计算结果_" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(state.lastResult, null, 2), "application/json");
+  }
+
   function exportResultImage() {
     if (!state.lastResult) { alert("请先点击「开始计算」生成结果后再导出。"); return; }
     if (typeof html2canvas === "undefined") { alert("图片库未加载（需联网首次访问），请刷新重试。"); return; }
     var rs = $("resultSection");
+    // 固定导出画布宽度：手机窄屏导出时按桌面宽度排版，避免多列文本被压缩显示不齐
+    var EXPORT_W = 1080;
     // 仅导出「计算结果」内容：只展开 tabResult，补充信息 / 原始 JSON 不纳入
     // 注意：必须显式 display:"block"（空字符串会被 .tab-panel{display:none} 类规则重新隐藏，导致内容截不到）
     var panels = document.querySelectorAll(".tab-panel");
@@ -891,12 +944,17 @@
       html2canvas(rs, {
         backgroundColor: "#ffffff",
         scale: 1.5,           // 降低 scale 显著减少生成耗时（原 2）
+        width: EXPORT_W,
+        windowWidth: EXPORT_W,
         useCORS: true,
         logging: false,
         onclone: function (clonedDoc) {
           var panel = clonedDoc.getElementById("resultSection");
           if (panel) {
             panel.classList.add("export-mode");
+            // 导出按固定宽排版，避免文本压缩
+            panel.style.width = EXPORT_W + "px";
+            panel.style.maxWidth = "none";
             // 强制隐藏 tabs（不进入导出图）
             var tabs = panel.querySelector("nav.tabs");
             if (tabs) tabs.style.display = "none";
@@ -1074,6 +1132,7 @@
 
     $("btnCalc").addEventListener("click", calculate);
     $("btnExportImg").addEventListener("click", exportResultImage);
+    $("btnExportJson").addEventListener("click", exportResultJson);
     $("btnSave").addEventListener("click", function () { saveForm(); tip("已保存当前表单"); });
     $("btnTemplate").addEventListener("click", function () {
       if (typeof XLSX === "undefined") { alert("XLSX 库未加载（需联网），暂无法下载模板。"); return; }

@@ -101,7 +101,13 @@ body::after {
 /* 计算结果出现后切回双列布局（结果区在表单右侧），hero 与左表单等宽对齐 */
 .layout.has-result { max-width: none; display: grid; grid-template-columns: minmax(0, 760px) minmax(0, 1fr); gap: 16px; }
 body.has-result .hero-banner { max-width: 760px; }
-@media (max-width: 900px) { .layout, .layout.has-result { display: block; max-width: none; } }
+/* 单列断点 900→820：手机横屏(约820-1100)与 PC 一致保持双列；窄于820才单列 stack */
+@media (max-width: 820px) { .layout, .layout.has-result { display: block; max-width: none; } }
+/* 中宽屏(横屏/大屏手机)：双列时左表单让出更多宽度给结果区，多列结果不挤压 */
+@media (min-width: 821px) and (max-width: 1100px) {
+  .layout.has-result { grid-template-columns: minmax(0, 1fr) 1.3fr; }
+  body.has-result .hero-banner { max-width: none; }
+}
 
 .form-panel, .result-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
 fieldset { border: 1px solid var(--border); border-radius: 10px; margin: 0 0 14px; padding: 10px 12px; }
