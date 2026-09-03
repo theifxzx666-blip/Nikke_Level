@@ -159,7 +159,9 @@ table.data th { background: #f2f6f4; }
 @media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
 .compare .col { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
 .compare .col h4 { margin: 0 0 6px; color: var(--primary-dark); }
-pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; font-family: inherit; overflow-x: auto; max-height: 480px; }
+pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-top: 10px; font-size: 12px; font-family: inherit; overflow-x: auto; max-height: 480px; }
+.raw-toolbar { display: flex; justify-content: flex-end; }
+.raw-toolbar .btn-export { margin-left: 0; }
 
 /* 悬浮进度球 */
 .progress-fab {
@@ -447,30 +449,3 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 @keyframes exportSpin { to { transform: rotate(360deg); } }
 .export-loading-text { font-size: 13px; color: var(--muted); }
-
-/* ===== 临时广告横幅（挂至 2026-09-10）===== */
-.ad-ad {
-  display: block; overflow: hidden;
-  border: 2px solid #ffd75e; border-radius: 10px;
-  background: linear-gradient(90deg, #0e5a41, #1d9e75 60%, #117a58);
-  color: #fff; font-size: 14px; font-weight: 600; line-height: 1.6;
-  text-align: center; margin: 0 0 12px; padding: 7px 10px;
-  box-shadow: 0 3px 10px rgba(13, 90, 60, 0.35);
-  cursor: pointer;
-}
-.ad-ad .ad-track { display: inline-block; white-space: nowrap; max-width: 100%; }
-.ad-ad .ad-text { margin-right: 3em; }
-.ad-ad em {
-  font-style: normal; color: #ffd75e; font-weight: 800;
-  text-shadow: 0 0 6px rgba(255, 215, 94, 0.7);
-}
-/* 溢出（内容显示不齐）时横向滚动展示全文 */
-.ad-ad.ad-roll { text-align: left; }
-.ad-ad.ad-roll .ad-track {
-  will-change: transform;
-  animation: adRoll 12s linear infinite;
-}
-@keyframes adRoll {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(-100%); }
-}

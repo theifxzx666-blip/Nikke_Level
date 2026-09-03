@@ -71,20 +71,19 @@
 
   /* ---------- 表单值读写 ---------- */
   function defaultForm() {
-    var today = dateStr(new Date());
     return {
-      recorded: today, current: "474", target: "481", alternate: "501",
-      normal_stage: "", hard_stage: "", base: "483", tactics: "是",
-      credit_rate: "57240/h", battle_rate: "570180/h", dust_rate: "88/h",
+      recorded: "2026-09-02", current: "489", target: "501", alternate: "521",
+      normal_stage: "", hard_stage: "", base: "518", tactics: "是",
+      credit_rate: "59860/h", battle_rate: "600440/h", dust_rate: "91.95/h",
       wipeouts: "3", wipeout_hours: "2", completed: "3", daily_full: "是", reset_time: "04:00",
-      future_open: "2026-08-31", future_normal_stage: "", future_hard_stage: "", future_base: "500",
-      future_credit: "58530/h", future_battle: "584950/h", future_dust: "90.02/h",
-      bare_credit: "25169K", bare_battle: "274M", bare_dust: "12181",
+      future_open: "2026-10-14", future_normal_stage: "", future_hard_stage: "", future_base: "535",
+      future_credit: "61110/h", future_battle: "614880/h", future_dust: "102.41/h",
+      bare_credit: "66605K", bare_battle: "302M", bare_dust: "13591",
       stage_clear_mode: "只计普通", stage_clear_credit: "25864", stage_clear_battle: "74096", stage_clear_dust: "630",
       stage_clear_credit2: "2615", stage_clear_battle2: "73446", stage_clear_dust2: "1630",
       cost_credit: "", cost_battle: "", cost_dust: "",
       fixed: JSON.parse(JSON.stringify(DEFAULT_FIXED)),
-      ark: "870", growth: "27", challenger: "340",
+      ark: "1159", growth: "56", challenger: "1125",
     };
   }
 
@@ -860,6 +859,11 @@
 
   function renderRaw(result) {
     $("tabRaw").innerHTML = "";
+    var bar = el("div", "", "raw-toolbar");
+    var exportBtn = el("button", "⬇ 下载原始 JSON", "btn btn-export");
+    exportBtn.addEventListener("click", exportResultJson);
+    bar.appendChild(exportBtn);
+    $("tabRaw").appendChild(bar);
     var pre = el("pre", JSON.stringify(result, null, 2), "raw");
     $("tabRaw").appendChild(pre);
   }
@@ -1130,7 +1134,6 @@
 
     $("btnCalc").addEventListener("click", calculate);
     $("btnExportImg").addEventListener("click", exportResultImage);
-    $("btnExportJson").addEventListener("click", exportResultJson);
     $("btnSave").addEventListener("click", function () { saveForm(); tip("已保存当前表单"); });
     $("btnTemplate").addEventListener("click", function () {
       if (typeof XLSX === "undefined") { alert("XLSX 库未加载（需联网），暂无法下载模板。"); return; }
