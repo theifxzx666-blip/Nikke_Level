@@ -943,14 +943,34 @@
     showExportLoading();
     // 先让 loading 渲染一帧再启动截图（避免首帧空白）；截图期间主线程繁忙，CSS 动画仍可播放
     setTimeout(function () {
+      // 按实际内容高度裁剪，避免 fixed 全屏背景层把画布撑出大段空白
+      // 预留：顶部注入标题约 104px + 导出面板上下 padding 约 44px + 底部留白约 14px
+      var H = rs.scrollHeight + 160;
       html2canvas(rs, {
         backgroundColor: "#ffffff",
         scale: 1.5,           // 降低 scale 显著减少生成耗时（原 2）
         width: EXPORT_W,
+        height: H,
         windowWidth: EXPORT_W,
+        windowHeight: H,
         useCORS: true,
         logging: false,
         onclone: function (clonedDoc) {
+          // 将克隆文档整体固定到内容高度并裁掉溢出，避免固定背景层/悬浮物残留成大段空白
+          var root = clonedDoc.documentElement;
+          var cbody = clonedDoc.body;
+          root.style.height = H + "px";
+          root.style.overflow = "hidden";
+          cbody.style.height = H + "px";
+          cbody.style.minHeight = "0";
+          cbody.style.overflow = "hidden";
+          // 隐藏 body 级 fixed 全屏背景（角色立绘/渐变遮罩）
+          var st = clonedDoc.createElement("style");
+          st.textContent = "html,body{background-image:none !important;}body::before,body::after{content:none !important;display:none !important;background-image:none !important;}";
+          clonedDoc.head.appendChild(st);
+          // 隐藏页面固定悬浮元素（仅保留结果内容）
+          clonedDoc.querySelectorAll(".progress-fab,.progress-panel,.btn-calc-fab,.save-tip,#exportLoading")
+            .forEach(function (n) { n.style.display = "none"; });
           var panel = clonedDoc.getElementById("resultSection");
           if (panel) {
             panel.classList.add("export-mode");
