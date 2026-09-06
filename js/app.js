@@ -853,7 +853,12 @@
     b3.appendChild(el("div", text3, "sb-text"));
     wrap.appendChild(b3);
 
-    wrap.appendChild(el("div", "口径：全箱梭哈 = 固定小时箱 + 自选箱全部使用；上表自选箱分配由引擎按资源最优计算（含各资源数量），可照表逐箱开启；「使用」即需开启的箱子数，「保留」为不开启的余量。", "summary-note"));
+    var hasKeep = (sellArr && sellArr.some(function (p) { return p.keep > 0; })) ||
+                  (fsell && fsell.some(function (p) { return p.keep > 0; }));
+    wrap.appendChild(el("div",
+      "口径：全箱梭哈 = 固定小时箱 + 自选箱全部使用；上表自选箱分配由引擎按资源最优计算（含各资源数量），可照表逐箱开启；「使用」即需开启的箱子数，"
+      + (hasKeep ? "「保留」即全开也无法再多升 1 级、故按其不开启计的余量。" : "「保留」为不开启的余量。"),
+      "summary-note"));
     return wrap;
   }
 
