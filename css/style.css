@@ -449,3 +449,47 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 @keyframes exportSpin { to { transform: rotate(360deg); } }
 .export-loading-text { font-size: 13px; color: var(--muted); }
+
+/* ---------- 跨设备同步弹窗（数据码 / 分享链接） ---------- */
+.hero-toolbar { flex-wrap: wrap; gap: 8px; }
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 300; display: none;
+  align-items: center; justify-content: center; padding: 20px;
+  background: rgba(10, 26, 20, 0.55); backdrop-filter: blur(2px);
+}
+.modal {
+  width: min(560px, 100%); max-height: 84vh; overflow: auto;
+  background: #fff; border-radius: 14px; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #eef9f4, #e7f5ee); border-radius: 14px 14px 0 0;
+}
+.modal-title { font-weight: 700; color: var(--primary); font-size: 15px; }
+.modal-close {
+  border: none; background: none; cursor: pointer; font-size: 16px; color: var(--muted);
+  padding: 2px 6px; border-radius: 6px;
+}
+.modal-close:hover { background: rgba(0, 0, 0, 0.06); color: #333; }
+.modal-body { padding: 16px 18px; }
+.share-sec { margin-bottom: 16px; }
+.share-sec + .share-sec { padding-top: 14px; border-top: 1px dashed var(--border); }
+.share-hint, .share-hint2 { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; line-height: 1.5; }
+.share-hint2 { margin-top: 12px; }
+.share-code, .share-link {
+  width: 100%; box-sizing: border-box; font-size: 13px; line-height: 1.5;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: #f7faf9; color: #334; resize: vertical; font-family: ui-monospace, Consolas, "Courier New", monospace;
+}
+.share-code { min-height: 84px; }
+.share-link { min-height: 38px; margin: 8px 0; }
+.share-link:focus { outline: 2px solid #b9e6d3; border-color: var(--primary); }
+.share-code[readonly], .share-link[readonly] { color: #445; }
+.share-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.share-row .btn { flex: 0 0 auto; }
+.share-row .btn-primary { flex: 0 0 auto; }
+.share-row .share-link { flex: 1 1 180px; }
+.qr-area { min-height: 168px; }
+.qr-area img { width: 168px; height: 168px; image-rendering: pixelated; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+.qr-fallback { font-size: 12px; color: var(--muted); margin: 8px 0; }

@@ -144,6 +144,143 @@
     tip._t = setTimeout(function () { t.classList.remove("show"); }, 2600);
   }
 
+  /* ---------- 跨设备同步（数据码 / 分享链接） ---------- */
+  function shareCodeOf(f) {
+    try {
+      var json = JSON.stringify(f);
+      if (typeof LZString !== "undefined") return LZString.compressToEncodedURIComponent(json);
+      return "_" + encodeURIComponent(btoa(unescape(encodeURIComponent(json))));
+    } catch (e) { return null; }
+  }
+  function unshareCode(code) {
+    var json = null;
+    try { json = typeof LZString !== "undefined" ? LZString.decompressFromEncodedURIComponent(code) : null; } catch (e) { json = null; }
+    if (!json && code.charAt(0) === "_") {
+      try { json = decodeURIComponent(escape(atob(decodeURIComponent(code.slice(1))))); } catch (e2) { json = null; }
+    }
+    if (!json) return null;
+    try { return JSON.parse(json); } catch (e3) { return null; }
+  }
+  function copyText(txt) {
+    var ta = el("textarea", "", "copy-ghost"); ta.value = txt;
+    ta.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 999999);
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  function renderQR(area, text) {
+    area.innerHTML = "";
+    if (typeof qrcode !== "function") { area.appendChild(el("div", "（未加载二维码库，请用复制数据码/链接）", "qr-fallback")); return; }
+    try {
+      var qr = qrcode(0, "L");
+      qr.addData(text); qr.make();
+      area.innerHTML = qr.createImgTag(6, 2);
+    }
+    catch (e) { area.appendChild(el("div", "（二维码生成失败，请用复制数据码/链接）", "qr-fallback")); }
+  }
+  function applyFormFromCode(code) {
+    var f = unshareCode(code);
+    if (!f) return false;
+    state.form = Object.assign(defaultForm(), f);
+    Object.keys(DEFAULT_FIXED).forEach(function (k) {
+      if (!state.form.fixed[k]) state.form.fixed[k] = JSON.parse(JSON.stringify(DEFAULT_FIXED[k]));
+    });
+    renderForm();
+    try { syncCostFromLevel(); } catch (e) {}
+    updateProgress();
+    saveForm();
+    return true;
+  }
+  /* 从 #data= 分享链接恢复并计算（加载时 + hashchange 共用） */
+  function restoreFromShareHash() {
+    try {
+      var hash = decodeURIComponent(location.hash || "");
+      if (hash.indexOf("#data=") !== 0) return;
+      if (applyFormFromCode(hash.slice(6))) {
+        tip("已从链接恢复表单，正在计算…");
+        setTimeout(function () { try { calculate(); } catch (e) {} }, 250);
+      }
+    } catch (e) {}
+  }
+  function buildShareModal() {
+    if (buildShareModal._open) return buildShareModal._open;
+    var ov = el("div", "", "modal-overlay");
+    var box = el("div", "", "modal");
+    var head = el("div", "", "modal-head");
+    var closeBtn = el("button", "✕", "modal-close");
+    head.appendChild(el("span", "跨设备同步 · 数据码 / 分享链接", "modal-title"));
+    head.appendChild(closeBtn);
+    var body = el("div", "", "modal-body");
+
+    // ① 生成
+    var gen = el("div", "", "share-sec");
+    gen.appendChild(el("div", "① 导出：把当前表单压成一段“数据码”，另一台设备粘贴 / 扫码即可恢复。", "share-hint"));
+    var genCode = el("textarea", "", "share-code"); genCode.readOnly = true; genCode.placeholder = "点击「生成数据码」";
+    gen.appendChild(genCode);
+    var row1 = el("div", "", "share-row");
+    var genBtn = el("button", "生成数据码", "btn btn-primary");
+    var copyCodeBtn = el("button", "复制数据码", "btn");
+    row1.appendChild(genBtn); row1.appendChild(copyCodeBtn);
+    gen.appendChild(row1);
+    var linkEl = el("input", "", "share-link"); linkEl.readOnly = true; linkEl.placeholder = "分享链接（手机打开即自动恢复）";
+    var copyLinkBtn = el("button", "复制链接", "btn");
+    var row2 = el("div", "", "share-row");
+    row2.appendChild(linkEl); row2.appendChild(copyLinkBtn);
+    gen.appendChild(row2);
+    gen.appendChild(el("div", "② 用手机扫码打开链接，自动恢复并出结果：", "share-hint2"));
+    var qrArea = el("div", "", "qr-area");
+    gen.appendChild(qrArea);
+
+    // ③ 恢复
+    var res = el("div", "", "share-sec");
+    res.appendChild(el("div", "③ 恢复：把收到的数据码（或完整链接）粘贴后，点击「填入并应用」。", "share-hint"));
+    var resCode = el("textarea", "", "share-code"); resCode.placeholder = "粘贴数据码或含 #data= 的链接";
+    res.appendChild(resCode);
+    var resRow = el("div", "", "share-row");
+    var resSpec = el("select", "", "share-range");
+    [["both", "恢复表单 + 自动计算"], ["fill", "仅恢复表单"]].forEach(function (o) {
+      var op = new Option(o[1], o[0]);
+      if (o[0] === "both") op.selected = true;
+      resSpec.appendChild(op);
+    });
+    var resBtn = el("button", "填入并应用表单", "btn btn-primary");
+    resRow.appendChild(resSpec); resRow.appendChild(resBtn);
+    res.appendChild(resRow);
+
+    body.appendChild(gen); body.appendChild(res);
+    box.appendChild(head); box.appendChild(body);
+    ov.appendChild(box); document.body.appendChild(ov);
+
+    function fillShare() {
+      collectForm();
+      var code = shareCodeOf(state.form);
+      if (!code) { genCode.value = "（压缩库未加载，无法生成）"; return; }
+      genCode.value = code;
+      var link = location.origin + location.pathname + "#data=" + code;
+      linkEl.value = link;
+      renderQR(qrArea, link);
+    }
+    function open() { ov.style.display = "flex"; fillShare(); }
+    function hide() { ov.style.display = "none"; }
+    closeBtn.addEventListener("click", hide);
+    ov.addEventListener("click", function (e) { if (e.target === ov) hide(); });
+    genBtn.addEventListener("click", function () { fillShare(); tip("已生成，可复制或扫码"); });
+    copyCodeBtn.addEventListener("click", function () { if (genCode.value) { copyText(genCode.value); tip("数据码已复制"); } });
+    copyLinkBtn.addEventListener("click", function () { if (linkEl.value) { copyText(linkEl.value); tip("链接已复制"); } });
+    resBtn.addEventListener("click", function () {
+      var v = (resCode.value || "").trim();
+      if (!v) { tip("请先粘贴数据码"); return; }
+      var i = v.indexOf("#data=");
+      var code = i >= 0 ? v.slice(i + 6) : v;
+      if (!applyFormFromCode(code)) { tip("数据码无效或已损坏"); return; }
+      tip("已恢复表单");
+      if (resSpec.value === "both") { setTimeout(function () { try { calculate(); } catch (e) {} }, 150); }
+      hide();
+    });
+    buildShareModal._open = { open: open };
+    return buildShareModal._open;
+  }
+
   /* ---------- 渲染表单 ---------- */
   function fillSelect(sel, options, selected) {
     sel.innerHTML = "";
@@ -1101,6 +1238,10 @@
 
   /* ---------- 事件绑定 ---------- */
   function bindEvents() {
+    // 跨设备同步：弹窗
+    $("btnShare").addEventListener("click", function () { buildShareModal().open(); });
+    // 同一页面内改 #data= hash（如直接粘贴/扫码改链接）也即时恢复
+    window.addEventListener("hashchange", restoreFromShareHash);
     // 普通章节 -> 困难跟随 + 未来+2
     $("f_normal_chapter").addEventListener("change", function () {
       syncStageOptions("normal");
@@ -1261,6 +1402,8 @@
         syncCostFromLevel();
         updateProgress();
         tip("就绪");
+        // 携带 #data= 分享链接进入：自动恢复表单并出结果
+        restoreFromShareHash();
       })
       .catch(function (e) {
         alert("数据加载失败：" + e.message);
