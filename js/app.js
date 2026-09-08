@@ -86,6 +86,8 @@
       fixed: JSON.parse(JSON.stringify(DEFAULT_FIXED)),
       ark: "1159", growth: "56", challenger: "1125",
       saved_at: "",       // 最近一次「保存当前表单」的日期（YYYY-MM-DD）
+      capture_time: "",   // 每日采集时刻（HH:MM）
+      collected_before: "是", // 采集前是否已回收基地收益（是/否）
     };
   }
 
@@ -120,6 +122,7 @@
     f.cost_credit = val("f_cost_credit"); f.cost_battle = val("f_cost_battle"); f.cost_dust = val("f_cost_dust");
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
     f.saved_at = val("f_saved_at");
+    f.capture_time = val("f_capture_time"); f.collected_before = val("f_collected_before");
     f.fixed = {};
     document.querySelectorAll(".fixed").forEach(function (inp) {
       var label = inp.dataset.label, h = inp.dataset.h;
@@ -301,6 +304,8 @@
     var f = state.form;
     setVal("f_recorded", f.recorded); setVal("f_current", f.current); setVal("f_target", f.target); setVal("f_alternate", f.alternate);
     setVal("f_saved_at", f.saved_at || "");
+    setVal("f_capture_time", f.capture_time || "");
+    setVal("f_collected_before", f.collected_before || "是");
     setVal("f_base", f.base); setVal("f_tactics", f.tactics);
     setVal("f_credit_rate", f.credit_rate); setVal("f_battle_rate", f.battle_rate); setVal("f_dust_rate", f.dust_rate);
     setVal("f_wipeouts", f.wipeouts); setVal("f_wipeout_hours", f.wipeout_hours); setVal("f_completed", f.completed);
@@ -1161,7 +1166,7 @@
     var f = collectForm();
     var aoa = [
       ["字段", "值"],
-      ["数据日期", f.recorded], ["最近保存日期", f.saved_at], ["当前同步器等级", f.current], ["目标同步器等级", f.target], ["后续追求目标等级", f.alternate],
+      ["数据日期", f.recorded], ["最近保存日期", f.saved_at], ["采集时刻", f.capture_time], ["采集前已回收基地", f.collected_before], ["当前同步器等级", f.current], ["目标同步器等级", f.target], ["后续追求目标等级", f.alternate],
       ["普通主线进度", f.normal_stage], ["困难主线进度", f.hard_stage], ["基地防御等级", f.base], ["战术学院满级", f.tactics],
       ["信用点收益", f.credit_rate], ["战斗数据收益", f.battle_rate], ["红球收益", f.dust_rate],
       ["每日歼灭次数", f.wipeouts], ["每次小时数", f.wipeout_hours], ["今天已完成", f.completed],
@@ -1198,7 +1203,7 @@
         }
         var f = collectForm();
         var FIELD = {
-          "数据日期": "recorded", "最近保存日期": "saved_at", "当前同步器等级": "current", "目标同步器等级": "target", "后续追求目标等级": "alternate",
+          "数据日期": "recorded", "最近保存日期": "saved_at", "采集时刻": "capture_time", "采集前已回收基地": "collected_before", "当前同步器等级": "current", "目标同步器等级": "target", "后续追求目标等级": "alternate",
           "普通主线进度": "normal_stage", "困难主线进度": "hard_stage", "基地防御等级": "base", "战术学院满级": "tactics",
           "信用点收益": "credit_rate", "战斗数据收益": "battle_rate", "红球收益": "dust_rate",
           "每日歼灭次数": "wipeouts", "每次小时数": "wipeout_hours", "今天已完成": "completed",
