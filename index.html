@@ -6,7 +6,7 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="stylesheet" href="css/style.css?v=20260907"> 
+<link rel="stylesheet" href="css/style.css?v=20260908"> 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -35,6 +35,7 @@
       <legend>账号状态</legend>
       <div class="grid g4">
         <label>数据日期<input type="date" id="f_recorded"></label>
+        <label>最近保存日期<input type="date" id="f_saved_at" readonly title="最后一次点击「保存当前表单」的日期，用于判断快照对应哪一天"></label>
         <label>当前同步器等级<input type="number" id="f_current" min="1" step="1"></label>
         <label>目标同步器等级<input type="number" id="f_target" min="1" step="1" value="481"></label>
         <label>后续追求目标等级<input type="number" id="f_alternate" min="1" step="1" value="501"></label>
@@ -196,12 +197,12 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/core.js?v=20260907"></script>
-<script src="js/outpost.js?v=20260907"></script>
-<script src="js/boxes.js?v=20260907"></script>
-<script src="js/scenarios.js?v=20260907"></script>
+<script src="js/core.js?v=20260908"></script>
+<script src="js/outpost.js?v=20260908"></script>
+<script src="js/boxes.js?v=20260908"></script>
+<script src="js/scenarios.js?v=20260908"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-<script src="js/app.js?v=20260907"></script>
+<script src="js/app.js?v=20260908"></script>
 </body>
 </html>

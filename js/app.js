@@ -55,6 +55,7 @@
     return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day);
   }
   function dateStr(d) { return d ? d.toISOString().slice(0, 10) : ""; }
+  function todayLocal() { var d = new Date(), m = d.getMonth() + 1, day = d.getDate(); return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day); }
 
   /* ---------- 状态 ---------- */
   var state = {
@@ -84,6 +85,7 @@
       cost_credit: "", cost_battle: "", cost_dust: "",
       fixed: JSON.parse(JSON.stringify(DEFAULT_FIXED)),
       ark: "1159", growth: "56", challenger: "1125",
+      saved_at: "",       // 最近一次「保存当前表单」的日期（YYYY-MM-DD）
     };
   }
 
@@ -117,6 +119,7 @@
     f.stage_clear_credit2 = val("f_stage_credit2"); f.stage_clear_battle2 = val("f_stage_battle2"); f.stage_clear_dust2 = val("f_stage_dust2");
     f.cost_credit = val("f_cost_credit"); f.cost_battle = val("f_cost_battle"); f.cost_dust = val("f_cost_dust");
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
+    f.saved_at = val("f_saved_at");
     f.fixed = {};
     document.querySelectorAll(".fixed").forEach(function (inp) {
       var label = inp.dataset.label, h = inp.dataset.h;
@@ -128,6 +131,8 @@
 
   function saveForm() {
     collectForm();
+    state.form.saved_at = todayLocal();          // 记录最近保存日期
+    setVal("f_saved_at", state.form.saved_at);
     try { localStorage.setItem(LS_KEY, JSON.stringify(state.form)); } catch (e) {}
   }
 
@@ -295,6 +300,7 @@
   function renderForm() {
     var f = state.form;
     setVal("f_recorded", f.recorded); setVal("f_current", f.current); setVal("f_target", f.target); setVal("f_alternate", f.alternate);
+    setVal("f_saved_at", f.saved_at || "");
     setVal("f_base", f.base); setVal("f_tactics", f.tactics);
     setVal("f_credit_rate", f.credit_rate); setVal("f_battle_rate", f.battle_rate); setVal("f_dust_rate", f.dust_rate);
     setVal("f_wipeouts", f.wipeouts); setVal("f_wipeout_hours", f.wipeout_hours); setVal("f_completed", f.completed);
@@ -1155,7 +1161,7 @@
     var f = collectForm();
     var aoa = [
       ["字段", "值"],
-      ["数据日期", f.recorded], ["当前同步器等级", f.current], ["目标同步器等级", f.target], ["后续追求目标等级", f.alternate],
+      ["数据日期", f.recorded], ["最近保存日期", f.saved_at], ["当前同步器等级", f.current], ["目标同步器等级", f.target], ["后续追求目标等级", f.alternate],
       ["普通主线进度", f.normal_stage], ["困难主线进度", f.hard_stage], ["基地防御等级", f.base], ["战术学院满级", f.tactics],
       ["信用点收益", f.credit_rate], ["战斗数据收益", f.battle_rate], ["红球收益", f.dust_rate],
       ["每日歼灭次数", f.wipeouts], ["每次小时数", f.wipeout_hours], ["今天已完成", f.completed],
@@ -1167,6 +1173,10 @@
       ["方舟箱", f.ark], ["30天箱", f.growth], ["挑战者箱", f.challenger],
       ["预计新主线开放日", f.future_open], ["预计普通进度", f.future_normal_stage], ["预计困难进度", f.future_hard_stage], ["预计基地等级", f.future_base],
     ];
+    // 固定小时箱数量（每日收益采集需保全各色/时长，导入时会回填表单）
+    var FL = ["芯尘盒", "信用点盒", "战斗数据辑盒", "成长套组"], DH = ["24", "12", "8", "4", "2", "1"];
+    FL.forEach(function (l) { DH.forEach(function (h) { aoa.push(["固定箱·" + l + "·" + h + "h", ((f.fixed && f.fixed[l]) ? f.fixed[l][h] : 0)]); }); });
+    aoa.push(["备注", ""]);   // 每日采集填写：今日是否升级/开箱/领一次性奖励（供收益差分参考）
     var ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = [{ wch: 24 }, { wch: 20 }];
     var wb = XLSX.utils.book_new();
@@ -1188,7 +1198,7 @@
         }
         var f = collectForm();
         var FIELD = {
-          "数据日期": "recorded", "当前同步器等级": "current", "目标同步器等级": "target", "后续追求目标等级": "alternate",
+          "数据日期": "recorded", "最近保存日期": "saved_at", "当前同步器等级": "current", "目标同步器等级": "target", "后续追求目标等级": "alternate",
           "普通主线进度": "normal_stage", "困难主线进度": "hard_stage", "基地防御等级": "base", "战术学院满级": "tactics",
           "信用点收益": "credit_rate", "战斗数据收益": "battle_rate", "红球收益": "dust_rate",
           "每日歼灭次数": "wipeouts", "每次小时数": "wipeout_hours", "今天已完成": "completed",
@@ -1203,9 +1213,19 @@
         Object.keys(FIELD).forEach(function (k) {
           if (map[k] !== undefined && map[k] !== "") f[FIELD[k]] = map[k];
         });
+        // 回填固定小时箱数量
+        var FL = ["芯尘盒", "信用点盒", "战斗数据辑盒", "成长套组"], DH = ["24", "12", "8", "4", "2", "1"];
+        FL.forEach(function (l) { DH.forEach(function (h) {
+          var key = "固定箱·" + l + "·" + h + "h";
+          if (map[key] !== undefined && map[key] !== "") {
+            if (!f.fixed[l]) f.fixed[l] = {};
+            f.fixed[l][h] = parseInt(map[key], 10) || 0;
+          }
+        }); });
         state.form = f;
         renderForm();
-        saveForm();
+        // 直接持久化并保留导入的「最近保存日期」，不覆盖为今天
+        try { localStorage.setItem(LS_KEY, JSON.stringify(state.form)); } catch (e) {}
         tip("XLSX 导入成功，已刷新表单");
       } catch (err) {
         alert("XLSX 读取失败：" + err.message);
