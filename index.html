@@ -6,7 +6,7 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="stylesheet" href="css/style.css?v=20260909"> 
+<link rel="stylesheet" href="css/style.css?v=20260910"> 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -28,6 +28,12 @@
   </div>
 </section>
 
+<nav class="app-nav" id="appNav" aria-label="功能切换">
+  <button class="app-nav-btn active" data-app="appPlanner"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/9140007.webp" alt="">资源规划计算器</button>
+  <button class="app-nav-btn" data-app="appModStats"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/7080001.webp" alt="">定制模组统计</button>
+</nav>
+
+<section id="appPlanner" class="app-view active">
 <div class="layout" id="layout">
   <!-- ============ 表单区 ============ -->
   <section id="formSection" class="form-panel">
@@ -199,6 +205,9 @@
   <div class="pp-head">表单填写进度 <span id="ppCount"></span><button id="ppClose" class="pp-close">✕</button></div>
   <ul id="ppList"></ul>
 </div>
+</section>
+
+<section id="appModStats" class="app-view"></section>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="js/core.js?v=20260909"></script>
@@ -208,5 +217,57 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="js/app.js?v=20260909"></script>
+<script>
+/* 顶层功能切换：资源规划计算器 ⇄ 定制模组统计（iframe 懒加载，仅在首次打开时挂载） */
+(function () {
+  var frame = null;
+  function switchTo(key) {
+    document.querySelectorAll(".app-nav-btn").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.app === key);
+    });
+    document.querySelectorAll(".app-view").forEach(function (v) {
+      v.classList.toggle("active", v.id === key);
+    });
+    // 顶部 hero 工具按钮（保存/模板/导入/跨设备同步）仅对资源规划计算器有效，切到模块页时隐藏
+    var toolbar = document.querySelector(".hero-toolbar");
+    if (toolbar) toolbar.style.display = key === "appPlanner" ? "" : "none";
+    if (key === "appModStats" && !frame) {
+      frame = document.createElement("iframe");
+      frame.id = "modStatsFrame";
+      frame.src = "mod_stats.html";
+      frame.title = "定制模组统计";
+      frame.addEventListener("load", fitModFrame);
+      document.getElementById("appModStats").appendChild(frame);
+    }
+  }
+  // 模块统计 iframe 高度随内容完整撑开：全部内容平铺展示，外层页面整页滚动，不截断、不内部滚动
+  function fitModFrame() {
+    try {
+      var doc = frame.contentDocument;
+      if (!doc || !frame.isConnected) return;
+      var body = doc.body;
+      var appEl = doc.querySelector(".app");
+      function apply() {
+        var h = (body && body.scrollHeight) || (appEl && appEl.getBoundingClientRect().height) || 0;
+        if (h > 0) frame.style.height = (h + 6) + "px";
+      }
+      apply();
+      if (window.__modFrameRO) window.__modFrameRO.disconnect();
+      if ("ResizeObserver" in window) {
+        window.__modFrameRO = new ResizeObserver(function () { apply(); });
+        window.__modFrameRO.observe(body || document);
+        if (appEl && appEl !== body) window.__modFrameRO.observe(appEl);
+      }
+      if (!window.__modFrameOnResize) {
+        window.__modFrameOnResize = function () { apply(); };
+        window.addEventListener("resize", window.__modFrameOnResize);
+      }
+    } catch (e) {}
+  }
+  document.querySelectorAll(".app-nav-btn").forEach(function (b) {
+    b.addEventListener("click", function () { switchTo(b.dataset.app); });
+  });
+})();
+</script>
 </body>
 </html>

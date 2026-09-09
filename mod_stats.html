@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIKKE · 定制模组长期统计</title>
+<style>
+@font-face{font-family:'MaiYuan';src:url('assets/fonts/maiyuan.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+ --primary:#1d9e75;--primary-dark:#0f6e56;
+ --bg:#f5f7f6;--bg2:#ffffff;--bg3:#eef2f0;--bg4:#e3e9e6;--border:#dde3e0;
+ --text:#222;--text2:#667;--text3:#3a4440;--accent:#1d9e75;--accent2:#0f6e56;
+ --green:#1d9e75;--gold:#b8860b;--red:#d6394b;--orange:#d97b1e;--cyan:#0e9aa7;
+ --radius:14px;--shadow:0 6px 16px rgba(0,0,0,.08);--font:'MaiYuan','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:#eef3f1;color:var(--text);padding:22px}
+button,input,select{font:inherit}
+button{cursor:pointer}
+::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-track{background:#e7ecea}::-webkit-scrollbar-thumb{background:#c3cec9;border-radius:99px}
+.app{width:min(1480px,100%);margin:auto}
+.header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.brand{display:flex;gap:14px;align-items:center}.brand-mark{width:48px;height:48px;border:1px solid #b9d3c6;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#e3efe9,#d2e6da);box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.brand-mark span{font-size:24px}.brand h1{font-size:25px;line-height:1.15;letter-spacing:.3px;color:var(--text)}.brand small{display:block;color:var(--text2);font-size:12px;font-weight:400;margin-top:5px}
+.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.header-actions button,.server-btn{border:1px solid var(--border);background:var(--bg2);color:var(--text2);padding:9px 13px;border-radius:10px;transition:.2s}.header-actions button:hover{border-color:var(--primary);background:var(--bg3);color:var(--text)}.danger:hover{border-color:var(--red)!important;color:var(--red)!important}
+.server-switch{display:flex;gap:4px;padding:4px;border:1px solid var(--border);background:var(--bg3);border-radius:12px}.server-btn{border:0;background:transparent;padding:8px 12px;font-size:13px;color:var(--text2)}.server-btn.active{background:linear-gradient(180deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.server-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(90deg,rgba(29,158,117,.07),rgba(0,0,0,.02));border:1px solid var(--border);padding:11px 14px;border-radius:12px;margin-bottom:18px;color:var(--text2);font-size:13px}.server-info strong{color:var(--text)}.param{padding:4px 8px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);color:var(--text2)}
+.stats-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:18px}.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px;box-shadow:var(--shadow);min-height:106px}.stat-card:hover{border-color:var(--primary)}.label{font-size:11px;color:var(--text2);letter-spacing:.5px}.value{font-size:26px;font-weight:700;margin-top:8px;line-height:1.1;color:var(--text)}.value.gold{color:var(--gold)}.value.green{color:var(--green)}.value.red{color:var(--red)}.value.orange{color:var(--orange)}.sub{font-size:11px;color:var(--text2);margin-top:7px;line-height:1.45}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--border)}.panel-title{font-size:15px;font-weight:650;color:var(--text)}.panel-sub{font-size:12px;color:var(--text2)}
+.form-body{padding:18px}.form-grid{display:grid;grid-template-columns:160px 135px 1fr 1fr auto;gap:14px;align-items:end}.field{display:flex;flex-direction:column;gap:6px;min-width:0}.field label{font-size:11px;color:var(--text2);font-weight:600}.field input,.field select,.date-trigger{width:100%;height:42px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);padding:0 12px;outline:none;transition:.2s}.field input:focus,.field select:focus,.date-trigger:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+.date-trigger{text-align:left;display:flex;align-items:center;justify-content:space-between}.date-trigger span:last-child{color:var(--text2)}.date-value.placeholder{color:var(--text2)}
+.drop-fields{display:grid;grid-template-columns:repeat(3,minmax(70px,1fr));gap:8px}.drop-input{height:42px!important;text-align:center;font-size:16px!important;font-weight:650}.drop-wrap{position:relative}.drop-sum{font-size:11px;color:var(--text2);margin-top:6px}.hint{font-size:11px;color:var(--text2);margin-top:6px}.form-actions{display:flex;gap:8px}.btn-primary,.btn-secondary{height:42px;padding:0 16px;border-radius:10px}.btn-primary{border:1px solid var(--primary);background:linear-gradient(180deg,var(--primary),var(--primary-dark));color:#fff;font-weight:650;box-shadow:0 8px 18px rgba(29,158,117,.22)}.btn-primary:hover{filter:brightness(1.08)}.btn-secondary{border:1px solid var(--border);background:var(--bg2);color:var(--text2)}
+.table-scroll{overflow:auto}.table-wrap{overflow:hidden}.table-tools{display:flex;align-items:center;gap:8px}.badge{font-size:11px;border-radius:99px;padding:4px 9px;background:var(--bg3);color:var(--text2);border:1px solid var(--border)}.badge.double{background:rgba(184,134,11,.1);color:#9a6d1a;border-color:rgba(184,134,11,.3)}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:1050px;font-size:12px}thead th{position:sticky;top:0;z-index:3;background:#e9efec;color:var(--text2);text-align:left;font-size:10px;letter-spacing:.4px;padding:11px 10px;border-bottom:1px solid var(--border);white-space:nowrap}tbody td{padding:10px;border-bottom:1px solid rgba(221,227,224,.72);color:var(--text3);white-space:nowrap}tbody tr:hover td{background:rgba(29,158,117,.04)}tbody tr.today td{background:rgba(29,158,117,.08)}.date-col{font-weight:650;color:var(--text)}.num{text-align:center;font-variant-numeric:tabular-nums}.muted{color:var(--text2)}.good{color:var(--green)!important}.bad{color:var(--red)!important}.near{color:var(--gold)!important}.del-btn{border:0;background:transparent;color:var(--text2);padding:6px;border-radius:8px}.del-btn:hover{color:var(--red);background:rgba(214,57,75,.08)}.note{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.empty{padding:54px 20px;text-align:center;color:var(--text2)}.empty-icon{font-size:38px;display:block;margin-bottom:8px}
+.period-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:16px}.period-card{border:1px solid var(--border);background:var(--bg2);border-radius:11px;padding:13px}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:12px;font-weight:650;color:var(--text)}.p-stage{font-size:10px;color:var(--text2)}.p-main{font-size:22px;font-weight:750;margin:12px 0 4px;color:var(--text)}.p-theory{font-size:11px;color:var(--text2)}.p-row{display:flex;justify-content:space-between;gap:8px;margin-top:10px}.p-dev{font-weight:650;font-size:12px}.p-status{margin-top:10px;display:inline-block;padding:4px 8px;border-radius:999px;font-size:10px;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.1)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.1)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
+.help-body{padding:15px 18px;color:var(--text2);font-size:12px;line-height:1.9}.help-body ul{padding-left:18px}.help-body code{padding:2px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text3)}
+.progress{height:7px;background:#e6ece9;border-radius:999px;overflow:hidden;margin-top:10px}.progress>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--cyan));width:0}
+.toast{position:fixed;right:24px;bottom:24px;z-index:1000;padding:12px 15px;border:1px solid var(--border);background:var(--bg2);border-radius:11px;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);pointer-events:none;transition:.22s;max-width:min(420px,calc(100vw - 30px));font-size:13px;color:var(--text)}.toast.show{opacity:1;transform:translateY(0)}.toast.success{border-left:4px solid var(--green)}.toast.error{border-left:4px solid var(--red)}.toast.info{border-left:4px solid var(--accent)}
+.back-top{position:fixed;right:22px;bottom:82px;width:40px;height:40px;border-radius:12px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);opacity:0;pointer-events:none;transition:.2s}.back-top.show{opacity:1;pointer-events:auto}
+/* 日历弹窗 */
+.calendar-pop{position:fixed;z-index:2000;width:330px;background:var(--bg2);border:1px solid #cfd8d3;border-radius:16px;box-shadow:0 18px 44px rgba(0,0,0,.22);padding:14px;display:none}.calendar-pop.show{display:block}.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.cal-title{font-size:14px;font-weight:700}.cal-nav{display:flex;gap:5px}.cal-nav button{width:32px;height:30px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);border-radius:8px}.cal-nav button:hover{border-color:var(--primary)}.cal-week,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal-week div{text-align:center;font-size:10px;color:var(--text2);padding:4px 0}.cal-day{height:34px;border:1px solid transparent;background:transparent;color:var(--text3);border-radius:8px}.cal-day:hover:not(:disabled){background:var(--bg3);border-color:#cfd8d3}.cal-day.muted{color:#9aa7a1}.cal-day.today{border-color:var(--primary)}.cal-day.selected{background:var(--primary);color:#fff}.cal-day:disabled{opacity:.28;cursor:not-allowed}.cal-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}.cal-foot span{font-size:10px;color:var(--text2)}.cal-today{border:1px solid var(--border);background:var(--bg3);color:var(--text2);border-radius:8px;padding:6px 9px;font-size:11px}
+@media(max-width:1150px){.stats-grid{grid-template-columns:repeat(3,1fr)}.form-grid{grid-template-columns:1fr 1fr;}.form-actions{grid-column:1/-1;justify-content:flex-end}.period-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:720px){body{padding:12px}.header{align-items:flex-start}.brand{flex-wrap:wrap}.brand h1{font-size:21px}.header-actions{width:100%}.header-actions button{flex:1}.server-switch{width:100%}.server-btn{flex:1}.stats-grid{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.form-actions{grid-column:auto}.btn-primary,.btn-secondary{flex:1}.period-grid{grid-template-columns:1fr 1fr}.calendar-pop{width:min(330px,calc(100vw - 24px))}}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}.value{font-size:22px}.period-grid{grid-template-columns:1fr}.panel-head{align-items:flex-start;flex-direction:column}.server-info{line-height:1.7}}
+/* 作者名牌（标题旁） */
+.author-chip{display:flex;align-items:center;gap:8px;text-decoration:none;margin-left:14px;padding:5px 11px 5px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;transition:.2s}
+.author-chip:hover{border-color:var(--primary);background:#e4f0ea}
+.author-chip .author-avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);background:#fff}
+.author-chip-txt{display:flex;flex-direction:column;line-height:1.25;white-space:nowrap}
+.author-chip-txt b{font-size:13px;color:var(--text)}
+.author-chip-txt em{font-style:normal;font-size:11px;color:var(--primary)}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="header">
+  <div class="brand"><div class="brand-mark"><span>⚙</span></div><div><h1>定制模组统计</h1><small>NIKKE · 长期掉落统计与概率偏差分析</small></div><a class="author-chip" href="https://space.bilibili.com/76579052?spm_id_from=333.337.0.0" target="_blank" rel="noopener" title="本工具（定制模组统计）由 sa_yuki 制作维护，点击查看 B站主页"><img class="author-avatar" src="assets/author_sa_yuki.webp" alt="作者 sa_yuki"><span class="author-chip-txt"><b>作者 · sa_yuki</b><em>B站主页 ↗</em></span></a></div>
+  <div class="header-actions">
+    <div class="server-switch" aria-label="服务器切换">
+      <button class="server-btn active" id="serverCN" onclick="switchServer('cn')">🇨🇳 国服</button>
+      <button class="server-btn" id="serverGL" onclick="switchServer('global')">🌐 国际服</button>
+    </div>
+    <button onclick="exportData()">📤 导出</button>
+    <button onclick="document.getElementById('importInput').click()">📥 导入</button>
+    <input id="importInput" type="file" accept=".json" hidden onchange="importData(event)">
+    <button class="danger" onclick="clearAll()">🗑 清空当前服</button>
+  </div>
+</header>
+
+<div class="server-info" id="serverInfo"></div>
+
+<section class="stats-grid">
+  <div class="stat-card"><div class="label">实际累计模组</div><div class="value gold" id="statActual">0.00</div><div class="sub" id="statActualSub">含碎片折算</div></div>
+  <div class="stat-card"><div class="label">已记录天数</div><div class="value" id="statDays">0</div><div class="sub" id="statDaysSub">建议至少 90 天</div></div>
+  <div class="stat-card"><div class="label">双倍天数</div><div class="value orange" id="statDouble">0</div><div class="sub" id="statDoubleSub">活动双倍记录</div></div>
+  <div class="stat-card"><div class="label">理论期望</div><div class="value" id="statTheory">0.00</div><div class="sub" id="statTheorySub"></div></div>
+  <div class="stat-card"><div class="label">偏差（实际 − 理论）</div><div class="value" id="statDev">0.00</div><div class="sub" id="statDevSub">—</div></div>
+  <div class="stat-card"><div class="label">偏差 %</div><div class="value" id="statDevPct">0.0%</div><div class="sub" id="statDevStatus">暂无数据</div><div class="progress"><span id="sampleProgress"></span></div></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><div class="panel-title">📝 添加每日记录</div><div class="panel-sub">碎片无需手填，系统会自动累计并完整保留余数</div></div><div class="badge" id="dropRangeBadge">普通日 0 ~ 3</div></div>
+  <div class="form-body">
+    <form id="recordForm" onsubmit="addRecord(event)">
+      <div class="form-grid">
+        <div class="field"><label>日期</label><button type="button" class="date-trigger" id="dateTrigger" onclick="openCalendar()"><span id="dateValue" class="date-value placeholder">选择日期</span><span>▾</span></button><input type="hidden" id="inputDate"></div>
+        <div class="field"><label>活动双倍</label><select id="inputDouble" onchange="updateDropLimits()"><option value="false">否 · 普通日</option><option value="true">是 · 双倍日</option></select></div>
+        <div class="field drop-wrap"><label>三次直接掉落</label><div class="drop-fields"><input class="drop-input" type="number" id="inputD1" min="0" max="3" value="0" required><input class="drop-input" type="number" id="inputD2" min="0" max="3" value="0" required><input class="drop-input" type="number" id="inputD3" min="0" max="3" value="0" required></div><div class="drop-sum">当天直接模组：<strong id="directPreview">0</strong>　<span id="dropHint">每次 0 ~ 3</span></div></div>
+        <div class="field"><label>备注（可选）</label><input type="text" id="inputNote" maxlength="60" placeholder="例如：漏记一天 / 活动第一天"></div>
+        <div class="form-actions"><button class="btn-primary" type="submit">➕ 保存记录</button><button class="btn-secondary" type="button" onclick="resetForm()">重置</button></div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><div class="panel-title">📋 历史记录</div><div class="panel-sub" id="recordCount">当前服务器共 0 条</div></div><div class="table-tools"><span class="badge" id="fragmentSummary">碎片累计：0</span><span class="badge" id="completeFragmentSummary">可兑换：0 + 0 碎片</span></div></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>日期</th><th>双倍</th><th>掉落 1</th><th>掉落 2</th><th>掉落 3</th><th>直接模组</th><th>当日碎片</th><th>碎片累计</th><th>碎片折算</th><th>当天总模组</th><th>累计总模组</th><th>累计理论</th><th>偏差</th><th>偏差%</th><th>备注</th><th>操作</th></tr></thead>
+      <tbody id="tableBody"><tr><td colspan="16" class="empty"><span class="empty-icon">📭</span>暂无记录，请先添加数据</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><div class="panel-title">📊 周期统计</div><div class="panel-sub">从当前服务器的第 1 条记录开始计算</div></div></div>
+  <div class="period-grid" id="periodGrid"></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div class="panel-title">📖 使用说明</div></div>
+  <div class="help-body">
+    <ul id="helpList"></ul>
+  </div>
+</section>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<div class="calendar-pop" id="calendarPop">
+  <div class="cal-head"><div class="cal-title" id="calTitle"></div><div class="cal-nav"><button type="button" onclick="changeMonth(-1)">‹</button><button type="button" onclick="changeMonth(1)">›</button></div></div>
+  <div class="cal-week"><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-foot"><span>未来日期不可选择</span><button class="cal-today" type="button" onclick="selectToday()">今天</button></div>
+</div>
+
+<script>
+const SERVER_CONFIG = {
+  cn: {
+    name:'国服', flag:'🇨🇳', trigger:0.58, fragmentPerRun:37,
+    note:'每次结算保底 37 碎片；每日 3 次普通日合计 111 碎片。',
+  },
+  global: {
+    name:'国际服', flag:'🌐', trigger:0.69, fragmentPerRun:50,
+    note:'每次结算保底 50 碎片；每日 3 次普通日合计 150 碎片。',
+  }
+};
+const PROB_1=0.700963, PROB_2=0.289037, PROB_3=0.01;
+function triggerPercent(){ return Number((cfg().trigger * 100).toFixed(8)).toString(); }
+const RUNS_PER_DAY=3;
+const FRAGMENTS_PER_MODULE=100;
+const STORAGE_KEY='nikke_mod_stats_v2';
+let currentServer = localStorage.getItem('nikke_current_server') || 'cn';
+let calendarMonth = new Date();
+let toastTimer=null;
+
+function cfg(){ return SERVER_CONFIG[currentServer]; }
+function triggerExpectation(){ return cfg().trigger * (1*PROB_1 + 2*PROB_2 + 3*PROB_3); }
+function directDailyExpectation(){ return triggerExpectation()*RUNS_PER_DAY; }
+function fragmentDailyExpectation(){ return cfg().fragmentPerRun*RUNS_PER_DAY/FRAGMENTS_PER_MODULE; }
+function normalExpectation(){ return directDailyExpectation()+fragmentDailyExpectation(); }
+function doubleExpectation(){ return normalExpectation()*2; }
+function todayStr(){ const d=new Date(); return localDateStr(d); }
+function localDateStr(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+function parseDate(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+
+function loadAll(){
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){ const x=JSON.parse(raw); if(x&&typeof x==='object'&&!Array.isArray(x)) return x; if(Array.isArray(x)) return {cn:x,global:[]}; } }catch(e){}
+  return {cn:[],global:[]};
+}
+function saveAll(data){ localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); }
+function loadRecords(){ return (loadAll()[currentServer]||[]).filter(r=>r&&typeof r.date==='string'); }
+function saveRecords(records){ const all=loadAll(); all[currentServer]=records; saveAll(all); }
+
+function normalizeRecord(r){
+  return {date:r.date,double:r.double===true,d1:Number(r.d1)||0,d2:Number(r.d2)||0,d3:Number(r.d3)||0,note:typeof r.note==='string'?r.note:''};
+}
+function computeStats(records){
+  const sorted=records.map(normalizeRecord).sort((a,b)=>a.date.localeCompare(b.date));
+  let cumActual=0,cumTheory=0,cumFragments=0,doubleDays=0;
+  const list=sorted.map((r,i)=>{
+    if(r.double) doubleDays++;
+    const direct=r.d1+r.d2+r.d3;
+    const dayFragments=cfg().fragmentPerRun*RUNS_PER_DAY*(r.double?2:1);
+    cumFragments+=dayFragments;
+    const fragmentEquivalent=cumFragments/FRAGMENTS_PER_MODULE;
+    const total=direct+dayFragments/FRAGMENTS_PER_MODULE;
+    const theory=r.double?doubleExpectation():normalExpectation();
+    cumActual+=total; cumTheory+=theory;
+    const dev=cumActual-cumTheory; const devPct=cumTheory?dev/cumTheory:0;
+    return {...r,idx:i+1,direct,dayFragments,cumFragments,fragmentEquivalent,total,theory,cumActual,cumTheory,dev,devPct};
+  });
+  const last=list[list.length-1];
+  return {list,totalActual:last?last.cumActual:0,totalTheory:last?last.cumTheory:0,totalDev:last?last.dev:0,devPct:last?last.devPct:0,days:list.length,doubleDays,cumFragments: last?last.cumFragments:0};
+}
+
+function switchServer(server){
+  if(!SERVER_CONFIG[server]||server===currentServer) return;
+  currentServer=server; localStorage.setItem('nikke_current_server',server); resetForm(); render(computeStats(loadRecords())); showToast(`已切换到 ${cfg().flag} ${cfg().name}`,'info');
+}
+function renderServerInfo(){
+  const c=cfg();
+  document.getElementById('serverCN').classList.toggle('active',currentServer==='cn');
+  document.getElementById('serverGL').classList.toggle('active',currentServer==='global');
+  document.getElementById('serverInfo').innerHTML=`<strong>${c.flag} 当前服务器：${c.name}</strong><span class="param">触发率 ${triggerPercent()}%</span><span class="param">1 / 2 / 3 个：${(PROB_1*100).toFixed(4)}% / ${(PROB_2*100).toFixed(4)}% / ${(PROB_3*100).toFixed(2)}%</span><span class="param">碎片 ${c.fragmentPerRun} / 次</span><span class="param">普通日 ${normalExpectation().toFixed(2)} 模组</span><span class="param">双倍日 ${doubleExpectation().toFixed(2)} 模组</span>`;
+  document.getElementById('helpList').innerHTML=`
+    <li>当前为 <strong>${c.flag} ${c.name}</strong>，触发率 <strong>${triggerPercent()}%</strong>；1/2/3 个条件概率为 <strong>70.0963% / 28.9037% / 1%</strong>。</li>
+    <li>每天完成 9 阶段异常拦截后，填写三次<strong>实际直接掉落数量</strong>，不要自己乘双倍。</li>
+    <li>活动双倍日选择“是”，系统会将当天直接掉落和碎片都按双倍规则计算。</li>
+    <li>${c.note}</li>
+    <li>碎片按<strong>真实累计值</strong>保存，100 碎片只作为折算单位显示；例如 111 → 1 模组 + 11 碎片，不会丢失余数。</li>
+    <li>建议至少连续记录 <strong>90 天</strong>，更适合判断长期偏欧 / 偏非。</li>
+    <li>数据保存在浏览器 <strong>localStorage</strong>；导出 JSON 可以备份两套服务器的数据。</li>`;
+  document.getElementById('dropRangeBadge').textContent=`普通日 0 ~ 3 · 双倍日 0 ~ 6`;
+}
+function render(stats){
+  renderServerInfo();
+  document.getElementById('statActual').textContent=stats.totalActual.toFixed(2);
+  document.getElementById('statDays').textContent=stats.days;
+  document.getElementById('statDaysSub').textContent=stats.days<90?`还需 ${90-stats.days} 天达到建议样本`:'已达到 90 天建议样本';
+  document.getElementById('statDouble').textContent=stats.doubleDays;
+  document.getElementById('statTheory').textContent=stats.totalTheory.toFixed(2);
+  document.getElementById('statTheorySub').textContent=`普通日 ${normalExpectation().toFixed(2)} · 双倍日 ${doubleExpectation().toFixed(2)}`;
+  const dev=stats.totalDev,pct=stats.devPct*100;
+  const devEl=document.getElementById('statDev'); devEl.textContent=(dev>=0?'+':'')+dev.toFixed(2); devEl.className='value '+(dev>0.3?'green':dev<-0.3?'red':'');
+  document.getElementById('statDevSub').textContent=stats.days?`累计碎片 ${stats.cumFragments}`:'—';
+  const pctEl=document.getElementById('statDevPct'); pctEl.textContent=(pct>=0?'+':'')+pct.toFixed(1)+'%'; pctEl.className='value '+(pct>5?'green':pct<-5?'red':'');
+  const status=document.getElementById('statDevStatus'); status.textContent=!stats.days?'暂无数据':pct>5?'🔥 偏欧 · 继续观察':pct<-5?'🌧 偏非 · 继续观察':'✅ 正常范围'; status.style.color=!stats.days?'var(--text2)':pct>5?'var(--green)':pct<-5?'var(--red)':'var(--gold)';
+  document.getElementById('sampleProgress').style.width=Math.min(100,stats.days/90*100)+'%';
+
+  document.getElementById('fragmentSummary').textContent=`碎片累计：${stats.cumFragments}`;
+  document.getElementById('completeFragmentSummary').textContent=`可兑换：${Math.floor(stats.cumFragments/100)} + ${stats.cumFragments%100} 碎片`;
+  document.getElementById('recordCount').textContent=`${cfg().flag} ${cfg().name} · 共 ${stats.list.length} 条`;
+
+  const tbody=document.getElementById('tableBody');
+  if(!stats.list.length){ tbody.innerHTML='<tr><td colspan="16" class="empty"><span class="empty-icon">📭</span>暂无记录，请先添加数据</td></tr>'; }
+  else {
+    tbody.innerHTML=[...stats.list].reverse().map(r=>{
+      const pct2=r.devPct*100; const cls=pct2>1?'good':pct2<-1?'bad':'muted'; const today=r.date===todayStr()?'today':'';
+      return `<tr class="${today}">
+        <td class="date-col">${r.date}${today?' · 今天':''}</td><td><span class="badge ${r.double?'double':''}">${r.double?'双倍':'普通'}</span></td>
+        <td class="num">${r.d1}</td><td class="num">${r.d2}</td><td class="num">${r.d3}</td><td class="num">${r.direct.toFixed(1)}</td>
+        <td class="num">${r.dayFragments}</td><td class="num">${r.cumFragments}</td><td class="num">${r.fragmentEquivalent.toFixed(2)}</td>
+        <td class="num"><strong>${r.total.toFixed(2)}</strong></td><td class="num"><strong>${r.cumActual.toFixed(2)}</strong></td><td class="num muted">${r.cumTheory.toFixed(2)}</td>
+        <td class="num ${cls}">${r.dev>=0?'+':''}${r.dev.toFixed(2)}</td><td class="num ${cls}">${pct2>=0?'+':''}${pct2.toFixed(1)}%</td>
+        <td class="note" title="${escapeHtml(r.note)}">${r.note?escapeHtml(r.note):'—'}</td><td><button class="del-btn" title="删除" onclick="deleteRecord('${r.date}')">✕</button></td>
+      </tr>`;
+    }).join('');
+  }
+  renderPeriods(stats);
+}
+function renderPeriods(stats){
+  const targets=[30,60,90,180,365];
+  document.getElementById('periodGrid').innerHTML=targets.map(target=>{
+    if(stats.list.length<target){return `<div class="period-card"><div class="p-top"><span class="p-label">📆 ${target} 天</span><span class="p-stage">样本期</span></div><div class="p-main muted">未完成</div><div class="p-theory">还需 ${target-stats.list.length} 天数据</div><div class="progress"><span style="width:${Math.min(100,stats.list.length/target*100)}%"></span></div></div>`}
+    const r=stats.list[target-1],pct=r.devPct*100,cls=pct>1?'good':pct<-1?'bad':'near', status=pct>5?'🔥 偏欧':pct<-5?'🌧 偏非':'✅ 正常范围',scls=pct>5?'lucky':pct<-5?'unlucky':'normal';
+    return `<div class="period-card"><div class="p-top"><span class="p-label">📆 ${target} 天</span><span class="p-stage">第 ${target} 天</span></div><div class="p-main">${r.cumActual.toFixed(2)}</div><div class="p-theory">期望 ${r.cumTheory.toFixed(2)} 模组</div><div class="p-row"><span class="p-dev ${cls}">${r.dev>=0?'+':''}${r.dev.toFixed(2)}</span><span class="p-dev ${cls}">${pct>=0?'+':''}${pct.toFixed(1)}%</span></div><span class="p-status ${scls}">${status}</span></div>`;
+  }).join('');
+}
+function updateDropLimits(){
+  const isDouble=document.getElementById('inputDouble').value==='true',max=isDouble?6:3;
+  ['inputD1','inputD2','inputD3'].forEach(id=>{const e=document.getElementById(id);e.max=max;if(Number(e.value)>max)e.value=max});
+  document.getElementById('dropHint').textContent=`每次 0 ~ ${max}`; updateDirectPreview();
+}
+function updateDirectPreview(){ const n=['inputD1','inputD2','inputD3'].reduce((s,id)=>s+(Number(document.getElementById(id).value)||0),0); document.getElementById('directPreview').textContent=n.toFixed(0); }
+function resetForm(){ const t=todayStr(); setDate(t); document.getElementById('inputDouble').value='false'; ['inputD1','inputD2','inputD3'].forEach(id=>document.getElementById(id).value='0'); document.getElementById('inputNote').value=''; updateDropLimits(); }
+function addRecord(e){
+  e.preventDefault();
+  const date=document.getElementById('inputDate').value;if(!date){showToast('请选择日期','error');openCalendar();return}
+  if(date>todayStr()){showToast('不能选择未来日期','error');return}
+  const isDouble=document.getElementById('inputDouble').value==='true', max=isDouble?6:3, vals=['inputD1','inputD2','inputD3'].map(id=>Number(document.getElementById(id).value)||0);
+  if(vals.some(v=>v<0||v>max)){showToast(`每次掉落数量必须在 0 ~ ${max} 之间`,'error');return}
+  const rec={date,double:isDouble,d1:vals[0],d2:vals[1],d3:vals[2],note:document.getElementById('inputNote').value.trim()};
+  let rows=loadRecords();const idx=rows.findIndex(r=>r.date===date);if(idx>=0&&!confirm(`${cfg().name} ${date} 已有记录，是否覆盖？`))return;if(idx>=0)rows.splice(idx,1);rows.push(rec);saveRecords(rows);render(computeStats(rows));resetForm();showToast(`✅ ${date} 已保存`,'success');
+}
+function deleteRecord(date){if(!confirm(`确定删除 ${cfg().name} 的 ${date} 记录吗？`))return;saveRecords(loadRecords().filter(r=>r.date!==date));render(computeStats(loadRecords()));showToast(`已删除 ${date}`,'info')}
+function clearAll(){const rows=loadRecords();if(!rows.length){showToast('当前服务器没有数据','info');return}if(!confirm(`确定清除 ${cfg().name} 的全部 ${rows.length} 条记录吗？`))return;if(!confirm('再次确认：此操作不可撤销。'))return;saveRecords([]);render(computeStats([]));showToast('已清空当前服务器数据','info')}
+function exportData(){const all=loadAll(),payload={version:2,exportedAt:new Date().toISOString(),servers:all};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`nikke_mod_stats_${todayStr()}.json`;a.click();URL.revokeObjectURL(url);showToast('✅ 已导出两套服务器数据','success')}
+function importData(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const data=JSON.parse(e.target.result);let incoming;if(data&&data.servers)incoming=data.servers;else if(Array.isArray(data))incoming={cn:data,global:[]};else throw new Error('无法识别的数据格式');for(const key of ['cn','global']){if(!Array.isArray(incoming[key]))incoming[key]=[]}if(!confirm('导入后会覆盖两套服务器的当前数据，是否继续？'))return;saveAll({cn:incoming.cn.map(normalizeRecord),global:incoming.global.map(normalizeRecord)});render(computeStats(loadRecords()));showToast('✅ 导入成功','success')}catch(err){showToast('❌ 导入失败：'+err.message,'error')}finally{event.target.value=''}};reader.readAsText(file)}
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;', '"':'&quot;'}[c]))}
+function showToast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3000)}
+
+/* 日期弹窗 */
+function openCalendar(){
+  const pop=document.getElementById('calendarPop');
+  const trigger=document.getElementById('dateTrigger');
+  renderCalendar(); pop.classList.add('show');
+  const rect=trigger.getBoundingClientRect();const width=Math.min(330,window.innerWidth-24);let left=Math.min(rect.left,window.innerWidth-width-12),top=rect.bottom+8;if(top+360>window.innerHeight)top=Math.max(12,rect.top-368);pop.style.width=width+'px';pop.style.left=Math.max(12,left)+'px';pop.style.top=Math.max(12,top)+'px';
+}
+function closeCalendar(){document.getElementById('calendarPop').classList.remove('show')}
+function changeMonth(delta){calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1);renderCalendar()}
+function renderCalendar(){
+  const y=calendarMonth.getFullYear(),m=calendarMonth.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0),start=first.getDay(),days=last.getDate(),today=todayStr(),selected=document.getElementById('inputDate').value;
+  document.getElementById('calTitle').textContent=`${y} 年 ${m+1} 月`;const grid=document.getElementById('calGrid');let html='';
+  for(let i=0;i<start;i++){html+='<button type="button" class="cal-day muted" disabled></button>'}
+  for(let d=1;d<=days;d++){const ds=localDateStr(new Date(y,m,d)),dis=ds>today?'disabled':'',sel=ds===selected?' selected':'',tod=ds===today?' today':'';html+=`<button type="button" class="cal-day${sel}${tod}" ${dis} onclick="pickDate('${ds}')">${d}</button>`}
+  const trailing=(7-(start+days)%7)%7;
+  for(let i=0;i<trailing;i++){html+='<button type="button" class="cal-day muted" disabled></button>'}
+  grid.innerHTML=html;
+}
+function pickDate(ds){setDate(ds);closeCalendar()}
+function setDate(ds){document.getElementById('inputDate').value=ds;const d=parseDate(ds);const el=document.getElementById('dateValue');el.textContent=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;el.classList.remove('placeholder');calendarMonth=new Date(d.getFullYear(),d.getMonth(),1)}
+function selectToday(){const t=todayStr();setDate(t);closeCalendar()}
+document.addEventListener('click',e=>{const p=document.getElementById('calendarPop'),t=document.getElementById('dateTrigger');if(p.classList.contains('show')&&!p.contains(e.target)&&!t.contains(e.target))closeCalendar()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCalendar()});
+['inputD1','inputD2','inputD3'].forEach(id=>document.getElementById(id).addEventListener('input',updateDirectPreview));
+window.addEventListener('scroll',()=>document.getElementById('backTop').classList.toggle('show',window.scrollY>450));
+
+function init(){render(computeStats(loadRecords()));resetForm()}
+init();
+</script>
+</body>
+</html>
