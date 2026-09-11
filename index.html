@@ -31,6 +31,7 @@
 <nav class="app-nav" id="appNav" aria-label="功能切换">
   <button class="app-nav-btn active" data-app="appPlanner"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/9140007.webp" alt="">资源规划计算器</button>
   <button class="app-nav-btn" data-app="appModStats"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/7080001.webp" alt="">定制模组统计</button>
+<button class="app-nav-btn" data-app="appRerollStats"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/3221001.webp" alt="">洗词条计算器</button>
 </nav>
 
 <section id="appPlanner" class="app-view active">
@@ -154,10 +155,10 @@
       <table class="fixed-table">
         <thead><tr><th>箱子 \ 小时</th><th>24h</th><th>12h</th><th>8h</th><th>4h</th><th>2h</th><th>1h</th></tr></thead>
         <tbody>
-          <tr><td>芯尘盒</td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="1" min="0"></td></tr>
-          <tr><td>信用点盒</td><td><input type="number" class="fixed" data-label="信用点盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="1" min="0"></td></tr>
-          <tr><td>战斗数据辑盒</td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="1" min="0"></td></tr>
-          <tr><td>成长套组</td><td><input type="number" class="fixed" data-label="成长套组" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="1" min="0"></td></tr>
+          <tr><td><img class="box-icon" src="assets/box_core_dust.webp" alt="芯尘盒">芯尘盒</td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="1" min="0"></td></tr>
+          <tr><td><img class="box-icon" src="assets/box_battle.webp" alt="战斗数据辑盒">战斗数据辑盒</td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="1" min="0"></td></tr>
+          <tr><td><img class="box-icon" src="assets/box_credit.webp" alt="信用点盒">信用点盒</td><td><input type="number" class="fixed" data-label="信用点盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="1" min="0"></td></tr>
+          <tr><td><img class="box-icon" src="assets/box_growth.webp" alt="成长套组">成长套组</td><td><input type="number" class="fixed" data-label="成长套组" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="1" min="0"></td></tr>
         </tbody>
       </table>
     </fieldset>
@@ -165,9 +166,9 @@
     <fieldset class="grp-d">
       <legend>自选箱数量</legend>
       <div class="grid g3">
-        <label>方舟官方补给物资Ⅰ<input type="number" id="f_ark" min="0" step="1" value="870"></label>
-        <label>30天成长补给箱<input type="number" id="f_growth" min="0" step="1" value="27"></label>
-        <label>挑战者成长宝箱<input type="number" id="f_challenger" min="0" step="1" value="340"></label>
+        <label><span class="box-name"><img class="box-icon" src="assets/mbox_ark.webp" alt="方舟官方补给物资Ⅰ">方舟官方补给物资Ⅰ</span><input type="number" id="f_ark" min="0" step="1" value="870"></label>
+        <label><span class="box-name"><img class="box-icon" src="assets/mbox_30d.jpg" alt="30天成长补给箱">30天成长补给箱</span><input type="number" id="f_growth" min="0" step="1" value="27"></label>
+        <label><span class="box-name"><img class="box-icon" src="assets/mbox_challenger.webp" alt="挑战者成长宝箱">挑战者成长宝箱</span><input type="number" id="f_challenger" min="0" step="1" value="340"></label>
       </div>
       <p class="hint">挑战者成长宝箱为固定数值奖励，默认全部消耗（不受基地等级影响）。</p>
     </fieldset>
@@ -208,6 +209,8 @@
 
 <section id="appModStats" class="app-view"></section>
 
+<section id="appRerollStats" class="app-view"></section>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="js/core.js?v=20260911"></script>
 <script src="js/outpost.js?v=20260911"></script>
@@ -217,9 +220,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="js/app.js?v=20260911"></script>
 <script>
-/* 顶层功能切换：资源规划计算器 ⇄ 定制模组统计（iframe 懒加载，仅在首次打开时挂载） */
+/* 顶层功能切换：资源规划计算器 ⇄ 定制模组统计 ⇄ 洗词条计算器（iframe 懒加载，仅在首次打开时挂载） */
 (function () {
-  var frame = null;
+  var frames = {
+    appModStats: { id: "modStatsFrame", src: "mod_stats.html", title: "定制模组统计" },
+    appRerollStats: { id: "rerollStatsFrame", src: "reroll_calculator.html", title: "洗词条计算器" }
+  };
+  var iframes = {};
   function switchTo(key) {
     document.querySelectorAll(".app-nav-btn").forEach(function (b) {
       b.classList.toggle("active", b.dataset.app === key);
@@ -227,39 +234,40 @@
     document.querySelectorAll(".app-view").forEach(function (v) {
       v.classList.toggle("active", v.id === key);
     });
-    // 顶部 hero 工具按钮（保存/模板/导入/跨设备同步）仅对资源规划计算器有效，切到模块页时隐藏
+    // 顶部 hero 工具按钮（保存/模板/导入/跨设备同步）仅对资源规划计算器有效，切到子工具页时隐藏
     var toolbar = document.querySelector(".hero-toolbar");
     if (toolbar) toolbar.style.display = key === "appPlanner" ? "" : "none";
-    if (key === "appModStats" && !frame) {
-      frame = document.createElement("iframe");
-      frame.id = "modStatsFrame";
-      frame.src = "mod_stats.html";
-      frame.title = "定制模组统计";
-      frame.addEventListener("load", fitModFrame);
-      document.getElementById("appModStats").appendChild(frame);
+    var cfg = frames[key];
+    if (cfg && !iframes[key]) {
+      var iframe = document.createElement("iframe");
+      iframe.id = cfg.id;
+      iframe.src = cfg.src;
+      iframe.title = cfg.title;
+      iframe.addEventListener("load", function () { fitFrame(key); });
+      iframes[key] = iframe;
+      document.getElementById(key).appendChild(iframe);
     }
   }
-  // 模块统计 iframe 高度随内容完整撑开：全部内容平铺展示，外层页面整页滚动，不截断、不内部滚动
-  function fitModFrame() {
+  // 子工具 iframe 高度随内容完整撑开：全部内容平铺展示，外层页面整页滚动，不截断、不内部滚动
+  function fitFrame(key) {
+    var iframe = iframes[key];
     try {
-      var doc = frame.contentDocument;
-      if (!doc || !frame.isConnected) return;
+      var doc = iframe.contentDocument;
+      if (!doc || !iframe.isConnected) return;
       var body = doc.body;
       var appEl = doc.querySelector(".app");
       function apply() {
         var h = (body && body.scrollHeight) || (appEl && appEl.getBoundingClientRect().height) || 0;
-        if (h > 0) frame.style.height = (h + 6) + "px";
+        if (h > 0) iframe.style.height = (h + 6) + "px";
       }
       apply();
-      if (window.__modFrameRO) window.__modFrameRO.disconnect();
+      if (window.__frameRO) (window.__frameRO[key] || {}).disconnect && window.__frameRO[key].disconnect();
       if ("ResizeObserver" in window) {
-        window.__modFrameRO = new ResizeObserver(function () { apply(); });
-        window.__modFrameRO.observe(body || document);
-        if (appEl && appEl !== body) window.__modFrameRO.observe(appEl);
-      }
-      if (!window.__modFrameOnResize) {
-        window.__modFrameOnResize = function () { apply(); };
-        window.addEventListener("resize", window.__modFrameOnResize);
+        var ro = new ResizeObserver(function () { apply(); });
+        if (body) ro.observe(body);
+        if (appEl && appEl !== body) ro.observe(appEl);
+        window.__frameRO = window.__frameRO || {};
+        window.__frameRO[key] = ro;
       }
     } catch (e) {}
   }

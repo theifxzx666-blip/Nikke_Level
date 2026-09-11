@@ -131,6 +131,11 @@ input:focus, select:focus { outline: 2px solid #9fe1cb; border-color: var(--prim
 .fixed-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .fixed-table th, .fixed-table td { border: 1px solid var(--border); padding: 4px; text-align: center; }
 .fixed-table input { width: 70px; text-align: center; padding: 4px; }
+.box-icon { width: 20px; height: 20px; vertical-align: -4px; margin-right: 6px; border-radius: 4px; object-fit: contain; display: inline-block; }
+.fixed-table .box-icon { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; }
+.fixed-table td:first-child { text-align: left; white-space: nowrap; }
+.box-name { display: inline-flex; align-items: center; gap: 6px; }
+.box-name .box-icon { margin-right: 0; }
 
 .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 12px; flex-wrap: wrap; }
 .tab {
@@ -504,15 +509,15 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .app-view { display: none; }
 .app-view.active { display: block; }
 
-#appModStats { padding: 8px 20px 60px; margin: 0 auto; max-width: 1480px; }
-#modStatsFrame {
+#appModStats, #appRerollStats { padding: 8px 20px 60px; margin: 0 auto; max-width: 1480px; }
+#modStatsFrame, #rerollStatsFrame {
   width: 100%; height: 480px; min-height: 300px; display: block;
   border: 0; border-radius: 12px; background: #eef3f1; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 @media (max-width: 820px) {
   .app-nav { max-width: 100%; }
   .app-nav-btn { flex: 1 1 auto; }
-  #appModStats { padding: 0 12px 60px; }
+  #appModStats, #appRerollStats { padding: 0 12px 60px; }
 }
 .share-code[readonly], .share-link[readonly] { color: #445; }
 .share-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
