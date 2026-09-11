@@ -56,6 +56,7 @@
   }
   function dateStr(d) { return d ? d.toISOString().slice(0, 10) : ""; }
   function todayLocal() { var d = new Date(), m = d.getMonth() + 1, day = d.getDate(); return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day); }
+  function nowTime() { var d = new Date(); function p(n) { return (n < 10 ? "0" : "") + n; } return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds()); }
 
   /* ---------- 状态 ---------- */
   var state = {
@@ -122,7 +123,7 @@
     f.cost_credit = val("f_cost_credit"); f.cost_battle = val("f_cost_battle"); f.cost_dust = val("f_cost_dust");
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
     f.saved_at = val("f_saved_at");
-    f.capture_time = val("f_capture_time"); f.collected_before = val("f_collected_before");
+    f.collected_before = val("f_collected_before");
     f.fixed = {};
     document.querySelectorAll(".fixed").forEach(function (inp) {
       var label = inp.dataset.label, h = inp.dataset.h;
@@ -135,6 +136,7 @@
   function saveForm() {
     collectForm();
     state.form.saved_at = todayLocal();          // 记录最近保存日期
+    state.form.capture_time = nowTime();         // 记录采集时刻（内部参数，自动写入）
     setVal("f_saved_at", state.form.saved_at);
     try { localStorage.setItem(LS_KEY, JSON.stringify(state.form)); } catch (e) {}
   }
@@ -304,7 +306,6 @@
     var f = state.form;
     setVal("f_recorded", f.recorded); setVal("f_current", f.current); setVal("f_target", f.target); setVal("f_alternate", f.alternate);
     setVal("f_saved_at", f.saved_at || "");
-    setVal("f_capture_time", f.capture_time || "");
     setVal("f_collected_before", f.collected_before || "是");
     setVal("f_base", f.base); setVal("f_tactics", f.tactics);
     setVal("f_credit_rate", f.credit_rate); setVal("f_battle_rate", f.battle_rate); setVal("f_dust_rate", f.dust_rate);
@@ -1164,6 +1165,7 @@
   /* ---------- XLSX 导入/导出 ---------- */
   function buildXlsxTemplate() {
     var f = collectForm();
+    f.capture_time = nowTime();                  // 下载时自动写入采集时刻，免手填
     var aoa = [
       ["字段", "值"],
       ["数据日期", f.recorded], ["最近保存日期", f.saved_at], ["采集时刻", f.capture_time], ["采集前已回收基地", f.collected_before], ["当前同步器等级", f.current], ["目标同步器等级", f.target], ["后续追求目标等级", f.alternate],
