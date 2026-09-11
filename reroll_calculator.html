@@ -715,6 +715,26 @@
     @media (max-width:880px){.topbar-inner{flex-wrap:wrap}.topbar-primary{flex-wrap:wrap}.author-chip{margin-left:auto}}
     #import-character-data{display:none!important}
     .form-section,.controls{background:var(--surface)}
+    div.inline-optimal-result:not(.empty-result){white-space:normal;font-family:inherit}
+    .optimal-card{padding:2px}
+    .oc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .oc-title{font-size:0.95rem;font-weight:700;color:var(--ink)}
+    .oc-badge{font-size:0.72rem;font-weight:700;padding:3px 11px;border-radius:99px;background:var(--surface-strong);color:var(--primary-hover)}
+    .oc-badge.go{background:var(--primary-soft);color:var(--primary-dark)}
+    .oc-body{display:grid;gap:8px;margin-bottom:6px}
+    .oc-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+    .oc-label{color:var(--muted);font-size:0.78rem;min-width:92px}
+    .oc-num{font-size:1.45rem;font-weight:800;color:var(--ink);line-height:1}
+    .oc-unit{font-size:0.8rem;color:var(--muted)}
+    .oc-time{color:var(--muted);font-size:0.75rem}
+    .oc-action .oc-action-text{font-weight:700;color:var(--primary-dark)}
+    .oc-tips{border-top:1px dashed var(--line);margin-top:6px;padding-top:8px;display:grid;gap:6px}
+    .oc-tip{font-size:0.75rem;color:var(--muted);line-height:1.6}
+    .oc-tip b{color:var(--primary-dark)}
+    details.oc-details{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
+    details.oc-details summary{cursor:pointer;font-size:0.75rem;color:var(--muted)}
+    details.oc-details summary:hover{color:var(--primary)}
+    .oc-detail-line{font-size:0.72rem;color:var(--muted);font-family:'Cascadia Mono',monospace;margin:4px 0 0}
   </style>
 </head>
 <body>
@@ -783,7 +803,7 @@
               <h3>最优结果</h3>
             </div>
           </div>
-          <pre class="inline-optimal-result empty-result" id="classic-optimal-result" aria-live="polite">运行算法测试后显示。</pre>
+          <div class="inline-optimal-result empty-result" id="classic-optimal-result" aria-live="polite">运行算法测试后显示。</div>
         </div>
       </div>
 
@@ -1239,9 +1259,10 @@
       });
     }
 
-    function setInlineOptimalResult(element, text, isEmpty = false) {
+    function setInlineOptimalResult(element, text, isEmpty = false, asHTML = false) {
       if (!element) return;
-      element.textContent = text;
+      if (asHTML) element.innerHTML = text;
+      else element.textContent = text;
       element.classList.toggle("empty-result", isEmpty);
     }
 
@@ -1254,6 +1275,72 @@
         ? exactSolution.firstActionText
         : `初始锁定 ${strategyName(bestMonteCarlo.strategy)}`;
       return `预计消耗：约 ${expectedCost.toFixed(1)} 颗石头\n最优建议：${actionText}`;
+    }
+
+    function renderOptimalCardHTML({ exactSolution, monteCarloResults, targetInput }) {
+      const bestMC = monteCarloResults?.[0] || null;
+      const cost = exactSolution?.value ?? bestMC?.mean ?? 0;
+      const done = cost <= 1e-9;
+      const actionText = done
+        ? "当前盘面已经满足目标"
+        : exactSolution
+          ? exactSolution.firstActionText
+          : `初始锁定 ${strategyName(bestMC.strategy)}，随后按 3→2→1 顺位上锁`;
+      const days = cost > 0 ? Math.max(1, Math.ceil(cost / 3.5)) : 0;
+
+      const badge = done
+        ? '<span class="oc-badge go">已经达标</span>'
+        : '<span class="oc-badge">还需洗练</span>';
+
+      const tips = buildOptimalTips({ done, actionText, targetInput });
+
+      const detailLines = [];
+      if (exactSolution) {
+        const r = exactSolution.residual != null ? exactSolution.residual.toExponential(2) : "—";
+        detailLines.push(`有限状态 MDP 期望：${exactSolution.value.toFixed(2)} 颗；状态数 ${exactSolution.stateCount ?? "—"}；Bellman 残差 ${r}`);
+      }
+      if (bestMC) {
+        detailLines.push(`蒙特卡洛对照：约 ${bestMC.mean.toFixed(1)} 颗 ± ${bestMC.margin95.toFixed(1)}（95% 置信区间）`);
+        if (exactSolution && exactSolution.value > 0) {
+          const diff = bestMC.mean - exactSolution.value;
+          detailLines.push(`现行 3→2→1 策略与最优策略差约 ${Math.max(0, diff).toFixed(1)} 颗`);
+        }
+      }
+      const detailsHtml = detailLines.length
+        ? `<details class="oc-details"><summary>技术明细</summary>${detailLines.map(l => `<div class="oc-detail-line">${l}</div>`).join("")}</details>`
+        : "";
+
+      return (
+        '<div class="optimal-card"><div class="oc-head"><span class="oc-title">最优结果</span>' + badge + '</div>' +
+        '<div class="oc-body">' +
+        '<div class="oc-row oc-cost"><span class="oc-label">预计需消耗</span><span class="oc-num">' + cost.toFixed(1) + '</span><span class="oc-unit">颗石头</span></div>' +
+        (done ? '' : '<div class="oc-time">约需攒 ' + days + ' 天（按每日约 3.5 颗估算）</div>') +
+        '<div class="oc-row oc-action"><span class="oc-label">建议动作</span><span class="oc-action-text">' + actionText + '</span></div>' +
+        '</div>' +
+        (tips.length ? '<div class="oc-tips">' + tips.join("") + '</div>' : '') +
+        detailsHtml +
+        '</div>'
+      );
+    }
+
+    function buildOptimalTips({ done, actionText, targetInput }) {
+      const tips = [];
+      if (done) {
+        tips.push('<div class="oc-tip"><b>已经达标</b>：别再为更好看的数值继续投入紧俏的石头，锁定后把资源转去养下一件装备。</div>');
+      } else {
+        if (/锁定[^，]*3号位/.test(actionText)) {
+          tips.push('<div class="oc-tip"><b>3号位出词条仅 25%</b>：出现有效词条建议直接锁定（先保数量），数值可后续再洗。</div>');
+        }
+        if (/锁定[^，]*1号位/.test(actionText)) {
+          tips.push('<div class="oc-tip"><b>锁1号位成本偏高</b>：1号位100%出词条，非蓝即黑才锁1；多数情况锁2/3号更省石头。</div>');
+        }
+        const maxTier = Array.isArray(targetInput) ? targetInput.reduce((m, t) => Math.max(m, t && t.tier ? t.tier : 0), 0) : 0;
+        if (maxTier >= 11) {
+          tips.push('<div class="oc-tip"><b>目标挡位 ≥11 属追数值</b>：消耗指数级上涨，普通玩家洗到 10+ 即可。</div>');
+        }
+        tips.push('<div class="oc-tip">石头是紧俏资源（约每日 3.5 颗），洗练前先确认这件卡值得 <b>8词</b> 还是 <b>12词</b>。</div>');
+      }
+      return tips;
     }
 
     function clearScopedOptimalResult(control) {
@@ -3165,7 +3252,7 @@
           ? buildMonteCarloResultOutput(monteCarloResults, targetInput, iterations)
           : buildExactResultOutput(exactSolution, targetInput);
         setResult(primaryOutput);
-        setInlineOptimalResult(classicOptimalResult, inlineOptimalResultText({ exactSolution, monteCarloResults }));
+        setInlineOptimalResult(classicOptimalResult, renderOptimalCardHTML({ exactSolution, monteCarloResults, targetInput }), false, true);
         setDetails(buildDetailsOutput({ exactSolution, formulaResult, monteCarloResults, iterations, seed }));
         activateOutputTab("result");
       } catch (error) {
