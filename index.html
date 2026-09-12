@@ -257,7 +257,11 @@
       var body = doc.body;
       var appEl = doc.querySelector(".app");
       function apply() {
-        var h = (body && body.scrollHeight) || (appEl && appEl.getBoundingClientRect().height) || 0;
+        var h = Math.max(
+          (body && body.scrollHeight) || 0,
+          (doc.documentElement && doc.documentElement.scrollHeight) || 0
+        );
+        if (h <= 0) h = (appEl && appEl.getBoundingClientRect().height) || 0;
         if (h > 0) iframe.style.height = (h + 6) + "px";
       }
       apply();
