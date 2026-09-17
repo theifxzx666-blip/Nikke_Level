@@ -31,8 +31,8 @@
 <nav class="app-nav" id="appNav" aria-label="功能切换">
   <button class="app-nav-btn active" data-app="appPlanner"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/9140007.webp" alt="">资源规划计算器</button>
   <button class="app-nav-btn" data-app="appModStats"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/7080001.webp" alt="">定制模组统计</button>
-<button class="app-nav-btn" data-app="appRerollStats"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/3221001.webp" alt="">洗词条计算器</button>
 <button class="app-nav-btn" data-app="appAvatarFrame"><img class="app-nav-icon" src="assets/tab_avatar.png" alt="">头像预览</button>
+<button class="app-nav-btn" data-app="appRerollStats"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/3221001.webp" alt="">洗词条计算器</button>
 </nav>
 
 <section id="appPlanner" class="app-view active">
@@ -253,11 +253,18 @@
     }
   }
   // 子工具 iframe 高度随内容完整撑开：全部内容平铺展示，外层页面整页滚动，不截断、不内部滚动
+  function isNarrow() { return window.matchMedia("(max-width: 820px)").matches; }
   function fitFrame(key) {
     var iframe = iframes[key];
     try {
       var doc = iframe.contentDocument;
       if (!doc || !iframe.isConnected) return;
+      // 头像预览例外：窄屏下锁定为视口高、由子页内部滚动，让预览与头像列表同屏（选中即刻可见变化）
+      if (key === "appAvatarFrame" && isNarrow()) {
+        iframe.style.height = "";
+        if (window.__frameRO && window.__frameRO[key]) { window.__frameRO[key].disconnect(); window.__frameRO[key] = null; }
+        return;
+      }
       var body = doc.body;
       var appEl = doc.querySelector(".app");
       function apply() {
@@ -280,7 +287,21 @@
     } catch (e) {}
   }
   document.querySelectorAll(".app-nav-btn").forEach(function (b) {
-    b.addEventListener("click", function () { switchTo(b.dataset.app); });
+    b.addEventListener("click", function () {
+      var key = b.dataset.app;
+      switchTo(key);
+      // 窄屏下 hero 占位高，切到头像预览后主动滚到工具区，避免「点了却看不到内容」
+      if (key === "appAvatarFrame" && isNarrow()) {
+        var view = document.getElementById(key);
+        if (view) setTimeout(function () { view.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
+      }
+    });
+  });
+  // 桌面 ⇄ 窄屏切换时重新适配 iframe 高度策略
+  var rsTimer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(rsTimer);
+    rsTimer = setTimeout(function () { Object.keys(iframes).forEach(fitFrame); }, 150);
   });
 })();
 </script>

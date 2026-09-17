@@ -518,6 +518,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .app-nav { max-width: 100%; }
   .app-nav-btn { flex: 1 1 auto; }
   #appModStats, #appRerollStats, #appAvatarFrame { padding: 0 12px 60px; }
+  /* 头像预览：窄屏改为「锁定视口高 + 子页内部滚动」，让预览与头像列表同屏显示 */
+  #appAvatarFrame { padding: 0 8px 10px; }
+  #avatarFrame { height: calc(100vh - 8px); height: calc(100dvh - 8px); min-height: 0; }
 }
 .share-code[readonly], .share-link[readonly] { color: #445; }
 .share-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
