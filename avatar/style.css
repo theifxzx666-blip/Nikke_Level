@@ -186,10 +186,15 @@ main{
 }
 .empty{padding:40px 16px;color:var(--dim);text-align:center;grid-column:1/-1}
 
+/* ---------- 父页已锁定 iframe 高度（窄屏全屏工具模式）----------
+   由父页在 <html> 上打 .locked 标记，而不是本页按宽度猜断点：
+   父页与子页断点若不一致（父 820 / 子 900），在夹缝区会出现
+   「父页不锁高、本页却 overflow:hidden」→ 内容被裁 + 列表滚不动。
+   有了显式标记后，只在真正锁高时把滚动下沉到列表内部。 */
+html.locked,html.locked body{height:100%;overflow:hidden;overscroll-behavior:none}
+
 /* ---------- 窄屏（手机）：预览常驻顶部 + 列表内部滚动，选中即刻可见变化 ---------- */
 @media(max-width:900px){
-  /* 外层已把 iframe 锁为视口高，这里不再整页滚动，把滚动下沉到列表 */
-  html,body{height:100%;overflow:hidden}
   main{display:flex;flex-direction:column;min-height:0}
 
   /* 顶栏：手机上收窄，让位给工具本体 */

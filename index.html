@@ -231,6 +231,18 @@
     appAvatarFrame: { id: "avatarFrame", src: "avatar/index.html", title: "头像预览" }
   };
   var iframes = {};
+  // 头像预览在窄屏进入「全屏工具模式」：隐藏 hero、父页不滚动，滚动只发生在列表里
+  function setAvatarFull(on) {
+    on = !!on;
+    var was = document.body.classList.contains("avatar-full");
+    document.body.classList.toggle("avatar-full", on);
+    if (on && !was) window.scrollTo(0, 0);
+    // 模式变化后立刻同步子页的 .locked 标记与 iframe 高度策略
+    if (on !== was) {
+      var f = iframes["appAvatarFrame"];
+      if (f && f.isConnected) fitFrame("appAvatarFrame");
+    }
+  }
   function switchTo(key) {
     document.querySelectorAll(".app-nav-btn").forEach(function (b) {
       b.classList.toggle("active", b.dataset.app === key);
@@ -241,6 +253,7 @@
     // 顶部 hero 工具按钮（保存/模板/导入/跨设备同步）仅对资源规划计算器有效，切到子工具页时隐藏
     var toolbar = document.querySelector(".hero-toolbar");
     if (toolbar) toolbar.style.display = key === "appPlanner" ? "" : "none";
+    setAvatarFull(key === "appAvatarFrame" && isNarrow());
     var cfg = frames[key];
     if (cfg && !iframes[key]) {
       var iframe = document.createElement("iframe");
@@ -253,14 +266,21 @@
     }
   }
   // 子工具 iframe 高度随内容完整撑开：全部内容平铺展示，外层页面整页滚动，不截断、不内部滚动
-  function isNarrow() { return window.matchMedia("(max-width: 820px)").matches; }
+  // 头像预览锁高阈值：子页窄屏断点是 900，而宽屏时 iframe 左右各有 20px 内边距，
+  // 所以窗口 940 以内 iframe 都会落进子页的窄屏区 —— 取 940 才能与子页判定对齐，不留夹缝
+  function isNarrow() { return window.matchMedia("(max-width: 940px)").matches; }
   function fitFrame(key) {
     var iframe = iframes[key];
     try {
       var doc = iframe.contentDocument;
       if (!doc || !iframe.isConnected) return;
-      // 头像预览例外：窄屏下锁定为视口高、由子页内部滚动，让预览与头像列表同屏（选中即刻可见变化）
-      if (key === "appAvatarFrame" && isNarrow()) {
+      var root = doc.documentElement;
+      // 头像预览：窄屏下父页锁定视口高、由子页列表内部滚动（预览与列表同屏，选中即刻可见）。
+      // 用 <html class="locked"> 显式告知子页「高度已被锁定」，比让子页按宽度猜断点可靠：
+      // 父页断点 820 / 子页断点 900，夹缝区若靠宽度判断会出现「父页没锁高、子页却已 overflow:hidden」。
+      var lock = key === "appAvatarFrame" && isNarrow();
+      if (root) root.classList.toggle("locked", lock);
+      if (lock) {
         iframe.style.height = "";
         if (window.__frameRO && window.__frameRO[key]) { window.__frameRO[key].disconnect(); window.__frameRO[key] = null; }
         return;
@@ -287,21 +307,17 @@
     } catch (e) {}
   }
   document.querySelectorAll(".app-nav-btn").forEach(function (b) {
-    b.addEventListener("click", function () {
-      var key = b.dataset.app;
-      switchTo(key);
-      // 窄屏下 hero 占位高，切到头像预览后主动滚到工具区，避免「点了却看不到内容」
-      if (key === "appAvatarFrame" && isNarrow()) {
-        var view = document.getElementById(key);
-        if (view) setTimeout(function () { view.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
-      }
-    });
+    b.addEventListener("click", function () { switchTo(b.dataset.app); });
   });
   // 桌面 ⇄ 窄屏切换时重新适配 iframe 高度策略
   var rsTimer = null;
   window.addEventListener("resize", function () {
     clearTimeout(rsTimer);
-    rsTimer = setTimeout(function () { Object.keys(iframes).forEach(fitFrame); }, 150);
+    rsTimer = setTimeout(function () {
+      var act = document.querySelector(".app-nav-btn.active");
+      setAvatarFull(!!act && act.dataset.app === "appAvatarFrame" && isNarrow());
+      Object.keys(iframes).forEach(fitFrame);
+    }, 150);
   });
 })();
 </script>
