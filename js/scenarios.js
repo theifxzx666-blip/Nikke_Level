@@ -57,10 +57,8 @@
     return result;
   }
 
-  function futureMainStoryScenario(snapshot) {
-    if (!snapshot.main_story_open_at || !snapshot.future_base_level) {
-      return { available: false, reason: "未填写新主线开放时间或未来基地收益" };
-    }
+  /* 开放日当天的快照：裸资源按等待期自然积累（当前收益 + 每日歼灭），收益切换到新基地收益 */
+  function futureSnapshot(snapshot) {
     var openAt = new Date(snapshot.main_story_open_at.getTime());
     var start = new Date(snapshot.recorded_at.getTime());
     var natural = C.incomeBetween(snapshot, start, openAt);
@@ -72,8 +70,35 @@
     var future = JSON.parse(JSON.stringify(snapshot));
     future.bare_resources = addRes(snapshot.bare_resources, natural);
     future.income_per_hour = snapshot.future_income_per_hour || snapshot.income_per_hour;
+    return future;
+  }
+
+  function futureMainStoryScenario(snapshot) {
+    if (!snapshot.main_story_open_at || !snapshot.future_base_level) {
+      return { available: false, reason: "未填写新主线开放时间或未来基地收益" };
+    }
+    var openAt = new Date(snapshot.main_story_open_at.getTime());
+    var future = futureSnapshot(snapshot);
     var fixed = immediateLevels(future, true, true, future.income_per_hour);
-    return { available: true, open_at: C.isoMinutes(openAt), natural_before_open: natural, projected_bare: future.bare_resources, result: fixed };
+    return {
+      available: true, open_at: C.isoMinutes(openAt),
+      natural_before_open: subRes(future.bare_resources, snapshot.bare_resources),
+      projected_bare: future.bare_resources, result: fixed,
+    };
+  }
+
+  /* 指定目标等级的「开够即停」自选箱方案
+     mode = "now"（当前基地收益）| "future"（开放日新基地收益 + 等待期自然积累）
+     与 immediateLevels 同口径：可用资源 = 裸资源 + 推图收益 + 固定小时箱 */
+  function planForTarget(snapshot, targetLevel, mode) {
+    var snap2 = snapshot;
+    if (mode === "future") {
+      if (!snapshot.main_story_open_at || !snapshot.future_base_level) return null;
+      snap2 = futureSnapshot(snapshot);
+    }
+    var steps = Math.max(0, targetLevel - snapshot.current_sync_level);
+    var base = addRes(snap2.bare_resources, snapshot.stage_clear_resources || {});
+    return B.optimizeSelectableForTarget(snap2, base, steps, snap2.income_per_hour);
   }
 
   function effectiveRate(snapshot, when) {
@@ -219,26 +244,11 @@
     });
     // 按「目标同步器等级」优化的自选箱分配（当前收益）：到 target 需要怎么开箱
     var targetSteps = Math.max(0, snapshot.target_sync_level - snapshot.current_sync_level);
-    var targetPlanNow = null;
-    if (targetSteps > 0) {
-      targetPlanNow = B.optimizeSelectableForTarget(snapshot, bareRes, targetSteps, snapshot.income_per_hour);
-    }
+    var targetPlanNow = targetSteps > 0 ? planForTarget(snapshot, snapshot.target_sync_level, "now") : null;
     // 按「目标同步器等级」优化的自选箱分配（新主线开放后，未来收益 + 等待期自然积累）
-    var targetPlanFuture = null;
-    var futureIncome = snapshot.future_income_per_hour || snapshot.income_per_hour;
-    if (targetSteps > 0 && future.available) {
-      var openAt = new Date(snapshot.main_story_open_at.getTime());
-      var startAt = new Date(snapshot.recorded_at.getTime());
-      var futSnap = JSON.parse(JSON.stringify(snapshot));
-      var natural2 = C.incomeBetween(snapshot, startAt, openAt);
-      var wHours = snapshot.daily_wipeout_count * snapshot.wipeout_hours_each;
-      var d2 = Math.max(0, Math.round((openAt.getTime() - startAt.getTime()) / 86400000));
-      RESOURCES.forEach(function (r) { natural2[r] += (snapshot.income_per_hour[r] || 0.0) * wHours * d2; });
-      futSnap.bare_resources = addRes(snapshot.bare_resources, natural2);
-      futSnap.income_per_hour = futureIncome;
-      targetPlanFuture = B.optimizeSelectableForTarget(futSnap, futSnap.bare_resources, targetSteps, futSnap.income_per_hour);
-    }
+    var targetPlanFuture = (targetSteps > 0 && future.available) ? planForTarget(snapshot, snapshot.target_sync_level, "future") : null;
     // 各类资源最大等级（开启后 / future 三档）：按未来收益 + 等待期自然积累
+    var futureIncome = snapshot.future_income_per_hour || snapshot.income_per_hour;
     if (future.available) {
       var fBare = addRes(future.projected_bare, snapshot.stage_clear_resources || {});
       var fFixed = addRes(fBare, B.fixedBoxResources(snapshot, futureIncome));
@@ -282,7 +292,9 @@
   global.NikkeScenarios = {
     noBoxToTarget: noBoxToTarget,
     immediateLevels: immediateLevels,
+    futureSnapshot: futureSnapshot,
     futureMainStoryScenario: futureMainStoryScenario,
+    planForTarget: planForTarget,
     scenarioF: scenarioF,
     naturalToTarget: naturalToTarget,
     evaluate: evaluate,

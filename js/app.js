@@ -701,10 +701,12 @@
       });
       return { days: "0", date: immediate, plan: "固定小时箱按需开启 " + n + " 个即可达成（无需开自选箱）", fixedNeed: need.used || {} };
     }
-    // ③ 全箱梭哈可达成：固定箱全部 + 挑战者优先平替（不足再开自选箱）
+    // ③ 全箱梭哈可达成：按「当前正在渲染的这个目标等级」现算开够即停方案
+    //   （此前误用 target_selectable_* —— 那是按「目标同步器等级」预计算的，导致「后续追求目标等级」显示的是别个目标的方案）
     if (maxLv >= tgt) {
-      var plan = future ? result.target_selectable_future : result.target_selectable_now;
-      return { days: "0", date: immediate, plan: boxPlanText(plan ? plan.selectable : [], true) };
+      var plan = S.planForTarget(snap, tgt, future ? "future" : "now");
+      var arr = plan ? plan.selectable : null;
+      return { days: "0", date: immediate, plan: boxPlanText(arr, true), selectablePlan: arr };
     }
     // ④ 全资源投入也无法达成
     var gap = tgt - maxLv;
@@ -769,9 +771,15 @@
           b.appendChild(fixedPlanTable(np.fixedNeed));
           if (np.plan) b.appendChild(el("div", np.plan, "caption"));
         } else {
-          var sel = (result.target_selectable_now || {}).selectable || null;
+          var sel = np.selectablePlan;
           var hasUsed = sel && sel.some(function (p) { return p.used > 0; });
-          if (hasUsed) b.appendChild(selectableBoxTable(sel));
+          if (hasUsed) {
+            b.appendChild(el("div", "开箱方案（固定小时箱全部使用，自选箱按下表逐箱开启）：", "sb-plan"));
+            b.appendChild(selectableBoxTable(sel));
+          } else if (np.plan) {
+            // 一个自选箱都不用开：说明原因，不留空白
+            b.appendChild(el("div", np.plan, "sb-text"));
+          }
         }
       } else {
         // 现状不可达但未来可达：保留「开放日（预期日期）可达」+ 表格
@@ -781,9 +789,14 @@
           b.appendChild(fixedPlanTable(fp.fixedNeed));
           if (fp.plan) b.appendChild(el("div", fp.plan, "caption"));
         } else {
-          var fsel = (result.target_selectable_future || {}).selectable || null;
+          var fsel = fp ? fp.selectablePlan : null;
           var fUsed = fsel && fsel.some(function (p) { return p.used > 0; });
-          if (fUsed) b.appendChild(selectableBoxTable(fsel));
+          if (fUsed) {
+            b.appendChild(el("div", "开箱方案（等新主线开放后，按新基地收益逐箱开启）：", "sb-plan"));
+            b.appendChild(selectableBoxTable(fsel));
+          } else if (fp && fp.plan) {
+            b.appendChild(el("div", fp.plan, "sb-text"));
+          }
         }
       }
       wrap.appendChild(b);
@@ -932,11 +945,9 @@
 
     // 全箱梭哈口径：现状 / 新主线开放后 的最高等级与配套方案
     var nowLv = result.selectable.level;
-    var nowPlan = (result.target_selectable_now || {}).selectable || null;
     var fut = result.future_main_story;
     var hasFut = !!(fut && fut.available && fut.result);
     var futLv = hasFut ? fut.result.level : null;
-    var futPlan = hasFut ? (result.target_selectable_future || {}).selectable || null : null;
 
     // Block ① 现状（当前基地 · 直接全箱梭哈）
     var b1 = el("div", "", "summary-block");
@@ -967,13 +978,16 @@
       if (diff > 0) big2 += "（较现状多升 <b>" + diff + "</b> 级）";
       if (futLv >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
       b2.appendChild(el("div", big2, "sb-big"));
-      var fsell = (result.target_selectable_future || {}).selectable || null;
+      // 与 Block① 对称：取「开放日全箱梭哈到该最高等级」的真实逐箱分配
+      //   （此前误用 target_selectable_future —— 那是为「达成目标等级」优化的方案，目标被裸资源+固定箱满足时会是空表）
+      var futPlanNode = (fut.result && fut.result.selectable) || null;
+      var fsell = futPlanNode ? (Array.isArray(futPlanNode) ? futPlanNode : futPlanNode.selectable) : null;
       var fSellUsed = fsell && fsell.some(function (p) { return p.used > 0; });
       if (fsell && fSellUsed) {
         b2.appendChild(el("div", "开箱方案（等新主线开放后，按新基地收益逐箱开启）：", "sb-plan"));
         b2.appendChild(selectableBoxTable(fsell));
       } else {
-        b2.appendChild(el("div", "未来方案暂无自选箱分配，可先按现状梭哈，或开放日后重算。", "sb-text"));
+        b2.appendChild(el("div", "无需开启自选箱（等待期自然积累 + 固定小时箱已足够全箱梭哈到该等级）。", "sb-text"));
       }
       var fIn = snap.future_income_per_hour || {};
       var hasF = (fIn.credit || 0) > 0 || (fIn.battle_data || 0) > 0 || (fIn.core_dust || 0) > 0;
@@ -1413,7 +1427,7 @@
           chs.forEach(function (ch) { fmap[ch] = O.stagesInChapter(ch, mode); });
         });
         // 阶梯消耗表（带版本参数，避开 Pages/浏览器缓存导致档位表不生效）
-        return fetch("data/level_cost_table.json?v=20260917").then(function (r) { return r.json(); }).then(function (d) {
+        return fetch("data/level_cost_table.json?v=20260917b").then(function (r) { return r.json(); }).then(function (d) {
           if (d && d.kind === "tiered_per_level") COST_TIERS = d.tiers || [];
         }).catch(function () { COST_TIERS = []; });
       })
