@@ -32,6 +32,7 @@
   <button class="app-nav-btn active" data-app="appPlanner"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/9140007.webp" alt="">资源规划计算器</button>
   <button class="app-nav-btn" data-app="appModStats"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/7080001.webp" alt="">定制模组统计</button>
 <button class="app-nav-btn" data-app="appRerollStats"><img class="app-nav-icon" src="https://static.dotgg.gg/nikke/items/3221001.webp" alt="">洗词条计算器</button>
+<button class="app-nav-btn" data-app="appAvatarFrame"><img class="app-nav-icon" src="assets/tab_avatar.png" alt="">头像预览</button>
 </nav>
 
 <section id="appPlanner" class="app-view active">
@@ -211,6 +212,8 @@
 
 <section id="appRerollStats" class="app-view"></section>
 
+<section id="appAvatarFrame" class="app-view"></section>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="js/core.js?v=20260917"></script>
 <script src="js/outpost.js?v=20260917"></script>
@@ -220,11 +223,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="js/app.js?v=20260917"></script>
 <script>
-/* 顶层功能切换：资源规划计算器 ⇄ 定制模组统计 ⇄ 洗词条计算器（iframe 懒加载，仅在首次打开时挂载） */
+/* 顶层功能切换：资源规划计算器 ⇄ 定制模组统计 ⇄ 洗词条计算器 ⇄ 头像预览（iframe 懒加载，仅在首次打开时挂载） */
 (function () {
   var frames = {
     appModStats: { id: "modStatsFrame", src: "mod_stats.html", title: "定制模组统计" },
-    appRerollStats: { id: "rerollStatsFrame", src: "reroll_calculator.html", title: "洗词条计算器" }
+    appRerollStats: { id: "rerollStatsFrame", src: "reroll_calculator.html", title: "洗词条计算器" },
+    appAvatarFrame: { id: "avatarFrame", src: "avatar/index.html", title: "头像预览" }
   };
   var iframes = {};
   function switchTo(key) {

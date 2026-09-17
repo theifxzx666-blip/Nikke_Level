@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NIKKE 头像预览</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>NIKKE 头像预览</h1>
+  <div class="topbar-right">
+    <span id="stat" class="stat"></span>
+    <button id="btn-export" class="btn primary">导出 PNG</button>
+  </div>
+</header>
+
+<div class="warn" id="warn" hidden></div>
+
+<main>
+  <!-- 预览舞台 -->
+  <section class="stage">
+    <div class="preview-wrap">
+      <div class="checker" id="bg"></div>
+      <canvas id="cv" width="512" height="512"></canvas>
+      <div class="loading" id="loading" hidden>加载中…</div>
+    </div>
+
+    <div class="stage-info">
+      <div class="row"><span class="k">角色</span><span class="v" id="cur-avatar">未选择</span></div>
+      <div class="row"><span class="k">头像框</span><span class="v" id="cur-frame">无框（白环）</span></div>
+    </div>
+
+    <div class="stage-actions">
+      <div class="seg" id="seg-bg">
+        <button data-bg="checker" class="on">棋盘</button>
+        <button data-bg="white">白底</button>
+        <button data-bg="black">黑底</button>
+      </div>
+      <button id="btn-none" class="btn ghost">移除头像框</button>
+      <button id="btn-random" class="btn ghost">随机一组</button>
+    </div>
+  </section>
+
+  <!-- 选择面板 -->
+  <section class="picker">
+    <div class="tabs">
+      <button class="tab on" data-tab="avatar">角色头像<em id="n-avatar"></em></button>
+      <button class="tab" data-tab="frame">头像框<em id="n-frame"></em></button>
+    </div>
+    <div class="searchbar">
+      <input type="search" id="q" placeholder="搜索编号 / 名称，例如 c100、luxuriousspider">
+      <button id="btn-clear" class="btn tiny">清空</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+</main>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
