@@ -539,8 +539,17 @@ body.avatar-full .app-nav-icon { width: 18px; height: 18px; vertical-align: -4px
 body.avatar-full #appAvatarFrame {
   flex: 1 1 auto; min-height: 0; max-width: none;
   display: flex; flex-direction: column; padding: 0 8px 8px;
+  /* 关键：基础规则的 margin:0 auto 在 flex 列容器里会让 auto 外边距吸收交叉轴空间、
+     禁用 stretch → section 收缩到 fit-content（=iframe 默认宽 300px），子页因此永远命中窄屏布局。
+     显式 width:100% 恢复满宽（>1480 的屏由 max-width + auto 边距居中） */
+  width: 100%; margin: 0 auto;
 }
 body.avatar-full #avatarFrame { flex: 1 1 auto; min-height: 0; height: 100%; }
+/* PC（>820px）全屏工具模式排版微调：导航居中收窄，工具区两侧留呼吸边距（窄屏仍用上面的全宽规则） */
+@media (min-width: 821px) {
+  body.avatar-full .app-nav { max-width: 880px; margin: 10px auto 8px; }
+  body.avatar-full #appAvatarFrame { padding: 0 20px 14px; }
+}
 .share-code[readonly], .share-link[readonly] { color: #445; }
 .share-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
 .share-row .btn { flex: 0 0 auto; }

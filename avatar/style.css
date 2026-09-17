@@ -159,6 +159,8 @@ main{
   display:grid;gap:8px;
   grid-template-columns:repeat(auto-fill,minmax(78px,1fr));
   align-content:start;
+  /* 滚轮/触摸到列表边缘时不把滚动链给外层（PC 锁视口后外层本就不可滚，防患于未然） */
+  overscroll-behavior:contain;
 }
 .cell{
   position:relative;border:1px solid var(--line);border-radius:8px;
@@ -192,6 +194,13 @@ main{
    「父页不锁高、本页却 overflow:hidden」→ 内容被裁 + 列表滚不动。
    有了显式标记后，只在真正锁高时把滚动下沉到列表内部。 */
 html.locked,html.locked body{height:100%;overflow:hidden;overscroll-behavior:none}
+
+/* ---------- PC（>900px）：预览组在左栏内垂直居中，消除底部空白 ----------
+   用 auto margin 居中：内容超高时 auto margin 归零，不会像 justify-content 那样裁掉顶部 */
+@media(min-width:901px){
+  .stage > .preview-wrap{margin-top:auto}
+  .stage > .stage-actions{margin-bottom:auto}
+}
 
 /* ---------- 窄屏（手机）：预览常驻顶部 + 列表内部滚动，选中即刻可见变化 ---------- */
 @media(max-width:900px){

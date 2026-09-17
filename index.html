@@ -6,7 +6,7 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="stylesheet" href="css/style.css?v=20260917c"> 
+<link rel="stylesheet" href="css/style.css?v=20260918a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -231,7 +231,9 @@
     appAvatarFrame: { id: "avatarFrame", src: "avatar/index.html", title: "头像预览" }
   };
   var iframes = {};
-  // 头像预览在窄屏进入「全屏工具模式」：隐藏 hero、父页不滚动，滚动只发生在列表里
+  // 头像预览进入「全屏工具模式」：隐藏 hero、父页不滚动，滚动只发生在列表里。
+  // 宽窄屏统一启用：PC 上同样是工具占满视口、左右双栏等高、滚轮在列表内翻页
+  // （此前 PC 走 scrollHeight 自适应，子页是 height:100% 的封闭布局，高度永远算不准 → 底部不对/两栏不等高）
   function setAvatarFull(on) {
     on = !!on;
     var was = document.body.classList.contains("avatar-full");
@@ -253,7 +255,7 @@
     // 顶部 hero 工具按钮（保存/模板/导入/跨设备同步）仅对资源规划计算器有效，切到子工具页时隐藏
     var toolbar = document.querySelector(".hero-toolbar");
     if (toolbar) toolbar.style.display = key === "appPlanner" ? "" : "none";
-    setAvatarFull(key === "appAvatarFrame" && isNarrow());
+    setAvatarFull(key === "appAvatarFrame");
     var cfg = frames[key];
     if (cfg && !iframes[key]) {
       var iframe = document.createElement("iframe");
@@ -266,19 +268,16 @@
     }
   }
   // 子工具 iframe 高度随内容完整撑开：全部内容平铺展示，外层页面整页滚动，不截断、不内部滚动
-  // 头像预览锁高阈值：子页窄屏断点是 900，而宽屏时 iframe 左右各有 20px 内边距，
-  // 所以窗口 940 以内 iframe 都会落进子页的窄屏区 —— 取 940 才能与子页判定对齐，不留夹缝
-  function isNarrow() { return window.matchMedia("(max-width: 940px)").matches; }
+  // （头像预览例外：始终走锁视口高的全屏工具模式，不适用本逻辑）
   function fitFrame(key) {
     var iframe = iframes[key];
     try {
       var doc = iframe.contentDocument;
       if (!doc || !iframe.isConnected) return;
       var root = doc.documentElement;
-      // 头像预览：窄屏下父页锁定视口高、由子页列表内部滚动（预览与列表同屏，选中即刻可见）。
-      // 用 <html class="locked"> 显式告知子页「高度已被锁定」，比让子页按宽度猜断点可靠：
-      // 父页断点 820 / 子页断点 900，夹缝区若靠宽度判断会出现「父页没锁高、子页却已 overflow:hidden」。
-      var lock = key === "appAvatarFrame" && isNarrow();
+      // 头像预览：宽窄屏一律锁视口高（全屏工具模式），由子页列表内部滚动。
+      // 用 <html class="locked"> 显式告知子页「高度已被锁定」，比让子页按宽度猜断点可靠。
+      var lock = key === "appAvatarFrame";
       if (root) root.classList.toggle("locked", lock);
       if (lock) {
         iframe.style.height = "";
@@ -315,7 +314,7 @@
     clearTimeout(rsTimer);
     rsTimer = setTimeout(function () {
       var act = document.querySelector(".app-nav-btn.active");
-      setAvatarFull(!!act && act.dataset.app === "appAvatarFrame" && isNarrow());
+      setAvatarFull(!!act && act.dataset.app === "appAvatarFrame");
       Object.keys(iframes).forEach(fitFrame);
     }, 150);
   });
