@@ -729,7 +729,7 @@
     cards.appendChild(card(fmtDays(result.no_box.days) + " 天", "自然升级（不开箱）", true));
     box.appendChild(cards);
     var capLines = [
-      "① 当前同步器等级：当前等级（" + snap.current_sync_level + "）；仅用现有资源（含推图·不开箱）还可升到 " + result.bare.level + "。",
+      "① 当前同步器等级：当前等级（" + snap.current_sync_level + "）；仅用现有资源（不含新主线推图收益·不开箱）还可升到 " + result.bare.level + "。",
       "② 仅使用固定小时箱：只开固定小时箱能达到的等级（已计入成长套组）；",
       "③ 全箱梭哈：固定小时箱 + 自选箱全部使用能达到的等级；",
       "④ 自然升级（不开箱）：完全不开箱，" + fmtDays(result.no_box.days) + " 天到目标 " + result.no_box.target + "。",
@@ -829,7 +829,7 @@
       prRows.push([resLabels[r], "同步器 " + before, after !== null ? "同步器 " + after : "-"]);
     });
     box.appendChild(table(["资源", "新主线开启前最大等级", "新主线开启后最大等级"], prRows));
-    box.appendChild(el("p", "以上为「固定小时箱 + 资源自选箱」（全箱梭哈）口径下，三类资源各自单独计算能升到的最大等级（只看单资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。", "caption"));
+    box.appendChild(el("p", "以上为「固定小时箱 + 资源自选箱」（全箱梭哈）口径下，三类资源各自单独计算能升到的最大等级（只看单资源）；开启前不含「预计新主线推图收益」（属新主线开放后的一次性资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。", "caption"));
 
     // 3. 固定小时箱收益折算（含差值换算）
     box.appendChild(el("h3", "固定小时箱收益折算（开主线前 vs 开主线后）", "sec"));
@@ -858,7 +858,8 @@
       });
       box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], cmpRows));
       var levelDiff = result.future_main_story.result.level - result.selectable.level;
-      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + localDateStr(result.future_main_story.open_at) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
+      var bgExtra = result.future_main_story.box_gain_vs_now || 0;
+      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + localDateStr(result.future_main_story.open_at) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级：其中开箱收益对比 +" + bgExtra + " 级，其余 " + Math.max(0, levelDiff - bgExtra) + " 级为等待期自然积累）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
       var hasFutIncome2 = (futIncome2.credit || 0) > 0 || (futIncome2.battle_data || 0) > 0 || (futIncome2.core_dust || 0) > 0;
       if (!hasFutIncome2) {
         box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
@@ -951,7 +952,7 @@
 
     // Block ① 现状（当前基地 · 直接全箱梭哈）
     var b1 = el("div", "", "summary-block");
-    b1.appendChild(el("div", "① 现状（当前基地 · 直接全箱梭哈）", "sb-head"));
+    b1.appendChild(el("div", "① 现状（当前基地等级 · 直接全箱梭哈）", "sb-head"));
     var big1 = "全箱梭哈最高可到 <b>同步器 " + nowLv + "</b>";
     if (nowLv >= target) big1 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
     else big1 += "（目标 " + target + " 还差 " + Math.max(0, target - nowLv) + " 级）";
@@ -975,7 +976,13 @@
       var date = fut.open_at ? localDateStr(fut.open_at) : "";
       var diff = futLv - nowLv;
       var big2 = "开放日（" + date + "）全箱梭哈最高可到 <b>同步器 " + futLv + "</b>";
-      if (diff > 0) big2 += "（较现状多升 <b>" + diff + "</b> 级）";
+      if (diff > 0) {
+        // 「较现状多升」只计开箱收益对比（同一资源底盘下，箱子按新基地收益折算多出的等级）；
+        // 等待期自然积累与是否开箱无关，单独列出
+        var boxGain = fut.box_gain_vs_now || 0;
+        var waitGain = Math.max(0, diff - boxGain);
+        big2 += "（开箱收益对比：较现状多升 <b>" + boxGain + "</b> 级；另有等待期自然积累 " + waitGain + " 级）";
+      }
       if (futLv >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
       b2.appendChild(el("div", big2, "sb-big"));
       // 与 Block① 对称：取「开放日全箱梭哈到该最高等级」的真实逐箱分配
@@ -1004,7 +1011,8 @@
     if (hasFut) {
       var diff3 = futLv - nowLv;
       if (diff3 > 0) {
-        text3 = "💰 <b>建议等新主线开放后再全箱梭哈</b>：现在梭哈到 <b>同步器 " + nowLv + "</b>；等 " + date + " 再梭哈可到 <b>同步器 " + futLv + "</b>，多 <b>" + diff3 + "</b> 级。";
+        var bg3 = fut.box_gain_vs_now || 0;
+        text3 = "💰 <b>建议等新主线开放后再全箱梭哈</b>：现在梭哈到 <b>同步器 " + nowLv + "</b>；等 " + date + " 再梭哈可到 <b>同步器 " + futLv + "</b>，多 <b>" + diff3 + "</b> 级（其中开箱收益对比 +" + bg3 + " 级，其余 " + Math.max(0, diff3 - bg3) + " 级为等待期自然积累）。";
       } else {
         text3 = "现在全箱梭哈可到 <b>同步器 " + nowLv + "</b>；等新主线开放后再梭哈可到 <b>同步器 " + futLv + "</b>（收益相当，可立即梭哈）。";
       }

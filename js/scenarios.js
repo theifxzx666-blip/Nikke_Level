@@ -41,7 +41,21 @@
     var steps = C.affordableLevels(resources, snapshot, snapshot.current_sync_level);
     var result = { level: snapshot.current_sync_level + steps, steps: steps, resources_before_selectable: resources, fixed: fixed, selectable: null };
     if (includeSelectable) {
-      var low = steps + 1, high = steps + 60;
+      // 二分上界：按「所有自选箱各自取最优单资源价值」的松弛估计动态确定，
+      // 松弛值 ≥ 真实最优，避免箱量很大时被固定 +60 截断（此前 high = steps + 60 是硬上限）
+      var pool = { credit: resources.credit, battle_data: resources.battle_data, core_dust: resources.core_dust };
+      (snapshot.selectable_boxes || []).forEach(function (b) {
+        if (!b.options || !b.options.length) return;
+        RESOURCES.forEach(function (r) {
+          var best = 0;
+          b.options.forEach(function (opt) {
+            var v = (opt.rewards && opt.rewards[r]) || 0;
+            best = Math.max(best, opt.mode === "units" ? v : v * (incomePerHour[r] || 0));
+          });
+          pool[r] += best * b.quantity;
+        });
+      });
+      var low = steps + 1, high = Math.max(steps + 1, C.affordableLevels(pool, snapshot, snapshot.current_sync_level));
       while (low <= high) {
         var mid = Math.floor((low + high) / 2);
         var plan = B.optimizeSelectableForTarget(snapshot, addRes(snapshot.bare_resources, snapshot.stage_clear_resources || {}), mid, incomePerHour);
@@ -80,16 +94,27 @@
     var openAt = new Date(snapshot.main_story_open_at.getTime());
     var future = futureSnapshot(snapshot);
     var fixed = immediateLevels(future, true, true, future.income_per_hour);
+    // 开箱收益对比：同一资源底盘（现状裸资源，不含推图收益与等待期积累）下，
+    // 箱子按新基地收益 vs 当前收益折算的等级差 —— 只反映「箱子更值钱」这部分，
+    // 不含等待期自然积累（那部分与是否开箱无关）
+    var boxGain = 0;
+    if (snapshot.future_income_per_hour) {
+      var baseSnap = Object.assign({}, snapshot, { stage_clear_resources: C.zeroRes() });
+      var lvNew = immediateLevels(baseSnap, true, true, snapshot.future_income_per_hour).level;
+      var lvOld = immediateLevels(baseSnap, true, true, snapshot.income_per_hour).level;
+      boxGain = Math.max(0, lvNew - lvOld);
+    }
     return {
       available: true, open_at: C.isoMinutes(openAt),
       natural_before_open: subRes(future.bare_resources, snapshot.bare_resources),
       projected_bare: future.bare_resources, result: fixed,
+      box_gain_vs_now: boxGain,
     };
   }
 
   /* 指定目标等级的「开够即停」自选箱方案
-     mode = "now"（当前基地收益）| "future"（开放日新基地收益 + 等待期自然积累）
-     与 immediateLevels 同口径：可用资源 = 裸资源 + 推图收益 + 固定小时箱 */
+     mode = "now"（当前基地收益，不含推图收益）| "future"（开放日新基地收益 + 等待期自然积累 + 推图收益）
+     与 immediateLevels 同口径：可用资源 = 裸资源 + 固定小时箱 */
   function planForTarget(snapshot, targetLevel, mode) {
     var snap2 = snapshot;
     if (mode === "future") {
@@ -211,14 +236,18 @@
   }
 
   function evaluate(snapshot) {
-    var noBox = noBoxToTarget(snapshot, snapshot.target_sync_level);
-    var bare = immediateLevels(snapshot);
-    var fixed = immediateLevels(snapshot, true);
-    var selectable = immediateLevels(snapshot, true, true);
-    var future = futureMainStoryScenario(snapshot);
+    // 「预计新主线推图收益」是新主线开放后才拿得到的一次性资源：
+    // 现状口径（不开箱 / 仅固定箱 / 全箱梭哈）一律不计入；新主线（future）口径保留
     var stage = snapshot.stage_clear_resources || {};
-    var bareRes = addRes(snapshot.bare_resources, stage);
-    var fixedRes = addRes(bareRes, B.fixedBoxResources(snapshot, snapshot.income_per_hour));
+    var hasStage = RESOURCES.some(function (r) { return (stage[r] || 0) > 1e-9; });
+    var snapNow = hasStage ? Object.assign({}, snapshot, { stage_clear_resources: C.zeroRes() }) : snapshot;
+    var noBox = noBoxToTarget(snapNow, snapshot.target_sync_level);
+    var bare = immediateLevels(snapNow);
+    var fixed = immediateLevels(snapNow, true);
+    var selectable = immediateLevels(snapNow, true, true);
+    var future = futureMainStoryScenario(snapshot);
+    var bareRes = addRes(snapNow.bare_resources, snapNow.stage_clear_resources || {});
+    var fixedRes = addRes(bareRes, B.fixedBoxResources(snapNow, snapshot.income_per_hour));
     var selRes = {};
     RESOURCES.forEach(function (r) {
       var rv = fixedRes[r] || 0.0;
@@ -244,7 +273,7 @@
     });
     // 按「目标同步器等级」优化的自选箱分配（当前收益）：到 target 需要怎么开箱
     var targetSteps = Math.max(0, snapshot.target_sync_level - snapshot.current_sync_level);
-    var targetPlanNow = targetSteps > 0 ? planForTarget(snapshot, snapshot.target_sync_level, "now") : null;
+    var targetPlanNow = targetSteps > 0 ? planForTarget(snapNow, snapshot.target_sync_level, "now") : null;
     // 按「目标同步器等级」优化的自选箱分配（新主线开放后，未来收益 + 等待期自然积累）
     var targetPlanFuture = (targetSteps > 0 && future.available) ? planForTarget(snapshot, snapshot.target_sync_level, "future") : null;
     // 各类资源最大等级（开启后 / future 三档）：按未来收益 + 等待期自然积累
@@ -279,9 +308,9 @@
     return {
       no_box: noBox, bare: bare, fixed: fixed, selectable: selectable,
       future_main_story: future,
-      scenario_f: scenarioF(snapshot, snapshot.alternate_target_level),
-      scenario_f_target: scenarioF(snapshot, snapshot.target_sync_level),
-      scenario_f_alt: scenarioF(snapshot, snapshot.alternate_target_level),
+      scenario_f: scenarioF(snapNow, snapshot.alternate_target_level),
+      scenario_f_target: scenarioF(snapNow, snapshot.target_sync_level),
+      scenario_f_alt: scenarioF(snapNow, snapshot.alternate_target_level),
       per_resource: perResource,
       // 目标等级口径的自选箱分配（当前收益 / 新主线后）
       target_selectable_now: targetPlanNow,
