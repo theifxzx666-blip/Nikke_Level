@@ -1,8 +1,22 @@
 {
-  "version": 1,
+  "version": 2,
   "source": "user_excel_屯箱子计算器",
   "kind": "tiered_per_level",
+  "unit": "credit/battle_data 单位 K（×1000 后为每级实值）；core_dust 单位 个",
+  "tier_source_note": "301-750 共 9 档取自用户 Excel 计算器（原表按 K 取整，与权威表偏差均 < 0.03%）；201/251/751/801 四档于 2026-09-17 补齐，取自 Prydwen level-requirements 权威分档表",
   "tiers": [
+    {
+      "level": 201,
+      "credit": 1694.2,
+      "battle_data": 20944.6,
+      "core_dust": 10000.0
+    },
+    {
+      "level": 251,
+      "credit": 3134.0,
+      "battle_data": 39883.6,
+      "core_dust": 10000.0
+    },
     {
       "level": 301,
       "credit": 3809.0,
@@ -56,6 +70,18 @@
       "credit": 10422.0,
       "battle_data": 95082.0,
       "core_dust": 18000.0
+    },
+    {
+      "level": 751,
+      "credit": 10943.967,
+      "battle_data": 100787.538,
+      "core_dust": 19000.0
+    },
+    {
+      "level": 801,
+      "credit": 11491.166,
+      "battle_data": 105826.915,
+      "core_dust": 20000.0
     }
   ],
   "stage_clear_resources": {

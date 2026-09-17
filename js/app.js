@@ -1412,8 +1412,8 @@
           var fmap = mode === "hard" ? state.futureHardStages : state.futureNormalStages;
           chs.forEach(function (ch) { fmap[ch] = O.stagesInChapter(ch, mode); });
         });
-        // 阶梯消耗表
-        return fetch("data/level_cost_table.json").then(function (r) { return r.json(); }).then(function (d) {
+        // 阶梯消耗表（带版本参数，避开 Pages/浏览器缓存导致档位表不生效）
+        return fetch("data/level_cost_table.json?v=20260917").then(function (r) { return r.json(); }).then(function (d) {
           if (d && d.kind === "tiered_per_level") COST_TIERS = d.tiers || [];
         }).catch(function () { COST_TIERS = []; });
       })
