@@ -59,6 +59,8 @@ body{
   border-color:#0f6e56;color:#fff;font-weight:600;
 }
 .btn.primary:hover{background:linear-gradient(180deg,#22b184,#128063)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled:hover{background:linear-gradient(180deg,#1d9e75,#0f6e56);border-color:#0f6e56}
 .btn.ghost{background:transparent;color:var(--dim)}
 .btn.ghost:hover{color:var(--txt)}
 .btn.tiny{padding:5px 10px;font-size:12px}

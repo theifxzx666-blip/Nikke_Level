@@ -18,13 +18,10 @@
   const gridEl = document.getElementById('grid');
   const loadingEl = document.getElementById('loading');
 
-  // 离屏画布：头像做圆形遮罩用（复用以避免每帧新建）
-  const off = document.createElement('canvas');
-  off.width = off.height = SIZE;
-  const octx = off.getContext('2d');
+  // 头像圆形遮罩在 compositeTo 内用 msk 画布完成
 
-  const state = { tab: 'avatar', q: '', filter: { avatar: '全部', frame: '全部' },
-                  avatar: null, frame: null };
+  const state = { tab: 'avatar', q: '', filter: { avatar: '全部', frame: '全部', pendant: '全部' },
+                  avatar: null, frame: null, pendant: null };
 
   /* ---------------- 筛选卡 ----------------
      头像 Tab：按企业（全部/极乐净土/米西利斯/泰特拉/朝圣者/反常/其他）
@@ -39,11 +36,22 @@
     { k: '其他' },
   ];
   const FRAME_CHIPS = ['全部', '动态', '静态', '其他'];
+  const PENDANT_CHIPS = ['全部', '冠军竞技场', '博物馆'];
+
+  function pendantCat(o) {
+    if (o.名称.indexOf('champion_arena') === 0) return '冠军竞技场';
+    if (o.名称.indexOf('icn_soloraid_museum') === 0) return '博物馆';
+    return '其他';
+  }
 
   function chipCount(tab, k) {
     if (tab === 'avatar') {
       if (k === '全部') return D.头像.length;
       return D.头像.filter(o => (o.企业 || '其他') === k).length;
+    }
+    if (tab === 'pendant') {
+      if (k === '全部') return D.挂件.length;
+      return D.挂件.filter(o => pendantCat(o) === k).length;
     }
     if (k === '全部') return D.静态框.length + D.动态框.length;
     if (k === '动态') return D.动态框.filter(o => o.中文名).length;
@@ -57,7 +65,9 @@
     box.innerHTML = '';
     const defs = state.tab === 'avatar'
       ? MFG_CHIPS.map(c => ({ k: c.k, icon: c.icon }))
-      : FRAME_CHIPS.map(k => ({ k }));
+      : state.tab === 'pendant'
+        ? PENDANT_CHIPS.map(k => ({ k }))
+        : FRAME_CHIPS.map(k => ({ k }));
     defs.forEach(d => {
       const b = document.createElement('button');
       b.className = 'chip' + (cur === d.k ? ' on' : '');
@@ -100,20 +110,30 @@
     return cache.get(src);
   }
 
-  /* ---------------- 合成绘制 ---------------- */
-  function paint(frameImg) {
-    ctx.clearRect(0, 0, SIZE, SIZE);
+  /* ---------------- 合成绘制 ----------------
+     层级（自底向上）：头像（圆形遮罩）→ 头像框 → 头像框挂件（顶层，非必选） */
+  const msk = document.createElement('canvas');   // 遮罩画布（任意尺寸复用）
+  const mctx = msk.getContext('2d');
+
+  function compositeTo(g, size, frameImg, pendantImg) {
+    g.clearRect(0, 0, size, size);
     if (state.avatar && state.avatar.img) {
-      octx.globalCompositeOperation = 'source-over';
-      octx.clearRect(0, 0, SIZE, SIZE);
-      octx.drawImage(state.avatar.img, 0, 0, SIZE, SIZE);
-      octx.globalCompositeOperation = 'destination-in';
-      octx.beginPath();
-      octx.arc(SIZE / 2, SIZE / 2, SIZE * CIRCLE / 2, 0, Math.PI * 2);
-      octx.fill();
-      ctx.drawImage(off, 0, 0);
+      mctx.width = mctx.height = size;
+      mctx.globalCompositeOperation = 'source-over';
+      mctx.clearRect(0, 0, size, size);
+      mctx.drawImage(state.avatar.img, 0, 0, size, size);
+      mctx.globalCompositeOperation = 'destination-in';
+      mctx.beginPath();
+      mctx.arc(size / 2, size / 2, size * CIRCLE / 2, 0, Math.PI * 2);
+      mctx.fill();
+      g.drawImage(msk, 0, 0);
     }
-    if (frameImg) ctx.drawImage(frameImg, 0, 0, SIZE, SIZE);
+    if (frameImg) g.drawImage(frameImg, 0, 0, size, size);
+    if (pendantImg) g.drawImage(pendantImg, 0, 0, size, size);
+  }
+
+  function paint(frameImg) {
+    compositeTo(ctx, SIZE, frameImg, state.pendant && state.pendant.img);
   }
 
   let timer = null;
@@ -123,6 +143,7 @@
 
   function repaint() {
     stopPlay();
+    updateGifBtn();
     const f = state.frame;
     if (!f) { paint(null); return; }
     if (f.frames && f.frames.length) {          // 动态框：按游戏逐帧时长循环
@@ -186,9 +207,26 @@
     updateInfo(); markGrid(); repaint();
   }
 
+  async function pickPendant(entry) {        // entry 为 null 表示「无挂件」
+    if (!entry) {
+      state.pendant = null;
+      updateInfo(); markGrid(); repaint();
+      return;
+    }
+    loadingEl.hidden = false;
+    try {
+      state.pendant = { name: entry.名称, zh: entry.中文名 || '',
+                        img: await IMG(ROOT + entry.文件) };
+    } catch (e) { console.warn(e); }
+    loadingEl.hidden = true;
+    updateInfo(); markGrid(); repaint();
+  }
+
   function onPick(o) {
     if (o.kind === 'avatar') pickAvatar(o.raw);
     else if (o.kind === 'none') pickFrame(null);
+    else if (o.kind === 'no-pendant') pickPendant(null);
+    else if (o.kind === 'pendant') pickPendant(o.raw);
     else pickFrame(o);
   }
 
@@ -197,6 +235,12 @@
     if (state.tab === 'avatar') {
       return D.头像.map(o => ({ key: o.名称, label: o.中文名 || label(o.名称), code: label(o.名称),
                                 kind: 'avatar', raw: o, thumb: o.文件 }));
+    }
+    if (state.tab === 'pendant') {
+      const arr = [{ key: '__nopendant__', label: '无挂件', kind: 'no-pendant', thumb: null }];
+      D.挂件.forEach(o => arr.push({ key: o.名称, label: o.中文名 || label(o.名称), code: label(o.名称),
+                                     kind: 'pendant', raw: o, thumb: o.文件 }));
+      return arr;
     }
     const arr = [{ key: '__none__', label: '无框', kind: 'none', thumb: null }];
     D.静态框.forEach(o => arr.push({ key: o.名称, label: o.中文名 || label(o.名称), code: label(o.名称),
@@ -213,6 +257,10 @@
       if (state.tab === 'avatar') {
         return flt === '全部' || (o.raw.企业 || '其他') === flt;
       }
+      if (state.tab === 'pendant') {
+        if (o.kind === 'no-pendant') return flt === '全部';
+        return flt === '全部' || pendantCat(o.raw) === flt;
+      }
       if (o.kind === 'none') return flt === '全部';   // 「无框」只在全部里出现
       if (flt === '动态') return o.kind === 'dynamic' && o.raw.中文名;
       if (flt === '静态') return o.kind === 'static' && o.raw.中文名;
@@ -221,7 +269,7 @@
     });
     const items = q
       ? all.filter(o => (o.key + ' ' + o.label + ' ' + (o.code || '') + ' ' +
-                         (o.raw.中文名 || '') + ' ' + (o.raw.企业 || ''))
+                         (o.raw && o.raw.中文名 || '') + ' ' + (o.raw && o.raw.企业 || ''))
                         .toLowerCase().indexOf(q) >= 0)
       : all;
 
@@ -273,9 +321,10 @@
   }
 
   function markGrid() {
-    const cur = state.tab === 'avatar'
-      ? (state.avatar && state.avatar.item.名称)
-      : (state.frame ? state.frame.name : '__none__');
+    let cur;
+    if (state.tab === 'avatar') cur = state.avatar && state.avatar.item.名称;
+    else if (state.tab === 'pendant') cur = state.pendant ? state.pendant.name : '__nopendant__';
+    else cur = state.frame ? state.frame.name : '__none__';
     Array.prototype.forEach.call(gridEl.children, c => {
       c.classList.toggle('on', !!c.dataset && c.dataset.key === cur);
     });
@@ -290,6 +339,10 @@
     const f = state.frame;
     fEl.textContent = f ? (f.zh || f.name) : '无框（白环）';
     fEl.title = f ? f.name : '';
+    const pEl = document.getElementById('cur-pendant');
+    const p = state.pendant;
+    pEl.textContent = p ? (p.zh || p.name) : '无挂件';
+    pEl.title = p ? p.name : '';
   }
 
   /* ---------------- 交互 ---------------- */
@@ -323,6 +376,8 @@
     const pool = D.静态框.map(o => ({ kind: 'static', raw: o }))
       .concat(D.动态框.map(o => ({ kind: 'dynamic', raw: o })));
     pickFrame(pool[Math.floor(Math.random() * pool.length)]);
+    if (D.挂件.length) pickPendant(D.挂件[Math.floor(Math.random() * D.挂件.length)]);
+    else pickPendant(null);
   };
 
   document.getElementById('seg-bg').onclick = e => {
@@ -333,27 +388,82 @@
     bgEl.className = b.dataset.bg;
   };
 
+  /* ---------------- 导出 ---------------- */
+  function fname(part) {
+    return (part || '').replace(/[\\/:*?"<>|\s]+/g, '_');
+  }
+  function comboName() {
+    const a = state.avatar && state.avatar.item;
+    const f = state.frame;
+    const p = state.pendant;
+    return [
+      a ? (a.中文名 || label(a.名称)) : 'nochar',
+      f ? (f.zh || f.name) : 'noframe',
+      p ? (p.zh || p.name) : null,
+    ].map(fname).join('_');
+  }
+
+  function download(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement('a');
+    el.href = url;
+    el.download = name;
+    document.body.appendChild(el);
+    el.click();
+    el.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
   document.getElementById('btn-export').onclick = () => {
-    const a = (state.avatar && state.avatar.item.名称) || 'nochar';
-    const f = (state.frame && state.frame.name) || 'noframe';
-    cv.toBlob(blob => {
-      const url = URL.createObjectURL(blob);
-      const el = document.createElement('a');
-      el.href = url;
-      el.download = 'nikke_' + a + '_' + f + '.png';
-      document.body.appendChild(el);
-      el.click();
-      el.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }, 'image/png');
+    cv.toBlob(blob => download(blob, 'nikke_' + comboName() + '.png'), 'image/png');
   };
+
+  /* GIF 导出：头像（遮罩）+ 动态框逐帧 + 挂件，按游戏逐帧时长编码 256px 循环 GIF */
+  const gifCv = document.createElement('canvas');
+  gifCv.width = gifCv.height = 256;
+  const gifCtx = gifCv.getContext('2d', { willReadFrequently: true });
+
+  document.getElementById('btn-gif').onclick = async () => {
+    const f = state.frame;
+    const enc = window.gifenc;
+    if (!f || f.kind !== 'dynamic' || !enc) return;
+    const btn = document.getElementById('btn-gif');
+    btn.disabled = true;
+    loadingEl.hidden = false;
+    try {
+      const gif = enc.GIFEncoder();
+      for (let i = 0; i < f.frames.length; i++) {
+        compositeTo(gifCtx, gifCv.width, f.frames[i], state.pendant && state.pendant.img);
+        const { data } = gifCtx.getImageData(0, 0, gifCv.width, gifCv.height);
+        const palette = enc.quantize(data, 256, { format: 'rgb565' });
+        const index = enc.applyPalette(data, palette, 'rgb565');
+        gif.writeFrame(index, gifCv.width, gifCv.height,
+                       { palette: palette, delay: f.durs[i] || 100 });
+      }
+      gif.finish();
+      download(new Blob([gif.bytes()], { type: 'image/gif' }), 'nikke_' + comboName() + '.gif');
+    } catch (e) {
+      console.warn(e);
+      alert('GIF 导出失败：' + e.message);
+    }
+    loadingEl.hidden = true;
+    updateGifBtn();
+  };
+
+  function updateGifBtn() {
+    const f = state.frame;
+    document.getElementById('btn-gif').disabled =
+      !(f && f.kind === 'dynamic' && window.gifenc);
+  }
 
   /* ---------------- 启动 ---------------- */
   document.getElementById('n-avatar').textContent = D.头像.length;
   document.getElementById('n-frame').textContent = D.静态框.length + D.动态框.length;
+  document.getElementById('n-pendant').textContent = (D.挂件 || []).length;
   document.getElementById('stat').textContent =
     '素材源自游戏原始资源 ｜ 头像 ' + D.头像.length +
-    ' ｜ 静态框 ' + D.静态框.length + ' ｜ 动态框 ' + D.动态框.length + ' 组';
+    ' ｜ 静态框 ' + D.静态框.length + ' ｜ 动态框 ' + D.动态框.length +
+    ' 组 ｜ 挂件 ' + (D.挂件 || []).length;
 
   renderChips();
   renderGrid();
@@ -363,7 +473,7 @@
   if (location.protocol === 'file:') {
     const w = document.getElementById('warn');
     w.hidden = false;
-    w.innerHTML = '当前以 <code>file://</code> 打开，预览可用，但「导出 PNG」会被浏览器的跨源策略拦截。'
+    w.innerHTML = '当前以 <code>file://</code> 打开，预览可用，但「导出 PNG / GIF」会被浏览器的跨源策略拦截。'
       + '请在 <code>头像框预览</code> 目录下执行 <code>python -m http.server 8777</code>，'
       + '再访问 <code>http://127.0.0.1:8777/重构方案_v2.0/阶段4_预览工具/工具/index.html</code>。';
   }

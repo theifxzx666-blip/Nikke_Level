@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NIKKE 头像预览</title>
-<link rel="stylesheet" href="style.css?v=20260918d">
+<link rel="stylesheet" href="style.css?v=20260918g">
 </head>
 <body>
 
@@ -13,6 +13,7 @@
   <div class="topbar-right">
     <span id="stat" class="stat"></span>
     <button id="btn-export" class="btn primary">导出 PNG</button>
+    <button id="btn-gif" class="btn primary" disabled title="选择动态头像框后可导出">导出 GIF</button>
   </div>
 </header>
 
@@ -30,6 +31,7 @@
     <div class="stage-info">
       <div class="row"><span class="k">角色</span><span class="v" id="cur-avatar">未选择</span></div>
       <div class="row"><span class="k">头像框</span><span class="v" id="cur-frame">无框（白环）</span></div>
+      <div class="row"><span class="k">挂件</span><span class="v" id="cur-pendant">无挂件</span></div>
     </div>
 
     <div class="stage-actions">
@@ -48,6 +50,7 @@
     <div class="tabs">
       <button class="tab on" data-tab="avatar">角色头像<em id="n-avatar"></em></button>
       <button class="tab" data-tab="frame">头像框<em id="n-frame"></em></button>
+      <button class="tab" data-tab="pendant">挂件<em id="n-pendant"></em></button>
     </div>
     <div class="searchbar">
       <input type="search" id="q" placeholder="搜索编号 / 中文名，例如 c100、拉毗、奢华之蛛">
@@ -58,7 +61,8 @@
   </section>
 </main>
 
-<script src="data.js?v=20260918f"></script>
-<script src="app.js"></script>
+<script src="data.js?v=20260918g"></script>
+<script src="gifenc.js?v=20260918g"></script>
+<script src="app.js?v=20260918g"></script>
 </body>
 </html>
