@@ -379,8 +379,7 @@
     const pool = D.静态框.map(o => ({ kind: 'static', raw: o }))
       .concat(D.动态框.map(o => ({ kind: 'dynamic', raw: o })));
     pickFrame(pool[Math.floor(Math.random() * pool.length)]);
-    if (D.挂件.length) pickPendant(D.挂件[Math.floor(Math.random() * D.挂件.length)]);
-    else pickPendant(null);
+    // 挂件不参与随机：保留用户当前选择（含"无挂件"）
   };
 
   document.getElementById('seg-bg').onclick = e => {
