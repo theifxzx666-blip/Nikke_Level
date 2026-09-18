@@ -531,6 +531,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body.avatar-full {
   height: 100vh; height: 100svh; min-height: 0; overflow: hidden;
   display: flex; flex-direction: column;
+  /* 补偿父页滚动条：其他子工具 Tab 的父页带滚动条（少 15px），头像全屏模式无滚动条，
+     不补齐的话同一视口下头像 Tab 的内容整体比别的 Tab 宽 15px */
+  padding-right: var(--sbw, 15px);
 }
 body.avatar-full .hero-banner { display: none; }
 /* 定制模组统计 / 洗词条计算器同步头像预览的做法：进入子工具页即隐藏顶部 hero 顶图
@@ -542,9 +545,9 @@ body.avatar-full .app-nav-icon { width: 18px; height: 18px; vertical-align: -4px
 body.avatar-full #appAvatarFrame {
   flex: 1 1 auto; min-height: 0;
   display: flex; flex-direction: column; padding: 0 8px 8px;
-  /* 容器定宽：80rem=1280px（Tailwind max-w-7xl / Bootstrap 容器标准档），
-     超宽屏居中、两侧留白，内容不再无限拉宽导致信息贴边截断 */
-  width: 100%; max-width: 80rem; margin: 0 auto;
+  /* 容器定宽与其他子工具 Tab 对齐：共用 #appModStats/#appRerollStats 的 1480px 档
+     （此前 80rem=1280px 比别的 Tab 窄一截，1440 视口下 iframe 1240 vs 1385，肉眼可见不一致） */
+  width: 100%; max-width: 1480px; margin: 0 auto;
   /* 关键：基础规则的 margin:0 auto 在 flex 列容器里会让 auto 外边距吸收交叉轴空间、
      禁用 stretch → section 收缩到 fit-content（=iframe 默认宽 300px），子页因此永远命中窄屏布局。
      显式 width:100% 恢复满宽（定宽后由 max-width + auto 边距居中） */

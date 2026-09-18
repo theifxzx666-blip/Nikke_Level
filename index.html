@@ -6,7 +6,7 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="stylesheet" href="css/style.css?v=20260918e">
+<link rel="stylesheet" href="css/style.css?v=20260918h">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -246,6 +246,12 @@
     }
   }
   function switchTo(key) {
+    // 量滚动条宽度（--sbw 供 avatar-full 补偿用）：必须在滚动条可见的 Tab 下量，
+    // 头像全屏模式 overflow:hidden 无滚动条，量出来恒 0
+    if (key !== "appAvatarFrame") {
+      var sbw = window.innerWidth - document.documentElement.clientWidth;
+      if (sbw > 0) document.documentElement.style.setProperty("--sbw", sbw + "px");
+    }
     document.querySelectorAll(".app-nav-btn").forEach(function (b) {
       b.classList.toggle("active", b.dataset.app === key);
     });

@@ -118,7 +118,10 @@
   function compositeTo(g, size, frameImg, pendantImg) {
     g.clearRect(0, 0, size, size);
     if (state.avatar && state.avatar.img) {
-      mctx.width = mctx.height = size;
+      // 注意：width/height 是 canvas 元素的属性，必须设在 msk 上（设在 ctx 上只是无效扩展属性，
+      // 画布会保持默认 300×150，头像被压扁成左上角一小块 —— R13 线上事故根因）
+      if (msk.width !== size) msk.width = size;
+      if (msk.height !== size) msk.height = size;
       mctx.globalCompositeOperation = 'source-over';
       mctx.clearRect(0, 0, size, size);
       mctx.drawImage(state.avatar.img, 0, 0, size, size);
