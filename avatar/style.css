@@ -158,6 +158,33 @@ main{
 }
 .searchbar input:focus{border-color:var(--primary)}
 
+/* ---------- 筛选卡（chip）----------
+   沿用旧项目 avatar_tool 的交互（单选 chip + 计数），配色对齐浅色主题；
+   企业色点沿用旧项目定稿：极乐 #3aa0ff / 米西利斯 #ff7a45 / 泰特拉 #4fc3f7 /
+   朝圣者 #ffd166 / 反常 #c98bff，企业 Logo 用 GameKee 官方简中企业图标 */
+.chips{
+  display:flex;flex-wrap:wrap;gap:6px;
+  padding:10px 16px;border-bottom:1px solid var(--line);flex:0 0 auto;
+}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  border:1px solid var(--line);border-radius:999px;
+  background:#fff;color:var(--dim);
+  padding:4px 11px;font-size:12px;font-family:inherit;cursor:pointer;transition:.13s;
+}
+.chip:hover{color:var(--txt);border-color:#9fe1cb}
+.chip img{width:17px;height:17px;display:block;border-radius:3px}
+.chip em{font-style:normal;font-size:10.5px;color:#94a09b}
+.chip.on{color:var(--primary-dark);background:var(--soft);border-color:var(--primary);font-weight:600}
+.chip.on em{color:var(--primary-dark)}
+.chip[data-k="极乐净土"].on{border-color:#3aa0ff;background:#eaf4ff;color:#1d6fb8}
+.chip[data-k="米西利斯"].on{border-color:#ff7a45;background:#fff1ea;color:#c2531f}
+.chip[data-k="泰特拉"].on{border-color:#4fc3f7;background:#e8f7fe;color:#1878a6}
+.chip[data-k="朝圣者"].on{border-color:#e5b83a;background:#fdf6e3;color:#8a6a10}
+.chip[data-k="反常"].on{border-color:#c98bff;background:#f5edff;color:#7a3fc0}
+.chip[data-k="其他"].on{border-color:#9aa5a0;background:#eef1f0;color:#4a544f}
+.chip[data-k="动态"].on{border-color:#ff8a3d;background:#fff1e4;color:#b35411}
+
 .grid{
   flex:1 1 auto;min-height:0;overflow:auto;
   padding:14px 16px 24px;
@@ -244,6 +271,10 @@ html.locked,html.locked body{height:100%;overflow:hidden;overscroll-behavior:non
   .picker{flex:1 1 auto;min-height:0}
   .searchbar{padding:9px 12px}
   .searchbar input{font-size:16px}          /* iOS 聚焦时不放大页面 */
+  /* 筛选卡：手机上收紧行高与间距，允许横向滚动换行 */
+  .chips{padding:8px 12px;gap:5px}
+  .chip{padding:3px 9px;font-size:11.5px}
+  .chip img{width:15px;height:15px}
   .grid{
     padding:10px 12px 16px;gap:7px;
     overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
