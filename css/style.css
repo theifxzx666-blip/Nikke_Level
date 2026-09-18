@@ -533,6 +533,9 @@ body.avatar-full {
   display: flex; flex-direction: column;
 }
 body.avatar-full .hero-banner { display: none; }
+/* 定制模组统计 / 洗词条计算器同步头像预览的做法：进入子工具页即隐藏顶部 hero 顶图
+   （顶图及其工具按钮只属于「资源规划计算器」首页） */
+body.tool-mode .hero-banner { display: none; }
 body.avatar-full .app-nav { flex: 0 0 auto; max-width: none; margin: 8px 8px 6px; }
 body.avatar-full .app-nav-btn { padding: 7px 10px; font-size: 12.5px; }
 body.avatar-full .app-nav-icon { width: 18px; height: 18px; vertical-align: -4px; margin-right: 5px; }
@@ -547,9 +550,12 @@ body.avatar-full #appAvatarFrame {
      显式 width:100% 恢复满宽（定宽后由 max-width + auto 边距居中） */
 }
 body.avatar-full #avatarFrame { flex: 1 1 auto; min-height: 0; height: 100%; }
-/* PC（>820px）全屏工具模式排版微调：导航居中收窄，工具区两侧留呼吸边距（窄屏仍用上面的全宽规则） */
+/* PC（>820px）全屏工具模式排版微调：导航居中收窄，工具区两侧留呼吸边距（窄屏仍用上面的全宽规则）
+   注意：body.avatar-full 是 flex 列容器，此处水平 auto 边距会禁用 stretch 使导航收缩成 fit-content，
+   必须显式 width:100%（max-width 只做定宽居中）—— 导航长度因此与其他三个 Tab 一致。
+   窄屏不能加 width:100%（边距 8px 会向右溢出 8px），靠 stretch 自适应即可 */
 @media (min-width: 821px) {
-  body.avatar-full .app-nav { max-width: 880px; margin: 10px auto 8px; }
+  body.avatar-full .app-nav { width: 100%; max-width: 880px; margin: 10px auto 8px; }
   body.avatar-full #appAvatarFrame { padding: 0 20px 14px; }
 }
 .share-code[readonly], .share-link[readonly] { color: #445; }

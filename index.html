@@ -6,7 +6,7 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="stylesheet" href="css/style.css?v=20260918a">
+<link rel="stylesheet" href="css/style.css?v=20260918e">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -252,9 +252,12 @@
     document.querySelectorAll(".app-view").forEach(function (v) {
       v.classList.toggle("active", v.id === key);
     });
-    // 顶部 hero 工具按钮（保存/模板/导入/跨设备同步）仅对资源规划计算器有效，切到子工具页时隐藏
+    // 顶部 hero（顶图 + 工具按钮）仅对资源规划计算器有意义：切到任何子工具页都隐藏顶图，
+    // 与头像预览的全屏工具模式保持一致（tool-mode 类只藏 hero，不改变各页自身的滚动模型）
+    var isPlanner = key === "appPlanner";
     var toolbar = document.querySelector(".hero-toolbar");
-    if (toolbar) toolbar.style.display = key === "appPlanner" ? "" : "none";
+    if (toolbar) toolbar.style.display = isPlanner ? "" : "none";
+    document.body.classList.toggle("tool-mode", !isPlanner);
     setAvatarFull(key === "appAvatarFrame");
     var cfg = frames[key];
     if (cfg && !iframes[key]) {
