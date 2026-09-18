@@ -537,12 +537,14 @@ body.avatar-full .app-nav { flex: 0 0 auto; max-width: none; margin: 8px 8px 6px
 body.avatar-full .app-nav-btn { padding: 7px 10px; font-size: 12.5px; }
 body.avatar-full .app-nav-icon { width: 18px; height: 18px; vertical-align: -4px; margin-right: 5px; }
 body.avatar-full #appAvatarFrame {
-  flex: 1 1 auto; min-height: 0; max-width: none;
+  flex: 1 1 auto; min-height: 0;
   display: flex; flex-direction: column; padding: 0 8px 8px;
+  /* 容器定宽：80rem=1280px（Tailwind max-w-7xl / Bootstrap 容器标准档），
+     超宽屏居中、两侧留白，内容不再无限拉宽导致信息贴边截断 */
+  width: 100%; max-width: 80rem; margin: 0 auto;
   /* 关键：基础规则的 margin:0 auto 在 flex 列容器里会让 auto 外边距吸收交叉轴空间、
      禁用 stretch → section 收缩到 fit-content（=iframe 默认宽 300px），子页因此永远命中窄屏布局。
-     显式 width:100% 恢复满宽（>1480 的屏由 max-width + auto 边距居中） */
-  width: 100%; margin: 0 auto;
+     显式 width:100% 恢复满宽（定宽后由 max-width + auto 边距居中） */
 }
 body.avatar-full #avatarFrame { flex: 1 1 auto; min-height: 0; height: 100%; }
 /* PC（>820px）全屏工具模式排版微调：导航居中收窄，工具区两侧留呼吸边距（窄屏仍用上面的全宽规则） */

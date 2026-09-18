@@ -63,10 +63,11 @@ body{
 .btn.ghost:hover{color:var(--txt)}
 .btn.tiny{padding:5px 10px;font-size:12px}
 
-/* ---------- 主体 ---------- */
+/* ---------- 主体：标准「侧栏 + 内容」仪表盘布局 ----------
+   左栏 clamp(320px,40%,440px)：窄窗口保底 320，宽窗口封顶 440，列表吃剩余全部宽度 */
 main{
   flex:1 1 auto;min-height:0;
-  display:grid;grid-template-columns:minmax(320px,42%) 1fr;
+  display:grid;grid-template-columns:clamp(320px,40%,440px) 1fr;
 }
 
 /* ---------- 提示条 ---------- */
@@ -89,11 +90,10 @@ main{
 }
 .preview-wrap{
   position:relative;align-self:center;
-  /* 三重约束自适应：左栏宽度、440px 上限、窗口高度（矮窗口自动缩小让位给信息与按钮，
-     保证按钮行恒驻可见、左栏不出现裁切）。min() 里套 max() 兜底，极矮窗口不低于 180px；
-     vh 行是旧浏览器回退。 */
-  width:min(100%, 440px, calc(100vh - 230px));
-  width:min(100%, 440px, max(180px, calc(100svh - 230px)));
+  /* 流式尺寸用标准 clamp()：下限 220 / 上限 440，随窗口高度在两者间线性伸缩，
+     保证矮窗口下信息与按钮恒驻可见（子页 svh = 窗口高 − 父页导航约 78px） */
+  width:min(100%, clamp(220px, calc(100vh - 230px), 440px));
+  width:min(100%, clamp(220px, calc(100svh - 230px), 440px));
   aspect-ratio:1/1;
   border-radius:12px;overflow:hidden;
   box-shadow:0 6px 20px rgba(0,0,0,.12),0 0 0 1px var(--line);
@@ -162,7 +162,8 @@ main{
   flex:1 1 auto;min-height:0;overflow:auto;
   padding:14px 16px 24px;
   display:grid;gap:8px;
-  grid-template-columns:repeat(auto-fill,minmax(78px,1fr));
+  /* 流式单元：窄窗口少列大格（而不是挤出一堆小格），宽窗口封顶 104px 不无限放大 */
+  grid-template-columns:repeat(auto-fill,minmax(clamp(84px, 8.5vw, 104px),1fr));
   align-content:start;
   /* 滚轮/触摸到列表边缘时不把滚动链给外层（PC 锁视口后外层本就不可滚，防患于未然） */
   overscroll-behavior:contain;
