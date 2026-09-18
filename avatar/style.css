@@ -89,7 +89,12 @@ main{
 }
 .preview-wrap{
   position:relative;align-self:center;
-  width:min(100%,360px);aspect-ratio:1/1;
+  /* 三重约束自适应：左栏宽度、440px 上限、窗口高度（矮窗口自动缩小让位给信息与按钮，
+     保证按钮行恒驻可见、左栏不出现裁切）。min() 里套 max() 兜底，极矮窗口不低于 180px；
+     vh 行是旧浏览器回退。 */
+  width:min(100%, 440px, calc(100vh - 230px));
+  width:min(100%, 440px, max(180px, calc(100svh - 230px)));
+  aspect-ratio:1/1;
   border-radius:12px;overflow:hidden;
   box-shadow:0 6px 20px rgba(0,0,0,.12),0 0 0 1px var(--line);
 }
@@ -195,11 +200,15 @@ main{
    有了显式标记后，只在真正锁高时把滚动下沉到列表内部。 */
 html.locked,html.locked body{height:100%;overflow:hidden;overscroll-behavior:none}
 
-/* ---------- PC（>900px）：预览组在左栏内垂直居中，消除底部空白 ----------
+/* ---------- PC（>900px）：预览组在左栏内垂直居中 + 信息压单行 ----------
    用 auto margin 居中：内容超高时 auto margin 归零，不会像 justify-content 那样裁掉顶部 */
 @media(min-width:901px){
   .stage > .preview-wrap{margin-top:auto}
   .stage > .stage-actions{margin-bottom:auto}
+  /* 角色/头像框信息并排一行，省竖向空间（长名自动换行不截断） */
+  .stage-info{flex-direction:row;align-items:baseline;gap:18px;padding:9px 14px}
+  .stage-info .k{flex:0 0 auto}
+  .stage-info .v{font-size:12.5px}
 }
 
 /* ---------- 窄屏（手机）：预览常驻顶部 + 列表内部滚动，选中即刻可见变化 ---------- */
