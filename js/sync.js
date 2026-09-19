@@ -126,8 +126,12 @@
   /* ============ 渲染 ============ */
   function render() {
     if (!configured()) {
-      $inner.innerHTML =
-        '<div class="nk-empty">云同步未配置或 SDK 未加载。请在 <code>js/sync.js</code> 顶部填入 Supabase URL 与 anon key，并确认网络可访问。</div>';
+      var noCfg = !SUPABASE_URL || !SUPABASE_ANON_KEY;
+      $inner.innerHTML = '<div class="nk-empty">' +
+        (noCfg
+          ? "云同步功能当前未配置，暂时无法使用云端同步。"
+          : "同步组件加载失败，可能是网络受限导致。请刷新页面重试；若仍不行，请更换网络后稍后再来。") +
+        "</div>";
       return;
     }
     if (!curUser) { renderAuth(); return; }
