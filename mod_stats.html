@@ -64,10 +64,23 @@ table{width:100%;border-collapse:separate;border-spacing:0;min-width:1050px;font
     </div>
     <button onclick="exportData()">📤 导出</button>
     <button onclick="document.getElementById('importInput').click()">📥 导入</button>
+    <button onclick="openParentSync()" title="登录后云端同步「定制模组统计」数据">☁️ 账号同步</button>
     <input id="importInput" type="file" accept=".json" hidden onchange="importData(event)">
     <button class="danger" onclick="clearAll()">🗑 清空当前服</button>
   </div>
 </header>
+
+<script>
+// 账号同步：模组统计页通常以 iframe 嵌入主页，复用父页面的账号同步面板（同源）
+function openParentSync(){
+  try{
+    var p=window.parent;
+    if(p && p!==window && p.__nikkeSync && p.__nikkeSync.open){ p.__nikkeSync.open(); return; }
+  }catch(e){}
+  var msg='账号同步请回到主页，点顶栏「👤 账号同步」使用。';
+  if(typeof showToast==='function'){ showToast(msg,'info'); } else { alert(msg); }
+}
+</script>
 
 <div class="server-info" id="serverInfo"></div>
 

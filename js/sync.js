@@ -373,5 +373,8 @@
     }
   }
 
+  /* 暴露给同源 iframe（定制模组统计页）复用账号同步面板；放在 init 之前，不依赖初始化是否成功 */
+  window.__nikkeSync = { open: open };
+
   init();
 })();
