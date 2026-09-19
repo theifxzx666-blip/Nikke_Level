@@ -188,13 +188,29 @@
     }
     catch (e) { area.appendChild(el("div", "（二维码生成失败，请用复制数据码/链接）", "qr-fallback")); }
   }
+  /* 读取模组统计数据（键与 mod_stats.html 的 STORAGE_KEY 一致，同源共享） */
+  function getModStatsLS() {
+    try {
+      var raw = localStorage.getItem("nikke_mod_stats_v3");
+      if (!raw || raw === "null") return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
   function applyFormFromCode(code) {
     var f = unshareCode(code);
     if (!f) return false;
-    state.form = Object.assign(defaultForm(), f);
+    // 新格式（v2，携带模组统计）：{ v:2, planner, mod_stats }；旧格式为纯 form，兼容不变
+    var planner = (f && f.v === 2 && f.planner !== undefined) ? f.planner : f;
+    state.form = Object.assign(defaultForm(), planner);
     Object.keys(DEFAULT_FIXED).forEach(function (k) {
       if (!state.form.fixed[k]) state.form.fixed[k] = JSON.parse(JSON.stringify(DEFAULT_FIXED[k]));
     });
+    if (f && f.v === 2 && f.mod_stats) {
+      try { localStorage.setItem("nikke_mod_stats_v3", JSON.stringify(f.mod_stats)); } catch (e) {}
+      // 模组统计 iframe 已挂载则刷新，让恢复的数据立即可见
+      var mf = document.getElementById("modStatsFrame");
+      if (mf && mf.contentWindow) { try { mf.contentWindow.location.reload(); } catch (e2) {} }
+    }
     renderForm();
     try { syncCostFromLevel(); } catch (e) {}
     updateProgress();
@@ -263,7 +279,7 @@
 
     function fillShare() {
       collectForm();
-      var code = shareCodeOf(state.form);
+      var code = shareCodeOf({ v: 2, planner: state.form, mod_stats: getModStatsLS() });
       if (!code) { genCode.value = "（压缩库未加载，无法生成）"; return; }
       genCode.value = code;
       var link = location.origin + location.pathname + "#data=" + code;
@@ -282,8 +298,9 @@
       if (!v) { tip("请先粘贴数据码"); return; }
       var i = v.indexOf("#data=");
       var code = i >= 0 ? v.slice(i + 6) : v;
+      var pkt = unshareCode(code);
       if (!applyFormFromCode(code)) { tip("数据码无效或已损坏"); return; }
-      tip("已恢复表单");
+      tip((pkt && pkt.v === 2 && pkt.mod_stats) ? "已恢复表单与模组统计" : "已恢复表单");
       if (resSpec.value === "both") { setTimeout(function () { try { calculate(); } catch (e) {} }, 150); }
       hide();
     });
