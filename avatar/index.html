@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NIKKE 头像预览</title>
-<link rel="stylesheet" href="style.css?v=20260922a">
+<link rel="stylesheet" href="style.css?v=20260922c">
 </head>
 <body>
 
@@ -52,17 +52,27 @@
       <button class="tab" data-tab="frame">头像框<em id="n-frame"></em></button>
       <button class="tab" data-tab="pendant">挂件<em id="n-pendant"></em></button>
     </div>
-    <div class="searchbar">
-      <input type="search" id="q" placeholder="搜索编号 / 中文名，例如 c100、拉毗、奢华之蛛">
-      <button id="btn-clear" class="btn tiny">清空</button>
+    <div class="filter" id="filter">
+      <!-- 折叠头只在窄屏显示：手机上一行摘要即可，展开才有搜索框与企业筛选卡（收起时省约 120px 列表高度） -->
+      <button class="filter-head" id="filter-toggle" type="button" aria-expanded="false" aria-controls="filter-body">
+        <span class="fh-icon" aria-hidden="true">⌕</span>
+        <span class="fh-text" id="filter-summary">搜索 / 筛选</span>
+        <span class="fh-arrow" aria-hidden="true">▾</span>
+      </button>
+      <div class="filter-body" id="filter-body">
+        <div class="searchbar">
+          <input type="search" id="q" placeholder="搜索编号 / 中文名，例如 c100、拉毗、奢华之蛛">
+          <button id="btn-clear" class="btn tiny">清空</button>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
     </div>
-    <div class="chips" id="chips"></div>
     <div class="grid" id="grid"></div>
   </section>
 </main>
 
 <script src="data.js?v=20260918i"></script>
 <script src="gifenc.js?v=20260918g"></script>
-<script src="app.js?v=20260918j"></script>
+<script src="app.js?v=20260922b"></script>
 </body>
 </html>

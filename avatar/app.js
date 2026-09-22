@@ -89,10 +89,13 @@
       b.onclick = () => {
         if (state.filter[state.tab] === d.k) return;
         state.filter[state.tab] = d.k;
+        updateFilterSummary();
+        if (narrow()) setFilterOpen(false);   // 选完立刻收起，让列表马上露出来
         renderChips(); renderGrid();
       };
       box.appendChild(b);
     });
+    updateFilterSummary();
   }
 
   /* ---------------- 图片加载 ---------------- */
@@ -358,10 +361,28 @@
     };
   });
 
+  /* 筛选区折叠（仅窄屏生效，PC 上折叠头被 CSS 隐藏）：
+     收起后只显示一行摘要，点企业卡自动收起以立刻露出列表 */
+  const filterEl = document.getElementById('filter');
+  const filterToggle = document.getElementById('filter-toggle');
+  function narrow(){ return window.matchMedia('(max-width:900px)').matches; }
+  function setFilterOpen(open){
+    filterEl.classList.toggle('open', open);
+    filterToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function updateFilterSummary(){
+    const flt = state.filter[state.tab];
+    const parts = [];
+    if (flt && flt !== '全部') parts.push(flt);
+    if (state.q) parts.push('“' + state.q + '”');
+    document.getElementById('filter-summary').textContent = parts.length ? parts.join(' · ') : '搜索 / 筛选';
+  }
+  filterToggle.onclick = () => setFilterOpen(!filterEl.classList.contains('open'));
+
   const qEl = document.getElementById('q');
-  qEl.oninput = () => { state.q = qEl.value; renderGrid(); };
+  qEl.oninput = () => { state.q = qEl.value; updateFilterSummary(); renderGrid(); };
   document.getElementById('btn-clear').onclick = () => {
-    qEl.value = ''; state.q = ''; renderGrid(); qEl.focus();
+    qEl.value = ''; state.q = ''; updateFilterSummary(); renderGrid(); qEl.focus();
   };
 
   document.getElementById('btn-none').onclick = () => {
