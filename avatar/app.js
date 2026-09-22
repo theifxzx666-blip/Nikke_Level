@@ -433,14 +433,34 @@
     btn.disabled = true;
     loadingEl.hidden = false;
     try {
-      const gif = enc.GIFEncoder();
+      // 1) 先合成全部帧并缓存像素：全程共用一张全局调色板。
+      //    逐帧各自 quantize 会造成帧间颜色漂移（播放时闪烁噪点）——旧实现根因。
+      const framesData = [];
       for (let i = 0; i < f.frames.length; i++) {
         compositeTo(gifCtx, gifCv.width, f.frames[i], state.pendant && state.pendant.img);
-        const { data } = gifCtx.getImageData(0, 0, gifCv.width, gifCv.height);
-        const palette = enc.quantize(data, 256, { format: 'rgb565' });
-        const index = enc.applyPalette(data, palette, 'rgb565');
-        gif.writeFrame(index, gifCv.width, gifCv.height,
-                       { palette: palette, delay: f.durs[i] || 100 });
+        framesData.push(gifCtx.getImageData(0, 0, gifCv.width, gifCv.height).data);
+      }
+      // 2) 只采样不透明像素建调色板（透明角落不参与配色，避免被映射成角部色块）
+      const sample = [];
+      for (const d of framesData) {
+        for (let p = 0; p < d.length; p += 4 * 5) { // 每帧约 1/5 抽样，足够代表全部颜色
+          if (d[p + 3] >= 128) sample.push(d[p], d[p + 1], d[p + 2], 255);
+        }
+      }
+      const palette = enc.quantize(new Uint8Array(sample), 255, { format: 'rgb565' });
+      const T = palette.length; // 末位索引保留为透明色
+      palette.push([0, 0, 0]);
+      // 3) 逐帧索引：alpha<128 的像素（圈外角落+半透明边缘）归透明索引，避免光晕
+      const gif = enc.GIFEncoder();
+      for (let i = 0; i < framesData.length; i++) {
+        const d = framesData[i];
+        const idx = enc.applyPalette(d, palette, 'rgb565');
+        for (let p = 3, o = 0; o < idx.length; p += 4, o++) {
+          if (d[p] < 128) idx[o] = T;
+        }
+        gif.writeFrame(idx, gifCv.width, gifCv.height,
+                       { palette: palette, delay: f.durs[i] || 100,
+                         transparent: true, transparentIndex: T, dispose: 2 });
       }
       gif.finish();
       download(new Blob([gif.bytes()], { type: 'image/gif' }), 'nikke_' + comboName() + '.gif');
