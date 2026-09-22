@@ -278,10 +278,21 @@ html.locked,html.locked body{height:100%;overflow:hidden;overscroll-behavior:non
   .chip{padding:3px 9px;font-size:11.5px}
   .chip img{width:15px;height:15px}
   .grid{
-    padding:10px 12px 16px;gap:7px;
+    padding:10px 12px 16px;gap:8px;
     overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
-    grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
+    /* 手机上单格保证 ≥96px（远高于 HIG 44pt/ Material 48dp 触控标准），列数随屏宽 3~6 列；
+       旧值 minmax(72px) 在 359px 视口下切出 4 列小格（单格仅 78px、缩略图 70px），误触多 */
+    grid-template-columns:repeat(auto-fill,minmax(clamp(96px,26vw,120px),1fr));
   }
-  .cell{padding:3px}
-  .cell .cap{font-size:9.5px}
+  .cell{padding:5px}
+  .cell .cap{font-size:11px}
+}
+
+/* ---------- 触摸设备：按下即反馈 + 去粘滞 hover ----------
+   :hover 在触摸屏上会粘在最后点的格子上，改用 :active 缩放反馈；
+   同时去掉移动浏览器的点击高亮块与双击缩放延迟 */
+@media(hover:none){
+  .cell{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  .cell:hover{transform:none;border-color:var(--line)}
+  .cell:active{transform:scale(.96);border-color:#9fe1cb}
 }
