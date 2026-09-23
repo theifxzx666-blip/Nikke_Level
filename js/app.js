@@ -58,6 +58,40 @@
   function todayLocal() { var d = new Date(), m = d.getMonth() + 1, day = d.getDate(); return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day); }
   function nowTime() { var d = new Date(); function p(n) { return (n < 10 ? "0" : "") + n; } return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds()); }
 
+  /* ---------- 外部库按需加载 ---------- */
+  /* 首屏不再加载 html2canvas / xlsx（合计 gzip ≈360KB），改为点到「导出图片 / 下载模板 / 导入 XLSX」时才注入。
+     库文件已本地化到 assets/js/vendor/，与页面同源，不再依赖 cdnjs 与 static.dotgg.gg（跨境均不稳）。 */
+  var VENDOR = {
+    html2canvas: { url: "assets/js/vendor/html2canvas.min.js?v=20260923b", globals: ["html2canvas"] },
+    xlsx: { url: "assets/js/vendor/xlsx.full.min.js?v=20260923b", globals: ["XLSX"] },
+  };
+  var _vendorPending = {};
+  function vendorReady(spec) {
+    return spec.globals.every(function (n) { return typeof window[n] !== "undefined"; });
+  }
+  function ensureVendor(key) {
+    var spec = VENDOR[key];
+    if (vendorReady(spec)) return Promise.resolve();
+    if (_vendorPending[key]) return _vendorPending[key];
+    _vendorPending[key] = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = spec.url;
+      s.async = true;
+      s.onload = function () {
+        if (vendorReady(spec)) { resolve(); return; }
+        delete _vendorPending[key];
+        reject(new Error("库文件异常"));
+      };
+      s.onerror = function () {
+        delete _vendorPending[key];
+        if (s.parentNode) s.parentNode.removeChild(s);
+        reject(new Error("加载失败"));
+      };
+      document.head.appendChild(s);
+    });
+    return _vendorPending[key];
+  }
+
   /* ---------- 状态 ---------- */
   var state = {
     form: null,               // localStorage 表单值
@@ -1121,7 +1155,14 @@
 
   function exportResultImage() {
     if (!state.lastResult) { alert("请先点击「开始计算」生成结果后再导出。"); return; }
-    if (typeof html2canvas === "undefined") { alert("图片库未加载（需联网首次访问），请刷新重试。"); return; }
+    showExportLoading();   // 先出遮罩：首次导出需现加载 html2canvas（约 200KB，之后走缓存）
+    ensureVendor("html2canvas").then(runExportResultImage).catch(function () {
+      hideExportLoading();
+      alert("图片导出组件加载失败，请检查网络后重试。");
+    });
+  }
+
+  function runExportResultImage() {
     var rs = $("resultSection");
     // 固定导出画布宽度：手机窄屏导出时按桌面宽度排版，避免多列文本被压缩显示不齐
     var EXPORT_W = 1080;
@@ -1231,6 +1272,12 @@
   }
 
   function importXlsx(file) {
+    ensureVendor("xlsx").then(function () { readXlsxFile(file); }).catch(function () {
+      alert("Excel 组件加载失败，请检查网络后重试。");
+    });
+  }
+
+  function readXlsxFile(file) {
     var reader = new FileReader();
     reader.onload = function (e) {
       try {
@@ -1368,8 +1415,11 @@
     $("btnExportImg").addEventListener("click", exportResultImage);
     $("btnSave").addEventListener("click", function () { saveForm(); tip("已保存当前表单"); });
     $("btnTemplate").addEventListener("click", function () {
-      if (typeof XLSX === "undefined") { alert("XLSX 库未加载（需联网），暂无法下载模板。"); return; }
-      download("账号评估表单.xlsx", buildXlsxTemplate(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      ensureVendor("xlsx").then(function () {
+        download("账号评估表单.xlsx", buildXlsxTemplate(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      }).catch(function () {
+        alert("Excel 组件加载失败，请检查网络后重试。");
+      });
     });
     $("btnImport").addEventListener("click", function () { $("fileXlsx").click(); });
     $("fileXlsx").addEventListener("change", function () {
