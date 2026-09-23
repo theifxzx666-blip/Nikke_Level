@@ -6,7 +6,8 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="stylesheet" href="css/style.css?v=20260918h">
+<link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/style.css?v=20260923a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -228,7 +229,7 @@
 /* 顶层功能切换：资源规划计算器 ⇄ 定制模组统计 ⇄ 洗词条计算器 ⇄ 头像预览（iframe 懒加载，仅在首次打开时挂载） */
 (function () {
   var frames = {
-    appModStats: { id: "modStatsFrame", src: "mod_stats.html?v=20260920b", title: "定制模组统计" },
+    appModStats: { id: "modStatsFrame", src: "mod_stats.html?v=20260923a", title: "定制模组统计" },
     appRerollStats: { id: "rerollStatsFrame", src: "reroll_calculator.html", title: "洗词条计算器" },
     appAvatarFrame: { id: "avatarFrame", src: "avatar/index.html", title: "头像预览" }
   };

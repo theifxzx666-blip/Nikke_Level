@@ -1,7 +1,8 @@
 /* NIKKE 头像预览 — 浅色主题（对齐主站「资源规划计算器」的配色与 MaiYuan 字体） */
 @font-face{
   font-family:"MaiYuan";
-  src:url("../assets/fonts/maiyuan.ttf") format("truetype");
+  src:url("../assets/fonts/maiyuan-subset.woff2") format("woff2"),
+      url("../assets/fonts/maiyuan-subset.ttf") format("truetype");
   font-weight:normal;font-style:normal;font-display:swap;
 }
 

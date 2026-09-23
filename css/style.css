@@ -21,10 +21,13 @@
   --hero-bg: url("../assets/bg/hero.webp");
 }
 * { box-sizing: border-box; }
-/* 自定义字体：卖圆体（测试用，不满意随时回滚 body 的 font-family 即可） */
+/* 自定义字体：Kingnammm Maiyuan 2（子集化版，仅保留站内实际用到的 1549 个字符）
+   7.86MB 全量 ttf → 277KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
+   新增/改动文案若用到新汉字，需重跑子集化脚本（见 临时文件/font_charset.js + font_subset.py）。 */
 @font-face {
   font-family: "MaiYuan";
-  src: url("../assets/fonts/maiyuan.ttf") format("truetype");
+  src: url("../assets/fonts/maiyuan-subset.woff2") format("woff2"),
+       url("../assets/fonts/maiyuan-subset.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
