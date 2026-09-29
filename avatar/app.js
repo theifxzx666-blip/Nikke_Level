@@ -517,7 +517,7 @@
     const w = document.getElementById('warn');
     w.hidden = false;
     w.innerHTML = '当前以 <code>file://</code> 打开，预览可用，但「导出 PNG / GIF」会被浏览器的跨源策略拦截。'
-      + '请在 <code>头像框预览</code> 目录下执行 <code>python -m http.server 8777</code>，'
-      + '再访问 <code>http://127.0.0.1:8777/重构方案_v2.0/阶段4_预览工具/工具/index.html</code>。';
+      + '请在 <code>nikke_src/avatar</code> 目录下执行 <code>python -m http.server 8777</code>，'
+      + '再访问 <code>http://127.0.0.1:8777/index.html</code>。';
   }
 })();
