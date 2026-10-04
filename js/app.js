@@ -713,24 +713,26 @@
   }
   // naturalDaysOf 当前未在渲染中使用（达成判断改为「全箱梭哈也无法达成」口径）；保留供后续扩展
 
-  /* 开箱方案文本（固定箱全部使用 + 自选箱分配） */
+  /* 开箱方案文本（开箱顺序：①挑战者全开 → ②固定箱按需 → ③自选箱分配；固定箱明细见表格） */
   function boxPlanText(plan, reached) {
     // 目标已达成或无开箱方案：显示「无需开箱」+ 原因
     if (!plan || !plan.length || plan.every(function (p) { return !p.used; })) {
       return reached ? "无需开箱（资源已足够）" : "无需开箱（等待自然增长）";
     }
-    var parts = ["固定小时箱全部使用"];
+    var hasChal = plan.some(function (p) { return p.name.indexOf("挑战") >= 0 && p.used > 0; });
+    var parts = hasChal ? ["挑战者成长宝箱全开"] : [];
     plan.forEach(function (p) {
-      if (p.used > 0) {
+      if (p.used > 0 && p.name.indexOf("挑战") < 0) {
         var det = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
           .map(function (k) { return k + " x" + p.choices[k]; }).join("+");
         parts.push(p.name + " x" + p.used + (det ? "（" + det + "）" : ""));
         }
       });
-    return parts.join("；");
+    return parts.length ? parts.join("；") : "无需开箱（资源已足够）";
   }
 
-  /* 开箱达成目标统计方案：按资源储备层级判断（①裸资源够 ②固定箱按需够 ③固定箱+挑战者平替够 ④梭哈不够） */
+  /* 开箱达成目标统计方案：开箱顺序 ①挑战者成长宝箱全开 → ②固定小时箱按需 → ③方舟/30天箱按需
+     层级判断：①裸资源够 ②+挑战者够 ③+固定箱按需够 ④+自选箱够 ⑤梭哈不够 */
   function planByLevels(result, snap, tgt, future) {
     var pr = result.per_resource;
     var prefix = future ? "future_" : "";
@@ -738,28 +740,48 @@
     var bare = pr[prefix + "bare"], fixed = pr[prefix + "fixed"];
     var maxLv = future ? result.future_main_story.result.level : result.selectable.level;
     var immediate = future ? ("开放日即达（" + localDateStr(result.future_main_story.open_at) + "）") : "立即可达（今天）";
+    var income = future ? (snap.future_income_per_hour || snap.income_per_hour) : snap.income_per_hour;
+    var baseRes = future ? result.future_main_story.projected_bare : snap.bare_resources;
+    var steps = Math.max(0, tgt - snap.current_sync_level);
     // ① 当前资源储备已足够
     if (minL(bare) >= tgt) return { days: "0", date: immediate, plan: "无需开箱（当前资源已足够）" };
-    // ② 固定小时箱按需开启即可达成
+    // ② 挑战者成长宝箱（开箱顺序①，固定数值奖励）全开即可达成
+    var chalRes = B.challengerUnitsResources(snap);
+    var lvChal = snap.current_sync_level + C.affordableLevels(
+      C.addRes(C.addRes(baseRes, snap.stage_clear_resources || {}), chalRes),
+      snap, snap.current_sync_level);
+    if (lvChal >= tgt) {
+      var plan2 = S.planForTarget(snap, tgt, future ? "future" : "now");
+      var n2 = 0;
+      ((plan2 && plan2.selectable) || []).forEach(function (p) { if (p.name.indexOf("挑战") >= 0) n2 = Math.max(n2, p.used); });
+      if (n2 > 0) {
+        return { days: "0", date: immediate,
+          plan: "只开挑战者成长宝箱（" + n2 + " 个）即可达成（固定小时箱与方舟/30天箱无需开启）",
+          selectablePlan: plan2 ? plan2.selectable : null,
+          selCaption: "开箱方案（只开挑战者成长宝箱）：" };
+      }
+    }
+    // ③ 挑战者全开 + 固定小时箱按需开启即可达成
     if (minL(fixed) >= tgt) {
-      var steps = Math.max(0, tgt - snap.current_sync_level);
-      var baseRes = future ? result.future_main_story.projected_bare : snap.bare_resources;
-      var income = future ? (snap.future_income_per_hour || snap.income_per_hour) : snap.income_per_hour;
-      var need = B.fixedBoxesNeeded(snap, baseRes, steps, income);
+      var need = B.fixedBoxesNeeded(snap, baseRes, steps, income, chalRes);
       var n = 0;
       Object.keys(need.used || {}).forEach(function (nm) {
         Object.keys(need.used[nm]).forEach(function (h) { n += need.used[nm][h]; });
       });
-      return { days: "0", date: immediate, plan: "固定小时箱按需开启 " + n + " 个即可达成（无需开自选箱）", fixedNeed: need.used || {} };
+      return { days: "0", date: immediate,
+        plan: "挑战者成长宝箱全开 + 固定小时箱按需开启 " + n + " 个即可达成（无需开方舟/30天箱）",
+        fixedNeed: need.used || {} };
     }
-    // ③ 全箱梭哈可达成：按「当前正在渲染的这个目标等级」现算开够即停方案
+    // ④ 全箱梭哈可达成：按「当前正在渲染的这个目标等级」现算开够即停方案
     //   （此前误用 target_selectable_* —— 那是按「目标同步器等级」预计算的，导致「后续追求目标等级」显示的是别个目标的方案）
     if (maxLv >= tgt) {
       var plan = S.planForTarget(snap, tgt, future ? "future" : "now");
       var arr = plan ? plan.selectable : null;
-      return { days: "0", date: immediate, plan: boxPlanText(arr, true), selectablePlan: arr };
+      return { days: "0", date: immediate, plan: boxPlanText(arr, true), selectablePlan: arr,
+        fixedNeed: plan ? plan.fixed_used : null,
+        selCaption: "开箱方案（挑战者全开 → 固定小时箱按需 → 自选箱按下表逐箱开启）：" };
     }
-    // ④ 全资源投入也无法达成
+    // ⑤ 全资源投入也无法达成
     var gap = tgt - maxLv;
     return { days: "-", date: "全箱梭哈也无法达成", plan: "全资源投入后仍差 " + gap + " 级（需补充资源）" };
   }
@@ -782,7 +804,7 @@
     var capLines = [
       "① 当前同步器等级：当前等级（" + snap.current_sync_level + "）；仅用现有资源（不含新主线推图收益·不开箱）还可升到 " + result.bare.level + "。",
       "② 仅使用固定小时箱：只开固定小时箱能达到的等级（已计入成长套组）；",
-      "③ 全箱梭哈：固定小时箱 + 自选箱全部使用能达到的等级；",
+      "③ 全箱梭哈：按开箱顺序（挑战者成长宝箱全开 → 固定小时箱 → 自选箱）全部消耗能达到的等级；",
       "④ 自然升级（不开箱）：完全不开箱，" + fmtDays(result.no_box.days) + " 天到目标 " + result.no_box.target + "。",
     ];
     box.appendChild(el("div", capLines.join("<br>"), "cards-caption"));
@@ -818,36 +840,25 @@
       }
       if (nowOk) {
         b.appendChild(el("div", "现状可达（" + np.date + "）", "sb-big"));
-        if (np.fixedNeed && Object.keys(np.fixedNeed).length) {
-          b.appendChild(fixedPlanTable(np.fixedNeed));
-          if (np.plan) b.appendChild(el("div", np.plan, "caption"));
-        } else {
-          var sel = np.selectablePlan;
-          var hasUsed = sel && sel.some(function (p) { return p.used > 0; });
-          if (hasUsed) {
-            b.appendChild(el("div", "开箱方案（固定小时箱全部使用，自选箱按下表逐箱开启）：", "sb-plan"));
-            b.appendChild(selectableBoxTable(sel));
-          } else if (np.plan) {
-            // 一个自选箱都不用开：说明原因，不留空白
-            b.appendChild(el("div", np.plan, "sb-text"));
-          }
+        if (np.plan) b.appendChild(el("div", np.plan, "sb-text"));
+        if (np.fixedNeed && Object.keys(np.fixedNeed).length) b.appendChild(fixedPlanTable(np.fixedNeed));
+        var sel = np.selectablePlan;
+        var hasUsed = sel && sel.some(function (p) { return p.used > 0; });
+        if (hasUsed) {
+          b.appendChild(el("div", np.selCaption || "开箱方案（按下表逐箱开启）：", "sb-plan"));
+          b.appendChild(selectableBoxTable(sel));
         }
       } else {
         // 现状不可达但未来可达：保留「开放日（预期日期）可达」+ 表格
         var futDate = result.future_main_story.open_at ? localDateStr(result.future_main_story.open_at) : "";
         b.appendChild(el("div", "开放日（" + futDate + "）可达", "sb-big"));
-        if (fp && fp.fixedNeed && Object.keys(fp.fixedNeed).length) {
-          b.appendChild(fixedPlanTable(fp.fixedNeed));
-          if (fp.plan) b.appendChild(el("div", fp.plan, "caption"));
-        } else {
-          var fsel = fp ? fp.selectablePlan : null;
-          var fUsed = fsel && fsel.some(function (p) { return p.used > 0; });
-          if (fUsed) {
-            b.appendChild(el("div", "开箱方案（等新主线开放后，按新基地收益逐箱开启）：", "sb-plan"));
-            b.appendChild(selectableBoxTable(fsel));
-          } else if (fp && fp.plan) {
-            b.appendChild(el("div", fp.plan, "sb-text"));
-          }
+        if (fp && fp.plan) b.appendChild(el("div", fp.plan, "sb-text"));
+        if (fp && fp.fixedNeed && Object.keys(fp.fixedNeed).length) b.appendChild(fixedPlanTable(fp.fixedNeed));
+        var fsel = fp ? fp.selectablePlan : null;
+        var fUsed = fsel && fsel.some(function (p) { return p.used > 0; });
+        if (fUsed) {
+          b.appendChild(el("div", fp.selCaption || "开箱方案（等新主线开放后，按新基地收益逐箱开启）：", "sb-plan"));
+          b.appendChild(selectableBoxTable(fsel));
         }
       }
       wrap.appendChild(b);
@@ -970,7 +981,7 @@
     });
     var wrap = el("div", "", "sb-plan");
     if (!rows.length) { wrap.appendChild(el("div", "无需开启固定小时箱（现有资源已足够）。", "sb-text")); return wrap; }
-    wrap.appendChild(el("div", "固定小时箱按需开启明细（无需开自选箱）：", "sb-plan"));
+    wrap.appendChild(el("div", "固定小时箱按需开启明细：", "sb-plan"));
     wrap.appendChild(table(["固定小时箱", "时长", "开启数量"], rows));
     wrap.appendChild(el("div", "共需开启固定小时箱 <b>" + total + "</b> 个。", "caption"));
     return wrap;
@@ -1008,15 +1019,18 @@
     if (nowLv >= target) big1 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
     else big1 += "（目标 " + target + " 还差 " + Math.max(0, target - nowLv) + " 级）";
     b1.appendChild(el("div", big1, "sb-big"));
-    var selNode = (result.selectable && result.selectable.selectable) || null;
-    // selectable={level,...,selectable:<plan>}：逐箱分配数组在 <plan>.selectable 层
-    var sellArr = Array.isArray(selNode) ? selNode : (selNode && selNode.selectable) || null;
+    var selPlan1 = (result.selectable && result.selectable.selectable) || null;
+    // selPlan1 = 开箱方案对象（.selectable 为逐箱分配数组、.fixed_used 为固定箱按需明细）
+    var sellArr = selPlan1 ? (Array.isArray(selPlan1) ? selPlan1 : selPlan1.selectable) : null;
     var sellUsed = sellArr && sellArr.some(function (p) { return p.used > 0; });
-    if (sellArr && sellUsed) {
-      b1.appendChild(el("div", "开箱方案（全箱梭哈＝固定小时箱全部使用，自选箱按下表逐箱开启）：", "sb-plan"));
-      b1.appendChild(selectableBoxTable(sellArr));
+    var fixedUsed1 = selPlan1 && !Array.isArray(selPlan1) ? selPlan1.fixed_used : null;
+    var hasFixed1 = fixedUsed1 && Object.keys(fixedUsed1).length > 0;
+    if (sellUsed || hasFixed1) {
+      b1.appendChild(el("div", "开箱顺序（全箱梭哈）：① 挑战者成长宝箱全开 → ② 固定小时箱按需 → ③ 自选箱按下表逐箱开启：", "sb-plan"));
+      if (hasFixed1) b1.appendChild(fixedPlanTable(fixedUsed1));
+      if (sellUsed) b1.appendChild(selectableBoxTable(sellArr));
     } else {
-      b1.appendChild(el("div", "无需开启自选箱（现有资源 + 固定小时箱已足够全箱梭哈）。", "sb-text"));
+      b1.appendChild(el("div", "无需开箱（现有资源已足够全箱梭哈）。", "sb-text"));
     }
     wrap.appendChild(b1);
 
@@ -1039,13 +1053,17 @@
       // 与 Block① 对称：取「开放日全箱梭哈到该最高等级」的真实逐箱分配
       //   （此前误用 target_selectable_future —— 那是为「达成目标等级」优化的方案，目标被裸资源+固定箱满足时会是空表）
       var futPlanNode = (fut.result && fut.result.selectable) || null;
-      var fsell = futPlanNode ? (Array.isArray(futPlanNode) ? futPlanNode : futPlanNode.selectable) : null;
+      var futPlan = futPlanNode ? (Array.isArray(futPlanNode) ? { selectable: futPlanNode } : futPlanNode) : null;
+      var fsell = futPlan ? futPlan.selectable : null;
       var fSellUsed = fsell && fsell.some(function (p) { return p.used > 0; });
-      if (fsell && fSellUsed) {
-        b2.appendChild(el("div", "开箱方案（等新主线开放后，按新基地收益逐箱开启）：", "sb-plan"));
-        b2.appendChild(selectableBoxTable(fsell));
+      var fFixedUsed = futPlan ? futPlan.fixed_used : null;
+      var fHasFixed = fFixedUsed && Object.keys(fFixedUsed).length > 0;
+      if (fSellUsed || fHasFixed) {
+        b2.appendChild(el("div", "开箱顺序（全箱梭哈）：① 挑战者成长宝箱全开 → ② 固定小时箱按需 → ③ 自选箱按下表逐箱开启：", "sb-plan"));
+        if (fHasFixed) b2.appendChild(fixedPlanTable(fFixedUsed));
+        if (fSellUsed) b2.appendChild(selectableBoxTable(fsell));
       } else {
-        b2.appendChild(el("div", "无需开启自选箱（等待期自然积累 + 固定小时箱已足够全箱梭哈到该等级）。", "sb-text"));
+        b2.appendChild(el("div", "无需开箱（等待期自然积累已足够全箱梭哈到该等级）。", "sb-text"));
       }
       var fIn = snap.future_income_per_hour || {};
       var hasF = (fIn.credit || 0) > 0 || (fIn.battle_data || 0) > 0 || (fIn.core_dust || 0) > 0;
@@ -1078,7 +1096,7 @@
     var hasKeep = (sellArr && sellArr.some(function (p) { return p.keep > 0; })) ||
                   (fsell && fsell.some(function (p) { return p.keep > 0; }));
     wrap.appendChild(el("div",
-      "口径：全箱梭哈 = 固定小时箱 + 自选箱全部使用；上表自选箱分配由引擎按资源最优计算（含各资源数量），可照表逐箱开启；「使用」即需开启的箱子数，"
+      "口径：全箱梭哈 = 挑战者成长宝箱全开 + 固定小时箱与自选箱按开箱顺序开启至无法再升 1 级；上表自选箱分配由引擎按资源最优计算（含各资源数量），可照表逐箱开启；「使用」即需开启的箱子数，"
       + (hasKeep ? "「保留」即全开也无法再多升 1 级、故按其不开启计的余量。" : "「保留」为不开启的余量。"),
       "summary-note"));
     return wrap;

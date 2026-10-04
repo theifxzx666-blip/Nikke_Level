@@ -33,18 +33,16 @@
     return result;
   }
 
-  /* 固定小时箱按需计算：从最大时长箱开始，开够「达到 target」所需的最少固定箱数量 */
-  function fixedBoxesNeeded(snapshot, baseResources, targetSteps, incomePerHour) {
-    var needed = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
-    var balance = addRes(baseResources, snapshot.stage_clear_resources || {});
+  /* 固定小时箱按缺口最小开启：单资源箱从大时长到小时长，成长套组同时补三资源。
+     gaps = 三资源剩余缺口；返回 { used, remaining_shortage } */
+  function fixedFillGaps(snapshot, gaps, incomePerHour) {
     var remaining = {};
-    RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, needed[r] - balance[r]); });
+    RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, gaps[r] || 0.0); });
     var used = {};
     var names = { "芯尘盒": "core_dust", "信用点盒": "credit", "战斗数据辑盒": "battle_data" };
     function boxVal(res, h) {
       return res === "core_dust" ? Math.floor((incomePerHour[res] || 0.0) * h) : (incomePerHour[res] || 0.0) * h;
     }
-    // 单资源箱：按资源缺口优先开对应类型，从大时长到小时长
     ["芯尘盒", "信用点盒", "战斗数据辑盒"].forEach(function (name) {
       var res = names[name];
       var map = snapshot.fixed_boxes[name] || {};
@@ -74,6 +72,33 @@
     return { used: used, remaining_shortage: remaining };
   }
 
+  /* 固定小时箱按需计算：从最大时长箱开始，开够「达到 target」所需的最少固定箱数量。
+     preConsumed（可选）：开箱顺序①挑战者成长宝箱已贡献的资源，先从缺口中扣除 */
+  function fixedBoxesNeeded(snapshot, baseResources, targetSteps, incomePerHour, preConsumed) {
+    var needed = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
+    var balance = addRes(baseResources, snapshot.stage_clear_resources || {});
+    var gaps = {};
+    RESOURCES.forEach(function (r) {
+      var g = Math.max(0.0, needed[r] - balance[r]);
+      if (preConsumed) g = Math.max(0.0, g - (preConsumed[r] || 0));
+      gaps[r] = g;
+    });
+    return fixedFillGaps(snapshot, gaps, incomePerHour);
+  }
+
+  /* 挑战者成长宝箱（units 固定数值二选一）全开的资源贡献：开箱顺序①，始终全消耗选第一项 */
+  function challengerUnitsResources(snapshot) {
+    var res = C.zeroRes();
+    (snapshot.selectable_boxes || []).forEach(function (b) {
+      if (b.quantity <= 0 || !b.options || b.options.length !== 2) return;
+      var allUnits = b.options.every(function (o) { return o.mode === "units"; });
+      if (!allUnits) return;
+      var o0 = b.options[0];
+      if (o0.rewards) RESOURCES.forEach(function (r) { res[r] += (o0.rewards[r] || 0) * b.quantity; });
+    });
+    return res;
+  }
+
   function single(option) {
     var vals = [];
     Object.keys(option.rewards || {}).forEach(function (r) {
@@ -87,20 +112,19 @@
     return option.mode === "units" ? value : value * (incomePerHour[resource] || 0.0);
   }
 
+  /* 自选箱优化（开箱顺序：①挑战者成长宝箱全开 → ②固定小时箱按需 → ③方舟/30天自选箱按需）
+     baseResources = 裸资源（调用方决定是否含推图/等待期积累） */
   function optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour) {
     var needed = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
-    var fixed = fixedBoxResources(snapshot, incomePerHour);
-    var available = addRes(baseResources, fixed);
+    var base = addRes(baseResources, snapshot.stage_clear_resources || {});
     var shortage = {};
-    RESOURCES.forEach(function (r) { shortage[r] = Math.max(0.0, needed[r] - available[r]); });
-    // 裸资源 + 固定小时箱已满足目标：不开任何自选箱（挑战者也保留），无需优化
+    RESOURCES.forEach(function (r) { shortage[r] = Math.max(0.0, needed[r] - base[r]); });
+    // 裸资源已满足目标：什么都不开（挑战者也保留）
     if (RESOURCES.every(function (r) { return shortage[r] <= 1e-6; })) {
       var emptyPlan = (snapshot.selectable_boxes || []).filter(function (b) { return b.quantity > 0; })
         .map(function (b) { return { name: b.name, used: 0, keep: b.quantity, choices: {} }; });
-      return { target_steps: targetSteps, needed: needed, fixed: fixed, selectable: emptyPlan, boxes_used: 0, remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 }, feasible: true };
+      return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: {}, selectable: emptyPlan, boxes_used: 0, remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 }, feasible: true };
     }
-    var remaining = {};
-    RESOURCES.forEach(function (r) { remaining[r] = shortage[r]; });
 
     var boxes = [];
     (snapshot.selectable_boxes || []).forEach(function (box) {
@@ -109,29 +133,42 @@
       }
     });
 
-    var fast = fastThreeTwoFlexiblePlan(boxes, shortage, needed, fixed, incomePerHour, targetSteps);
-    if (fast) return fast;
+    // 开箱顺序①：挑战者成长宝箱（units 固定数值二选一）优先全消耗（选第一项，无分配损耗）
+    var challengerRes = C.zeroRes();
+    boxes.forEach(function (item) {
+      var opts = item.box.options || [];
+      if (item.left > 0 && opts.length === 2 && opts.every(function (o) { return o.mode === "units"; })) {
+        var o0 = opts[0];
+        item.left = 0;
+        item.choices[o0.label] = item.box.quantity;
+        if (o0.rewards) {
+          RESOURCES.forEach(function (r) { challengerRes[r] += (o0.rewards[r] || 0) * item.box.quantity; });
+        }
+      }
+    });
+    var remaining = {};
+    RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, shortage[r] - challengerRes[r]); });
+
+    // 开箱顺序②：固定小时箱按需开启（从大时长到小时长，成长套组收尾）
+    var fixedFill = fixedFillGaps(snapshot, remaining, incomePerHour);
+    RESOURCES.forEach(function (r) { remaining[r] = fixedFill.remaining_shortage[r]; });
+
+    // 开箱顺序③：方舟/30天自选箱按需
+    var fast = fastThreeTwoFlexiblePlan(boxes, remaining, needed, fixedFill.used, incomePerHour, targetSteps);
+    if (fast) {
+      fast.fixed = fixedBoxResources(snapshot, incomePerHour);
+      fast.fixed_used = fixedFill.used;
+      return fast;
+    }
 
     var hasMulti = boxes.some(function (item) {
       return item.box.options.some(function (opt) { return !single(opt); });
     });
     if (hasMulti) {
-      return { target_steps: targetSteps, needed: needed, fixed: fixed, selectable: [], boxes_used: 0, remaining_shortage: shortage, feasible: false, error: "存在多资源同时奖励箱子，需扩展枚举规则" };
+      return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: fixedFill.used, selectable: [], boxes_used: 0, remaining_shortage: shortage, feasible: false, error: "存在多资源同时奖励箱子，需扩展枚举规则" };
     }
 
-    // 挑战者（units 模式二选一箱）全消耗（与 fast 路径一致：单位数值奖励无分配损耗）
-    boxes.forEach(function (item) {
-      var opts = item.box.options || [];
-      if (opts.length === 2 && opts.every(function (o) { return o.mode === "units"; })) {
-        var o0 = opts[0];
-        item.left = 0;
-        item.choices[o0.label] = item.box.quantity;
-        if (o0.rewards) {
-          RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, remaining[r] - (o0.rewards[r] || 0) * item.box.quantity); });
-        }
-      }
-    });
-
+    // 挑战者已在顺序①全消耗；此处只剩单资源三选一箱的贪心
     var totalUsed = boxes.reduce(function (s, it) { return s + (it.box.quantity - it.left); }, 0);
     while (Object.keys(remaining).some(function (r) { return remaining[r] > 1e-6; })) {
       var candidates = [];
@@ -155,15 +192,20 @@
       totalUsed += 1;
     }
 
+    // 方案条目按开箱顺序展示：挑战者排最前，其余按表单顺序
     var plans = boxes.map(function (item) {
       return { name: item.box.name, used: item.box.quantity - item.left, keep: item.left, choices: item.choices };
     });
+    plans.sort(function (a, b) {
+      return (a.name.indexOf("挑战") >= 0 ? 0 : 1) - (b.name.indexOf("挑战") >= 0 ? 0 : 1);
+    });
     var feasible = !RESOURCES.some(function (r) { return remaining[r] > 1e-6; });
-    return { target_steps: targetSteps, needed: needed, fixed: fixed, selectable: plans, boxes_used: totalUsed, remaining_shortage: remaining, feasible: feasible };
+    return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: fixedFill.used, selectable: plans, boxes_used: totalUsed, remaining_shortage: remaining, feasible: feasible };
   }
 
-  /* 快速有界求解器：方舟(三选一) + 30天(三选一) + 挑战者(二选一 units) 形态 */
-  function fastThreeTwoFlexiblePlan(boxes, shortage, needed, fixed, incomePerHour, targetSteps) {
+  /* 快速有界求解器：方舟(三选一) + 挑战者(二选一 units) + 30天(三选一) 形态
+     shortage = 开箱顺序①挑战者全开、②固定箱按需之后的剩余缺口；固定箱明细由 fixedUsed 传入 */
+  function fastThreeTwoFlexiblePlan(boxes, shortage, needed, fixedUsed, incomePerHour, targetSteps) {
     if (boxes.length !== 3) return null;
     function pick(cond) { for (var i = 0; i < boxes.length; i++) if (cond(boxes[i])) return boxes[i]; return null; }
     var three = pick(function (b) { return b.box.options.length === 3 && b.box.quantity <= 100; });
@@ -205,14 +247,21 @@
           contrib[o.resource] += combos[i] * o.value;
           labels3[o.label] = combos[i];
         }
-        // 挑战者箱（two，二选一 units）：单位数值奖励、无分配损耗，应该全消耗
-        // 简化：全选第一个选项（battle_data，挑战者主收益方向）
+        // 挑战者（two）已在开箱顺序①全消耗（units 固定数值、无分配损耗），
+        // 其贡献已从 shortage 中扣除，这里只汇总方案条目；
+        // 非 units 二选一箱（罕见，顺序①不消耗）维持旧口径：全消耗选第一项
         var contrib2 = { credit: contrib.credit, battle_data: contrib.battle_data, core_dust: contrib.core_dust };
         var labels2 = {};
-        for (var idx = 0; idx < 2; idx++) labels2[twoOptions[idx].label] = 0;
-        labels2[twoOptions[0].label] = two.box.quantity;
-        var usedTwo = two.box.quantity;
-        contrib2[twoOptions[0].resource] += two.box.quantity * twoOptions[0].value;
+        var usedTwo = two.box.quantity - two.left;
+        if (two.left > 0) {
+          usedTwo = two.box.quantity;
+          two.left = 0;
+          labels2[twoOptions[0].label] = two.box.quantity;
+          two.choices[twoOptions[0].label] = two.box.quantity;
+          contrib2[twoOptions[0].resource] += two.box.quantity * twoOptions[0].value;
+        } else {
+          Object.keys(two.choices).forEach(function (k) { labels2[k] = two.choices[k]; });
+        }
         var remaining = {};
         RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, shortage[r] - contrib2[r]); });
           var flexCounts = {};
@@ -232,10 +281,11 @@
             var labelsFlex = {};
             Object.keys(flexValues).forEach(function (r) { labelsFlex[flexValues[r].label] = flexCounts[r] || 0; });
             best = {
-              target_steps: targetSteps, needed: needed, fixed: fixed,
+              target_steps: targetSteps, needed: needed,
+              fixed_used: fixedUsed,
               selectable: [
-                { name: three.box.name, used: count0 + count1 + count2, keep: three.box.quantity - count0 - count1 - count2, choices: labels3 },
                 { name: two.box.name, used: usedTwo, keep: two.box.quantity - usedTwo, choices: labels2 },
+                { name: three.box.name, used: count0 + count1 + count2, keep: three.box.quantity - count0 - count1 - count2, choices: labels3 },
                 { name: flex.box.name, used: flexUsed, keep: flex.box.quantity - flexUsed, choices: labelsFlex },
               ],
               boxes_used: total,
@@ -252,6 +302,8 @@
   global.NikkeBoxes = {
     fixedBoxResources: fixedBoxResources,
     fixedBoxesNeeded: fixedBoxesNeeded,
+    fixedFillGaps: fixedFillGaps,
+    challengerUnitsResources: challengerUnitsResources,
     optionValue: optionValue,
     single: single,
     optimizeSelectableForTarget: optimizeSelectableForTarget,
