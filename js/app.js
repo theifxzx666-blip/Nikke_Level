@@ -422,7 +422,19 @@
         setVal("f_dust_rate", income.core_dust.toFixed(2) + "/h");
       }
     } else {
-      hint.textContent = "未选择关卡进度时，将使用手填基地等级与手动收益。";
+      hint.textContent = "未选择关卡进度时，将使用手填基地等级；收益按基地等级自动带出（可手动修改）。";
+    }
+  }
+
+  /* 手填基地防御等级 → 收益自动刷新（收益表按基地等级索引，与同步器等级无游戏内联动） */
+  function syncIncomeFromBase() {
+    var base = parseInt(val("f_base"), 10);
+    if (!base) return;
+    var income = O.incomeForLevel(base, val("f_tactics") !== "否");
+    if (income) {
+      setVal("f_credit_rate", Math.round(income.credit) + "/h");
+      setVal("f_battle_rate", Math.round(income.battle_data) + "/h");
+      setVal("f_dust_rate", income.core_dust.toFixed(2) + "/h");
     }
   }
 
@@ -1412,10 +1424,10 @@
     });
     $("f_future_hard_stage").addEventListener("change", function () { state.futureHardManual = true; syncFutureBase(); onFormChange(); });
 
-    $("f_tactics").addEventListener("change", function () { syncCurrentBase(); syncFutureBase(); onFormChange(); });
+    $("f_tactics").addEventListener("change", function () { syncCurrentBase(); syncIncomeFromBase(); syncFutureBase(); onFormChange(); });
     $("f_stage_mode").addEventListener("change", function () { updateStageClearUI(); onFormChange(); });
     $("f_future_open").addEventListener("change", onFormChange);
-    $("f_base").addEventListener("change", onFormChange);
+    $("f_base").addEventListener("change", function () { syncIncomeFromBase(); onFormChange(); });
     $("f_current").addEventListener("change", function () { syncCostFromLevel(); onFormChange(); });
     $("f_target").addEventListener("change", function () { renderCostPreview(); onFormChange(); });
     $("f_alternate").addEventListener("change", function () { renderCostPreview(); onFormChange(); });
