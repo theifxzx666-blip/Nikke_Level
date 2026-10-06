@@ -1,0 +1,3359 @@
+[
+ {
+  "类别": "静态框",
+  "名称": "champion_arena_main_bronze_tier1_frame",
+  "旧中文名": "新手边框",
+  "新中文名": "新手边框",
+  "来源": "官方",
+  "官方键": "spr:champion_arena_main_bronze_tier1_frame_00_00",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "champion_arena_main_bronze_tier2_frame",
+  "旧中文名": "王牌边框I",
+  "新中文名": "王牌边框I",
+  "来源": "官方",
+  "官方键": "spr:champion_arena_main_bronze_tier2_frame_00_00",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "champion_arena_main_gold_tier2_frame",
+  "旧中文名": "大师边框I",
+  "新中文名": "大师边框I",
+  "来源": "官方",
+  "官方键": "spr:champion_arena_main_gold_tier2_frame_00_00",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "champion_arena_main_gold_tier3_frame",
+  "旧中文名": "特级大师边框I",
+  "新中文名": "特级大师边框I",
+  "来源": "官方",
+  "官方键": "spr:champion_arena_main_gold_tier3_frame_00_00",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "champion_arena_main_platinum_tier3_frame",
+  "旧中文名": "冠军边框I",
+  "新中文名": "冠军边框I",
+  "来源": "官方",
+  "官方键": "spr:champion_arena_main_platinum_tier3_frame_00_00",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "champion_arena_main_silver_tier1_frame",
+  "旧中文名": "行家边框I",
+  "新中文名": "行家边框I",
+  "来源": "官方",
+  "官方键": "spr:champion_arena_main_silver_tier1_frame_00_00",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "champion_arena_main_silver_tier2_frame",
+  "旧中文名": "专家边框I",
+  "新中文名": "专家边框I",
+  "来源": "官方",
+  "官方键": "spr:champion_arena_main_silver_tier2_frame_00_00",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "champion_arena_main_silver_tier3_frame",
+  "旧中文名": "教授边框I",
+  "新中文名": "教授边框I",
+  "来源": "官方",
+  "官方键": "spr:champion_arena_main_silver_tier3_frame_00_00",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_1000days_event_frame",
+  "旧中文名": "1000 DAYS边框",
+  "新中文名": "1000 DAYS边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_aegisthediver_event_frame",
+  "旧中文名": "潜水员边框",
+  "新中文名": "潜水员边框",
+  "来源": "官方",
+  "官方键": "uf:aegisthediver_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_arkhero_frame",
+  "旧中文名": "方舟英雄边框",
+  "新中文名": "方舟英雄边框",
+  "来源": "官方",
+  "官方键": "uf:channel_arkhero_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce002_event_frame_01",
+  "旧中文名": "寄叶边框",
+  "新中文名": "寄叶边框",
+  "来源": "官方",
+  "官方键": "uf:ce002_01_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce002_event_frame_02",
+  "旧中文名": "白色边框",
+  "新中文名": "白色边框",
+  "来源": "官方",
+  "官方键": "uf:ce002_02_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce003_event_frame_01",
+  "旧中文名": "爱蜜莉雅边框",
+  "新中文名": "爱蜜莉雅边框",
+  "来源": "官方",
+  "官方键": "uf:ce003_01_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce003_event_frame_02",
+  "旧中文名": "雷姆边框",
+  "新中文名": "雷姆边框",
+  "来源": "官方",
+  "官方键": "uf:ce003_02_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce003_event_frame_03",
+  "旧中文名": "",
+  "新中文名": "拉姆边框",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "联动批次推断：01爱蜜莉雅/02雷姆 均为官方名，同批第三人即拉姆（角色822）"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce004_event_frame_01",
+  "旧中文名": "二号机边框",
+  "新中文名": "二号机边框",
+  "来源": "官方",
+  "官方键": "uf:ce004_event_frame_01",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce004_event_frame_02",
+  "旧中文名": "零号机边框",
+  "新中文名": "零号机边框",
+  "来源": "官方",
+  "官方键": "uf:ce004_event_frame_02",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce004_event_frame_03",
+  "旧中文名": "八号机边框",
+  "新中文名": "八号机边框",
+  "来源": "官方",
+  "官方键": "uf:ce004_event_frame_03",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce005_event_frame_01",
+  "旧中文名": "猫耳贝蕾帽边框",
+  "新中文名": "猫耳贝蕾帽边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce005_event_frame_02",
+  "旧中文名": "草帽边框",
+  "新中文名": "草帽边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce005_event_frame_03",
+  "旧中文名": "下半框眼镜边框",
+  "新中文名": "下半框眼镜边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce006_event_frame_01",
+  "旧中文名": "伊芙边框",
+  "新中文名": "伊芙边框",
+  "来源": "官方",
+  "官方键": "uf:ce006_event_frame_01",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce006_event_frame_02",
+  "旧中文名": "渡鸦边框",
+  "新中文名": "渡鸦边框",
+  "来源": "官方",
+  "官方键": "uf:ce006_event_frame_02",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce007_event_frame_01",
+  "旧中文名": "艾达边框",
+  "新中文名": "艾达边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce007_event_frame_02",
+  "旧中文名": "吉儿边框",
+  "新中文名": "吉儿边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce008_event_frame_01",
+  "旧中文名": "千束边框",
+  "新中文名": "千束边框",
+  "来源": "官方",
+  "官方键": "uf:ce008_event_frame_01",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce008_event_frame_02",
+  "旧中文名": "泷奈边框",
+  "新中文名": "泷奈边框",
+  "来源": "官方",
+  "官方键": "uf:ce008_event_frame_02",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce009_event_frame_01",
+  "旧中文名": "QUEEN（真）边框",
+  "新中文名": "QUEEN（真）边框",
+  "来源": "官方",
+  "官方键": "uf:ce009_event_frame_01",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce009_event_frame_02",
+  "旧中文名": "雪子边框",
+  "新中文名": "雪子边框",
+  "来源": "官方",
+  "官方键": "uf:ce009_event_frame_02",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce_01_event_frame_01",
+  "旧中文名": "波奇塔边框",
+  "新中文名": "波奇塔边框",
+  "来源": "官方",
+  "官方键": "uf:ce_01_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ce_01_event_frame_02",
+  "旧中文名": "波奇塔边框",
+  "新中文名": "电锯边框",
+  "来源": "官方",
+  "官方键": "uf:ce_02_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_champion_arena_acheivement_1_frame",
+  "旧中文名": "金色强运边框",
+  "新中文名": "金色强运边框",
+  "来源": "官方",
+  "官方键": "uf:_champion_arena_acheivement_1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_champion_arena_acheivement_2_frame",
+  "旧中文名": "银色失利边框",
+  "新中文名": "银色失利边框",
+  "来源": "官方",
+  "官方键": "uf:_champion_arena_acheivement_2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_champion_arena_league_1_frame",
+  "旧中文名": "",
+  "新中文名": "冠军竞技场小组循环赛边框I",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方 UI 术语 ARENA_CHAMPION_LEAGUE=小组循环赛"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_champion_arena_tournament_64_frame",
+  "旧中文名": "",
+  "新中文名": "冠军竞技场64强边框",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方 UI 术语 ARENA_CHAMPION_TOURNAMENT64=64强"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_champion_arena_tournament_8_frame",
+  "旧中文名": "",
+  "新中文名": "冠军竞技场8强边框",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方 UI 术语 ARENA_CHAMPION_TOURNAMENT8=8强"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_champion_arena_tournament_final_win_10_frame",
+  "旧中文名": "",
+  "新中文名": "冠军竞技场优胜边框X",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_champion_arena_tournament_final_win_1_frame",
+  "旧中文名": "",
+  "新中文名": "冠军竞技场优胜边框I",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方 UI 术语 ARENA_CHAMPION_TOURNAMENT_FINAL_WIN_PLAYER=优胜！"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_bilibili02_frame",
+  "旧中文名": "",
+  "新中文名": "bilibili专属拉普拉斯边框",
+  "来源": "官方",
+  "官方键": "uf:channel_bilibili2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_bilibili_frame",
+  "旧中文名": "",
+  "新中文名": "bilibili边框",
+  "来源": "官方",
+  "官方键": "uf:channel_bilibili_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_c220_frame",
+  "旧中文名": "",
+  "新中文名": "TapTap半周年活动边框",
+  "来源": "官方",
+  "官方键": "uf:channel_c220_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_c470_frame",
+  "旧中文名": "",
+  "新中文名": "炽血之红边框",
+  "来源": "官方",
+  "官方键": "uf:channel_c470_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_ce006_frame",
+  "旧中文名": "",
+  "新中文名": "异界旅人边框",
+  "来源": "官方",
+  "官方键": "uf:channel_ce006_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_halfH5_frame",
+  "旧中文名": "",
+  "新中文名": "半周年答题活动满分成就边框",
+  "来源": "官方",
+  "官方键": "uf:channel_halfH5_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_haoyou_frame",
+  "旧中文名": "",
+  "新中文名": "好游快爆边框",
+  "来源": "官方",
+  "官方键": "uf:channel_haoyou_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_huawei_frame",
+  "旧中文名": "",
+  "新中文名": "HUAWEI边框",
+  "来源": "官方",
+  "官方键": "uf:channel_huawei_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_kuaishou_frame",
+  "旧中文名": "",
+  "新中文名": "快手边框",
+  "来源": "官方",
+  "官方键": "uf:channel_kuaishou_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_luosen_frame",
+  "旧中文名": "",
+  "新中文名": "罗森点点边框",
+  "来源": "官方",
+  "官方键": "uf:channel_luosen_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_official_frame",
+  "旧中文名": "",
+  "新中文名": "官网下载边框",
+  "来源": "官方",
+  "官方键": "uf:channel_official_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_oppo_frame",
+  "旧中文名": "",
+  "新中文名": "OPPO边框",
+  "来源": "官方",
+  "官方键": "uf:channel_oppo_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_others2_frame",
+  "旧中文名": "",
+  "新中文名": "活动边框II",
+  "来源": "官方",
+  "官方键": "uf:channel_others2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_others_frame",
+  "旧中文名": "",
+  "新中文名": "活动边框I",
+  "来源": "官方",
+  "官方键": "uf:channel_others_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_pc_frame",
+  "旧中文名": "",
+  "新中文名": "PC下载边框",
+  "来源": "官方",
+  "官方键": "uf:channel_pc_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_qq_frame",
+  "旧中文名": "",
+  "新中文名": "QQ边框",
+  "来源": "官方",
+  "官方键": "uf:channel_qq_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_rongyao_frame",
+  "旧中文名": "",
+  "新中文名": "荣耀边框",
+  "来源": "官方",
+  "官方键": "uf:channel_rongyao_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_summer01_frame",
+  "旧中文名": "",
+  "新中文名": "今夏有妮边框",
+  "来源": "官方",
+  "官方键": "uf:channel_summer01_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_taptap2_frame",
+  "旧中文名": "",
+  "新中文名": "TapTap社区活动边框",
+  "来源": "官方",
+  "官方键": "uf:channel_taptap2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_taptap3_frame",
+  "旧中文名": "",
+  "新中文名": "TapTap夏日活动边框",
+  "来源": "官方",
+  "官方键": "uf:channel_taptap3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_taptap_frame",
+  "旧中文名": "",
+  "新中文名": "TapTap边框",
+  "来源": "官方",
+  "官方键": "uf:channel_taptap_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_tiktok_frame",
+  "旧中文名": "",
+  "新中文名": "抖音边框",
+  "来源": "官方",
+  "官方键": "uf:channel_tiktok_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_txapp_frame",
+  "旧中文名": "",
+  "新中文名": "应用宝边框",
+  "来源": "官方",
+  "官方键": "uf:channel_txapp_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_txvideo_frame",
+  "旧中文名": "",
+  "新中文名": "腾讯视频边框",
+  "来源": "官方",
+  "官方键": "uf:channel_txvideo_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_txvip_frame",
+  "旧中文名": "",
+  "新中文名": "心悦边框",
+  "来源": "官方",
+  "官方键": "uf:channel_txvip_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_vivo_frame",
+  "旧中文名": "",
+  "新中文名": "Vivo边框",
+  "来源": "官方",
+  "官方键": "uf:channel_vivo_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_channel_reservation_reward_xiaomi_frame",
+  "旧中文名": "",
+  "新中文名": "Xiaomi边框",
+  "来源": "官方",
+  "官方键": "uf:channel_xiaomi_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_commander_frame",
+  "旧中文名": "指挥官边框",
+  "新中文名": "指挥官边框",
+  "来源": "官方",
+  "官方键": "uf:commander",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_credit_frame",
+  "旧中文名": "信用点边框",
+  "新中文名": "信用点边框",
+  "来源": "官方",
+  "官方键": "uf:credit",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_dog_tag_frame",
+  "旧中文名": "标签边框",
+  "新中文名": "标签边框",
+  "来源": "官方",
+  "官方键": "uf:dog_tag",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_frontier_frame",
+  "旧中文名": "子弹边框",
+  "新中文名": "子弹边框",
+  "来源": "官方",
+  "官方键": "uf:frontier",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_inappshop_purchase_event_frame_01",
+  "旧中文名": "星光轨迹边框",
+  "新中文名": "星光轨迹边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_inappshop_purchase_event_frame_cn_01",
+  "旧中文名": "",
+  "新中文名": "无瑕童话边框",
+  "来源": "官方",
+  "官方键": "uf:inappshop_purchase_event_frame_cn_01",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_jofftour_event_frame_01",
+  "旧中文名": "千年古城的旅人",
+  "新中文名": "千年古城的旅人",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_moglight_event_frame",
+  "旧中文名": "",
+  "新中文名": "菜鸟边框",
+  "来源": "官方",
+  "官方键": "uf:moglight_event_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_mvg_event_frame",
+  "旧中文名": "魔镜边框",
+  "新中文名": "魔镜边框",
+  "来源": "官方",
+  "官方键": "uf:mvg_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_nks_event_frame",
+  "旧中文名": "※※边框",
+  "新中文名": "※※边框",
+  "来源": "官方",
+  "官方键": "uf:nks_event",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_04",
+  "旧中文名": "10TH指挥官边框",
+  "新中文名": "10TH指挥官边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_10th_04",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_05",
+  "旧中文名": "10TH老兵边框",
+  "新中文名": "10TH老兵边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_10th_05",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_06",
+  "旧中文名": "10TH队长边框",
+  "新中文名": "10TH队长边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_10th_06",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_07",
+  "旧中文名": "10TH将军边框",
+  "新中文名": "10TH将军边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_10th_07",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_08",
+  "旧中文名": "10TH帝王边框",
+  "新中文名": "10TH帝王边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_10th_08",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_09",
+  "旧中文名": "10TH传奇边框",
+  "新中文名": "10TH传奇边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_10th_09",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_10",
+  "旧中文名": "10TH领主边框",
+  "新中文名": "10TH领主边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_11",
+  "旧中文名": "10TH神谕边框",
+  "新中文名": "10TH神谕边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_12",
+  "旧中文名": "10TH至尊边框",
+  "新中文名": "10TH至尊边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_alpha",
+  "旧中文名": "",
+  "新中文名": "10TH排名边框α",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_beta",
+  "旧中文名": "",
+  "新中文名": "10TH排名边框β",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_10th_gamma",
+  "旧中文名": "",
+  "新中文名": "10TH排名边框γ",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_04",
+  "旧中文名": "1ST指挥官边框",
+  "新中文名": "1ST指挥官边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_1st_04",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_05",
+  "旧中文名": "1ST老兵边框",
+  "新中文名": "1ST老兵边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_1st_05",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_06",
+  "旧中文名": "1ST队长边框",
+  "新中文名": "1ST队长边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_1st_06",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_07",
+  "旧中文名": "1ST将军边框",
+  "新中文名": "1ST将军边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_1st_07",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_08",
+  "旧中文名": "1ST帝王边框",
+  "新中文名": "1ST帝王边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_1st_08",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_09",
+  "旧中文名": "1ST传奇边框",
+  "新中文名": "1ST传奇边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_1st_09",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_10",
+  "旧中文名": "1ST领主边框",
+  "新中文名": "1ST领主边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_11",
+  "旧中文名": "1ST神谕边框",
+  "新中文名": "1ST神谕边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_12",
+  "旧中文名": "1ST至尊边框",
+  "新中文名": "1ST至尊边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_alpha",
+  "旧中文名": "",
+  "新中文名": "1ST排名边框α",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_beta",
+  "旧中文名": "",
+  "新中文名": "1ST排名边框β",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_1st_gamma",
+  "旧中文名": "",
+  "新中文名": "1ST排名边框γ",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_04",
+  "旧中文名": "5TH指挥官边框",
+  "新中文名": "5TH指挥官边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_5th_04",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_05",
+  "旧中文名": "5TH老兵边框",
+  "新中文名": "5TH老兵边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_5th_05",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_06",
+  "旧中文名": "5TH队长边框",
+  "新中文名": "5TH队长边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_5th_06",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_07",
+  "旧中文名": "5TH将军边框",
+  "新中文名": "5TH将军边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_5th_07",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_08",
+  "旧中文名": "5TH帝王边框",
+  "新中文名": "5TH帝王边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_5th_08",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_09",
+  "旧中文名": "5TH传奇边框",
+  "新中文名": "5TH传奇边框",
+  "来源": "官方",
+  "官方键": "uf:rank_frame_5th_09",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_10",
+  "旧中文名": "5TH领主边框",
+  "新中文名": "5TH领主边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_11",
+  "旧中文名": "5TH神谕边框",
+  "新中文名": "5TH神谕边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_12",
+  "旧中文名": "5TH至尊边框",
+  "新中文名": "5TH至尊边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_alpha",
+  "旧中文名": "",
+  "新中文名": "5TH排名边框α",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_beta",
+  "旧中文名": "",
+  "新中文名": "5TH排名边框β",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_ranking_frame_5th_gamma",
+  "旧中文名": "",
+  "新中文名": "5TH排名边框γ",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "官方无记录，暂用变体字母"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_razer_event_frame",
+  "旧中文名": "怦然心动边框",
+  "新中文名": "怦然心动边框",
+  "来源": "官方",
+  "官方键": "uf:razer_event_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_rebuildeden_event_frame",
+  "旧中文名": "重建伊甸园边框",
+  "新中文名": "重建伊甸园边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_sennentour_frame",
+  "旧中文名": "",
+  "新中文名": "千年之旅边框",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "国际服活动，sennen=千年；官方无记录"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_side_story_frame_01",
+  "旧中文名": "营火边框",
+  "新中文名": "营火边框",
+  "来源": "官方",
+  "官方键": "uf:side_story_frame_01",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_side_story_frame_02",
+  "旧中文名": "月球漫步边框",
+  "新中文名": "月球漫步边框",
+  "来源": "官方",
+  "官方键": "uf:side_story_frame_02",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_side_story_frame_03",
+  "旧中文名": "纽带边框",
+  "新中文名": "纽带边框",
+  "来源": "官方",
+  "官方键": "uf:side_story_frame_03",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_side_story_frame_04",
+  "旧中文名": "淤泥之梦边框",
+  "新中文名": "淤泥之梦边框",
+  "来源": "官方",
+  "官方键": "uf:side_story_frame_04",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_side_story_frame_05",
+  "旧中文名": "伊甸园边框",
+  "新中文名": "伊甸园边框",
+  "来源": "官方",
+  "官方键": "uf:side_story_frame_05",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_side_story_frame_06",
+  "旧中文名": "方舟之星边框",
+  "新中文名": "方舟之星边框",
+  "来源": "官方",
+  "官方键": "uf:side_story_frame_06",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_9810811510911663_tier1_frame",
+  "旧中文名": "9810811510911663边框I",
+  "新中文名": "9810811510911663边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_9810811510911663_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_9810811510911663_tier2_frame",
+  "旧中文名": "9810811510911663边框II",
+  "新中文名": "9810811510911663边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_9810811510911663_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_9810811510911663_tier3_frame",
+  "旧中文名": "9810811510911663边框III",
+  "新中文名": "9810811510911663边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_9810811510911663_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_AltEizen_tier1_frame",
+  "旧中文名": "古铁边框I",
+  "新中文名": "古铁P.S.I.D.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_AltEizen_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_AltEizen_tier2_frame",
+  "旧中文名": "古铁边框II",
+  "新中文名": "古铁P.S.I.D.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_AltEizen_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_AltEizen_tier3_frame",
+  "旧中文名": "古铁边框III",
+  "新中文名": "古铁P.S.I.D.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_AltEizen_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Alteisen_ANMI_tier4_frame",
+  "旧中文名": "古铁A边框I（ANMI）",
+  "新中文名": "古铁A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_alteisen_03_tier4_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Alteisen_PSID_tier4_frame",
+  "旧中文名": "古铁A边框I（PSID）",
+  "新中文名": "古铁P.S.I.D.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_AltEizen_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_BlackSmith_ANMI_tier1_frame",
+  "旧中文名": "铁匠边框I（ANMI）",
+  "新中文名": "铁匠A.N.M.I.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_ANMI_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_BlackSmith_ANMI_tier2_frame",
+  "旧中文名": "铁匠边框II（ANMI）",
+  "新中文名": "铁匠A.N.M.I.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_ANMI_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_BlackSmith_ANMI_tier3_frame",
+  "旧中文名": "铁匠边框III（ANMI）",
+  "新中文名": "铁匠A.N.M.I.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_ANMI_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_BlackSmith_ANMI_tier4_frame",
+  "旧中文名": "铁匠边框I（ANMI）",
+  "新中文名": "铁匠A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_ANMI_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_BlackSmith_HSTA_tier4_frame",
+  "旧中文名": "铁匠边框I（HSTA）",
+  "新中文名": "铁匠H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_BlackSmith_tier1_frame",
+  "旧中文名": "铁匠边框I",
+  "新中文名": "铁匠H.S.T.A.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_BlackSmith_tier2_frame",
+  "旧中文名": "铁匠边框II",
+  "新中文名": "铁匠H.S.T.A.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_BlackSmith_tier3_frame",
+  "旧中文名": "铁匠边框III",
+  "新中文名": "铁匠H.S.T.A.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Crystal_PSID_tier4_frame",
+  "旧中文名": "水晶洞穴边框I（PSID）",
+  "新中文名": "水晶洞穴P.S.I.D.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Crystal_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Crystal_tier1_frame",
+  "旧中文名": "水晶洞穴边框I",
+  "新中文名": "水晶洞穴P.S.I.D.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Crystal_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Crystal_tier2_frame",
+  "旧中文名": "水晶洞穴边框II",
+  "新中文名": "水晶洞穴P.S.I.D.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Crystal_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Crystal_tier3_frame",
+  "旧中文名": "水晶洞穴边框III",
+  "新中文名": "水晶洞穴P.S.I.D.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Crystal_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Gluttony_ANMI_tier4_frame",
+  "旧中文名": "饕餮边框I（ANMI）",
+  "新中文名": "饕餮A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_gluttony_03_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_GraveDigger_ZEUS_tier4_frame",
+  "旧中文名": "掘墓边框I（过激派）",
+  "新中文名": "掘墓Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "alias:soloraid_GraveDigger_tier4",
+  "备注": "制造商变体，指向官方族内同制造商条目"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Harvester_HSTA_tier4_frame",
+  "旧中文名": "死神边框I（HSTA）",
+  "新中文名": "死神H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Harvester_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Harvester_tier1_frame",
+  "旧中文名": "死神边框I",
+  "新中文名": "死神H.S.T.A.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Harvester_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Harvester_tier2_frame",
+  "旧中文名": "死神边框II",
+  "新中文名": "死神H.S.T.A.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Harvester_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Harvester_tier3_frame",
+  "旧中文名": "死神边框III",
+  "新中文名": "死神H.S.T.A.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Harvester_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Indivilia_ZEUS_tier4_frame",
+  "旧中文名": "",
+  "新中文名": "茵迪维利亚Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Indivilia_tier4_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Indivilia_tier1_frame",
+  "旧中文名": "茵迪维利亚边框I",
+  "新中文名": "茵迪维利亚Z.E.U.S.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Indivilia_tier1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Indivilia_tier2_frame",
+  "旧中文名": "茵迪维利亚边框II",
+  "新中文名": "茵迪维利亚Z.E.U.S.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Indivilia_tier2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_Indivilia_tier3_frame",
+  "旧中文名": "茵迪维利亚边框III",
+  "新中文名": "茵迪维利亚Z.E.U.S.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Indivilia_tier3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_MotherWhale_ZEUS_tier4_frame",
+  "旧中文名": "母鲸边框I（过激派）",
+  "新中文名": "母鲸Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_motherwhale_04_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_MotherWhale_tier1_frame",
+  "旧中文名": "母鲸边框 I",
+  "新中文名": "母鲸边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_MotherWhale_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_MotherWhale_tier2_frame",
+  "旧中文名": "母鲸边框 II",
+  "新中文名": "母鲸边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_MotherWhale_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_MotherWhale_tier3_frame",
+  "旧中文名": "母鲸边框 III",
+  "新中文名": "母鲸边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_MotherWhale_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_StormBringer_tier1_frame",
+  "旧中文名": "岚灾边框I",
+  "新中文名": "岚灾边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_StormBringer_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_StormBringer_tier2_frame",
+  "旧中文名": "岚灾边框II",
+  "新中文名": "岚灾边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_StormBringer_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_StormBringer_tier3_frame",
+  "旧中文名": "岚灾边框III",
+  "新中文名": "岚灾边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_StormBringer_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_alteisen_03_tier1_frame",
+  "旧中文名": "古铁A边框I",
+  "新中文名": "古铁A.N.M.I.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_alteisen_03_tier1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_alteisen_03_tier2_frame",
+  "旧中文名": "古铁A边框I",
+  "新中文名": "古铁A.N.M.I.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_alteisen_03_tier2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_alteisen_03_tier3_frame",
+  "旧中文名": "古铁A边框I",
+  "新中文名": "古铁A.N.M.I.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_alteisen_03_tier3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_altruia_02_tier1_frame",
+  "旧中文名": "",
+  "新中文名": "奥图露亚边框I（水冷）",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "Boss 综合表 4520040141=奥图露亚；蓝色火焰对应水冷代码"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_altruia_02_tier2_frame",
+  "旧中文名": "",
+  "新中文名": "奥图露亚边框II（水冷）",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_altruia_02_tier3_frame",
+  "旧中文名": "",
+  "新中文名": "奥图露亚边框III（水冷）",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_alturia_04_tier1_frame",
+  "旧中文名": "奥图露亚边框I",
+  "新中文名": "奥图露亚边框I（燃烧）",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上；紫红火焰对应燃烧代码"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_alturia_04_tier2_frame",
+  "旧中文名": "奥图露亚边框I",
+  "新中文名": "奥图露亚边框II（燃烧）",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_alturia_04_tier3_frame",
+  "旧中文名": "奥图露亚边框I",
+  "新中文名": "奥图露亚边框III（燃烧）",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_annihilio_05_tier1_frame",
+  "旧中文名": "安尼希利奥边框I",
+  "新中文名": "安尼希利奥边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_annihilio_05_tier2_frame",
+  "旧中文名": "安尼希利奥边框I",
+  "新中文名": "安尼希利奥边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_annihilio_05_tier3_frame",
+  "旧中文名": "安尼希利奥边框I",
+  "新中文名": "安尼希利奥边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_behemoth_PSID_tier4_frame",
+  "旧中文名": "贝西摩斯边框I（PSID）",
+  "新中文名": "贝西摩斯P.S.I.D.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_behemoth_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_behemoth_tier1_frame",
+  "旧中文名": "贝西摩斯边框I",
+  "新中文名": "贝西摩斯P.S.I.D.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_behemoth_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_behemoth_tier2_frame",
+  "旧中文名": "贝西摩斯边框II",
+  "新中文名": "贝西摩斯P.S.I.D.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_behemoth_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_behemoth_tier3_frame",
+  "旧中文名": "贝西摩斯边框III",
+  "新中文名": "贝西摩斯P.S.I.D.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_behemoth_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_blacksnake_01_tier1_frame",
+  "旧中文名": "黑蛇边框 I",
+  "新中文名": "黑蛇边框I",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_blacksnake_01_tier2_frame",
+  "旧中文名": "黑蛇边框 I",
+  "新中文名": "黑蛇边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_blacksnake_01_tier3_frame",
+  "旧中文名": "黑蛇边框 I",
+  "新中文名": "黑蛇边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_crystalchamber_03_tier1_frame",
+  "旧中文名": "水晶洞穴A边框I",
+  "新中文名": "水晶洞穴A边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_crystalchamber_03_tier2_frame",
+  "旧中文名": "水晶洞穴A边框I",
+  "新中文名": "水晶洞穴A边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_crystalchamber_03_tier3_frame",
+  "旧中文名": "水晶洞穴A边框I",
+  "新中文名": "水晶洞穴A边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_egovista_04_tier1_frame",
+  "旧中文名": "艾格维斯塔边框I",
+  "新中文名": "艾格维斯塔边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_egovista_04_tier2_frame",
+  "旧中文名": "艾格维斯塔边框I",
+  "新中文名": "艾格维斯塔边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_egovista_04_tier3_frame",
+  "旧中文名": "艾格维斯塔边框I",
+  "新中文名": "艾格维斯塔边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_gluttony_03_tier1_frame",
+  "旧中文名": "饕餮边框I",
+  "新中文名": "饕餮A.N.M.I.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_gluttony_03_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_gluttony_03_tier2_frame",
+  "旧中文名": "饕餮边框I",
+  "新中文名": "饕餮A.N.M.I.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_gluttony_03_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_gluttony_03_tier3_frame",
+  "旧中文名": "饕餮边框I",
+  "新中文名": "饕餮A.N.M.I.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_gluttony_03_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_goldkraken_DMTR_tier4_frame",
+  "旧中文名": "黄金克拉肯边框I（DMTR）",
+  "新中文名": "黄金克拉肯[D.M.T.R.]边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_goldkraken_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_goldkraken_tier1_frame",
+  "旧中文名": "黄金克拉肯边框I",
+  "新中文名": "黄金克拉肯[D.M.T.R.]边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_goldkraken_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_goldkraken_tier2_frame",
+  "旧中文名": "黄金克拉肯边框II",
+  "新中文名": "黄金克拉肯[D.M.T.R.]边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_goldkraken_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_goldkraken_tier3_frame",
+  "旧中文名": "黄金克拉肯边框III",
+  "新中文名": "黄金克拉肯[D.M.T.R.]边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_goldkraken_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_gravedigger_tier1_frame",
+  "旧中文名": "掘墓边框I",
+  "新中文名": "掘墓Z.E.U.S.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_GraveDigger_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_gravedigger_tier2_frame",
+  "旧中文名": "掘墓边框I",
+  "新中文名": "掘墓Z.E.U.S.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_GraveDigger_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_gravedigger_tier3_frame",
+  "旧中文名": "掘墓边框I",
+  "新中文名": "掘墓Z.E.U.S.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_GraveDigger_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_hologramkraken_01_tier1_frame",
+  "旧中文名": "全息投影克拉肯边框I",
+  "新中文名": "全息投影克拉肯H.S.T.A.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_hologramkraken_01_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_hologramkraken_01_tier2_frame",
+  "旧中文名": "全息投影克拉肯边框I",
+  "新中文名": "全息投影克拉肯H.S.T.A.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_hologramkraken_01_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_hologramkraken_01_tier3_frame",
+  "旧中文名": "全息投影克拉肯边框I",
+  "新中文名": "全息投影克拉肯H.S.T.A.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_hologramkraken_01_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_hologramkraken_HSTA_tier4_frame",
+  "旧中文名": "全息投影克拉肯边框I（HSTA）",
+  "新中文名": "全息投影克拉肯H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_hologramkraken_01_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_islandeater_04_tier1_frame",
+  "旧中文名": "噬屿边框I",
+  "新中文名": "噬屿边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_islandeater_04_tier2_frame",
+  "旧中文名": "噬屿边框I",
+  "新中文名": "噬屿边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_islandeater_04_tier3_frame",
+  "旧中文名": "噬屿边框I",
+  "新中文名": "噬屿边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_landeater_tier1_frame",
+  "旧中文名": "噬天边框I",
+  "新中文名": "噬天边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_landeater_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_landeater_tier2_frame",
+  "旧中文名": "噬天边框II",
+  "新中文名": "噬天边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_landeater_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_landeater_tier3_frame",
+  "旧中文名": "噬天边框III",
+  "新中文名": "噬天边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_landeater_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_liberaliobody_01_tier1_frame",
+  "旧中文名": "",
+  "新中文名": "莉贝雷利奥H.S.T.A.边框I",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "Boss 综合表 2510160111=莉贝雷利奥躯体 [H.S.T.A.]"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_liberaliobody_01_tier2_frame",
+  "旧中文名": "",
+  "新中文名": "莉贝雷利奥H.S.T.A.边框II",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_liberaliobody_01_tier3_frame",
+  "旧中文名": "",
+  "新中文名": "莉贝雷利奥H.S.T.A.边框III",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_luxuriousspider_03_tier1_frame",
+  "旧中文名": "奢华之蛛边框I",
+  "新中文名": "奢华之蛛A.N.M.I.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_luxuriousspider_03_tier1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_luxuriousspider_03_tier2_frame",
+  "旧中文名": "奢华之蛛边框I",
+  "新中文名": "奢华之蛛A.N.M.I.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_luxuriousspider_03_tier2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_luxuriousspider_03_tier3_frame",
+  "旧中文名": "奢华之蛛边框I",
+  "新中文名": "奢华之蛛A.N.M.I.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_luxuriousspider_03_tier3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_luxuriousspider_ANMI_tier4_frame",
+  "旧中文名": "奢华之蛛边框I（ANMI）",
+  "新中文名": "奢华之蛛A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_luxuriousspider_03_tier4_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_massiveobject_tier1_frame",
+  "旧中文名": "巨大质量体边框I",
+  "新中文名": "巨大质量体边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_massiveobject_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_massiveobject_tier2_frame",
+  "旧中文名": "巨大质量体边框II",
+  "新中文名": "巨大质量体边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_massiveobject_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_massiveobject_tier3_frame",
+  "旧中文名": "巨大质量体边框III",
+  "新中文名": "巨大质量体边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_massiveobject_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_massiveobjectq_05_tier1_frame",
+  "旧中文名": "巨大质量体Q边框I",
+  "新中文名": "巨大质量体Q边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_massiveobjectq_05_tier2_frame",
+  "旧中文名": "巨大质量体Q边框I",
+  "新中文名": "巨大质量体Q边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_massiveobjectq_05_tier3_frame",
+  "旧中文名": "巨大质量体Q边框I",
+  "新中文名": "巨大质量体Q边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_materialh_01_tier1_frame",
+  "旧中文名": "秘材H边框I",
+  "新中文名": "秘材H H.S.T.A.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_materialh_01_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_materialh_01_tier2_frame",
+  "旧中文名": "秘材H边框II",
+  "新中文名": "秘材H H.S.T.A.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_materialh_01_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_materialh_01_tier3_frame",
+  "旧中文名": "秘材H边框III",
+  "新中文名": "秘材H H.S.T.A.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_materialh_01_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_materialh_HSTA_tier4_frame",
+  "旧中文名": "秘材H边框I（HSTA）",
+  "新中文名": "秘材H H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "alias:soloraid_materialh_01_tier4",
+  "备注": "制造商变体，指向官方族内同制造商条目"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_materialh_tier1_frame",
+  "旧中文名": "秘材H边框I",
+  "新中文名": "秘材H边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_materialh_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_materialh_tier2_frame",
+  "旧中文名": "秘材H边框II",
+  "新中文名": "秘材H边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_materialh_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_materialh_tier3_frame",
+  "旧中文名": "秘材H边框III",
+  "新中文名": "秘材H边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_materialh_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_mirrorcontainer_tier1_frame",
+  "旧中文名": "镜像容器边框I",
+  "新中文名": "镜像容器边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_mirrorcontainer_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_mirrorcontainer_tier2_frame",
+  "旧中文名": "镜像容器边框II",
+  "新中文名": "镜像容器边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_mirrorcontainer_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_mirrorcontainer_tier3_frame",
+  "旧中文名": "镜像容器边框III",
+  "新中文名": "镜像容器边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_mirrorcontainer_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_modernia_03_tier1_frame",
+  "旧中文名": "神罚边框 I",
+  "新中文名": "神罚A.N.M.I.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_modernia_03_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_modernia_03_tier2_frame",
+  "旧中文名": "神罚边框 II",
+  "新中文名": "神罚A.N.M.I.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_modernia_03_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_modernia_03_tier3_frame",
+  "旧中文名": "神罚边框III",
+  "新中文名": "神罚A.N.M.I.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_modernia_03_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_modernia_ANMI_tier4_frame",
+  "旧中文名": "神罚边框 I（ANMI）",
+  "新中文名": "神罚A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_modernia_03_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_modernia_tier1_frame",
+  "旧中文名": "神罚边框 I",
+  "新中文名": "神罚边框 I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_modernia_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_modernia_tier2_frame",
+  "旧中文名": "神罚边框 II",
+  "新中文名": "神罚边框 II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_modernia_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_modernia_tier3_frame",
+  "旧中文名": "神罚边框III",
+  "新中文名": "神罚边框 III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_modernia_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_motherwhale_04_tier1_frame",
+  "旧中文名": "母鲸边框 I",
+  "新中文名": "母鲸Z.E.U.S.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_motherwhale_04_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_motherwhale_04_tier2_frame",
+  "旧中文名": "母鲸边框 I",
+  "新中文名": "母鲸Z.E.U.S.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_motherwhale_04_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_motherwhale_04_tier3_frame",
+  "旧中文名": "母鲸边框 I",
+  "新中文名": "母鲸Z.E.U.S.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_motherwhale_04_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_nihilister_tier1_frame",
+  "旧中文名": "",
+  "新中文名": "尼希利斯塔边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Nihil_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_nihilister_tier2_frame",
+  "旧中文名": "",
+  "新中文名": "尼希利斯塔边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Nihil_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_nihilister_tier3_frame",
+  "旧中文名": "",
+  "新中文名": "尼希利斯塔边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Nihil_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_onlyone_01_tier1_frame",
+  "旧中文名": "",
+  "新中文名": "唯一者边框I",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "Boss 代号 OnlyOne，部件名 海中/大地/天空巨兽；官方无记录"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_onlyone_01_tier2_frame",
+  "旧中文名": "",
+  "新中文名": "唯一者边框II",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_onlyone_01_tier3_frame",
+  "旧中文名": "",
+  "新中文名": "唯一者边框III",
+  "来源": "推断",
+  "官方键": "",
+  "备注": "同上"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_pitilessjudge_02_tier1_frame",
+  "旧中文名": "冰冷的审判者边框I",
+  "新中文名": "冰冷的审判者边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_pitilessjudge_02_tier2_frame",
+  "旧中文名": "冰冷的审判者边框I",
+  "新中文名": "冰冷的审判者边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_pitilessjudge_02_tier3_frame",
+  "旧中文名": "冰冷的审判者边框I",
+  "新中文名": "冰冷的审判者边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_providence_04_tier1_frame",
+  "旧中文名": "天意边框I",
+  "新中文名": "天意Z.E.U.S.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_providence_04_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_providence_04_tier2_frame",
+  "旧中文名": "天意边框I",
+  "新中文名": "天意Z.E.U.S.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_providence_04_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_providence_04_tier3_frame",
+  "旧中文名": "天意边框I",
+  "新中文名": "天意Z.E.U.S.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_providence_04_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_providence_ZEUS_tier4_frame",
+  "旧中文名": "天意边框I（过激派）",
+  "新中文名": "天意Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_providence_04_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_queen_05_tier1_frame",
+  "旧中文名": "女王001边框I",
+  "新中文名": "女王001边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_queen_05_tier2_frame",
+  "旧中文名": "女王001边框I",
+  "新中文名": "女王001边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_queen_05_tier3_frame",
+  "旧中文名": "女王001边框I",
+  "新中文名": "女王001边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_talkative_HSTA_tier4_frame",
+  "旧中文名": "嚣嘈边框I（HSTA）",
+  "新中文名": "嚣嘈H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_talkative_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_talkative_tier1_frame",
+  "旧中文名": "嚣嘈边框I",
+  "新中文名": "嚣嘈H.S.T.A.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_talkative_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_talkative_tier2_frame",
+  "旧中文名": "嚣嘈边框II",
+  "新中文名": "嚣嘈H.S.T.A.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_talkative_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_talkative_tier3_frame",
+  "旧中文名": "嚣嘈边框III",
+  "新中文名": "嚣嘈H.S.T.A.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_talkative_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ultra_01_tier1_frame",
+  "旧中文名": "巨型边框I",
+  "新中文名": "巨型边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ultra_01_tier2_frame",
+  "旧中文名": "巨型边框II",
+  "新中文名": "巨型边框II",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ultra_01_tier3_frame",
+  "旧中文名": "巨型边框III",
+  "新中文名": "巨型边框III",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ultra_ZEUS_tier4_frame",
+  "旧中文名": "巨型边框I（过激派）",
+  "新中文名": "过激派Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "alias:soloraid_ultra_tier4",
+  "备注": "制造商变体，指向官方族内同制造商条目"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ultra_tier1_frame",
+  "旧中文名": "巨型边框I",
+  "新中文名": "过激派Z.E.U.S.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_ultra_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ultra_tier2_frame",
+  "旧中文名": "巨型边框II",
+  "新中文名": "过激派Z.E.U.S.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_ultra_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ultra_tier3_frame",
+  "旧中文名": "巨型边框III",
+  "新中文名": "过激派Z.E.U.S.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_ultra_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_whiteicedragon_02_tier1_frame",
+  "旧中文名": "白冰龙边框I",
+  "新中文名": "白冰龙边框I",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_whiteicedragon_02_tier2_frame",
+  "旧中文名": "白冰龙边框I",
+  "新中文名": "白冰龙边框II",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_whiteicedragon_02_tier3_frame",
+  "旧中文名": "白冰龙边框I",
+  "新中文名": "白冰龙边框III",
+  "来源": "修正",
+  "官方键": "",
+  "备注": "官方无该条，按同族 tier 序号修正罗马数字"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ziz_03_tier1_frame",
+  "旧中文名": "席兹边框I",
+  "新中文名": "席兹A.N.M.I.边框I",
+  "来源": "官方",
+  "官方键": "uf:soloraid_ziz_03_tier1",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ziz_03_tier2_frame",
+  "旧中文名": "席兹边框I",
+  "新中文名": "席兹A.N.M.I.边框II",
+  "来源": "官方",
+  "官方键": "uf:soloraid_ziz_03_tier2",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ziz_03_tier3_frame",
+  "旧中文名": "席兹边框I",
+  "新中文名": "席兹A.N.M.I.边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_ziz_03_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_soloraid_ziz_ANMI_tier4_frame",
+  "旧中文名": "席兹边框I（ANMI）",
+  "新中文名": "席兹A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_ziz_03_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_strangetales2_frame_01",
+  "旧中文名": "",
+  "新中文名": "DokiDoki Room活动边框",
+  "来源": "官方",
+  "官方键": "uf:channel_strangetales2_01_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_strangetales2_frame_02",
+  "旧中文名": "",
+  "新中文名": "DokiDoki Room活动边框",
+  "来源": "官方",
+  "官方键": "uf:channel_strangetales2_02_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_strangetales_frame_01",
+  "旧中文名": "",
+  "新中文名": "今天的你有点不一样活动边框",
+  "来源": "官方",
+  "官方键": "uf:channel_strangetales01_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_strangetales_frame_02",
+  "旧中文名": "",
+  "新中文名": "今天的你有点不一样活动边框",
+  "来源": "官方",
+  "官方键": "uf:channel_strangetales02_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_surface_beta_frame_01",
+  "旧中文名": "向导边框",
+  "新中文名": "向导边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_surface_beta_frame_02",
+  "旧中文名": "专业向导边框",
+  "新中文名": "专业向导边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season10_1_frame",
+  "旧中文名": "",
+  "新中文名": "S10联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season10_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season10_2_frame",
+  "旧中文名": "",
+  "新中文名": "S10联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season10_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season10_3_frame",
+  "旧中文名": "",
+  "新中文名": "S10联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season10_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season11_1_frame",
+  "旧中文名": "",
+  "新中文名": "S11联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season11_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season11_2_frame",
+  "旧中文名": "",
+  "新中文名": "S11联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season11_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season11_3_frame",
+  "旧中文名": "",
+  "新中文名": "S11联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season11_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season12_1_frame",
+  "旧中文名": "",
+  "新中文名": "S12联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season12_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season12_2_frame",
+  "旧中文名": "",
+  "新中文名": "S12联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season12_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season12_3_frame",
+  "旧中文名": "",
+  "新中文名": "S12联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season12_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season13_1_frame",
+  "旧中文名": "",
+  "新中文名": "S13联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season13_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season13_2_frame",
+  "旧中文名": "",
+  "新中文名": "S13联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season13_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season13_3_frame",
+  "旧中文名": "",
+  "新中文名": "S13联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season13_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season14_1_frame",
+  "旧中文名": "",
+  "新中文名": "S14联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season14_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season14_2_frame",
+  "旧中文名": "",
+  "新中文名": "S14联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season14_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season14_3_frame",
+  "旧中文名": "",
+  "新中文名": "S14联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season14_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season15_1_frame",
+  "旧中文名": "",
+  "新中文名": "S15联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season15_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season15_2_frame",
+  "旧中文名": "",
+  "新中文名": "S15联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season15_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season15_3_frame",
+  "旧中文名": "",
+  "新中文名": "S15联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season15_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season16_1_frame",
+  "旧中文名": "",
+  "新中文名": "S16联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season16_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season16_2_frame",
+  "旧中文名": "",
+  "新中文名": "S16联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season16_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season16_3_frame",
+  "旧中文名": "",
+  "新中文名": "S16联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season16_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season17_1_frame",
+  "旧中文名": "",
+  "新中文名": "S17联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season17_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season17_2_frame",
+  "旧中文名": "",
+  "新中文名": "S17联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season17_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season17_3_frame",
+  "旧中文名": "",
+  "新中文名": "S17联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season17_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season18_1_frame",
+  "旧中文名": "",
+  "新中文名": "S18联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season18_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season18_2_frame",
+  "旧中文名": "",
+  "新中文名": "S18联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season18_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season18_3_frame",
+  "旧中文名": "",
+  "新中文名": "S18联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season18_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season19_1_frame",
+  "旧中文名": "",
+  "新中文名": "S19联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season19_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season19_2_frame",
+  "旧中文名": "",
+  "新中文名": "S19联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season19_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season19_3_frame",
+  "旧中文名": "",
+  "新中文名": "S19联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season19_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season1_1_frame",
+  "旧中文名": "",
+  "新中文名": "S1联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season1_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season1_2_frame",
+  "旧中文名": "",
+  "新中文名": "S1联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season1_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season1_3_frame",
+  "旧中文名": "",
+  "新中文名": "S1联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season1_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season20_1_frame",
+  "旧中文名": "",
+  "新中文名": "S20联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season20_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season20_2_frame",
+  "旧中文名": "",
+  "新中文名": "S20联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season20_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season20_3_frame",
+  "旧中文名": "",
+  "新中文名": "S20联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season20_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season2_1_frame",
+  "旧中文名": "",
+  "新中文名": "S2联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season2_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season2_2_frame",
+  "旧中文名": "",
+  "新中文名": "S2联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season2_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season2_3_frame",
+  "旧中文名": "",
+  "新中文名": "S2联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season2_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season3_1_frame",
+  "旧中文名": "",
+  "新中文名": "S3联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season3_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season3_2_frame",
+  "旧中文名": "",
+  "新中文名": "S3联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season3_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season3_3_frame",
+  "旧中文名": "",
+  "新中文名": "S3联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season3_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season4_1_frame",
+  "旧中文名": "",
+  "新中文名": "S4联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season4_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season4_2_frame",
+  "旧中文名": "",
+  "新中文名": "S4联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season4_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season4_3_frame",
+  "旧中文名": "",
+  "新中文名": "S4联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season4_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season5_1_frame",
+  "旧中文名": "",
+  "新中文名": "S5联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season5_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season5_2_frame",
+  "旧中文名": "",
+  "新中文名": "S5联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season5_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season5_3_frame",
+  "旧中文名": "",
+  "新中文名": "S5联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season5_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season6_1_frame",
+  "旧中文名": "",
+  "新中文名": "S6联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season6_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season6_2_frame",
+  "旧中文名": "",
+  "新中文名": "S6联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season6_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season6_3_frame",
+  "旧中文名": "",
+  "新中文名": "S6联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season6_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season7_1_frame",
+  "旧中文名": "",
+  "新中文名": "S7联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season7_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season7_2_frame",
+  "旧中文名": "",
+  "新中文名": "S7联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season7_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season7_3_frame",
+  "旧中文名": "",
+  "新中文名": "S7联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season7_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season8_1_frame",
+  "旧中文名": "",
+  "新中文名": "S8联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season8_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season8_2_frame",
+  "旧中文名": "",
+  "新中文名": "S8联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season8_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season8_3_frame",
+  "旧中文名": "",
+  "新中文名": "S8联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season8_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season9_1_frame",
+  "旧中文名": "",
+  "新中文名": "S9联盟征服者边框III",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season9_1_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season9_2_frame",
+  "旧中文名": "",
+  "新中文名": "S9联盟征服者边框II",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season9_2_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_unionraid_ranking_season9_3_frame",
+  "旧中文名": "",
+  "新中文名": "S9联盟征服者边框I",
+  "来源": "官方",
+  "官方键": "uf:unionraid_ranking_season9_3_frame",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_01_frame_01",
+  "旧中文名": "利刃边框",
+  "新中文名": "利刃边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_01_frame_01",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_01_frame_02",
+  "旧中文名": "仙境边框",
+  "新中文名": "仙境边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_01_frame_02",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_01_frame_03",
+  "旧中文名": "圣徒边框",
+  "新中文名": "圣徒边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_01_frame_03",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_01_frame_04",
+  "旧中文名": "闪耀边框",
+  "新中文名": "闪耀边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_01_frame_04",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_01_frame_05",
+  "旧中文名": "单色边框",
+  "新中文名": "单色边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_01_frame_05",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_02_frame_01",
+  "旧中文名": "红色边框",
+  "新中文名": "红色边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_02_frame_01",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_02_frame_02",
+  "旧中文名": "高级边框",
+  "新中文名": "高级边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_02_frame_02",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_02_frame_03",
+  "旧中文名": "东方边框",
+  "新中文名": "东方边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_02_frame_03",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_02_frame_04",
+  "旧中文名": "幸运兔边框",
+  "新中文名": "幸运兔边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_02_frame_04",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_02_frame_05",
+  "旧中文名": "阴影边框",
+  "新中文名": "阴影边框",
+  "来源": "官方",
+  "官方键": "spr:icn_vote_event_02_frame_05",
+  "备注": ""
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_03_frame_01",
+  "旧中文名": "深红边框",
+  "新中文名": "深红边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_03_frame_02",
+  "旧中文名": "魔镜边框",
+  "新中文名": "魔镜边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_03_frame_03",
+  "旧中文名": "威严边框",
+  "新中文名": "威严边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_03_frame_04",
+  "旧中文名": "羽状边框",
+  "新中文名": "羽状边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "icn_vote_event_03_frame_05",
+  "旧中文名": "月光边框",
+  "新中文名": "月光边框",
+  "来源": "保留",
+  "官方键": "",
+  "备注": "官方无记录，沿用旧译名"
+ },
+ {
+  "类别": "静态框",
+  "名称": "uf_100",
+  "旧中文名": "新任指挥官",
+  "新中文名": "新任指挥官",
+  "来源": "官方",
+  "官方键": "uf:100",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "Alteisen_ANMI_tier4",
+  "旧中文名": "古铁A边框I（ANMI）",
+  "新中文名": "古铁A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_alteisen_03_tier4_frame",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "Alteisen_PSID_tier4",
+  "旧中文名": "古铁A边框I（PSID）",
+  "新中文名": "古铁P.S.I.D.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_AltEizen_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "BlackSmith_ANMI_tier4",
+  "旧中文名": "铁匠边框I（ANMI）",
+  "新中文名": "铁匠A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_ANMI_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "BlackSmith_HSTA_tier4",
+  "旧中文名": "铁匠边框I（HSTA）",
+  "新中文名": "铁匠H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_BlackSmith_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "Crystal_PSID_tier4",
+  "旧中文名": "水晶洞穴边框I（PSID）",
+  "新中文名": "水晶洞穴P.S.I.D.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Crystal_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "Gluttony_ANMI_tier4",
+  "旧中文名": "饕餮边框I（ANMI）",
+  "新中文名": "饕餮A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_gluttony_03_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "GraveDigger_ZEUS_tier4_layer1",
+  "旧中文名": "掘墓边框I（过激派）",
+  "新中文名": "掘墓Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "alias:soloraid_GraveDigger_tier4",
+  "备注": "制造商变体，指向官方族内同制造商条目"
+ },
+ {
+  "类别": "动态框",
+  "名称": "Harvester_HSTA_tier4",
+  "旧中文名": "死神边框I（HSTA）",
+  "新中文名": "死神H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Harvester_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "Indivilia_ZEUS_tier4",
+  "旧中文名": "",
+  "新中文名": "茵迪维利亚Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_Indivilia_tier4_frame",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "MotherWhale_ZEUS_tier4",
+  "旧中文名": "母鲸边框I（过激派）",
+  "新中文名": "母鲸Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_motherwhale_04_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "StormBringer_tier3",
+  "旧中文名": "岚灾边框III",
+  "新中文名": "岚灾边框III",
+  "来源": "官方",
+  "官方键": "uf:soloraid_StormBringer_tier3",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "behemoth_PSID_tier4",
+  "旧中文名": "贝西摩斯边框I（PSID）",
+  "新中文名": "贝西摩斯P.S.I.D.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_behemoth_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "goldkraken_DMTR_tier4",
+  "旧中文名": "黄金克拉肯边框I（DMTR）",
+  "新中文名": "黄金克拉肯[D.M.T.R.]边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_goldkraken_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "hologramkraken_HSTA_tier4",
+  "旧中文名": "全息投影克拉肯边框I（HSTA）",
+  "新中文名": "全息投影克拉肯H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_hologramkraken_01_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "luxuriousspider_ANMI_tier4",
+  "旧中文名": "奢华之蛛边框I（ANMI）",
+  "新中文名": "奢华之蛛A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_luxuriousspider_03_tier4_frame",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "materialh_HSTA_tier4",
+  "旧中文名": "秘材H边框I（HSTA）",
+  "新中文名": "秘材H H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "alias:soloraid_materialh_01_tier4",
+  "备注": "制造商变体，指向官方族内同制造商条目"
+ },
+ {
+  "类别": "动态框",
+  "名称": "modernia_ANMI_tier4",
+  "旧中文名": "神罚边框 I（ANMI）",
+  "新中文名": "神罚A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_modernia_03_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "providence_ZEUS_tier4",
+  "旧中文名": "天意边框I（过激派）",
+  "新中文名": "天意Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_providence_04_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "talkative_HSTA_tier4",
+  "旧中文名": "嚣嘈边框I（HSTA）",
+  "新中文名": "嚣嘈H.S.T.A.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_talkative_tier4",
+  "备注": ""
+ },
+ {
+  "类别": "动态框",
+  "名称": "ultra_ZEUS_tier4",
+  "旧中文名": "巨型边框I（过激派）",
+  "新中文名": "过激派Z.E.U.S.边框IV",
+  "来源": "官方",
+  "官方键": "alias:soloraid_ultra_tier4",
+  "备注": "制造商变体，指向官方族内同制造商条目"
+ },
+ {
+  "类别": "动态框",
+  "名称": "ziz_ANMI_tier4",
+  "旧中文名": "席兹边框I（ANMI）",
+  "新中文名": "席兹A.N.M.I.边框IV",
+  "来源": "官方",
+  "官方键": "uf:soloraid_ziz_03_tier4",
+  "备注": ""
+ }
+]

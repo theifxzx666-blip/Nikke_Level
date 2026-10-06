@@ -69,6 +69,12 @@
         ? PENDANT_CHIPS.map(k => ({ k }))
         : FRAME_CHIPS.map(k => ({ k }));
     defs.forEach(d => {
+      const cnt = chipCount(state.tab, d.k);
+      // 空分类不渲染（如 R21 全部汉化后「其他」为 0）；若当前筛选已失效则回退「全部」
+      if (cnt === 0 && d.k !== '全部') {
+        if (cur === d.k) { state.filter[state.tab] = '全部'; }
+        return;
+      }
       const b = document.createElement('button');
       b.className = 'chip' + (cur === d.k ? ' on' : '');
       b.type = 'button';

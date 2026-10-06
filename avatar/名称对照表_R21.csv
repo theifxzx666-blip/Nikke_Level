@@ -1,0 +1,374 @@
+﻿类别,精灵码(名称),旧中文名,新中文名,命名来源,官方 locale 键,依据/备注
+静态框,champion_arena_main_bronze_tier1_frame,新手边框,新手边框,官方 Locale,spr:champion_arena_main_bronze_tier1_frame_00_00,
+静态框,champion_arena_main_bronze_tier2_frame,王牌边框I,王牌边框I,官方 Locale,spr:champion_arena_main_bronze_tier2_frame_00_00,
+静态框,champion_arena_main_gold_tier2_frame,大师边框I,大师边框I,官方 Locale,spr:champion_arena_main_gold_tier2_frame_00_00,
+静态框,champion_arena_main_gold_tier3_frame,特级大师边框I,特级大师边框I,官方 Locale,spr:champion_arena_main_gold_tier3_frame_00_00,
+静态框,champion_arena_main_platinum_tier3_frame,冠军边框I,冠军边框I,官方 Locale,spr:champion_arena_main_platinum_tier3_frame_00_00,
+静态框,champion_arena_main_silver_tier1_frame,行家边框I,行家边框I,官方 Locale,spr:champion_arena_main_silver_tier1_frame_00_00,
+静态框,champion_arena_main_silver_tier2_frame,专家边框I,专家边框I,官方 Locale,spr:champion_arena_main_silver_tier2_frame_00_00,
+静态框,champion_arena_main_silver_tier3_frame,教授边框I,教授边框I,官方 Locale,spr:champion_arena_main_silver_tier3_frame_00_00,
+静态框,icn_1000days_event_frame,1000 DAYS边框,1000 DAYS边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_aegisthediver_event_frame,潜水员边框,潜水员边框,官方 Locale,uf:aegisthediver_event,
+静态框,icn_arkhero_frame,方舟英雄边框,方舟英雄边框,官方 Locale,uf:channel_arkhero_frame,
+静态框,icn_ce002_event_frame_01,寄叶边框,寄叶边框,官方 Locale,uf:ce002_01_event,
+静态框,icn_ce002_event_frame_02,白色边框,白色边框,官方 Locale,uf:ce002_02_event,
+静态框,icn_ce003_event_frame_01,爱蜜莉雅边框,爱蜜莉雅边框,官方 Locale,uf:ce003_01_event,
+静态框,icn_ce003_event_frame_02,雷姆边框,雷姆边框,官方 Locale,uf:ce003_02_event,
+静态框,icn_ce003_event_frame_03,,拉姆边框,推断(待核),,联动批次推断：01爱蜜莉雅/02雷姆 均为官方名，同批第三人即拉姆（角色822）
+静态框,icn_ce004_event_frame_01,二号机边框,二号机边框,官方 Locale,uf:ce004_event_frame_01,
+静态框,icn_ce004_event_frame_02,零号机边框,零号机边框,官方 Locale,uf:ce004_event_frame_02,
+静态框,icn_ce004_event_frame_03,八号机边框,八号机边框,官方 Locale,uf:ce004_event_frame_03,
+静态框,icn_ce005_event_frame_01,猫耳贝蕾帽边框,猫耳贝蕾帽边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ce005_event_frame_02,草帽边框,草帽边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ce005_event_frame_03,下半框眼镜边框,下半框眼镜边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ce006_event_frame_01,伊芙边框,伊芙边框,官方 Locale,uf:ce006_event_frame_01,
+静态框,icn_ce006_event_frame_02,渡鸦边框,渡鸦边框,官方 Locale,uf:ce006_event_frame_02,
+静态框,icn_ce007_event_frame_01,艾达边框,艾达边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ce007_event_frame_02,吉儿边框,吉儿边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ce008_event_frame_01,千束边框,千束边框,官方 Locale,uf:ce008_event_frame_01,
+静态框,icn_ce008_event_frame_02,泷奈边框,泷奈边框,官方 Locale,uf:ce008_event_frame_02,
+静态框,icn_ce009_event_frame_01,QUEEN（真）边框,QUEEN（真）边框,官方 Locale,uf:ce009_event_frame_01,
+静态框,icn_ce009_event_frame_02,雪子边框,雪子边框,官方 Locale,uf:ce009_event_frame_02,
+静态框,icn_ce_01_event_frame_01,波奇塔边框,波奇塔边框,官方 Locale,uf:ce_01_event,
+静态框,icn_ce_01_event_frame_02,波奇塔边框,电锯边框,官方 Locale,uf:ce_02_event,
+静态框,icn_champion_arena_acheivement_1_frame,金色强运边框,金色强运边框,官方 Locale,uf:_champion_arena_acheivement_1,
+静态框,icn_champion_arena_acheivement_2_frame,银色失利边框,银色失利边框,官方 Locale,uf:_champion_arena_acheivement_2,
+静态框,icn_champion_arena_league_1_frame,,冠军竞技场小组循环赛边框I,推断(待核),,官方 UI 术语 ARENA_CHAMPION_LEAGUE=小组循环赛
+静态框,icn_champion_arena_tournament_64_frame,,冠军竞技场64强边框,推断(待核),,官方 UI 术语 ARENA_CHAMPION_TOURNAMENT64=64强
+静态框,icn_champion_arena_tournament_8_frame,,冠军竞技场8强边框,推断(待核),,官方 UI 术语 ARENA_CHAMPION_TOURNAMENT8=8强
+静态框,icn_champion_arena_tournament_final_win_10_frame,,冠军竞技场优胜边框X,推断(待核),,同上
+静态框,icn_champion_arena_tournament_final_win_1_frame,,冠军竞技场优胜边框I,推断(待核),,官方 UI 术语 ARENA_CHAMPION_TOURNAMENT_FINAL_WIN_PLAYER=优胜！
+静态框,icn_channel_reservation_reward_bilibili02_frame,,bilibili专属拉普拉斯边框,官方 Locale,uf:channel_bilibili2_frame,
+静态框,icn_channel_reservation_reward_bilibili_frame,,bilibili边框,官方 Locale,uf:channel_bilibili_frame,
+静态框,icn_channel_reservation_reward_c220_frame,,TapTap半周年活动边框,官方 Locale,uf:channel_c220_frame,
+静态框,icn_channel_reservation_reward_c470_frame,,炽血之红边框,官方 Locale,uf:channel_c470_frame,
+静态框,icn_channel_reservation_reward_ce006_frame,,异界旅人边框,官方 Locale,uf:channel_ce006_frame,
+静态框,icn_channel_reservation_reward_halfH5_frame,,半周年答题活动满分成就边框,官方 Locale,uf:channel_halfH5_frame,
+静态框,icn_channel_reservation_reward_haoyou_frame,,好游快爆边框,官方 Locale,uf:channel_haoyou_frame,
+静态框,icn_channel_reservation_reward_huawei_frame,,HUAWEI边框,官方 Locale,uf:channel_huawei_frame,
+静态框,icn_channel_reservation_reward_kuaishou_frame,,快手边框,官方 Locale,uf:channel_kuaishou_frame,
+静态框,icn_channel_reservation_reward_luosen_frame,,罗森点点边框,官方 Locale,uf:channel_luosen_frame,
+静态框,icn_channel_reservation_reward_official_frame,,官网下载边框,官方 Locale,uf:channel_official_frame,
+静态框,icn_channel_reservation_reward_oppo_frame,,OPPO边框,官方 Locale,uf:channel_oppo_frame,
+静态框,icn_channel_reservation_reward_others2_frame,,活动边框II,官方 Locale,uf:channel_others2_frame,
+静态框,icn_channel_reservation_reward_others_frame,,活动边框I,官方 Locale,uf:channel_others_frame,
+静态框,icn_channel_reservation_reward_pc_frame,,PC下载边框,官方 Locale,uf:channel_pc_frame,
+静态框,icn_channel_reservation_reward_qq_frame,,QQ边框,官方 Locale,uf:channel_qq_frame,
+静态框,icn_channel_reservation_reward_rongyao_frame,,荣耀边框,官方 Locale,uf:channel_rongyao_frame,
+静态框,icn_channel_reservation_reward_summer01_frame,,今夏有妮边框,官方 Locale,uf:channel_summer01_frame,
+静态框,icn_channel_reservation_reward_taptap2_frame,,TapTap社区活动边框,官方 Locale,uf:channel_taptap2_frame,
+静态框,icn_channel_reservation_reward_taptap3_frame,,TapTap夏日活动边框,官方 Locale,uf:channel_taptap3_frame,
+静态框,icn_channel_reservation_reward_taptap_frame,,TapTap边框,官方 Locale,uf:channel_taptap_frame,
+静态框,icn_channel_reservation_reward_tiktok_frame,,抖音边框,官方 Locale,uf:channel_tiktok_frame,
+静态框,icn_channel_reservation_reward_txapp_frame,,应用宝边框,官方 Locale,uf:channel_txapp_frame,
+静态框,icn_channel_reservation_reward_txvideo_frame,,腾讯视频边框,官方 Locale,uf:channel_txvideo_frame,
+静态框,icn_channel_reservation_reward_txvip_frame,,心悦边框,官方 Locale,uf:channel_txvip_frame,
+静态框,icn_channel_reservation_reward_vivo_frame,,Vivo边框,官方 Locale,uf:channel_vivo_frame,
+静态框,icn_channel_reservation_reward_xiaomi_frame,,Xiaomi边框,官方 Locale,uf:channel_xiaomi_frame,
+静态框,icn_commander_frame,指挥官边框,指挥官边框,官方 Locale,uf:commander,
+静态框,icn_credit_frame,信用点边框,信用点边框,官方 Locale,uf:credit,
+静态框,icn_dog_tag_frame,标签边框,标签边框,官方 Locale,uf:dog_tag,
+静态框,icn_frontier_frame,子弹边框,子弹边框,官方 Locale,uf:frontier,
+静态框,icn_inappshop_purchase_event_frame_01,星光轨迹边框,星光轨迹边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_inappshop_purchase_event_frame_cn_01,,无瑕童话边框,官方 Locale,uf:inappshop_purchase_event_frame_cn_01,
+静态框,icn_jofftour_event_frame_01,千年古城的旅人,千年古城的旅人,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_moglight_event_frame,,菜鸟边框,官方 Locale,uf:moglight_event_frame,
+静态框,icn_mvg_event_frame,魔镜边框,魔镜边框,官方 Locale,uf:mvg_event,
+静态框,icn_nks_event_frame,※※边框,※※边框,官方 Locale,uf:nks_event,
+静态框,icn_ranking_frame_10th_04,10TH指挥官边框,10TH指挥官边框,官方 Locale,uf:rank_frame_10th_04,
+静态框,icn_ranking_frame_10th_05,10TH老兵边框,10TH老兵边框,官方 Locale,uf:rank_frame_10th_05,
+静态框,icn_ranking_frame_10th_06,10TH队长边框,10TH队长边框,官方 Locale,uf:rank_frame_10th_06,
+静态框,icn_ranking_frame_10th_07,10TH将军边框,10TH将军边框,官方 Locale,uf:rank_frame_10th_07,
+静态框,icn_ranking_frame_10th_08,10TH帝王边框,10TH帝王边框,官方 Locale,uf:rank_frame_10th_08,
+静态框,icn_ranking_frame_10th_09,10TH传奇边框,10TH传奇边框,官方 Locale,uf:rank_frame_10th_09,
+静态框,icn_ranking_frame_10th_10,10TH领主边框,10TH领主边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_10th_11,10TH神谕边框,10TH神谕边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_10th_12,10TH至尊边框,10TH至尊边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_10th_alpha,,10TH排名边框α,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_ranking_frame_10th_beta,,10TH排名边框β,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_ranking_frame_10th_gamma,,10TH排名边框γ,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_ranking_frame_1st_04,1ST指挥官边框,1ST指挥官边框,官方 Locale,uf:rank_frame_1st_04,
+静态框,icn_ranking_frame_1st_05,1ST老兵边框,1ST老兵边框,官方 Locale,uf:rank_frame_1st_05,
+静态框,icn_ranking_frame_1st_06,1ST队长边框,1ST队长边框,官方 Locale,uf:rank_frame_1st_06,
+静态框,icn_ranking_frame_1st_07,1ST将军边框,1ST将军边框,官方 Locale,uf:rank_frame_1st_07,
+静态框,icn_ranking_frame_1st_08,1ST帝王边框,1ST帝王边框,官方 Locale,uf:rank_frame_1st_08,
+静态框,icn_ranking_frame_1st_09,1ST传奇边框,1ST传奇边框,官方 Locale,uf:rank_frame_1st_09,
+静态框,icn_ranking_frame_1st_10,1ST领主边框,1ST领主边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_1st_11,1ST神谕边框,1ST神谕边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_1st_12,1ST至尊边框,1ST至尊边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_1st_alpha,,1ST排名边框α,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_ranking_frame_1st_beta,,1ST排名边框β,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_ranking_frame_1st_gamma,,1ST排名边框γ,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_ranking_frame_5th_04,5TH指挥官边框,5TH指挥官边框,官方 Locale,uf:rank_frame_5th_04,
+静态框,icn_ranking_frame_5th_05,5TH老兵边框,5TH老兵边框,官方 Locale,uf:rank_frame_5th_05,
+静态框,icn_ranking_frame_5th_06,5TH队长边框,5TH队长边框,官方 Locale,uf:rank_frame_5th_06,
+静态框,icn_ranking_frame_5th_07,5TH将军边框,5TH将军边框,官方 Locale,uf:rank_frame_5th_07,
+静态框,icn_ranking_frame_5th_08,5TH帝王边框,5TH帝王边框,官方 Locale,uf:rank_frame_5th_08,
+静态框,icn_ranking_frame_5th_09,5TH传奇边框,5TH传奇边框,官方 Locale,uf:rank_frame_5th_09,
+静态框,icn_ranking_frame_5th_10,5TH领主边框,5TH领主边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_5th_11,5TH神谕边框,5TH神谕边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_5th_12,5TH至尊边框,5TH至尊边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_ranking_frame_5th_alpha,,5TH排名边框α,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_ranking_frame_5th_beta,,5TH排名边框β,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_ranking_frame_5th_gamma,,5TH排名边框γ,推断(待核),,官方无记录，暂用变体字母
+静态框,icn_razer_event_frame,怦然心动边框,怦然心动边框,官方 Locale,uf:razer_event_frame,
+静态框,icn_rebuildeden_event_frame,重建伊甸园边框,重建伊甸园边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_sennentour_frame,,千年之旅边框,推断(待核),,国际服活动，sennen=千年；官方无记录
+静态框,icn_side_story_frame_01,营火边框,营火边框,官方 Locale,uf:side_story_frame_01,
+静态框,icn_side_story_frame_02,月球漫步边框,月球漫步边框,官方 Locale,uf:side_story_frame_02,
+静态框,icn_side_story_frame_03,纽带边框,纽带边框,官方 Locale,uf:side_story_frame_03,
+静态框,icn_side_story_frame_04,淤泥之梦边框,淤泥之梦边框,官方 Locale,uf:side_story_frame_04,
+静态框,icn_side_story_frame_05,伊甸园边框,伊甸园边框,官方 Locale,uf:side_story_frame_05,
+静态框,icn_side_story_frame_06,方舟之星边框,方舟之星边框,官方 Locale,uf:side_story_frame_06,
+静态框,icn_soloraid_9810811510911663_tier1_frame,9810811510911663边框I,9810811510911663边框I,官方 Locale,uf:soloraid_9810811510911663_tier1,
+静态框,icn_soloraid_9810811510911663_tier2_frame,9810811510911663边框II,9810811510911663边框II,官方 Locale,uf:soloraid_9810811510911663_tier2,
+静态框,icn_soloraid_9810811510911663_tier3_frame,9810811510911663边框III,9810811510911663边框III,官方 Locale,uf:soloraid_9810811510911663_tier3,
+静态框,icn_soloraid_AltEizen_tier1_frame,古铁边框I,古铁P.S.I.D.边框I,官方 Locale,uf:soloraid_AltEizen_tier1,
+静态框,icn_soloraid_AltEizen_tier2_frame,古铁边框II,古铁P.S.I.D.边框II,官方 Locale,uf:soloraid_AltEizen_tier2,
+静态框,icn_soloraid_AltEizen_tier3_frame,古铁边框III,古铁P.S.I.D.边框III,官方 Locale,uf:soloraid_AltEizen_tier3,
+静态框,icn_soloraid_Alteisen_ANMI_tier4_frame,古铁A边框I（ANMI）,古铁A.N.M.I.边框IV,官方 Locale,uf:soloraid_alteisen_03_tier4_frame,
+静态框,icn_soloraid_Alteisen_PSID_tier4_frame,古铁A边框I（PSID）,古铁P.S.I.D.边框IV,官方 Locale,uf:soloraid_AltEizen_tier4,
+静态框,icn_soloraid_BlackSmith_ANMI_tier1_frame,铁匠边框I（ANMI）,铁匠A.N.M.I.边框I,官方 Locale,uf:soloraid_BlackSmith_ANMI_tier1,
+静态框,icn_soloraid_BlackSmith_ANMI_tier2_frame,铁匠边框II（ANMI）,铁匠A.N.M.I.边框II,官方 Locale,uf:soloraid_BlackSmith_ANMI_tier2,
+静态框,icn_soloraid_BlackSmith_ANMI_tier3_frame,铁匠边框III（ANMI）,铁匠A.N.M.I.边框III,官方 Locale,uf:soloraid_BlackSmith_ANMI_tier3,
+静态框,icn_soloraid_BlackSmith_ANMI_tier4_frame,铁匠边框I（ANMI）,铁匠A.N.M.I.边框IV,官方 Locale,uf:soloraid_BlackSmith_ANMI_tier4,
+静态框,icn_soloraid_BlackSmith_HSTA_tier4_frame,铁匠边框I（HSTA）,铁匠H.S.T.A.边框IV,官方 Locale,uf:soloraid_BlackSmith_tier4,
+静态框,icn_soloraid_BlackSmith_tier1_frame,铁匠边框I,铁匠H.S.T.A.边框I,官方 Locale,uf:soloraid_BlackSmith_tier1,
+静态框,icn_soloraid_BlackSmith_tier2_frame,铁匠边框II,铁匠H.S.T.A.边框II,官方 Locale,uf:soloraid_BlackSmith_tier2,
+静态框,icn_soloraid_BlackSmith_tier3_frame,铁匠边框III,铁匠H.S.T.A.边框III,官方 Locale,uf:soloraid_BlackSmith_tier3,
+静态框,icn_soloraid_Crystal_PSID_tier4_frame,水晶洞穴边框I（PSID）,水晶洞穴P.S.I.D.边框IV,官方 Locale,uf:soloraid_Crystal_tier4,
+静态框,icn_soloraid_Crystal_tier1_frame,水晶洞穴边框I,水晶洞穴P.S.I.D.边框I,官方 Locale,uf:soloraid_Crystal_tier1,
+静态框,icn_soloraid_Crystal_tier2_frame,水晶洞穴边框II,水晶洞穴P.S.I.D.边框II,官方 Locale,uf:soloraid_Crystal_tier2,
+静态框,icn_soloraid_Crystal_tier3_frame,水晶洞穴边框III,水晶洞穴P.S.I.D.边框III,官方 Locale,uf:soloraid_Crystal_tier3,
+静态框,icn_soloraid_Gluttony_ANMI_tier4_frame,饕餮边框I（ANMI）,饕餮A.N.M.I.边框IV,官方 Locale,uf:soloraid_gluttony_03_tier4,
+静态框,icn_soloraid_GraveDigger_ZEUS_tier4_frame,掘墓边框I（过激派）,掘墓Z.E.U.S.边框IV,官方 Locale,alias:soloraid_GraveDigger_tier4,制造商变体，指向官方族内同制造商条目
+静态框,icn_soloraid_Harvester_HSTA_tier4_frame,死神边框I（HSTA）,死神H.S.T.A.边框IV,官方 Locale,uf:soloraid_Harvester_tier4,
+静态框,icn_soloraid_Harvester_tier1_frame,死神边框I,死神H.S.T.A.边框I,官方 Locale,uf:soloraid_Harvester_tier1,
+静态框,icn_soloraid_Harvester_tier2_frame,死神边框II,死神H.S.T.A.边框II,官方 Locale,uf:soloraid_Harvester_tier2,
+静态框,icn_soloraid_Harvester_tier3_frame,死神边框III,死神H.S.T.A.边框III,官方 Locale,uf:soloraid_Harvester_tier3,
+静态框,icn_soloraid_Indivilia_ZEUS_tier4_frame,,茵迪维利亚Z.E.U.S.边框IV,官方 Locale,uf:soloraid_Indivilia_tier4_frame,
+静态框,icn_soloraid_Indivilia_tier1_frame,茵迪维利亚边框I,茵迪维利亚Z.E.U.S.边框I,官方 Locale,uf:soloraid_Indivilia_tier1_frame,
+静态框,icn_soloraid_Indivilia_tier2_frame,茵迪维利亚边框II,茵迪维利亚Z.E.U.S.边框II,官方 Locale,uf:soloraid_Indivilia_tier2_frame,
+静态框,icn_soloraid_Indivilia_tier3_frame,茵迪维利亚边框III,茵迪维利亚Z.E.U.S.边框III,官方 Locale,uf:soloraid_Indivilia_tier3_frame,
+静态框,icn_soloraid_MotherWhale_ZEUS_tier4_frame,母鲸边框I（过激派）,母鲸Z.E.U.S.边框IV,官方 Locale,uf:soloraid_motherwhale_04_tier4,
+静态框,icn_soloraid_MotherWhale_tier1_frame,母鲸边框 I,母鲸边框I,官方 Locale,uf:soloraid_MotherWhale_tier1,
+静态框,icn_soloraid_MotherWhale_tier2_frame,母鲸边框 II,母鲸边框II,官方 Locale,uf:soloraid_MotherWhale_tier2,
+静态框,icn_soloraid_MotherWhale_tier3_frame,母鲸边框 III,母鲸边框III,官方 Locale,uf:soloraid_MotherWhale_tier3,
+静态框,icn_soloraid_StormBringer_tier1_frame,岚灾边框I,岚灾边框I,官方 Locale,uf:soloraid_StormBringer_tier1,
+静态框,icn_soloraid_StormBringer_tier2_frame,岚灾边框II,岚灾边框II,官方 Locale,uf:soloraid_StormBringer_tier2,
+静态框,icn_soloraid_StormBringer_tier3_frame,岚灾边框III,岚灾边框III,官方 Locale,uf:soloraid_StormBringer_tier3,
+静态框,icn_soloraid_alteisen_03_tier1_frame,古铁A边框I,古铁A.N.M.I.边框I,官方 Locale,uf:soloraid_alteisen_03_tier1_frame,
+静态框,icn_soloraid_alteisen_03_tier2_frame,古铁A边框I,古铁A.N.M.I.边框II,官方 Locale,uf:soloraid_alteisen_03_tier2_frame,
+静态框,icn_soloraid_alteisen_03_tier3_frame,古铁A边框I,古铁A.N.M.I.边框III,官方 Locale,uf:soloraid_alteisen_03_tier3_frame,
+静态框,icn_soloraid_altruia_02_tier1_frame,,奥图露亚边框I（水冷）,推断(待核),,Boss 综合表 4520040141=奥图露亚；蓝色火焰对应水冷代码
+静态框,icn_soloraid_altruia_02_tier2_frame,,奥图露亚边框II（水冷）,推断(待核),,同上
+静态框,icn_soloraid_altruia_02_tier3_frame,,奥图露亚边框III（水冷）,推断(待核),,同上
+静态框,icn_soloraid_alturia_04_tier1_frame,奥图露亚边框I,奥图露亚边框I（燃烧）,推断(待核),,同上；紫红火焰对应燃烧代码
+静态框,icn_soloraid_alturia_04_tier2_frame,奥图露亚边框I,奥图露亚边框II（燃烧）,推断(待核),,同上
+静态框,icn_soloraid_alturia_04_tier3_frame,奥图露亚边框I,奥图露亚边框III（燃烧）,推断(待核),,同上
+静态框,icn_soloraid_annihilio_05_tier1_frame,安尼希利奥边框I,安尼希利奥边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_annihilio_05_tier2_frame,安尼希利奥边框I,安尼希利奥边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_annihilio_05_tier3_frame,安尼希利奥边框I,安尼希利奥边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_behemoth_PSID_tier4_frame,贝西摩斯边框I（PSID）,贝西摩斯P.S.I.D.边框IV,官方 Locale,uf:soloraid_behemoth_tier4,
+静态框,icn_soloraid_behemoth_tier1_frame,贝西摩斯边框I,贝西摩斯P.S.I.D.边框I,官方 Locale,uf:soloraid_behemoth_tier1,
+静态框,icn_soloraid_behemoth_tier2_frame,贝西摩斯边框II,贝西摩斯P.S.I.D.边框II,官方 Locale,uf:soloraid_behemoth_tier2,
+静态框,icn_soloraid_behemoth_tier3_frame,贝西摩斯边框III,贝西摩斯P.S.I.D.边框III,官方 Locale,uf:soloraid_behemoth_tier3,
+静态框,icn_soloraid_blacksnake_01_tier1_frame,黑蛇边框 I,黑蛇边框I,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_blacksnake_01_tier2_frame,黑蛇边框 I,黑蛇边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_blacksnake_01_tier3_frame,黑蛇边框 I,黑蛇边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_crystalchamber_03_tier1_frame,水晶洞穴A边框I,水晶洞穴A边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_crystalchamber_03_tier2_frame,水晶洞穴A边框I,水晶洞穴A边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_crystalchamber_03_tier3_frame,水晶洞穴A边框I,水晶洞穴A边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_egovista_04_tier1_frame,艾格维斯塔边框I,艾格维斯塔边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_egovista_04_tier2_frame,艾格维斯塔边框I,艾格维斯塔边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_egovista_04_tier3_frame,艾格维斯塔边框I,艾格维斯塔边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_gluttony_03_tier1_frame,饕餮边框I,饕餮A.N.M.I.边框I,官方 Locale,uf:soloraid_gluttony_03_tier1,
+静态框,icn_soloraid_gluttony_03_tier2_frame,饕餮边框I,饕餮A.N.M.I.边框II,官方 Locale,uf:soloraid_gluttony_03_tier2,
+静态框,icn_soloraid_gluttony_03_tier3_frame,饕餮边框I,饕餮A.N.M.I.边框III,官方 Locale,uf:soloraid_gluttony_03_tier3,
+静态框,icn_soloraid_goldkraken_DMTR_tier4_frame,黄金克拉肯边框I（DMTR）,黄金克拉肯[D.M.T.R.]边框IV,官方 Locale,uf:soloraid_goldkraken_tier4,
+静态框,icn_soloraid_goldkraken_tier1_frame,黄金克拉肯边框I,黄金克拉肯[D.M.T.R.]边框I,官方 Locale,uf:soloraid_goldkraken_tier1,
+静态框,icn_soloraid_goldkraken_tier2_frame,黄金克拉肯边框II,黄金克拉肯[D.M.T.R.]边框II,官方 Locale,uf:soloraid_goldkraken_tier2,
+静态框,icn_soloraid_goldkraken_tier3_frame,黄金克拉肯边框III,黄金克拉肯[D.M.T.R.]边框III,官方 Locale,uf:soloraid_goldkraken_tier3,
+静态框,icn_soloraid_gravedigger_tier1_frame,掘墓边框I,掘墓Z.E.U.S.边框I,官方 Locale,uf:soloraid_GraveDigger_tier1,
+静态框,icn_soloraid_gravedigger_tier2_frame,掘墓边框I,掘墓Z.E.U.S.边框II,官方 Locale,uf:soloraid_GraveDigger_tier2,
+静态框,icn_soloraid_gravedigger_tier3_frame,掘墓边框I,掘墓Z.E.U.S.边框III,官方 Locale,uf:soloraid_GraveDigger_tier3,
+静态框,icn_soloraid_hologramkraken_01_tier1_frame,全息投影克拉肯边框I,全息投影克拉肯H.S.T.A.边框I,官方 Locale,uf:soloraid_hologramkraken_01_tier1,
+静态框,icn_soloraid_hologramkraken_01_tier2_frame,全息投影克拉肯边框I,全息投影克拉肯H.S.T.A.边框II,官方 Locale,uf:soloraid_hologramkraken_01_tier2,
+静态框,icn_soloraid_hologramkraken_01_tier3_frame,全息投影克拉肯边框I,全息投影克拉肯H.S.T.A.边框III,官方 Locale,uf:soloraid_hologramkraken_01_tier3,
+静态框,icn_soloraid_hologramkraken_HSTA_tier4_frame,全息投影克拉肯边框I（HSTA）,全息投影克拉肯H.S.T.A.边框IV,官方 Locale,uf:soloraid_hologramkraken_01_tier4,
+静态框,icn_soloraid_islandeater_04_tier1_frame,噬屿边框I,噬屿边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_islandeater_04_tier2_frame,噬屿边框I,噬屿边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_islandeater_04_tier3_frame,噬屿边框I,噬屿边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_landeater_tier1_frame,噬天边框I,噬天边框I,官方 Locale,uf:soloraid_landeater_tier1,
+静态框,icn_soloraid_landeater_tier2_frame,噬天边框II,噬天边框II,官方 Locale,uf:soloraid_landeater_tier2,
+静态框,icn_soloraid_landeater_tier3_frame,噬天边框III,噬天边框III,官方 Locale,uf:soloraid_landeater_tier3,
+静态框,icn_soloraid_liberaliobody_01_tier1_frame,,莉贝雷利奥H.S.T.A.边框I,推断(待核),,Boss 综合表 2510160111=莉贝雷利奥躯体 [H.S.T.A.]
+静态框,icn_soloraid_liberaliobody_01_tier2_frame,,莉贝雷利奥H.S.T.A.边框II,推断(待核),,同上
+静态框,icn_soloraid_liberaliobody_01_tier3_frame,,莉贝雷利奥H.S.T.A.边框III,推断(待核),,同上
+静态框,icn_soloraid_luxuriousspider_03_tier1_frame,奢华之蛛边框I,奢华之蛛A.N.M.I.边框I,官方 Locale,uf:soloraid_luxuriousspider_03_tier1_frame,
+静态框,icn_soloraid_luxuriousspider_03_tier2_frame,奢华之蛛边框I,奢华之蛛A.N.M.I.边框II,官方 Locale,uf:soloraid_luxuriousspider_03_tier2_frame,
+静态框,icn_soloraid_luxuriousspider_03_tier3_frame,奢华之蛛边框I,奢华之蛛A.N.M.I.边框III,官方 Locale,uf:soloraid_luxuriousspider_03_tier3_frame,
+静态框,icn_soloraid_luxuriousspider_ANMI_tier4_frame,奢华之蛛边框I（ANMI）,奢华之蛛A.N.M.I.边框IV,官方 Locale,uf:soloraid_luxuriousspider_03_tier4_frame,
+静态框,icn_soloraid_massiveobject_tier1_frame,巨大质量体边框I,巨大质量体边框I,官方 Locale,uf:soloraid_massiveobject_tier1,
+静态框,icn_soloraid_massiveobject_tier2_frame,巨大质量体边框II,巨大质量体边框II,官方 Locale,uf:soloraid_massiveobject_tier2,
+静态框,icn_soloraid_massiveobject_tier3_frame,巨大质量体边框III,巨大质量体边框III,官方 Locale,uf:soloraid_massiveobject_tier3,
+静态框,icn_soloraid_massiveobjectq_05_tier1_frame,巨大质量体Q边框I,巨大质量体Q边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_massiveobjectq_05_tier2_frame,巨大质量体Q边框I,巨大质量体Q边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_massiveobjectq_05_tier3_frame,巨大质量体Q边框I,巨大质量体Q边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_materialh_01_tier1_frame,秘材H边框I,秘材H H.S.T.A.边框I,官方 Locale,uf:soloraid_materialh_01_tier1,
+静态框,icn_soloraid_materialh_01_tier2_frame,秘材H边框II,秘材H H.S.T.A.边框II,官方 Locale,uf:soloraid_materialh_01_tier2,
+静态框,icn_soloraid_materialh_01_tier3_frame,秘材H边框III,秘材H H.S.T.A.边框III,官方 Locale,uf:soloraid_materialh_01_tier3,
+静态框,icn_soloraid_materialh_HSTA_tier4_frame,秘材H边框I（HSTA）,秘材H H.S.T.A.边框IV,官方 Locale,alias:soloraid_materialh_01_tier4,制造商变体，指向官方族内同制造商条目
+静态框,icn_soloraid_materialh_tier1_frame,秘材H边框I,秘材H边框I,官方 Locale,uf:soloraid_materialh_tier1,
+静态框,icn_soloraid_materialh_tier2_frame,秘材H边框II,秘材H边框II,官方 Locale,uf:soloraid_materialh_tier2,
+静态框,icn_soloraid_materialh_tier3_frame,秘材H边框III,秘材H边框III,官方 Locale,uf:soloraid_materialh_tier3,
+静态框,icn_soloraid_mirrorcontainer_tier1_frame,镜像容器边框I,镜像容器边框I,官方 Locale,uf:soloraid_mirrorcontainer_tier1,
+静态框,icn_soloraid_mirrorcontainer_tier2_frame,镜像容器边框II,镜像容器边框II,官方 Locale,uf:soloraid_mirrorcontainer_tier2,
+静态框,icn_soloraid_mirrorcontainer_tier3_frame,镜像容器边框III,镜像容器边框III,官方 Locale,uf:soloraid_mirrorcontainer_tier3,
+静态框,icn_soloraid_modernia_03_tier1_frame,神罚边框 I,神罚A.N.M.I.边框I,官方 Locale,uf:soloraid_modernia_03_tier1,
+静态框,icn_soloraid_modernia_03_tier2_frame,神罚边框 II,神罚A.N.M.I.边框II,官方 Locale,uf:soloraid_modernia_03_tier2,
+静态框,icn_soloraid_modernia_03_tier3_frame,神罚边框III,神罚A.N.M.I.边框III,官方 Locale,uf:soloraid_modernia_03_tier3,
+静态框,icn_soloraid_modernia_ANMI_tier4_frame,神罚边框 I（ANMI）,神罚A.N.M.I.边框IV,官方 Locale,uf:soloraid_modernia_03_tier4,
+静态框,icn_soloraid_modernia_tier1_frame,神罚边框 I,神罚边框 I,官方 Locale,uf:soloraid_modernia_tier1,
+静态框,icn_soloraid_modernia_tier2_frame,神罚边框 II,神罚边框 II,官方 Locale,uf:soloraid_modernia_tier2,
+静态框,icn_soloraid_modernia_tier3_frame,神罚边框III,神罚边框 III,官方 Locale,uf:soloraid_modernia_tier3,
+静态框,icn_soloraid_motherwhale_04_tier1_frame,母鲸边框 I,母鲸Z.E.U.S.边框I,官方 Locale,uf:soloraid_motherwhale_04_tier1,
+静态框,icn_soloraid_motherwhale_04_tier2_frame,母鲸边框 I,母鲸Z.E.U.S.边框II,官方 Locale,uf:soloraid_motherwhale_04_tier2,
+静态框,icn_soloraid_motherwhale_04_tier3_frame,母鲸边框 I,母鲸Z.E.U.S.边框III,官方 Locale,uf:soloraid_motherwhale_04_tier3,
+静态框,icn_soloraid_nihilister_tier1_frame,,尼希利斯塔边框I,官方 Locale,uf:soloraid_Nihil_tier1,
+静态框,icn_soloraid_nihilister_tier2_frame,,尼希利斯塔边框II,官方 Locale,uf:soloraid_Nihil_tier2,
+静态框,icn_soloraid_nihilister_tier3_frame,,尼希利斯塔边框III,官方 Locale,uf:soloraid_Nihil_tier3,
+静态框,icn_soloraid_onlyone_01_tier1_frame,,唯一者边框I,推断(待核),,Boss 代号 OnlyOne，部件名 海中/大地/天空巨兽；官方无记录
+静态框,icn_soloraid_onlyone_01_tier2_frame,,唯一者边框II,推断(待核),,同上
+静态框,icn_soloraid_onlyone_01_tier3_frame,,唯一者边框III,推断(待核),,同上
+静态框,icn_soloraid_pitilessjudge_02_tier1_frame,冰冷的审判者边框I,冰冷的审判者边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_pitilessjudge_02_tier2_frame,冰冷的审判者边框I,冰冷的审判者边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_pitilessjudge_02_tier3_frame,冰冷的审判者边框I,冰冷的审判者边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_providence_04_tier1_frame,天意边框I,天意Z.E.U.S.边框I,官方 Locale,uf:soloraid_providence_04_tier1,
+静态框,icn_soloraid_providence_04_tier2_frame,天意边框I,天意Z.E.U.S.边框II,官方 Locale,uf:soloraid_providence_04_tier2,
+静态框,icn_soloraid_providence_04_tier3_frame,天意边框I,天意Z.E.U.S.边框III,官方 Locale,uf:soloraid_providence_04_tier3,
+静态框,icn_soloraid_providence_ZEUS_tier4_frame,天意边框I（过激派）,天意Z.E.U.S.边框IV,官方 Locale,uf:soloraid_providence_04_tier4,
+静态框,icn_soloraid_queen_05_tier1_frame,女王001边框I,女王001边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_queen_05_tier2_frame,女王001边框I,女王001边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_queen_05_tier3_frame,女王001边框I,女王001边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_talkative_HSTA_tier4_frame,嚣嘈边框I（HSTA）,嚣嘈H.S.T.A.边框IV,官方 Locale,uf:soloraid_talkative_tier4,
+静态框,icn_soloraid_talkative_tier1_frame,嚣嘈边框I,嚣嘈H.S.T.A.边框I,官方 Locale,uf:soloraid_talkative_tier1,
+静态框,icn_soloraid_talkative_tier2_frame,嚣嘈边框II,嚣嘈H.S.T.A.边框II,官方 Locale,uf:soloraid_talkative_tier2,
+静态框,icn_soloraid_talkative_tier3_frame,嚣嘈边框III,嚣嘈H.S.T.A.边框III,官方 Locale,uf:soloraid_talkative_tier3,
+静态框,icn_soloraid_ultra_01_tier1_frame,巨型边框I,巨型边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_ultra_01_tier2_frame,巨型边框II,巨型边框II,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_ultra_01_tier3_frame,巨型边框III,巨型边框III,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_ultra_ZEUS_tier4_frame,巨型边框I（过激派）,过激派Z.E.U.S.边框IV,官方 Locale,alias:soloraid_ultra_tier4,制造商变体，指向官方族内同制造商条目
+静态框,icn_soloraid_ultra_tier1_frame,巨型边框I,过激派Z.E.U.S.边框I,官方 Locale,uf:soloraid_ultra_tier1,
+静态框,icn_soloraid_ultra_tier2_frame,巨型边框II,过激派Z.E.U.S.边框II,官方 Locale,uf:soloraid_ultra_tier2,
+静态框,icn_soloraid_ultra_tier3_frame,巨型边框III,过激派Z.E.U.S.边框III,官方 Locale,uf:soloraid_ultra_tier3,
+静态框,icn_soloraid_whiteicedragon_02_tier1_frame,白冰龙边框I,白冰龙边框I,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_soloraid_whiteicedragon_02_tier2_frame,白冰龙边框I,白冰龙边框II,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_whiteicedragon_02_tier3_frame,白冰龙边框I,白冰龙边框III,修正,,官方无该条，按同族 tier 序号修正罗马数字
+静态框,icn_soloraid_ziz_03_tier1_frame,席兹边框I,席兹A.N.M.I.边框I,官方 Locale,uf:soloraid_ziz_03_tier1,
+静态框,icn_soloraid_ziz_03_tier2_frame,席兹边框I,席兹A.N.M.I.边框II,官方 Locale,uf:soloraid_ziz_03_tier2,
+静态框,icn_soloraid_ziz_03_tier3_frame,席兹边框I,席兹A.N.M.I.边框III,官方 Locale,uf:soloraid_ziz_03_tier3,
+静态框,icn_soloraid_ziz_ANMI_tier4_frame,席兹边框I（ANMI）,席兹A.N.M.I.边框IV,官方 Locale,uf:soloraid_ziz_03_tier4,
+静态框,icn_strangetales2_frame_01,,DokiDoki Room活动边框,官方 Locale,uf:channel_strangetales2_01_frame,
+静态框,icn_strangetales2_frame_02,,DokiDoki Room活动边框,官方 Locale,uf:channel_strangetales2_02_frame,
+静态框,icn_strangetales_frame_01,,今天的你有点不一样活动边框,官方 Locale,uf:channel_strangetales01_frame,
+静态框,icn_strangetales_frame_02,,今天的你有点不一样活动边框,官方 Locale,uf:channel_strangetales02_frame,
+静态框,icn_surface_beta_frame_01,向导边框,向导边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_surface_beta_frame_02,专业向导边框,专业向导边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_unionraid_ranking_season10_1_frame,,S10联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season10_1_frame,
+静态框,icn_unionraid_ranking_season10_2_frame,,S10联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season10_2_frame,
+静态框,icn_unionraid_ranking_season10_3_frame,,S10联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season10_3_frame,
+静态框,icn_unionraid_ranking_season11_1_frame,,S11联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season11_1_frame,
+静态框,icn_unionraid_ranking_season11_2_frame,,S11联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season11_2_frame,
+静态框,icn_unionraid_ranking_season11_3_frame,,S11联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season11_3_frame,
+静态框,icn_unionraid_ranking_season12_1_frame,,S12联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season12_1_frame,
+静态框,icn_unionraid_ranking_season12_2_frame,,S12联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season12_2_frame,
+静态框,icn_unionraid_ranking_season12_3_frame,,S12联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season12_3_frame,
+静态框,icn_unionraid_ranking_season13_1_frame,,S13联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season13_1_frame,
+静态框,icn_unionraid_ranking_season13_2_frame,,S13联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season13_2_frame,
+静态框,icn_unionraid_ranking_season13_3_frame,,S13联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season13_3_frame,
+静态框,icn_unionraid_ranking_season14_1_frame,,S14联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season14_1_frame,
+静态框,icn_unionraid_ranking_season14_2_frame,,S14联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season14_2_frame,
+静态框,icn_unionraid_ranking_season14_3_frame,,S14联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season14_3_frame,
+静态框,icn_unionraid_ranking_season15_1_frame,,S15联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season15_1_frame,
+静态框,icn_unionraid_ranking_season15_2_frame,,S15联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season15_2_frame,
+静态框,icn_unionraid_ranking_season15_3_frame,,S15联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season15_3_frame,
+静态框,icn_unionraid_ranking_season16_1_frame,,S16联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season16_1_frame,
+静态框,icn_unionraid_ranking_season16_2_frame,,S16联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season16_2_frame,
+静态框,icn_unionraid_ranking_season16_3_frame,,S16联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season16_3_frame,
+静态框,icn_unionraid_ranking_season17_1_frame,,S17联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season17_1_frame,
+静态框,icn_unionraid_ranking_season17_2_frame,,S17联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season17_2_frame,
+静态框,icn_unionraid_ranking_season17_3_frame,,S17联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season17_3_frame,
+静态框,icn_unionraid_ranking_season18_1_frame,,S18联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season18_1_frame,
+静态框,icn_unionraid_ranking_season18_2_frame,,S18联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season18_2_frame,
+静态框,icn_unionraid_ranking_season18_3_frame,,S18联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season18_3_frame,
+静态框,icn_unionraid_ranking_season19_1_frame,,S19联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season19_1_frame,
+静态框,icn_unionraid_ranking_season19_2_frame,,S19联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season19_2_frame,
+静态框,icn_unionraid_ranking_season19_3_frame,,S19联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season19_3_frame,
+静态框,icn_unionraid_ranking_season1_1_frame,,S1联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season1_1_frame,
+静态框,icn_unionraid_ranking_season1_2_frame,,S1联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season1_2_frame,
+静态框,icn_unionraid_ranking_season1_3_frame,,S1联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season1_3_frame,
+静态框,icn_unionraid_ranking_season20_1_frame,,S20联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season20_1_frame,
+静态框,icn_unionraid_ranking_season20_2_frame,,S20联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season20_2_frame,
+静态框,icn_unionraid_ranking_season20_3_frame,,S20联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season20_3_frame,
+静态框,icn_unionraid_ranking_season2_1_frame,,S2联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season2_1_frame,
+静态框,icn_unionraid_ranking_season2_2_frame,,S2联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season2_2_frame,
+静态框,icn_unionraid_ranking_season2_3_frame,,S2联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season2_3_frame,
+静态框,icn_unionraid_ranking_season3_1_frame,,S3联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season3_1_frame,
+静态框,icn_unionraid_ranking_season3_2_frame,,S3联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season3_2_frame,
+静态框,icn_unionraid_ranking_season3_3_frame,,S3联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season3_3_frame,
+静态框,icn_unionraid_ranking_season4_1_frame,,S4联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season4_1_frame,
+静态框,icn_unionraid_ranking_season4_2_frame,,S4联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season4_2_frame,
+静态框,icn_unionraid_ranking_season4_3_frame,,S4联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season4_3_frame,
+静态框,icn_unionraid_ranking_season5_1_frame,,S5联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season5_1_frame,
+静态框,icn_unionraid_ranking_season5_2_frame,,S5联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season5_2_frame,
+静态框,icn_unionraid_ranking_season5_3_frame,,S5联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season5_3_frame,
+静态框,icn_unionraid_ranking_season6_1_frame,,S6联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season6_1_frame,
+静态框,icn_unionraid_ranking_season6_2_frame,,S6联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season6_2_frame,
+静态框,icn_unionraid_ranking_season6_3_frame,,S6联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season6_3_frame,
+静态框,icn_unionraid_ranking_season7_1_frame,,S7联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season7_1_frame,
+静态框,icn_unionraid_ranking_season7_2_frame,,S7联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season7_2_frame,
+静态框,icn_unionraid_ranking_season7_3_frame,,S7联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season7_3_frame,
+静态框,icn_unionraid_ranking_season8_1_frame,,S8联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season8_1_frame,
+静态框,icn_unionraid_ranking_season8_2_frame,,S8联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season8_2_frame,
+静态框,icn_unionraid_ranking_season8_3_frame,,S8联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season8_3_frame,
+静态框,icn_unionraid_ranking_season9_1_frame,,S9联盟征服者边框III,官方 Locale,uf:unionraid_ranking_season9_1_frame,
+静态框,icn_unionraid_ranking_season9_2_frame,,S9联盟征服者边框II,官方 Locale,uf:unionraid_ranking_season9_2_frame,
+静态框,icn_unionraid_ranking_season9_3_frame,,S9联盟征服者边框I,官方 Locale,uf:unionraid_ranking_season9_3_frame,
+静态框,icn_vote_event_01_frame_01,利刃边框,利刃边框,官方 Locale,spr:icn_vote_event_01_frame_01,
+静态框,icn_vote_event_01_frame_02,仙境边框,仙境边框,官方 Locale,spr:icn_vote_event_01_frame_02,
+静态框,icn_vote_event_01_frame_03,圣徒边框,圣徒边框,官方 Locale,spr:icn_vote_event_01_frame_03,
+静态框,icn_vote_event_01_frame_04,闪耀边框,闪耀边框,官方 Locale,spr:icn_vote_event_01_frame_04,
+静态框,icn_vote_event_01_frame_05,单色边框,单色边框,官方 Locale,spr:icn_vote_event_01_frame_05,
+静态框,icn_vote_event_02_frame_01,红色边框,红色边框,官方 Locale,spr:icn_vote_event_02_frame_01,
+静态框,icn_vote_event_02_frame_02,高级边框,高级边框,官方 Locale,spr:icn_vote_event_02_frame_02,
+静态框,icn_vote_event_02_frame_03,东方边框,东方边框,官方 Locale,spr:icn_vote_event_02_frame_03,
+静态框,icn_vote_event_02_frame_04,幸运兔边框,幸运兔边框,官方 Locale,spr:icn_vote_event_02_frame_04,
+静态框,icn_vote_event_02_frame_05,阴影边框,阴影边框,官方 Locale,spr:icn_vote_event_02_frame_05,
+静态框,icn_vote_event_03_frame_01,深红边框,深红边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_vote_event_03_frame_02,魔镜边框,魔镜边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_vote_event_03_frame_03,威严边框,威严边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_vote_event_03_frame_04,羽状边框,羽状边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,icn_vote_event_03_frame_05,月光边框,月光边框,沿用旧译名,,官方无记录，沿用旧译名
+静态框,uf_100,新任指挥官,新任指挥官,官方 Locale,uf:100,
+动态框,Alteisen_ANMI_tier4,古铁A边框I（ANMI）,古铁A.N.M.I.边框IV,官方 Locale,uf:soloraid_alteisen_03_tier4_frame,
+动态框,Alteisen_PSID_tier4,古铁A边框I（PSID）,古铁P.S.I.D.边框IV,官方 Locale,uf:soloraid_AltEizen_tier4,
+动态框,BlackSmith_ANMI_tier4,铁匠边框I（ANMI）,铁匠A.N.M.I.边框IV,官方 Locale,uf:soloraid_BlackSmith_ANMI_tier4,
+动态框,BlackSmith_HSTA_tier4,铁匠边框I（HSTA）,铁匠H.S.T.A.边框IV,官方 Locale,uf:soloraid_BlackSmith_tier4,
+动态框,Crystal_PSID_tier4,水晶洞穴边框I（PSID）,水晶洞穴P.S.I.D.边框IV,官方 Locale,uf:soloraid_Crystal_tier4,
+动态框,Gluttony_ANMI_tier4,饕餮边框I（ANMI）,饕餮A.N.M.I.边框IV,官方 Locale,uf:soloraid_gluttony_03_tier4,
+动态框,GraveDigger_ZEUS_tier4_layer1,掘墓边框I（过激派）,掘墓Z.E.U.S.边框IV,官方 Locale,alias:soloraid_GraveDigger_tier4,制造商变体，指向官方族内同制造商条目
+动态框,Harvester_HSTA_tier4,死神边框I（HSTA）,死神H.S.T.A.边框IV,官方 Locale,uf:soloraid_Harvester_tier4,
+动态框,Indivilia_ZEUS_tier4,,茵迪维利亚Z.E.U.S.边框IV,官方 Locale,uf:soloraid_Indivilia_tier4_frame,
+动态框,MotherWhale_ZEUS_tier4,母鲸边框I（过激派）,母鲸Z.E.U.S.边框IV,官方 Locale,uf:soloraid_motherwhale_04_tier4,
+动态框,StormBringer_tier3,岚灾边框III,岚灾边框III,官方 Locale,uf:soloraid_StormBringer_tier3,
+动态框,behemoth_PSID_tier4,贝西摩斯边框I（PSID）,贝西摩斯P.S.I.D.边框IV,官方 Locale,uf:soloraid_behemoth_tier4,
+动态框,goldkraken_DMTR_tier4,黄金克拉肯边框I（DMTR）,黄金克拉肯[D.M.T.R.]边框IV,官方 Locale,uf:soloraid_goldkraken_tier4,
+动态框,hologramkraken_HSTA_tier4,全息投影克拉肯边框I（HSTA）,全息投影克拉肯H.S.T.A.边框IV,官方 Locale,uf:soloraid_hologramkraken_01_tier4,
+动态框,luxuriousspider_ANMI_tier4,奢华之蛛边框I（ANMI）,奢华之蛛A.N.M.I.边框IV,官方 Locale,uf:soloraid_luxuriousspider_03_tier4_frame,
+动态框,materialh_HSTA_tier4,秘材H边框I（HSTA）,秘材H H.S.T.A.边框IV,官方 Locale,alias:soloraid_materialh_01_tier4,制造商变体，指向官方族内同制造商条目
+动态框,modernia_ANMI_tier4,神罚边框 I（ANMI）,神罚A.N.M.I.边框IV,官方 Locale,uf:soloraid_modernia_03_tier4,
+动态框,providence_ZEUS_tier4,天意边框I（过激派）,天意Z.E.U.S.边框IV,官方 Locale,uf:soloraid_providence_04_tier4,
+动态框,talkative_HSTA_tier4,嚣嘈边框I（HSTA）,嚣嘈H.S.T.A.边框IV,官方 Locale,uf:soloraid_talkative_tier4,
+动态框,ultra_ZEUS_tier4,巨型边框I（过激派）,过激派Z.E.U.S.边框IV,官方 Locale,alias:soloraid_ultra_tier4,制造商变体，指向官方族内同制造商条目
+动态框,ziz_ANMI_tier4,席兹边框I（ANMI）,席兹A.N.M.I.边框IV,官方 Locale,uf:soloraid_ziz_03_tier4,
