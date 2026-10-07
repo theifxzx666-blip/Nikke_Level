@@ -64,8 +64,20 @@
       </div>
     </fieldset>
 
+    <fieldset class="grp-a">
+      <legend>当前基地（前哨站 · 以手填等级为准）</legend>
+      <div class="grid g2">
+        <label>前哨基地防御等级<input type="number" id="f_base" min="1" step="1"></label>
+        <label>战术学院是否满级
+          <select id="f_tactics"><option>是</option><option>否</option></select>
+        </label>
+      </div>
+      <p class="hint" id="baseHint">推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。</p>
+    </fieldset>
+
     <fieldset class="grp-b">
-      <legend>关卡进度（前置，决定基地等级与收益）</legend>
+      <legend>关卡进度（可选 · 用于推算基地等级）</legend>
+      <p class="hint">推算口径：每通关 5 关（普通+困难合计）基地等级 +1，基于国际服数据；国服统计进度约比国际服多 3 关，推算值可能偏高——建议以游戏内实际基地等级手填为准，选完进度后可点「采用推算值」。</p>
       <div class="grid g2">
         <div>
           <label>普通主线关卡</label>
@@ -78,17 +90,12 @@
           <select id="f_hard_stage"></select>
         </div>
       </div>
-      <div class="grid g2">
-        <label>当前基地防御等级<input type="number" id="f_base" min="1" step="1"></label>
-        <label>战术学院是否满级
-          <select id="f_tactics"><option>是</option><option>否</option></select>
-        </label>
-      </div>
-      <p class="hint" id="baseHint"></p>
+      <button type="button" id="btnAdoptBase" class="btn" style="display:none;font-size:13px;padding:6px 12px;margin-top:4px;">采用推算值</button>
     </fieldset>
 
     <fieldset class="grp-b">
       <legend>当前收益与每日收益</legend>
+      <p class="hint">下方三个收益字段随「当前基地」的等级与战术学院口径自动带出，可手动修改（例如一举歼灭折算等特殊情形）。</p>
       <div class="grid g3">
         <label>信用点收益<input id="f_credit_rate" placeholder="57240/h"></label>
         <label>战斗数据辑收益<input id="f_battle_rate" placeholder="570180/h"></label>
@@ -222,7 +229,7 @@
 <script src="js/scenarios.js?v=20260917c"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261006a"></script>
+<script src="js/app.js?v=20261007a"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/sync.js?v=20260920d"></script>
 <script>

@@ -381,6 +381,8 @@
     syncStageOptions("normal"); syncStageOptions("hard");
     syncStageOptions("future_normal"); syncStageOptions("future_hard");
     updateStageClearUI();
+    // 回填不触发 change：补一次基地联动（手填为准，只在基地为空时自动填推算值）
+    syncCurrentBase();
   }
 
   function chapterOfSection(section) {
@@ -408,21 +410,41 @@
   }
 
   /* ---------- 联动 ---------- */
-  function syncCurrentBase() {
+  /* 关卡进度 → 基地等级推算（国际服口径：每通关 5 关 +1） */
+  function currentCalculatedBase() {
     var f = collectForm();
-    var level = O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null);
+    return O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null);
+  }
+  /* 以手填前哨基地等级为准：仅关卡进度变更（autoFill=true）且基地为空时才自动填推算值；
+     手填路径只提示推算参考，不覆盖、不打断输入。
+     国服统计进度约比国际服多 3 关，推算值可能偏高 → 建议以游戏内实际等级为准 */
+  function syncCurrentBase(autoFill) {
+    var level = currentCalculatedBase();
     var hint = $("baseHint");
-    if (level) {
+    var btn = $("btnAdoptBase");
+    var cur = parseInt(val("f_base"), 10) || 0;
+    function showBtn(lv) {
+      if (btn) { btn.style.display = ""; btn.textContent = "采用推算值 lv." + lv; }
+    }
+    if (!level) {
+      hint.textContent = "推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。";
+      if (btn) btn.style.display = "none";
+      return;
+    }
+    if (!cur && autoFill) {
       setVal("f_base", level);
-      hint.textContent = "按进度推算基地等级：lv." + level + "（已自动同步，可手动修改）";
-      var income = O.incomeForLevel(level, f.tactics !== "否");
-      if (income) {
-        setVal("f_credit_rate", Math.round(income.credit) + "/h");
-        setVal("f_battle_rate", Math.round(income.battle_data) + "/h");
-        setVal("f_dust_rate", income.core_dust.toFixed(2) + "/h");
-      }
+      syncIncomeFromBase();
+      hint.textContent = "已按关卡进度自动填入推算值 lv." + level + "（国际服口径，每通关 5 关 +1）。国服统计进度约比国际服多 3 关，推算值可能偏高，建议核对游戏内实际等级后手填修正。";
+      if (btn) btn.style.display = "none";
+    } else if (!cur) {
+      hint.textContent = "基地等级未填。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，可能偏高），可直接点下方按钮采用，或手填游戏内实际等级。";
+      showBtn(level);
+    } else if (cur === level) {
+      hint.textContent = "基地等级 lv." + cur + "（收益按此计算），与关卡进度推算值一致（国际服口径）。";
+      if (btn) btn.style.display = "none";
     } else {
-      hint.textContent = "未选择关卡进度时，将使用手填基地等级；收益按基地等级自动带出（可手动修改）。";
+      hint.textContent = "以手填基地等级 lv." + cur + " 为准（收益按此计算）。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，推算值可能偏高）。";
+      showBtn(level);
     }
   }
 
@@ -1389,12 +1411,13 @@
     $("f_normal_chapter").addEventListener("change", function () {
       syncStageOptions("normal");
       setVal("f_normal_stage", lastStage("normal", val("f_normal_chapter")));
-      syncCurrentBase();
+      // 先让困难章节强制跟降（enforceHardCap 会改写困难章节/关卡），再做基地推算，避免推算用了旧的困难状态
       enforceHardCap();
+      syncCurrentBase(true);
       syncFutureNormal();
       onFormChange();
     });
-    $("f_normal_stage").addEventListener("change", function () { syncCurrentBase(); onFormChange(); });
+    $("f_normal_stage").addEventListener("change", function () { syncCurrentBase(true); onFormChange(); });
 
     // 困难章节（手动 -> 标记 + 上限约束 + 未来困难+2）
     $("f_hard_chapter").addEventListener("change", function () {
@@ -1402,11 +1425,11 @@
       syncStageOptions("hard");
       setVal("f_hard_stage", lastStage("hard", val("f_hard_chapter")));
       enforceHardCap();
-      syncCurrentBase();
+      syncCurrentBase(true);
       syncFutureHard();
       onFormChange();
     });
-    $("f_hard_stage").addEventListener("change", function () { state.normalManual = true; syncCurrentBase(); onFormChange(); });
+    $("f_hard_stage").addEventListener("change", function () { state.normalManual = true; syncCurrentBase(true); onFormChange(); });
 
     // 未来进度（手动 -> 标记）
     $("f_future_normal_chapter").addEventListener("change", function () {
@@ -1427,7 +1450,15 @@
     $("f_tactics").addEventListener("change", function () { syncCurrentBase(); syncIncomeFromBase(); syncFutureBase(); onFormChange(); });
     $("f_stage_mode").addEventListener("change", function () { updateStageClearUI(); onFormChange(); });
     $("f_future_open").addEventListener("change", onFormChange);
-    $("f_base").addEventListener("change", function () { syncIncomeFromBase(); onFormChange(); });
+    $("f_base").addEventListener("change", function () { syncIncomeFromBase(); syncCurrentBase(); onFormChange(); });
+    $("btnAdoptBase").addEventListener("click", function () {
+      var level = currentCalculatedBase();
+      if (!level) return;
+      setVal("f_base", level);
+      syncIncomeFromBase();
+      syncCurrentBase();
+      onFormChange();
+    });
     $("f_current").addEventListener("change", function () { syncCostFromLevel(); onFormChange(); });
     $("f_target").addEventListener("change", function () { renderCostPreview(); onFormChange(); });
     $("f_alternate").addEventListener("change", function () { renderCostPreview(); onFormChange(); });
