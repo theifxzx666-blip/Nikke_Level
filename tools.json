@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-08",
+  "tools": [
+    {
+      "id": "planner",
+      "name": "资源规划计算器",
+      "icon": "assets/nav_planner.webp",
+      "type": "web",
+      "entry": null,
+      "viewId": "appPlanner",
+      "inline": true,
+      "version": "1.0.0",
+      "order": 10,
+      "enabled": true,
+      "sync": {
+        "enabled": true,
+        "storage": "localStorage",
+        "key": "nikke_planner_form_v1"
+      }
+    },
+    {
+      "id": "mod_stats",
+      "name": "定制模组统计",
+      "icon": "assets/nav_modstats.webp",
+      "type": "web",
+      "entry": "mod_stats.html?v=20260923a",
+      "frameId": "modStatsFrame",
+      "version": "1.0.0",
+      "order": 20,
+      "enabled": true,
+      "sync": {
+        "enabled": true,
+        "storage": "localStorage",
+        "key": "nikke_mod_stats_v3"
+      }
+    },
+    {
+      "id": "avatar",
+      "name": "头像预览",
+      "icon": "assets/tab_avatar.png",
+      "type": "web",
+      "entry": "avatar/index.html",
+      "frameId": "avatarFrame",
+      "fullscreen": true,
+      "version": "1.0.0",
+      "order": 30,
+      "enabled": true,
+      "sync": {
+        "enabled": false,
+        "storage": "none"
+      }
+    },
+    {
+      "id": "reroll",
+      "name": "洗词条计算器",
+      "icon": "assets/nav_reroll.webp",
+      "type": "web",
+      "entry": "reroll_calculator.html",
+      "frameId": "rerollStatsFrame",
+      "version": "1.0.0",
+      "order": 40,
+      "enabled": true,
+      "sync": {
+        "enabled": true,
+        "storage": "localStorage",
+        "key": "nikke_reroll_state_v1"
+      }
+    }
+  ]
+}
