@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-08",
+  "updatedAt": "2026-10-09",
+  "_note": "viewId 必须与 css/style.css 中各工具容器选择器一致（#appPlanner / #appModStats / #appAvatarFrame / #appRerollStats）。外壳默认按 app_<id> 生成容器 id，与 CSS 不符会导致容器拿不到样式——典型症状是头像预览的全屏 flex 布局失效、iframe 退回默认 150px 高。",
   "tools": [
     {
       "id": "planner",
@@ -25,6 +26,7 @@
       "icon": "assets/nav_modstats.webp",
       "type": "web",
       "entry": "mod_stats.html?v=20260923a",
+      "viewId": "appModStats",
       "frameId": "modStatsFrame",
       "version": "1.0.0",
       "order": 20,
@@ -41,6 +43,7 @@
       "icon": "assets/tab_avatar.png",
       "type": "web",
       "entry": "avatar/index.html",
+      "viewId": "appAvatarFrame",
       "frameId": "avatarFrame",
       "fullscreen": true,
       "version": "1.0.0",
@@ -57,6 +60,7 @@
       "icon": "assets/nav_reroll.webp",
       "type": "web",
       "entry": "reroll_calculator.html",
+      "viewId": "appRerollStats",
       "frameId": "rerollStatsFrame",
       "version": "1.0.0",
       "order": 40,
