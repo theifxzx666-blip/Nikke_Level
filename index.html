@@ -148,6 +148,15 @@
       </div>
     </fieldset>
 
+    <fieldset class="grp-c">
+      <legend>活动收益（可选 · 按具体日期计入）</legend>
+      <p class="hint">⚠ 请按<b>当前实际持有量</b>填写上方箱数与现有资源（已领取的活动奖励已包含在内）；本功能只补充<b>数据日期之后</b>剩余天数的活动产出，不会重复计入。</p>
+      <div id="eventRows"></div>
+      <button type="button" id="btnAddEvent" class="btn" style="font-size:13px;padding:6px 12px;">＋ 添加活动</button>
+      <p class="hint" id="eventTotals">未添加活动。</p>
+      <p class="hint note">活动期间的资源与箱子按日计入（从数据日期次日起算），并参与开箱顺序与全箱梭哈上限；商店按既有兑换节点自动兑换（Hard 开放日清一轮固定物资、活动结束前余代币兑信用点）。活动「一天」= 一次凌晨 04:00 服务器重置。</p>
+    </fieldset>
+
     <fieldset class="grp-d">
       <legend>升级消耗素材量</legend>
       <p class="hint">默认按内置阶梯表（每 50 级一档）随「当前同步器等级」自动写入，可手动覆盖。</p>
@@ -220,12 +229,13 @@
 <section id="appCombatReroll" class="app-view"></section>
 
 <script src="js/core.js?v=20260917c"></script>
+<script src="js/events.js?v=20261009a"></script>
 <script src="js/outpost.js?v=20260917c"></script>
 <script src="js/boxes.js?v=20261005a"></script>
-<script src="js/scenarios.js?v=20260917c"></script>
+<script src="js/scenarios.js?v=20261009a"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261007a"></script>
+<script src="js/app.js?v=20261009a"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/sync.js?v=20260920d"></script>
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->

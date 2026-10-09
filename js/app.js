@@ -2,6 +2,7 @@
 (function () {
   "use strict";
   var C = window.NikkeCore, O = window.NikkeOutpost, S = window.NikkeScenarios, B = window.NikkeBoxes;
+  var EV = window.NikkeEvents;   // 活动收益（events.js）
   var LS_KEY = "nikke_planner_form_v1";
   var DEFAULT_FIXED = {
     "芯尘盒": { 24: 30, 12: 26, 8: 7, 4: 1, 2: 315, 1: 1432 },
@@ -120,6 +121,7 @@
       cost_credit: "", cost_battle: "", cost_dust: "",
       fixed: JSON.parse(JSON.stringify(DEFAULT_FIXED)),
       ark: "1159", growth: "56", challenger: "1125",
+      activities: [],         // 活动收益：[{ template: "small14"|"large21"|"large28", start_date: "YYYY-MM-DD" }]
       saved_at: "",       // 最近一次「保存当前表单」的日期（YYYY-MM-DD）
       capture_time: "",   // 每日采集时刻（HH:MM）
       collected_before: "是", // 采集前是否已回收基地收益（是/否）
@@ -158,6 +160,7 @@
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
     f.saved_at = val("f_saved_at");
     f.collected_before = val("f_collected_before");
+    syncActivitiesFromRows();
     f.fixed = {};
     document.querySelectorAll(".fixed").forEach(function (inp) {
       var label = inp.dataset.label, h = inp.dataset.h;
@@ -353,6 +356,89 @@
     });
   }
 
+  /* ---------- 活动收益（可选）：模板由 data/event_templates.json 运行时加载 ---------- */
+  function loadEventTemplates() {
+    if (!EV) return Promise.resolve();
+    return fetch("data/event_templates.json?v=20261009a")
+      .then(function (r) { return r.json(); })
+      .then(function (d) { EV.setTemplates(d); })
+      .catch(function () { EV.setTemplates(null); });
+  }
+
+  /* DOM 行 → state.form.activities */
+  function syncActivitiesFromRows() {
+    var wrap = $("eventRows");
+    if (!wrap) return;
+    var list = [];
+    wrap.querySelectorAll(".event-row").forEach(function (row) {
+      var t = row.querySelector(".ev-template"), d = row.querySelector(".ev-start");
+      if (t && d && t.value && d.value) list.push({ template: t.value, start_date: d.value });
+    });
+    state.form.activities = list;
+  }
+
+  function activityRowEl(a) {
+    var row = document.createElement("div");
+    row.className = "event-row";
+    row.style.cssText = "display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap;";
+    var sel = document.createElement("select");
+    sel.className = "ev-template";
+    sel.style.cssText = "flex:1 1 150px;padding:6px;";
+    var tpls = EV ? EV.templateList() : [];
+    if (!tpls.length) {
+      var o0 = document.createElement("option");
+      o0.value = a.template || "large28"; o0.textContent = (a.template || "large28") + "（模板未加载）";
+      sel.appendChild(o0);
+    }
+    tpls.forEach(function (t) {
+      var o = document.createElement("option");
+      o.value = t.id;
+      o.textContent = t.label + "（" + t.duration + " 天）";
+      if (t.id === a.template) o.selected = true;
+      sel.appendChild(o);
+    });
+    var dt = document.createElement("input");
+    dt.type = "date"; dt.className = "ev-start";
+    dt.style.cssText = "flex:1 1 130px;padding:6px;";
+    dt.value = a.start_date || "";
+    dt.title = "活动开始日期（服务器当日 04:00 起算）";
+    var del = document.createElement("button");
+    del.type = "button"; del.className = "ev-del";
+    del.style.cssText = "flex:0 0 auto;padding:6px 10px;cursor:pointer;";
+    del.textContent = "✕"; del.title = "移除该活动";
+    row.appendChild(sel); row.appendChild(dt); row.appendChild(del);
+    return row;
+  }
+
+  function renderActivityRows() {
+    var wrap = $("eventRows");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    (state.form.activities || []).forEach(function (a) { wrap.appendChild(activityRowEl(a)); });
+    updateActivityTotals();
+  }
+
+  /* 表单内实时预览：按当前「数据日期」算各活动的实际计入区间与累计产出 */
+  function updateActivityTotals() {
+    var box = $("eventTotals");
+    if (!box) return;
+    syncActivitiesFromRows();
+    var acts = state.form.activities || [];
+    if (!acts.length) { box.textContent = "未添加活动。"; return; }
+    if (!EV || !EV.getTemplates()) { box.textContent = "活动模板加载失败，已按「不计入活动收益」处理，可刷新重试。"; return; }
+    var rec = val("f_recorded");
+    var t0 = rec ? new Date(rec + "T00:00:00") : new Date();
+    var sched;
+    try { sched = EV.schedule({ recorded_at: t0, activities: acts }); }
+    catch (e) { box.textContent = "活动参数异常：" + e.message; return; }
+    if (!sched.dates.length) {
+      box.innerHTML = "已计入 <b>0</b> 天：所填活动均已结束（或尚未进入计入区间）。已到手的奖励请直接填进上方箱量。";
+      return;
+    }
+    box.innerHTML = "已计入 <b>" + sched.dates.length + "</b> 天（" + sched.dates[0] + " ~ " + sched.dates[sched.dates.length - 1] +
+      "）：" + esc(EV.totalsText(sched.totals)) + "。";
+  }
+
   function renderForm() {
     var f = state.form;
     setVal("f_recorded", f.recorded); setVal("f_current", f.current); setVal("f_target", f.target); setVal("f_alternate", f.alternate);
@@ -381,6 +467,7 @@
     syncStageOptions("normal"); syncStageOptions("hard");
     syncStageOptions("future_normal"); syncStageOptions("future_hard");
     updateStageClearUI();
+    renderActivityRows();
     // 回填不触发 change：补一次基地联动（手填为准，只在基地为空时自动填推算值）
     syncCurrentBase();
   }
@@ -693,6 +780,8 @@
       selectable_boxes: selectable,
       upgrade_cost: upgradeCost,
       stage_clear_resources: stage,
+      // 活动收益（按日期计入；空数组 = 不开启本功能，行为与改动前一致）
+      activities: (f.activities || []).map(function (a) { return { template: a.template, start_date: a.start_date }; }),
     };
     return snap;
   }
@@ -841,6 +930,10 @@
       "③ 全箱梭哈：按开箱顺序（挑战者成长宝箱全开 → 固定小时箱 → 自选箱）全部消耗能达到的等级；",
       "④ 自然升级（不开箱）：完全不开箱，" + fmtDays(result.no_box.days) + " 天到目标 " + result.no_box.target + "。",
     ];
+    var es = result.event_summary;
+    if (es && es.available) {
+      capLines.push("⑤ 活动收益（" + es.days + " 天）：以上「现状」①②③ 均不含活动收益（活动从数据日期次日起到账）；活动已在「开放日/等待期」口径中计入，详见「补充信息 → 活动收益」。");
+    }
     box.appendChild(el("div", capLines.join("<br>"), "cards-caption"));
 
     // 2. 省流版结论（全箱梭哈口径）
@@ -900,10 +993,73 @@
     return wrap;
   }
 
+  /* ---------- 活动收益区块（补充信息 tab 顶部） ---------- */
+  function renderEventSection(box, result, snap) {
+    var es = result.event_summary;
+    if (!es || (!es.meta || !es.meta.length)) return;
+    box.appendChild(el("h3", "活动收益（按具体日期计入）", "sec"));
+
+    if (!es.available) {
+      var msgs = (es.meta || []).map(function (m) {
+        if (m.error) return "「" + (m.label || m.template) + "」模板数据异常：" + esc(m.error);
+        return "「" + (m.label || m.template) + "」" + (m.start || "-") + " ~ " + (m.end || "-") +
+               "：<b>已结束或未到计入区间，贡献 0</b>（该活动已到手的奖励已包含在你填写的箱量中）";
+      });
+      box.appendChild(el("p", msgs.join("<br>"), "caption"));
+      return;
+    }
+
+    // 1. 活动清单
+    var rows = es.meta.map(function (m) {
+      var st = m.error ? ("⚠ " + m.error)
+             : (m.active ? ("计入 " + m.inject_days + " 天") : "贡献 0（已结束/未开始）");
+      return [m.label || m.template, (m.start || "-") + " ~ " + (m.end || "-"),
+              m.active ? (m.inject_start + " ~ " + m.inject_end) : "-",
+              String(m.inject_days || 0), st];
+    });
+    box.appendChild(table(["活动模板", "活动窗口", "实际计入区间", "计入天数", "状态"], rows));
+    box.appendChild(el("p", "计入区间 = [max(活动开始日, 数据日期+1), 活动结束日]：你填写的箱量与资源是「截至数据日期的当前持仓」，<b>已包含数据日期当天及以前领到的活动奖励</b>，故活动收益一律从<b>数据日期次日起算</b>，避免重复计入；已结束的活动贡献恒为 0。", "caption"));
+
+    // 2. 累计产出（本表单 / 活动 / 合计）
+    var t = es.totals;
+    var resLabels = C.RESOURCE_LABELS;
+    var outRows = C.RESOURCES.map(function (r) {
+      var base = snap.bare_resources[r] || 0, add = (t.res && t.res[r]) || 0;
+      return [resLabels[r] + "（现有资源）", fmtNum(base), fmtNum(add), fmtNum(base + add)];
+    });
+    Object.keys(DEFAULT_FIXED).forEach(function (lab) {
+      var base = 0;
+      Object.keys(snap.fixed_boxes[lab] || {}).forEach(function (h) { base += snap.fixed_boxes[lab][h] || 0; });
+      var add = 0;
+      Object.keys((t.fixed && t.fixed[lab]) || {}).forEach(function (h) { add += t.fixed[lab][h]; });
+      outRows.push([lab + "（固定箱）", String(base), String(add), String(base + add)]);
+    });
+    (snap.selectable_boxes || []).forEach(function (b) {
+      var add = (t.selectable && t.selectable[b.name]) || 0;
+      if (b.quantity || add) outRows.push([b.name + "（自选箱）", String(b.quantity), String(add), String(b.quantity + add)]);
+    });
+    box.appendChild(table(["资源 / 箱", "本表单（现有持仓）", "活动计入", "合计"], outRows));
+    box.appendChild(el("p", "活动箱已并入箱子管线：参与开箱顺序（①挑战者成长宝箱全开 → ②固定小时箱按需 → ③方舟/30天自选箱按需）与全箱梭哈上限；但<b>不写回上方表单输入框</b>（活动箱是分日到账的）。挑战者成长宝箱按固定数值（units）计入，不走引擎的箱子折算。", "caption"));
+
+    // 3. 折合等级增量 + 与开放日的关系
+    box.appendChild(el("p", "折合等级增量：同一底盘（现有资源 + 全部箱）下，含活动 vs 不含活动的全箱梭哈等级 = <b>" +
+      es.without_event_level + " → " + es.with_event_level + "（+" + es.level_gain + " 级）</b>。", "caption"));
+    if (es.future_open) {
+      var seg = [];
+      if (es.days_before_open) seg.push("开放日前到账 <b>" + es.days_before_open + " 天</b>（计入等待期自然积累，抬高开放日快照）");
+      if (es.days_after_open) seg.push("开放日后到账 <b>" + es.days_after_open + " 天</b>（计入开放日后的未来收益）");
+      box.appendChild(el("p", "与「预计新主线开放日（" + es.future_open + "）」的关系：" + (seg.length ? seg.join("；") : "无交集") + "。", "caption"));
+    }
+    box.appendChild(el("p", "商店按既有兑换节点自动兑换（Hard 开放日清一轮固定物资；活动结束前把剩余代币一次性兑成信用点）；每日任务与签到奖励按模板规则逐日/定时到账。活动「一天」= 一次凌晨 04:00 服务器重置。", "caption"));
+  }
+
   /* ---------- 补充信息：各类资源最大等级 / 收益折算 / 自然升级 ---------- */
   function renderExtra(result, snap) {
     var box = $("tabExtra"); box.innerHTML = "";
     var resLabels = { credit: "信用点", battle_data: "战斗数据辑", core_dust: "红球" };
+
+    // 0. 活动收益（有活动时才出现）
+    renderEventSection(box, result, snap);
 
     // 1. 自然升级到 N（不开箱）
     box.appendChild(el("h3", "自然升级到" + result.no_box.target + "（不开箱）", "sec"));
@@ -943,7 +1099,10 @@
     box.appendChild(el("h3", "全资源梭哈收益折算（开主线前 vs 开主线后）", "sec"));
     if (result.future_main_story.available) {
       var futIncome2 = snap.future_income_per_hour || snap.income_per_hour;
-      var futSnap2 = JSON.parse(JSON.stringify(snap));
+      // 用「开放日快照」比较（含等待期内到账的活动资源与箱量；无活动时等同当前快照）
+      var futSnap2 = result.future_main_story.projected_snapshot
+        ? Object.assign({}, result.future_main_story.projected_snapshot)
+        : JSON.parse(JSON.stringify(snap));
       futSnap2.bare_resources = result.future_main_story.projected_bare;
       var nowTotal = allInTotal(snap, snap.income_per_hour);
       var futTotal = allInTotal(futSnap2, futIncome2);
@@ -1405,6 +1564,33 @@
   function bindEvents() {
     // 跨设备同步：弹窗
     $("btnShare").addEventListener("click", function () { buildShareModal().open(); });
+
+    // 活动收益：添加/移除活动行（动态行用事件委托，避免重复绑定）+ 实时刷新预览
+    $("btnAddEvent").addEventListener("click", function () {
+      syncActivitiesFromRows();
+      var tpls = EV ? EV.templateList() : [];
+      state.form.activities = state.form.activities || [];
+      state.form.activities.push({ template: tpls.length ? tpls[0].id : "large28", start_date: todayLocal() });
+      renderActivityRows();
+      onFormChange();
+    });
+    $("eventRows").addEventListener("click", function (e) {
+      var btn = (e.target && e.target.closest) ? e.target.closest(".ev-del") : null;
+      if (!btn) return;
+      var row = btn.closest(".event-row");
+      if (row) row.parentNode.removeChild(row);
+      syncActivitiesFromRows();
+      updateActivityTotals();
+      onFormChange();
+    });
+    $("eventRows").addEventListener("change", function (e) {
+      if (e.target && e.target.classList &&
+          (e.target.classList.contains("ev-template") || e.target.classList.contains("ev-start"))) {
+        updateActivityTotals();
+      }
+    });
+    // 数据日期变化 → 活动计入区间随之变化
+    $("f_recorded").addEventListener("change", updateActivityTotals);
     // 同一页面内改 #data= hash（如直接粘贴/扫码改链接）也即时恢复
     window.addEventListener("hashchange", restoreFromShareHash);
     // 普通章节 -> 困难跟随 + 未来+2
@@ -1572,6 +1758,7 @@
           state.stageClearEntries = (d && d.chapters) || {};
         }).catch(function () { state.stageClearEntries = {}; });
       })
+      .then(loadEventTemplates)
       .then(function () {
         renderForm();
         bindEvents();

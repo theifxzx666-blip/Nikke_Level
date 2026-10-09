@@ -11,6 +11,7 @@ global.fetch = function (url) {
 
 require("./js/core.js");
 require("./js/outpost.js");
+require("./js/events.js");   // 活动收益模块（scenarios.js 在加载时读取它；无活动时行为不变）
 require("./js/boxes.js");
 require("./js/scenarios.js");
 const O = global.NikkeOutpost;

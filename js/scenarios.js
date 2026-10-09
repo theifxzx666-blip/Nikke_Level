@@ -5,6 +5,7 @@
   var C = global.NikkeCore;
   var O = global.NikkeOutpost;
   var B = global.NikkeBoxes;
+  var EV = global.NikkeEvents;   // 活动收益（事件模块未加载时按「无活动」处理，行为与本改动前逐项一致）
   var RESOURCES = C.RESOURCES;
   var addRes = C.addRes;
   var subRes = C.subRes;
@@ -22,12 +23,38 @@
     target = target || snapshot.target_sync_level;
     var steps = Math.max(0, target - snapshot.current_sync_level);
     var required = C.costForLevels(snapshot, snapshot.current_sync_level, steps);
-    var shortage = {};
-    RESOURCES.forEach(function (r) { shortage[r] = Math.max(0.0, required[r] - snapshot.bare_resources[r]); });
     var daily = C.dailyIncome(snapshot, snapshot.daily_wipeout_count, snapshot.wipeout_hours_each);
-    var result = daysToTarget(shortage, daily);
-    result.target = target; result.steps = steps; result.required = required; result.shortage = shortage;
+    var sched = EV ? EV.schedule(snapshot) : null;
+    var t0 = (EV && snapshot.recorded_at) ? EV.localISO(new Date(snapshot.recorded_at)) : null;
+    function solve(evRes) {
+      var shortage = {};
+      RESOURCES.forEach(function (r) {
+        shortage[r] = Math.max(0.0, required[r] - snapshot.bare_resources[r] - ((evRes && evRes[r]) || 0));
+      });
+      return daysToTarget(shortage, daily);
+    }
+    var result = solve(null);
+    var evRes = null;
+    if (sched && sched.dates.length && t0 && isFinite(result.days)) {
+      // 活动直接资源计入（本口径不开箱，箱子不计入）：等待天数与活动到账天数互为前提，迭代到自洽
+      var d = result.days;
+      for (var it = 0; it < 8; it++) {
+        var e = EV.totalsForWindow(sched, EV.addDays(t0, 1), EV.addDays(t0, Math.ceil(d))).res;
+        var trial = solve(e);
+        evRes = e;
+        if (!isFinite(trial.days)) { d = trial.days; break; }
+        if (trial.days >= d - 1e-9) { d = trial.days; break; }   // 不再下降 → 收敛
+        d = trial.days;
+      }
+      result = solve(evRes);
+    }
+    var shortage2 = {};
+    RESOURCES.forEach(function (r) {
+      shortage2[r] = Math.max(0.0, required[r] - snapshot.bare_resources[r] - ((evRes && evRes[r]) || 0));
+    });
+    result.target = target; result.steps = steps; result.required = required; result.shortage = shortage2;
     result.daily_income = daily; result.uses_boxes = false;
+    result.event_resources = evRes || C.zeroRes();
     var start = new Date(snapshot.recorded_at.getTime());
     result.estimated_at = C.isoMinutes(new Date(start.getTime() + result.days * 86400000));
     return result;
@@ -84,6 +111,11 @@
     var future = JSON.parse(JSON.stringify(snapshot));
     future.bare_resources = addRes(snapshot.bare_resources, natural);
     future.income_per_hour = snapshot.future_income_per_hour || snapshot.income_per_hour;
+    // 活动收益：等待期内（到开放日当天为止）到账的活动资源 + 箱量并入开放日快照
+    if (EV) {
+      var sched = EV.schedule(snapshot);
+      if (sched.dates.length) future = EV.inject(future, sched, EV.localISO(openAt));
+    }
     return future;
   }
 
@@ -109,6 +141,7 @@
       natural_before_open: subRes(future.bare_resources, snapshot.bare_resources),
       projected_bare: future.bare_resources, result: fixed,
       box_gain_vs_now: boxGain,
+      projected_snapshot: future,   // 开放日快照（含活动箱；供 future 口径算箱量）
     };
   }
 
@@ -140,6 +173,16 @@
     var balance = { credit: snapshot.bare_resources.credit, battle_data: snapshot.bare_resources.battle_data, core_dust: snapshot.bare_resources.core_dust };
     var when = new Date(snapshot.recorded_at.getTime());
     var start = when.getTime();
+    var sched = EV ? EV.schedule(snapshot) : null;
+    var eventTotal = C.zeroRes();
+    /* 时间轴推进时把「凌晨 04:00 到账」的活动日产出入账 */
+    function harvestTo(toMs) {
+      if (!sched || !sched.dates.length) return;
+      var h = EV.harvest(sched, when.getTime(), toMs);
+      if (!h.days) return;
+      balance = addRes(balance, h.res);
+      eventTotal = addRes(eventTotal, h.res);
+    }
     var guard = 0;
     while (level < target && guard < 10000) {
       guard += 1;
@@ -161,9 +204,11 @@
         var hours = (nextSwitch.getTime() - when.getTime()) / 3600000.0;
         var rate2 = effectiveRate(snapshot, when);
         balance = addRes(balance, { credit: rate2.credit * hours, battle_data: rate2.battle_data * hours, core_dust: rate2.core_dust * hours });
+        harvestTo(nextSwitch.getTime());
         when = new Date(nextSwitch.getTime());
       } else {
         balance = addRes(balance, { credit: rate.credit * waitHours, battle_data: rate.battle_data * waitHours, core_dust: rate.core_dust * waitHours });
+        harvestTo(when.getTime() + waitHours * 3600000);
         when = new Date(when.getTime() + waitHours * 3600000);
       }
     }
@@ -172,6 +217,7 @@
       estimated_at: C.isoMinutes(when),
       days: (when.getTime() - start) / 86400000.0,
       remaining: balance, uses_boxes: false,
+      event_resources: eventTotal,
     };
   }
 
@@ -235,13 +281,49 @@
     };
   }
 
+  /* 活动收益汇总（供结果区渲染）
+     计入区间 = [max(活动开始日, 数据日期+1), 活动结束日]；已结束的活动贡献恒为 0 */
+  function eventSummary(snapshot) {
+    var out = { available: false, meta: [], totals: null, days: 0, level_gain: 0,
+                hits_future: false, future_open: null, income: null };
+    if (!EV) return out;
+    var sched = EV.schedule(snapshot);
+    out.meta = sched.meta;
+    out.totals = sched.totals;
+    out.days = sched.dates.length;
+    out.available = out.days > 0;
+    if (!out.available) return out;
+    // 折合等级增量：同一底盘（裸资源 + 全部箱）下「有活动 vs 无活动」的全箱梭哈等级差
+    var withEv = EV.inject(snapshot, sched, null);
+    var lv1 = immediateLevels(withEv, true, true, withEv.income_per_hour).level;
+    var lv0 = immediateLevels(snapshot, true, true, withEv.income_per_hour).level;
+    out.level_gain = Math.max(0, lv1 - lv0);
+    out.with_event_level = lv1;
+    out.without_event_level = lv0;
+    // 活动到账与新主线开放日的关系（影响等待期积累 / 开放日后的收益）
+    if (snapshot.main_story_open_at) {
+      var od = EV.localISO(new Date(snapshot.main_story_open_at));
+      out.future_open = od;
+      out.days_before_open = sched.dates.filter(function (d) { return d < od; }).length;
+      out.days_after_open = sched.dates.filter(function (d) { return d >= od; }).length;
+      out.hits_future = out.days_before_open > 0 || out.days_after_open > 0;
+      out.before_open = EV.sumThrough(sched, EV.addDays(od, -1));
+      out.after_open = EV.totalsForWindow(sched, od, null);
+    }
+    return out;
+  }
+
   function evaluate(snapshot) {
     // 「预计新主线推图收益」是新主线开放后才拿得到的一次性资源：
     // 现状口径（不开箱 / 仅固定箱 / 全箱梭哈）一律不计入；新主线（future）口径保留
     var stage = snapshot.stage_clear_resources || {};
     var hasStage = RESOURCES.some(function (r) { return (stage[r] || 0) > 1e-9; });
     var snapNow = hasStage ? Object.assign({}, snapshot, { stage_clear_resources: C.zeroRes() }) : snapshot;
-    var noBox = noBoxToTarget(snapNow, snapshot.target_sync_level);
+    // 「现状」四档（no_box / bare / fixed / selectable）一律不注入活动收益：
+    // 活动从「数据日期次日」才到账，今天能拿到的东西里没有活动剩余产出（详见提示词 3.1-4 / 7.1）
+    var hasAct = !!(snapshot.activities && snapshot.activities.length);
+    var snapNowPlain = hasAct ? Object.assign({}, snapNow, { activities: [] }) : snapNow;
+    var noBox = noBoxToTarget(snapNowPlain, snapshot.target_sync_level);
     var bare = immediateLevels(snapNow);
     var fixed = immediateLevels(snapNow, true);
     var selectable = immediateLevels(snapNow, true, true);
@@ -279,12 +361,13 @@
     // 各类资源最大等级（开启后 / future 三档）：按未来收益 + 等待期自然积累
     var futureIncome = snapshot.future_income_per_hour || snapshot.income_per_hour;
     if (future.available) {
+      var fSnap = future.projected_snapshot || snapshot;   // 开放日快照（无活动时 == snapshot 的克隆）
       var fBare = addRes(future.projected_bare, snapshot.stage_clear_resources || {});
-      var fFixed = addRes(fBare, B.fixedBoxResources(snapshot, futureIncome));
+      var fFixed = addRes(fBare, B.fixedBoxResources(fSnap, futureIncome));
       var fSel = {};
       RESOURCES.forEach(function (r) {
         var rv = fFixed[r] || 0;
-        (snapshot.selectable_boxes || []).forEach(function (box) {
+        (fSnap.selectable_boxes || []).forEach(function (box) {
           if (!box.options || !box.options.length) return;
           var best = 0;
           box.options.forEach(function (opt) {
@@ -315,6 +398,8 @@
       // 目标等级口径的自选箱分配（当前收益 / 新主线后）
       target_selectable_now: targetPlanNow,
       target_selectable_future: targetPlanFuture,
+      // 活动收益汇总（供结果区渲染；无活动时 available=false）
+      event_summary: eventSummary(snapshot),
     };
   }
 
@@ -327,6 +412,7 @@
     scenarioF: scenarioF,
     naturalToTarget: naturalToTarget,
     evaluate: evaluate,
+    eventSummary: eventSummary,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = global.NikkeScenarios;
 })(typeof window !== "undefined" ? window : globalThis);
