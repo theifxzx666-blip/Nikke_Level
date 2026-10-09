@@ -534,9 +534,12 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body.avatar-full {
   height: 100vh; height: 100svh; min-height: 0; overflow: hidden;
   display: flex; flex-direction: column;
-  /* 补偿父页滚动条：其他子工具 Tab 的父页带滚动条（少 15px），头像全屏模式无滚动条，
-     不补齐的话同一视口下头像 Tab 的内容整体比别的 Tab 宽 15px */
-  padding-right: var(--sbw, 15px);
+  /* 滚动条补偿（padding-right）只在桌面断点启用，见文件末尾 @media (min-width: 821px)。
+     移动端一律不加：① 移动端是 overlay 滚动条，本来就不占宽，加了反而比其他 Tab 窄；
+     ② 移动端 window.innerWidth 与 documentElement.clientWidth 在页面缩放 / 地址栏收放 /
+     输入框聚焦等场景下会差出上百 px（实测 390 视口上量到 511-390 = 121px），而 --sbw
+     一旦被写成大值就永久生效（只增不减、从不重算），会把整个工具区挤窄到 200px 出头——
+     表现就是顶栏「导出 PNG / GIF」被裁、角色信息竖成单字一列、列表只剩一行。 */
 }
 body.avatar-full .hero-banner { display: none; }
 /* 定制模组统计 / 洗词条计算器同步头像预览的做法：进入子工具页即隐藏顶部 hero 顶图
@@ -561,6 +564,10 @@ body.avatar-full #avatarFrame { flex: 1 1 auto; min-height: 0; height: 100%; }
    必须显式 width:100%（max-width 只做定宽居中）—— 导航长度因此与其他三个 Tab 一致。
    窄屏不能加 width:100%（边距 8px 会向右溢出 8px），靠 stretch 自适应即可 */
 @media (min-width: 821px) {
+  /* 滚动条补偿：其他子工具 Tab 的父页带滚动条（内容区少 15px），头像全屏模式无滚动条，
+     不补齐的话同一视口下头像 Tab 的内容整体比别的 Tab 宽 15px。
+     上限钳到 24px —— 滚动条宽度不可能是几十上百 px，--sbw 若被写成异常值，此处兜底。 */
+  body.avatar-full { padding-right: min(var(--sbw, 15px), 24px); }
   body.avatar-full .app-nav { width: 100%; max-width: 880px; margin: 10px auto 8px; }
   body.avatar-full #appAvatarFrame { padding: 0 20px 14px; }
 }

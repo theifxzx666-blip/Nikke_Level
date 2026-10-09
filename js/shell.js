@@ -173,10 +173,16 @@
     var t = findTool(id);
     if (!t) return;
     activeId = id;
-    // 非全屏页量滚动条宽度（全屏模式 overflow:hidden 量出来恒 0）
+    // 非全屏页量滚动条宽度（全屏模式 overflow:hidden 量出来恒 0）。
+    // 这个值只用于桌面端头像全屏模式的 15px 级宽度补偿，所以：
+    //   ① 只接受 (0, 40] 的合理值 —— 移动端页面缩放 / 地址栏收放时 innerWidth 与
+    //      clientWidth 会差出上百 px（实测 390 视口上 511-390 = 121px），写进 --sbw
+    //      会把整个头像工具区永久挤窄（且只增不减、从不重算）；
+    //   ② 超出合理范围就清掉变量、退回 CSS 默认值。
     if (!t.fullscreen) {
       var sbw = window.innerWidth - document.documentElement.clientWidth;
-      if (sbw > 0) document.documentElement.style.setProperty("--sbw", sbw + "px");
+      if (sbw > 0 && sbw <= 40) document.documentElement.style.setProperty("--sbw", sbw + "px");
+      else document.documentElement.style.removeProperty("--sbw");
     }
     var vid = viewIdOf(t);
     document.querySelectorAll(".app-nav-btn").forEach(function (b) {
