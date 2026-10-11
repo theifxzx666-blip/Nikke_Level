@@ -947,10 +947,13 @@
       "daily_task": {
         "per_day": {
           "credit_box_1h": 1,
+          "dust_box_1h": 1,
           "growth_box_1h": 1,
-          "ark_box": 1
+          "ark_box": 1,
+          "token": 120
         }
       },
+      "_daily_note": "每日任务（2026-10-11 用户更新源 txt）：信用点盒1h、芯尘盒1h、成长套组1h、方舟官方补给物资Ⅰ 各1；token=120 代币/日由引擎逐日入店币池（先于商店结算）。",
       "_checkin_note": "签到的 offset_day 为相对活动开始日的偏移（0 起算）；「活动第 N 天」= offset_day N-1",
       "checkin": [
         {

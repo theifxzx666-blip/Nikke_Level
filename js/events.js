@@ -1,5 +1,5 @@
 /* events.js — 活动收益置入（自 活动收益引擎/skills/activity_income.py 1:1 移植）
-   口径来源：工作区根《活动收益置入-实施提示词.md》（v2.3）
+   口径来源：工作区 docs/《活动收益置入-实施提示词.md》（v2.4）
    铁律：算法禁止"优化"，逐函数与 Python 同构；活动数值一律来自 data/event_templates.json（禁止手写）。 */
 (function (global) {
   "use strict";
@@ -213,6 +213,12 @@
     var lo = maxISO(dayMin, d0), hi = minISO(dayMax, d1);
     var days = {}, cur = lo;
     while (cur <= hi) { days[cur] = newDay(); cur = addDays(cur, 1); }
+
+    /* 每日任务代币：活动逐日产出，必须先于商店结算入账
+       （Hard 开放日清固定物资、结束前余额兑信用都吃这个池子）。
+       箱类奖励由 planActivity/schedule 叠加，此处只入 token。 */
+    var dtok = (((ev.daily_task || {}).per_day) || {}).token || 0;
+    if (dtok) { Object.keys(days).forEach(function (d) { days[d].token += dtok; }); }
 
     var chs = (ev.challenges || []).slice().sort(function (a, b) { return a.open < b.open ? -1 : (a.open > b.open ? 1 : 0); });
     Object.keys(days).forEach(function (d) {

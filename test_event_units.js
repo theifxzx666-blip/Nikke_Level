@@ -1,6 +1,6 @@
-/* test_event_units.js — 活动收益单元测试（对照《活动收益置入-实施提示词.md》9.1 验收基线）
+/* test_event_units.js — 活动收益单元测试（对照 docs/《活动收益置入-实施提示词.md》9.1 验收基线）
    运行：node test_event_units.js   → 必须输出 ALL EVENT TESTS PASSED
-   基线由 Python 引擎实跑得出（活动收益引擎 2026-10-09 口径修正后），禁止凭记忆改写。 */
+   基线由 Python 引擎实跑得出（活动收益引擎 2026-10-11 口径修正后），禁止凭记忆改写。 */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -35,8 +35,8 @@ function selOf(tot, name) { return tot.selectable[name] || 0; }
 const BASE = {
   small14: { days: 14, credit: 2086640, battle: 10516000, dust: 192, challenger: 159,
              c1: 10, b1: 10, d1: 324, b2: 12, d2: 12, g1: 14, g8: 0, g12: 0, ark: 0 },
-  large21: { days: 21, credit: 3465120, battle: 10516000, dust: 192, challenger: 360,
-             c1: 35, b1: 14, d1: 472, b2: 15, d2: 15, g1: 21, g8: 1, g12: 1, ark: 46 },
+  large21: { days: 21, credit: 3969120, battle: 10516000, dust: 192, challenger: 360,
+             c1: 35, b1: 14, d1: 493, b2: 15, d2: 15, g1: 21, g8: 1, g12: 1, ark: 46 },
   large28: { days: 28, credit: 5012120, battle: 10516000, dust: 192, challenger: 535,
              c1: 14, b1: 14, d1: 612, b2: 15, d2: 15, g1: 28, g8: 0, g12: 0, ark: 0 },
 };
