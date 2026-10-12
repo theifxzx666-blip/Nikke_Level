@@ -254,27 +254,155 @@ body.m-body .btn-big { padding: 14px; font-size: 16px; }
 body.m-body .tab { padding: 11px 10px; font-size: 13.5px; }
 body.m-body .app-nav-btn { min-height: 50px; }
 
-/* 结果表 / 固定箱表 / 分档预览：横向滑动（恒生效，不只依赖 ≤700px 断点） */
+/* ---------- 根因加固：拆掉 fieldset 的 min-inline-size ----------
+   浏览器 UA 给 <fieldset> 带 min-inline-size: min-content；表内 white-space: nowrap 会让
+   固定箱表的最小宽度达 431px、分档预览表达 605px，这个「最小宽度」被 fieldset 继承、
+   再经 block 祖先一路上传 → Chrome 移动端会把**布局视口**从 390 撑到 628px（+61%），
+   表现为整页变小、右侧内容被切（6 个时长只剩 4 个、底部第 4 个 Tab 被切）。
+   置 0 后视口恒等于设备宽度，超宽内容只能在自己容器里横滑。 */
+body.m-body #formSection fieldset {
+  min-inline-size: 0;
+  min-width: 0;
+}
+
+/* ---------- 结果表容器：恒生效的横滑（不只依赖 ≤700px 断点） ---------- */
 body.m-body .tbl-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   max-width: 100%;
   position: relative;
 }
-body.m-body .fixed-table,
-body.m-body .cost-preview table {
-  display: block;
+
+/* ---------- 固定小时箱表：7 列在容器宽度内平分 ----------
+   改造前：表固有宽 431px / 容器 324px → 必须左右滑才能填 2h、1h（且把整页撑到 628px）
+   改造后：表宽 = 容器宽，24 格一屏铺满、零横滑。
+   注意：table-layout: fixed 的列宽取自**首行**，所以列宽必须写在 th:first-child 上，
+   写在 td:first-child 上无效（实测已验证）。 */
+body.m-body .fixed-table {
+  display: table;
+  table-layout: fixed;
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
+  white-space: normal;
+  font-size: 12px;
 }
-body.m-body .fixed-table { font-size: 13px; }
-body.m-body .fixed-table input { width: 58px; min-height: 40px; text-align: center; }
+body.m-body .fixed-table th,
+body.m-body .fixed-table td { padding: 2px 1px; font-size: 11px; text-align: center; }
+body.m-body .fixed-table th:first-child,
+body.m-body .fixed-table td:first-child {
+  width: 27%;
+  white-space: normal;
+  font-size: 10.5px;
+  line-height: 1.15;
+  text-align: left;
+}
+body.m-body .fixed-table .box-icon { width: 14px; height: 14px; margin-right: 2px; vertical-align: -2px; }
+/* 24 格是密集数字网格，单格收到 36px 宽以换取「一屏填完」；
+   高度保留 40px（不取 44px）是密集网格的例外，兼顾触控与一屏可见 4 行。 */
+body.m-body .fixed-table input {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 4px 1px;
+  font-size: 13px;
+  border-radius: 6px;
+  text-align: center;
+  box-sizing: border-box;
+}
+/* 已填 / 未填的视觉区分（由 mobile.html 的内联脚本打 .has-val） */
+body.m-body .fixed-table input:not(.has-val) { color: #b6c1bd; }
+body.m-body .fixed-table input.has-val {
+  background: #f0faf6;
+  border-color: #9fe1cb;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+/* 分组标题旁的「清空」按钮（点击需阻止冒泡，否则会触发 legend 的展开/折叠） */
+body.m-body .legend-btn {
+  margin-left: 8px;
+  padding: 3px 9px;
+  font-family: inherit;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  vertical-align: 1px;
+}
+body.m-body .legend-btn:active { background: #f0f4f2; }
+
+/* 提示浮层：style.css 的 .toast 定在 bottom:42px，会被底部 Tab（63px）与吸底按钮压住 */
+body.m-body .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+
+/* ---------- 升级消耗分档预览：移动版改为「每档一段」竖排 ----------
+   改造前：6 列密集数字（含 11 位）在 324px 容器里需横滑 152px，「段内总消耗」列被切，
+   且曾把整页撑到 628px（605px 的元凶）。改造后零横滑、每项完整可读。 */
+body.m-body .cost-rows { display: grid; gap: 8px; margin: 8px 0 0; }
+body.m-body .cost-row {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+}
+body.m-body .cost-row.rise { border-color: #f3dcb2; background: #fffdf8; }
+body.m-body .cr-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--primary-dark);
+  margin-bottom: 4px;
+}
+body.m-body .cr-head span { font-size: 12px; color: var(--muted); }
+body.m-body .cr-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+body.m-body .cr-line b { color: #1a1a1a; font-weight: 600; word-break: break-word; text-align: right; }
+body.m-body .cr-total { border-top: 1px dashed var(--border); margin-top: 4px; padding-top: 4px; }
+body.m-body .cr-total b { font-size: 11.5px; }
+
+/* ---------- 结果表：瘦身（横滑 214px → 145px）+ 长表头折行 ---------- */
+body.m-body .result-panel table { font-size: 12px; }
 body.m-body .result-panel table th,
-body.m-body .result-panel table td { white-space: nowrap; }
-body.m-body .result-panel table td.wrap { white-space: normal; word-break: break-word; min-width: 132px; max-width: 58vw; }
+body.m-body .result-panel table td { white-space: nowrap; padding: 6px 6px; }
+/* 长表头（如「开主线前折算（当前收益）」）在窄屏折行，避免单列被撑到 130px+ */
+body.m-body .result-panel table th {
+  white-space: normal;
+  word-break: break-word;
+  max-width: 24vw;
+  line-height: 1.25;
+}
+body.m-body .result-panel table td.wrap {
+  white-space: normal;
+  word-break: break-word;
+  min-width: 104px;
+  max-width: 46vw;
+}
+body.m-body .result-panel table th:first-child,
+body.m-body .result-panel table td:first-child { min-width: 72px; }
+
+/* ---------- 分配表：移动版换成卡片（由 app.js 的 isMobileShell 分支产出） ----------
+   5 列表在 314px 容器里需横滑 145px 且「分配明细」被截断；卡片零横滑、长文本可换行。 */
+body.m-body .box-cards { display: grid; gap: 8px; margin: 8px 0 10px; }
+body.m-body .box-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 9px;
+  padding: 9px 10px;
+  background: #fbfdfc;
+}
+body.m-body .bc-name { font-size: 13.5px; font-weight: 600; color: var(--primary-dark); margin-bottom: 5px; }
+body.m-body .bc-nums { display: flex; gap: 16px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+body.m-body .bc-nums b { color: #1a1a1a; font-size: 14px; }
+body.m-body .bc-detail { font-size: 12.5px; line-height: 1.5; word-break: break-word; }
+body.m-body .bc-note { font-size: 11.5px; color: var(--muted); font-style: italic; margin-top: 5px; }
 body.m-body .tbl-scroll::after {
   content: "";
   position: absolute;
@@ -307,4 +435,10 @@ body.m-body .modal-body { padding: 14px; }
   body.m-body .g2, body.m-body .g3, body.m-body .g4 { grid-template-columns: 1fr; }
   body.m-body .app-nav-btn { font-size: 10px; }
   body.m-body .m-top-title { font-size: 14px; }
+  /* 超窄屏固定箱网格再收一档：320 宽下单格仅 28px，13px 字号放不下 4 位数字（如 1684） */
+  body.m-body .fixed-table input { font-size: 11px; padding: 4px 0; }
+  body.m-body .fixed-table th,
+  body.m-body .fixed-table td { padding: 2px 0; }
+  body.m-body .fixed-table th:first-child,
+  body.m-body .fixed-table td:first-child { font-size: 10px; }
 }

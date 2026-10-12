@@ -13,7 +13,7 @@
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
 <link rel="stylesheet" href="css/style.css?v=20261009b">
-<link rel="stylesheet" href="css/mobile.css?v=20261012a">
+<link rel="stylesheet" href="css/mobile.css?v=20261012b">
 </head>
 <body class="m-body">
 
@@ -197,7 +197,7 @@
     </fieldset>
 
     <fieldset class="grp-d">
-      <legend>固定小时箱数量</legend>
+      <legend>固定小时箱数量<button type="button" id="btnClearFixed" class="legend-btn">清空</button></legend>
       <table class="fixed-table">
         <thead><tr><th>箱子 \ 小时</th><th>24h</th><th>12h</th><th>8h</th><th>4h</th><th>2h</th><th>1h</th></tr></thead>
         <tbody>
@@ -254,7 +254,7 @@
 <script src="js/scenarios.js?v=20261009a"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261012b"></script>
+<script src="js/app.js?v=20261012c"></script>
 <!-- 顶层功能切换沿用桌面版外壳脚本（tools.json 驱动）；移动版只把导航用 CSS 固定到屏幕底部 -->
 <script src="js/shell.js?v=20261009b"></script>
 <script>
@@ -270,6 +270,97 @@ window.addEventListener("load", function () {
     document.body.appendChild(s);
   });
 });
+</script>
+
+<!-- 移动版专用输入增强（只存在于 mobile.html，不进 app.js：桌面站零影响）
+     ① 聚焦即全选       —— 覆盖已填数值不用先删
+     ② 回车跳下一格     —— 数字键盘右下角提示「下一项」，可连续填完 24 格
+     ③ 焦点避让软键盘   —— 输入框滚到屏幕中部，不被键盘遮住
+     ④ 已填/未填视觉区分 —— 有值高亮、0 值淡灰（配合 mobile.css 的 .has-val）
+     ⑤ 一键清空本组     —— 重填时不用逐格删 -->
+<script>
+(function () {
+  function fixedInputs() {
+    return Array.prototype.slice.call(document.querySelectorAll(".fixed"));
+  }
+  /* ④ 打标：app.js 写入的是数字（含 0），所以只能用脚本判断，CSS 无法按 value 取值 */
+  function syncMarks() {
+    fixedInputs().forEach(function (inp) {
+      inp.classList.toggle("has-val", parseInt(inp.value, 10) > 0);
+    });
+  }
+  /* 提示：复用 app.js 同一套 #toast（style.css 的 .toast）；位置由 mobile.css 抬高到底部 Tab 之上。
+     注意 #saveTip 在 .m-hidden 容器里（移动版隐藏），不能拿来当提示。 */
+  function tip(msg) {
+    var t = document.getElementById("toast");
+    if (!t) { t = document.createElement("div"); t.id = "toast"; t.className = "toast"; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.remove("show");
+    void t.offsetWidth;
+    t.classList.add("show");
+    clearTimeout(tip._t);
+    tip._t = setTimeout(function () { t.classList.remove("show"); }, 2400);
+  }
+
+  /* ② 让数字键盘右下角显示「下一项」
+     ① 前置条件：<input type="number"> **不支持** select()（selectionStart/End 恒为 null，
+     实测确认），聚焦全选在 number 输入框上是空操作 → 24 格改用 text + inputmode=numeric
+     （安卓数字键盘不变），另配纯数字过滤防止输入非数字。 */
+  fixedInputs().forEach(function (inp) {
+    inp.setAttribute("enterkeyhint", "next");
+    inp.type = "text";
+  });
+
+  /* ① + ③ 聚焦全选 + 避开软键盘
+     select() 必须放到下一帧：在 focusin 里同步调用会被浏览器随后的
+     「把光标落到值末尾」默认行为覆盖（实测选区会塌成 len–len）。 */
+  document.addEventListener("focusin", function (e) {
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains("fixed")) return;
+    setTimeout(function () { try { t.select(); } catch (err) { } }, 0);
+    setTimeout(function () {
+      try { t.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (err) { t.scrollIntoView(false); }
+    }, 150);
+  });
+
+  /* ② 回车 → 跳到下一个待填格（已是最后一格则收起键盘） */
+  document.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains("fixed") || e.key !== "Enter") return;
+    e.preventDefault();
+    var list = fixedInputs(), next = list[list.indexOf(t) + 1];
+    if (next) next.focus(); else t.blur();
+  });
+
+  /* ④ 纯数字过滤 + 已填/未填标记 */
+  document.addEventListener("input", function (e) {
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains("fixed")) return;
+    var clean = String(t.value).replace(/[^0-9]/g, "");
+    if (clean !== t.value) t.value = clean;
+    syncMarks();
+  });
+  document.addEventListener("change", function (e) {
+    if (e.target && e.target.classList && e.target.classList.contains("fixed")) syncMarks();
+  });
+
+  /* ⑤ 清空固定小时箱（legend 上有展开/折叠的点击监听，必须阻止冒泡） */
+  var btn = document.getElementById("btnClearFixed");
+  if (btn) {
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (!window.confirm("清空全部固定小时箱数量（24 格归零）？")) return;
+      fixedInputs().forEach(function (inp) { inp.value = 0; });
+      syncMarks();
+      tip("已清空固定小时箱");
+    });
+  }
+
+  /* 初次标记：app.js 在初始化时会把存档值写进输入框，等它写完再打标 */
+  window.addEventListener("load", syncMarks);
+  setTimeout(syncMarks, 400);
+  setTimeout(syncMarks, 1200);
+})();
 </script>
 </body>
 </html>

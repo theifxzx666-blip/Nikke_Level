@@ -746,16 +746,34 @@
       return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
     var html = "<div class='cost-preview'><h4>升级消耗分档预览（同步器 " + lvl + " → " + tgt + "）</h4>";
-    html += "<table><tr><th>等级段</th><th>信用点/级</th><th>战斗数据/级</th><th>红球/级</th><th>级数</th><th>段内总消耗（信用点/战斗数据/红球）</th></tr>";
-    segments.forEach(function (seg, idx) {
-      var rise = idx > 0 ? " class='rise'" : "";
-      var tc = seg.tier.credit * seg.count, tb = seg.tier.battle_data * seg.count, td = seg.tier.core_dust * seg.count;
-      var segLbl = seg.start + "–" + seg.end + (idx > 0 ? " ⬆" : "");
-      var totalTxt = numFmt(tc) + " / " + numFmt(tb) + " / " + numFmt(td);
-      var perTxt = numFmt(seg.tier.credit) + " / " + numFmt(seg.tier.battle_data) + " / " + numFmt(seg.tier.core_dust);
-      html += "<tr" + rise + "><td>" + segLbl + "</td><td>" + numFmt(seg.tier.credit) + "</td><td>" + numFmt(seg.tier.battle_data) + "</td><td>" + numFmt(seg.tier.core_dust) + "</td><td>" + seg.count + "</td><td>" + totalTxt + "</td></tr>";
-    });
-    html += "</table>";
+    if (isMobileShell()) {
+      /* 移动版：6 列密集数字在 324px 容器里需横滑 152px 且「段内总消耗」被切，
+         改为「每档一段」竖排 —— 零横滑、每项完整可读 */
+      html += "<div class='cost-rows'>";
+      segments.forEach(function (seg, idx) {
+        var tc = seg.tier.credit * seg.count, tb = seg.tier.battle_data * seg.count, td = seg.tier.core_dust * seg.count;
+        var segLbl = seg.start + "–" + seg.end + (idx > 0 ? " ⬆" : "");
+        html += "<div class='cost-row" + (idx > 0 ? " rise" : "") + "'>"
+          + "<div class='cr-head'><b>" + segLbl + "</b><span>" + seg.count + " 级</span></div>"
+          + "<div class='cr-line'><span>信用点/级</span><b>" + numFmt(seg.tier.credit) + "</b></div>"
+          + "<div class='cr-line'><span>战斗数据/级</span><b>" + numFmt(seg.tier.battle_data) + "</b></div>"
+          + "<div class='cr-line'><span>红球/级</span><b>" + numFmt(seg.tier.core_dust) + "</b></div>"
+          + "<div class='cr-line cr-total'><span>段内总消耗</span><b>"
+          + numFmt(tc) + " / " + numFmt(tb) + " / " + numFmt(td) + "</b></div>"
+          + "</div>";
+      });
+      html += "</div>";
+    } else {
+      html += "<table><tr><th>等级段</th><th>信用点/级</th><th>战斗数据/级</th><th>红球/级</th><th>级数</th><th>段内总消耗（信用点/战斗数据/红球）</th></tr>";
+      segments.forEach(function (seg, idx) {
+        var rise = idx > 0 ? " class='rise'" : "";
+        var tc = seg.tier.credit * seg.count, tb = seg.tier.battle_data * seg.count, td = seg.tier.core_dust * seg.count;
+        var segLbl = seg.start + "–" + seg.end + (idx > 0 ? " ⬆" : "");
+        var totalTxt = numFmt(tc) + " / " + numFmt(tb) + " / " + numFmt(td);
+        html += "<tr" + rise + "><td>" + segLbl + "</td><td>" + numFmt(seg.tier.credit) + "</td><td>" + numFmt(seg.tier.battle_data) + "</td><td>" + numFmt(seg.tier.core_dust) + "</td><td>" + seg.count + "</td><td>" + totalTxt + "</td></tr>";
+      });
+      html += "</table>";
+    }
     html += "<p class='hint'>按内置阶梯表（每 50 级一档）估算；⬆ 表示该段消耗相比上一档提升。手动填写的消耗仅覆盖当前等级所在档位，跨入更高档仍按内置阶梯表逐级递增；三项都留空时按内置阶梯表计算。</p></div>";
     wrap.innerHTML = html;
   }
@@ -859,6 +877,12 @@
     if (html !== undefined) d.innerHTML = html;
     if (cls) d.className = cls;
     return d;
+  }
+  /* 是否跑在移动版外壳里（mobile.html 的 <body class="m-body">）
+     仅用于「同一份数据、两种呈现形态」：桌面站 index.html 的 body 无该类，
+     因此窄屏打开桌面页时行为与样式完全不变。 */
+  function isMobileShell() {
+    return !!(document.body && document.body.classList && document.body.classList.contains("m-body"));
   }
   function table(headers, rows) {
     var t = el("table", "", "data");
@@ -1226,7 +1250,28 @@
       rows.push([p.name, p.used, p.keep, detail, note2]);
     });
     if (!planArr || !planArr.length || !hasUsed) return el("p", note, "caption");
+    // 移动版：表格 → 卡片（5 列在 314px 容器里需横滑约 145px，且「分配明细」列会被截断）
+    if (isMobileShell()) return selectableBoxCards(planArr);
     return table(["箱子", "使用", "保留", "分配明细", "备注"], rows);
+  }
+
+  /* 移动版分配表：一箱一张卡（数值 + 明细 + 备注竖排，零横滑、长文本不截断） */
+  function selectableBoxCards(planArr) {
+    var box = el("div", "", "box-cards");
+    (planArr || []).forEach(function (p) {
+      var detail = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
+        .map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
+      var card = el("div", "", "box-card");
+      card.appendChild(el("div", p.name, "bc-name"));
+      card.appendChild(el("div",
+        "<span>使用 <b>" + p.used + "</b></span><span>保留 <b>" + p.keep + "</b></span>", "bc-nums"));
+      card.appendChild(el("div", detail, "bc-detail"));
+      if (p.name.indexOf("挑战者") >= 0) {
+        card.appendChild(el("div", "固定数值奖励，默认全部消耗（不受基地等级影响）", "bc-note"));
+      }
+      box.appendChild(card);
+    });
+    return box;
   }
 
   /* 固定小时箱按需开启明细表：need.used[箱名][时长]=数量，输出 箱子/时长/数量 */
