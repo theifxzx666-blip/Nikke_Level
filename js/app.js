@@ -10,7 +10,15 @@
     "战斗数据辑盒": { 24: 2, 12: 3, 8: 2, 4: 0, 2: 102, 1: 824 },
     "成长套组": { 24: 0, 12: 0, 8: 0, 4: 0, 2: 0, 1: 8 },
   };
+  /* 推图收益默认值 = 官方拆包「最高已收录章节」（官方第 47 章「新生」= 计算器 Chapter 46）。
+     单位：信用于战斗数据为 K，红球为个。数据由 data/stage_clear_resources.json 提供，随所选章节联动。 */
   var DEFAULT_STAGE_CLEAR = {
+    stage_clear_credit: "15193.2", stage_clear_battle: "45113.6", stage_clear_dust: "370",
+    stage_clear_credit2: "2861.3", stage_clear_battle2: "39761", stage_clear_dust2: "880",
+    stage_clear_task_credit: "307.5", stage_clear_task_battle: "7464.45", stage_clear_task_dust: "1300",
+  };
+  /* 旧口径（37-38 章实测估算，来源：屯箱子计算器）——命中即视为「未自定义」，改用新默认 */
+  var LEGACY_STAGE_CLEAR = {
     stage_clear_credit: "25864", stage_clear_battle: "74096", stage_clear_dust: "630",
     stage_clear_credit2: "2615", stage_clear_battle2: "73446", stage_clear_dust2: "1630",
   };
@@ -104,6 +112,7 @@
     futureNormalStages: {}, futureHardStages: {},
     lastResult: null, lastSnapshot: null,
     stageClearEntries: {},
+    stageClearFallback: null,   // 官方拆包收录的最高章节键（更晚章节沿用）
   };
 
   /* ---------- 表单值读写 ---------- */
@@ -116,8 +125,9 @@
       future_open: "2026-10-14", future_normal_stage: "", future_hard_stage: "", future_base: "535",
       future_credit: "61110/h", future_battle: "614880/h", future_dust: "102.41/h",
       bare_credit: "66605K", bare_battle: "302M", bare_dust: "13591",
-      stage_clear_mode: "只计普通", stage_clear_credit: "25864", stage_clear_battle: "74096", stage_clear_dust: "630",
-      stage_clear_credit2: "2615", stage_clear_battle2: "73446", stage_clear_dust2: "1630",
+      stage_clear_mode: "只计普通", stage_clear_credit: "15193.2", stage_clear_battle: "45113.6", stage_clear_dust: "370",
+      stage_clear_credit2: "2861.3", stage_clear_battle2: "39761", stage_clear_dust2: "880",
+      stage_clear_task_credit: "307.5", stage_clear_task_battle: "7464.45", stage_clear_task_dust: "1300",
       cost_credit: "", cost_battle: "", cost_dust: "",
       fixed: JSON.parse(JSON.stringify(DEFAULT_FIXED)),
       ark: "1159", growth: "56", challenger: "1125",
@@ -138,6 +148,12 @@
         Object.keys(DEFAULT_FIXED).forEach(function (k) {
           if (!state.form.fixed[k]) state.form.fixed[k] = JSON.parse(JSON.stringify(DEFAULT_FIXED[k]));
         });
+        // 推图收益旧口径迁移：命中「37-38 章实测估算」旧默认值的一律视为未自定义，改用官方拆包新默认
+        Object.keys(LEGACY_STAGE_CLEAR).forEach(function (k) {
+          if (state.form[k] !== undefined && String(state.form[k]) === LEGACY_STAGE_CLEAR[k]) {
+            state.form[k] = DEFAULT_STAGE_CLEAR[k];
+          }
+        });
         return;
       }
     } catch (e) { /* ignore */ }
@@ -156,6 +172,7 @@
     f.bare_credit = val("f_bare_credit"); f.bare_battle = val("f_bare_battle"); f.bare_dust = val("f_bare_dust");
     f.stage_clear_mode = val("f_stage_mode"); f.stage_clear_credit = val("f_stage_credit"); f.stage_clear_battle = val("f_stage_battle"); f.stage_clear_dust = val("f_stage_dust");
     f.stage_clear_credit2 = val("f_stage_credit2"); f.stage_clear_battle2 = val("f_stage_battle2"); f.stage_clear_dust2 = val("f_stage_dust2");
+    f.stage_clear_task_credit = val("f_stage_task_credit"); f.stage_clear_task_battle = val("f_stage_task_battle"); f.stage_clear_task_dust = val("f_stage_task_dust");
     f.cost_credit = val("f_cost_credit"); f.cost_battle = val("f_cost_battle"); f.cost_dust = val("f_cost_dust");
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
     f.saved_at = val("f_saved_at");
@@ -453,6 +470,7 @@
     setVal("f_bare_credit", f.bare_credit); setVal("f_bare_battle", f.bare_battle); setVal("f_bare_dust", f.bare_dust);
     setVal("f_stage_mode", f.stage_clear_mode); setVal("f_stage_credit", f.stage_clear_credit); setVal("f_stage_battle", f.stage_clear_battle); setVal("f_stage_dust", f.stage_clear_dust);
     setVal("f_stage_credit2", f.stage_clear_credit2); setVal("f_stage_battle2", f.stage_clear_battle2); setVal("f_stage_dust2", f.stage_clear_dust2);
+    setVal("f_stage_task_credit", f.stage_clear_task_credit); setVal("f_stage_task_battle", f.stage_clear_task_battle); setVal("f_stage_task_dust", f.stage_clear_task_dust);
     setVal("f_cost_credit", f.cost_credit); setVal("f_cost_battle", f.cost_battle); setVal("f_cost_dust", f.cost_dust);
     setVal("f_ark", f.ark); setVal("f_growth", f.growth); setVal("f_challenger", f.challenger);
     document.querySelectorAll(".fixed").forEach(function (inp) {
@@ -467,6 +485,7 @@
     syncStageOptions("normal"); syncStageOptions("hard");
     syncStageOptions("future_normal"); syncStageOptions("future_hard");
     updateStageClearUI();
+    syncStageClearFromFuture();
     renderActivityRows();
     // 回填不触发 change：补一次基地联动（手填为准，只在基地为空时自动填推算值）
     syncCurrentBase();
@@ -599,25 +618,66 @@
     syncStageClearFromFuture();
   }
 
+  /* 推图收益字段是否仍为「自动带出」状态：记录上次自动填的值，用户手改后即不再覆盖 */
+  var stageAutoFilled = {};
+
   function syncStageClearFromFuture() {
-    var n = chapterNum(val("f_future_normal_chapter"));
-    if (!n) return;
-    var entry = state.stageClearEntries[String(n)] || state.stageClearEntries["38"] || {};
+    var chSel = val("f_future_normal_chapter");
+    if (!chSel) { updateStageClearNote(null, null, null); return; }
+    var n = chapterNum(chSel);
+    var entries = state.stageClearEntries || {};
+    var keys = Object.keys(entries);
+    if (!keys.length) { updateStageClearNote(null, null, n); return; }
+    var maxKey = keys.reduce(function (a, b) { return parseInt(a, 10) >= parseInt(b, 10) ? a : b; });
+    var fallbackKey = entries[String(state.stageClearFallback)] ? String(state.stageClearFallback) : maxKey;
+    var usedKey = entries[String(n)] ? String(n) : fallbackKey;
+    var entry = entries[usedKey] || {};
     var map = {
       f_stage_credit: entry.credit, f_stage_battle: entry.battle, f_stage_dust: entry.dust,
       f_stage_credit2: entry.credit_hard, f_stage_battle2: entry.battle_hard, f_stage_dust2: entry.dust_hard,
+      f_stage_task_credit: entry.task_credit, f_stage_task_battle: entry.task_battle, f_stage_task_dust: entry.task_dust,
     };
     Object.keys(map).forEach(function (id) {
       if (map[id] === undefined || map[id] === null) return;
+      var key = id.replace("f_stage_", "stage_clear_");
       var cur = val(id);
-      if (cur === "" || cur === undefined || DEFAULT_STAGE_CLEAR[id.replace("f_stage_", "stage_clear_")] === cur) {
-        setVal(id, String(map[id]));
-      }
+      var next = String(map[id]);
+      // 可覆盖 = 空 / 等于初始默认 / 仍等于上次自动带出的值（即用户没手动改过）
+      var autoable = (cur === "" || cur === undefined || stageAutoFilled[id] === cur || DEFAULT_STAGE_CLEAR[key] === cur);
+      if (!autoable) return;
+      setVal(id, next);
+      stageAutoFilled[id] = next;
     });
+    updateStageClearNote(usedKey, entry, n);
+  }
+
+  /* 图例与数据来源说明（随所选章节联动） */
+  function updateStageClearNote(usedKey, entry, n) {
+    var title = $("stageClearTitle"), note = $("stageClearNote");
+    if (!entry) {
+      if (title) title.textContent = "预计新主线推图收益（官方拆包逐章数据）";
+      if (note) note.textContent = (n === null || n === undefined) ? "" : "第 " + n + " 章暂无官方拆包数据，请手动填写。";
+      return;
+    }
+    var same = String(usedKey) === String(n);
+    if (title) title.textContent = "预计新主线推图收益（第 " + usedKey + " 章「" + entry.name + "」· 官方拆包）";
+    if (note) {
+      note.textContent =
+        (same ? "" : "第 " + n + " 章暂无官方拆包数据（已收录至第 " + maxOf(state.stageClearEntries) + " 章），暂按第 " + usedKey + " 章「" + entry.name + "」带出。") +
+        "本章 = 官方第 " + entry.official_chapter + " 章，普通 " + entry.n_normal + " 关 / 困难 " + entry.n_hard + " 关；该章主线任务 " + entry.task_count + " 条。";
+    }
+  }
+
+  function maxOf(entries) {
+    var keys = Object.keys(entries || {});
+    return keys.length ? keys.reduce(function (a, b) { return parseInt(a, 10) >= parseInt(b, 10) ? a : b; }) : "";
   }
 
   function updateStageClearUI() {
-    $("stageHardRow").style.display = val("f_stage_mode") === "普通+困难" ? "" : "none";
+    var mode = val("f_stage_mode");
+    $("stageHardRow").style.display = mode === "普通+困难" ? "" : "none";
+    var tr = $("stageTaskRow");
+    if (tr) tr.style.display = mode === "不计算" ? "none" : "";
   }
 
   function onFormChange() {
@@ -708,14 +768,21 @@
     var extra = { credit: 0, battle_data: 0, core_dust: 0 };
     var stage = { credit: 0, battle_data: 0, core_dust: 0 };
     if (f.stage_clear_mode !== "不计算") {
-      stage.credit = C.num(f.stage_clear_credit, 0);
-      stage.battle_data = C.num(f.stage_clear_battle, 0);
+      // 推图 / 主线任务数据以 **K** 记信用点与战斗数据（与 data/stage_clear_resources.json 一致），
+      // 内部口径是绝对值，故此处 ×1000；红球（芯尘）单位为「个」，不换算。
+      var K = 1000;
+      stage.credit = C.num(f.stage_clear_credit, 0) * K;
+      stage.battle_data = C.num(f.stage_clear_battle, 0) * K;
       stage.core_dust = C.num(f.stage_clear_dust, 0);
       if (f.stage_clear_mode === "普通+困难") {
-        stage.credit += C.num(f.stage_clear_credit2, 0);
-        stage.battle_data += C.num(f.stage_clear_battle2, 0);
+        stage.credit += C.num(f.stage_clear_credit2, 0) * K;
+        stage.battle_data += C.num(f.stage_clear_battle2, 0) * K;
         stage.core_dust += C.num(f.stage_clear_dust2, 0);
       }
+      // 该章主线任务奖励（与普通/困难无关：只要「计入范围」不是「不计算」就并入）
+      stage.credit += C.num(f.stage_clear_task_credit, 0) * K;
+      stage.battle_data += C.num(f.stage_clear_task_battle, 0) * K;
+      stage.core_dust += C.num(f.stage_clear_task_dust, 0);
     }
     // 升级消耗：手动填了某项则覆盖该项，未填的项回退到阶梯表对应档位（避免未填项成本为 0 导致升级虚高）
     function tierValue(tiers, level) {
@@ -1467,6 +1534,7 @@
       ["推图计入范围", f.stage_clear_mode],
       ["推图信用点(普通)", f.stage_clear_credit], ["推图战斗数据(普通)", f.stage_clear_battle], ["推图红球(普通)", f.stage_clear_dust],
       ["推图信用点(困难)", f.stage_clear_credit2], ["推图战斗数据(困难)", f.stage_clear_battle2], ["推图红球(困难)", f.stage_clear_dust2],
+      ["主线任务信用点", f.stage_clear_task_credit], ["主线任务战斗数据", f.stage_clear_task_battle], ["主线任务红球", f.stage_clear_task_dust],
       ["每级信用点(覆盖)", f.cost_credit], ["每级战斗数据(覆盖)", f.cost_battle], ["每级红球(覆盖)", f.cost_dust],
       ["方舟箱", f.ark], ["30天箱", f.growth], ["挑战者箱", f.challenger],
       ["预计新主线开放日", f.future_open], ["预计普通进度", f.future_normal_stage], ["预计困难进度", f.future_hard_stage], ["预计基地等级", f.future_base],
@@ -1510,6 +1578,7 @@
           "推图计入范围": "stage_clear_mode",
           "推图信用点(普通)": "stage_clear_credit", "推图战斗数据(普通)": "stage_clear_battle", "推图红球(普通)": "stage_clear_dust",
           "推图信用点(困难)": "stage_clear_credit2", "推图战斗数据(困难)": "stage_clear_battle2", "推图红球(困难)": "stage_clear_dust2",
+          "主线任务信用点": "stage_clear_task_credit", "主线任务战斗数据": "stage_clear_task_battle", "主线任务红球": "stage_clear_task_dust",
           "每级信用点(覆盖)": "cost_credit", "每级战斗数据(覆盖)": "cost_battle", "每级红球(覆盖)": "cost_dust",
           "方舟箱": "ark", "30天箱": "growth", "挑战者箱": "challenger",
           "预计新主线开放日": "future_open", "预计普通进度": "future_normal_stage", "预计困难进度": "future_hard_stage", "预计基地等级": "future_base",
@@ -1754,9 +1823,10 @@
         }).catch(function () { COST_TIERS = []; });
       })
       .then(function () {
-        return fetch("data/stage_clear_resources.json").then(function (r) { return r.json(); }).then(function (d) {
+        return fetch("data/stage_clear_resources.json?v=20261012b").then(function (r) { return r.json(); }).then(function (d) {
           state.stageClearEntries = (d && d.chapters) || {};
-        }).catch(function () { state.stageClearEntries = {}; });
+          state.stageClearFallback = (d && d.fallback_chapter) || null;
+        }).catch(function () { state.stageClearEntries = {}; state.stageClearFallback = null; });
       })
       .then(loadEventTemplates)
       .then(function () {

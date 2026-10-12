@@ -128,22 +128,28 @@
     </fieldset>
 
     <fieldset class="grp-c">
-      <legend id="stageClearTitle">预计新主线推图收益（按37-38 章估算）</legend>
-      <p class="hint">新主线推图通关给的一次性资源；默认值随预计新主线进度联动。</p>
-      <p class="hint note">暂无公开的章节通关收益统计表，目前使用 37~38 章实测数据预估（来源：屯箱子计算器），可按实机修改。</p>
+      <legend id="stageClearTitle">预计新主线推图收益（官方拆包逐章数据）</legend>
+      <p class="hint">新主线推图给的一次性资源 = 该章关卡通关奖励 + 该章主线任务奖励；默认值随「预计普通主线关卡」所选章节自动带出。</p>
+      <p class="hint note">数据来源：官方拆包 CampaignStageTable（国际服 149，47 章 / 3,800 关）+ MainQuestTable（583 条主线任务），按章汇总。<b>信用点 / 战斗数据单位为 K</b>（1K = 1000），红球为个；免费珠宝、铸模、企业装备、双模组高级增强器等不计。若会连推多章，请把各章数值相加后填入。</p>
       <div class="grid g3">
         <label>计入范围<select id="f_stage_mode"><option>不计算</option><option>只计普通</option><option>普通+困难</option></select></label>
       </div>
       <div class="grid g3">
-        <label>推图信用点（普通）<input id="f_stage_credit"></label>
-        <label>推图战斗数据（普通）<input id="f_stage_battle"></label>
+        <label>推图信用点（普通·K）<input id="f_stage_credit"></label>
+        <label>推图战斗数据（普通·K）<input id="f_stage_battle"></label>
         <label>推图红球（普通）<input id="f_stage_dust"></label>
       </div>
       <div class="grid g3" id="stageHardRow">
-        <label>推图信用点（困难）<input id="f_stage_credit2"></label>
-        <label>推图战斗数据（困难）<input id="f_stage_battle2"></label>
+        <label>推图信用点（困难·K）<input id="f_stage_credit2"></label>
+        <label>推图战斗数据（困难·K）<input id="f_stage_battle2"></label>
         <label>推图红球（困难）<input id="f_stage_dust2"></label>
       </div>
+      <div class="grid g3" id="stageTaskRow">
+        <label>主线任务信用点（K）<input id="f_stage_task_credit"></label>
+        <label>主线任务战斗数据（K）<input id="f_stage_task_battle"></label>
+        <label>主线任务红球<input id="f_stage_task_dust"></label>
+      </div>
+      <p class="hint" id="stageClearNote"></p>
     </fieldset>
 
     <fieldset class="grp-c">
@@ -232,7 +238,7 @@
 <script src="js/scenarios.js?v=20261009a"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261012a"></script>
+<script src="js/app.js?v=20261012b"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/sync.js?v=20260920d"></script>
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->
