@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NIKKE 资源规划计算器 · 移动版</title>
+<meta name="theme-color" content="#1d9e75">
+<meta name="format-detection" content="telephone=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/webp" href="assets/m/favicon.webp">
+<link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
+<!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
+<link rel="stylesheet" href="css/style.css?v=20261009b">
+<link rel="stylesheet" href="css/mobile.css?v=20261012a">
+</head>
+<body class="m-body">
+
+<!-- ===== 顶部固定栏（56px）=====
+     桌面版 hero banner 在 390 宽下有 383px 高（占掉近半屏），移动版换成紧凑固定栏：
+     保留 hero 图作为背景条以延续视觉，标题 + 高频操作（保存 / 跨设备同步）常驻可达。 -->
+<header class="m-top">
+  <div class="m-top-text">
+    <h1 class="m-top-title">NIKKE 资源规划计算器</h1>
+    <p class="m-top-sub">GODDESS OF VICTORY · 嗷润吉-DORO 制作</p>
+  </div>
+  <div class="m-top-act">
+    <button id="btnSave" class="m-top-btn m-top-btn-primary">保存</button>
+    <button id="btnShare" class="m-top-btn">同步</button>
+    <!-- 表单填写进度球：由右下角浮层移到顶栏 —— 浮层固定在视口右下会压住输入框（安卓竖屏尤明显） -->
+    <button id="progressFab" class="progress-fab" title="表单填写进度" aria-label="表单填写进度">
+      <svg viewBox="0 0 60 60" width="38" height="38">
+        <circle cx="30" cy="30" r="26" fill="none" stroke="#ddd" stroke-width="6"/>
+        <circle id="progressRing" cx="30" cy="30" r="26" fill="none" stroke="#1d9e75" stroke-width="6"
+          stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="0" transform="rotate(-90 30 30)"/>
+        <text id="progressText" x="30" y="31" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="600" fill="#333">0%</text>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- ===== 桌面专属工具（下载/导入 XLSX、导出图片）=====
+     app.js 的 bindEvents 不做 null 检查，直接对 #btnTemplate / #btnImport / #fileXlsx 绑定事件，
+     故这些节点必须保留在 DOM 中；移动版界面上一律隐藏（android 端不做 Excel 导入导出与一图流导出）。
+     隐藏后 app.js 的 ensureVendor() 不会被触发 → html2canvas / xlsx（按需库，合计 gzip ≈360KB）永不加载。 -->
+<div class="m-hidden" aria-hidden="true">
+  <button id="btnTemplate" class="btn">下载 XLSX 模板</button>
+  <input type="file" id="fileXlsx" accept=".xlsx">
+  <button id="btnImport" class="btn">导入 XLSX</button>
+  <span id="saveTip" class="save-tip"></span>
+</div>
+
+<!-- ===== 底部 Tab 栏 =====
+     节点位置保持在文档流顶部附近（shell.js 用 "#appNav ~ .app-view" 定位同级视图容器），
+     视觉上由 mobile.css 固定到屏幕底部（拇指自然可达），不再占用首屏。 -->
+<nav class="app-nav" id="appNav" aria-label="功能切换">
+  <!-- 导航按钮由 js/shell.js 从 tools.json 动态渲染（禁止在此硬编码工具清单） -->
+</nav>
+
+<section id="appPlanner" class="app-view active">
+<div class="layout" id="layout">
+  <!-- ============ 表单区 ============ -->
+  <section id="formSection" class="form-panel">
+    <fieldset class="grp-a">
+      <legend>账号状态</legend>
+      <div class="grid g4">
+        <label>数据日期<input type="date" id="f_recorded"></label>
+        <label>最近保存日期<input type="date" id="f_saved_at" readonly title="最后一次点击「保存当前表单」的日期，用于判断快照对应哪一天"></label>
+        <label>采集前已回收基地
+          <select id="f_collected_before"><option>是</option><option>否</option></select>
+        </label>
+        <label>当前同步器等级<input type="number" id="f_current" min="1" step="1" inputmode="numeric"></label>
+        <label>目标同步器等级<input type="number" id="f_target" min="1" step="1" value="481" inputmode="numeric"></label>
+        <label>后续追求目标等级<input type="number" id="f_alternate" min="1" step="1" value="501" inputmode="numeric"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-a">
+      <legend>现有资源</legend>
+      <div class="grid g3">
+        <label>信用点<input id="f_bare_credit" placeholder="25169K" inputmode="decimal"></label>
+        <label>战斗数据辑<input id="f_bare_battle" placeholder="274M" inputmode="decimal"></label>
+        <label>红球<input id="f_bare_dust" placeholder="12181" inputmode="decimal"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-a">
+      <legend>当前基地（前哨站 · 以手填等级为准）</legend>
+      <div class="grid g2">
+        <label>前哨基地防御等级<input type="number" id="f_base" min="1" step="1" inputmode="numeric"></label>
+        <label>战术学院是否满级
+          <select id="f_tactics"><option>是</option><option>否</option></select>
+        </label>
+      </div>
+      <p class="hint" id="baseHint">推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。</p>
+    </fieldset>
+
+    <fieldset class="grp-b">
+      <legend>关卡进度（可选 · 用于推算基地等级）</legend>
+      <p class="hint">推算口径：每通关 5 关（普通+困难合计）基地等级 +1，基于国际服数据；国服统计进度约比国际服多 3 关，推算值可能偏高——建议以游戏内实际基地等级手填为准，选完进度后可点「采用推算值」。</p>
+      <div class="grid g2">
+        <div>
+          <label>普通主线关卡</label>
+          <select id="f_normal_chapter"></select>
+          <select id="f_normal_stage"></select>
+        </div>
+        <div>
+          <label>困难主线关卡</label>
+          <select id="f_hard_chapter"></select>
+          <select id="f_hard_stage"></select>
+        </div>
+      </div>
+      <button type="button" id="btnAdoptBase" class="btn" style="display:none;font-size:13px;padding:6px 12px;margin-top:4px;">采用推算值</button>
+    </fieldset>
+
+    <fieldset class="grp-b">
+      <legend>当前收益与每日收益</legend>
+      <p class="hint">下方三个收益字段随「当前基地」的等级与战术学院口径自动带出，可手动修改（例如一举歼灭折算等特殊情形）。</p>
+      <div class="grid g3">
+        <label>信用点收益<input id="f_credit_rate" placeholder="57240/h" inputmode="decimal"></label>
+        <label>战斗数据辑收益<input id="f_battle_rate" placeholder="570180/h" inputmode="decimal"></label>
+        <label>红球收益<input id="f_dust_rate" placeholder="88/h" inputmode="decimal"></label>
+      </div>
+      <div class="grid g3">
+        <label>每日一举歼灭次数<input type="number" id="f_wipeouts" min="0" step="1" value="3" inputmode="numeric"></label>
+        <label>每次等价小时数<input type="number" id="f_wipeout_hours" min="0" step="0.5" value="2" inputmode="decimal"></label>
+        <label>今天已完成歼灭次数<input type="number" id="f_completed" min="0" step="1" value="3" inputmode="numeric"></label>
+      </div>
+      <div class="grid g2">
+        <label>后续是否每天完成全部次数<select id="f_daily_full"><option>是</option><option>否</option></select></label>
+        <label>服务器每日重置时间<input type="time" id="f_reset_time" value="04:00"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-c">
+      <legend>预计新主线进度</legend>
+      <div class="grid g2">
+        <label>预计新主线开放日期<input type="date" id="f_future_open"></label>
+        <div><p class="hint">选择下方「预计普通/困难主线关卡」章节后，自动推算预计新基地等级与收益。</p></div>
+      </div>
+      <div class="grid g2">
+        <div><label>预计普通主线关卡</label><select id="f_future_normal_chapter"></select><select id="f_future_normal_stage"></select></div>
+        <div><label>预计困难主线关卡</label><select id="f_future_hard_chapter"></select><select id="f_future_hard_stage"></select></div>
+      </div>
+      <div class="grid g4">
+        <label>预计新基地等级<input type="number" id="f_future_base" min="1" step="1" inputmode="numeric"></label>
+        <label>预计新信用点收益<input id="f_future_credit" placeholder="58530/h" inputmode="decimal"></label>
+        <label>预计新战斗数据收益<input id="f_future_battle" placeholder="584950/h" inputmode="decimal"></label>
+        <label>预计新红球收益<input id="f_future_dust" placeholder="90.02/h" inputmode="decimal"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-c">
+      <legend id="stageClearTitle">预计新主线推图收益（官方拆包逐章数据）</legend>
+      <p class="hint">新主线推图给的一次性资源 = 该章关卡通关奖励 + 该章主线任务奖励；默认值随「预计普通主线关卡」所选章节自动带出。</p>
+      <p class="hint note">数据来源：官方拆包 CampaignStageTable（国际服 149，47 章 / 3,800 关）+ MainQuestTable（583 条主线任务），按章汇总。<b>信用点 / 战斗数据单位为 K</b>（1K = 1000），红球为个；免费珠宝、铸模、企业装备、双模组高级增强器等不计。若会连推多章，请把各章数值相加后填入。</p>
+      <div class="grid g3">
+        <label>计入范围<select id="f_stage_mode"><option>不计算</option><option>只计普通</option><option>普通+困难</option></select></label>
+      </div>
+      <div class="grid g3">
+        <label>推图信用点（普通·K）<input id="f_stage_credit" inputmode="decimal"></label>
+        <label>推图战斗数据（普通·K）<input id="f_stage_battle" inputmode="decimal"></label>
+        <label>推图红球（普通）<input id="f_stage_dust" inputmode="decimal"></label>
+      </div>
+      <div class="grid g3" id="stageHardRow">
+        <label>推图信用点（困难·K）<input id="f_stage_credit2" inputmode="decimal"></label>
+        <label>推图战斗数据（困难·K）<input id="f_stage_battle2" inputmode="decimal"></label>
+        <label>推图红球（困难）<input id="f_stage_dust2" inputmode="decimal"></label>
+      </div>
+      <div class="grid g3" id="stageTaskRow">
+        <label>主线任务信用点（K）<input id="f_stage_task_credit" inputmode="decimal"></label>
+        <label>主线任务战斗数据（K）<input id="f_stage_task_battle" inputmode="decimal"></label>
+        <label>主线任务红球<input id="f_stage_task_dust" inputmode="decimal"></label>
+      </div>
+      <p class="hint" id="stageClearNote"></p>
+    </fieldset>
+
+    <fieldset class="grp-c">
+      <legend>活动收益（可选 · 按具体日期计入）</legend>
+      <p class="hint">⚠ 请按<b>当前实际持有量</b>填写上方箱数与现有资源（已领取的活动奖励已包含在内）；本功能只补充<b>数据日期之后</b>剩余天数的活动产出，不会重复计入。</p>
+      <div id="eventRows"></div>
+      <button type="button" id="btnAddEvent" class="btn" style="font-size:13px;padding:6px 12px;">＋ 添加活动</button>
+      <p class="hint" id="eventTotals">未添加活动。</p>
+      <p class="hint note">活动期间的资源与箱子按日计入（从数据日期次日起算），并参与开箱顺序与全箱梭哈上限；商店按既有兑换节点自动兑换（Hard 开放日清一轮固定物资、活动结束前余代币兑信用点）。活动「一天」= 一次凌晨 04:00 服务器重置。</p>
+    </fieldset>
+
+    <fieldset class="grp-d">
+      <legend>升级消耗素材量</legend>
+      <p class="hint">默认按内置阶梯表（每 50 级一档）随「当前同步器等级」自动写入，可手动覆盖。</p>
+      <div class="grid g3">
+        <label>当前升1级所需信用点<input id="f_cost_credit" placeholder="随当前等级自动写入" inputmode="decimal"></label>
+        <label>当前升1级所需战斗数据<input id="f_cost_battle" placeholder="随当前等级自动写入" inputmode="decimal"></label>
+        <label>当前升1级所需红球<input id="f_cost_dust" placeholder="随当前等级自动写入" inputmode="decimal"></label>
+      </div>
+      <div id="costPreviewWrap"></div>
+    </fieldset>
+
+    <fieldset class="grp-d">
+      <legend>固定小时箱数量</legend>
+      <table class="fixed-table">
+        <thead><tr><th>箱子 \ 小时</th><th>24h</th><th>12h</th><th>8h</th><th>4h</th><th>2h</th><th>1h</th></tr></thead>
+        <tbody>
+          <tr><td><img class="box-icon" src="assets/m/box_core_dust.webp" alt="芯尘盒">芯尘盒</td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="24" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="12" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="8" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="4" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="2" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="1" min="0" inputmode="numeric"></td></tr>
+          <tr><td><img class="box-icon" src="assets/m/box_battle.webp" alt="战斗数据辑盒">战斗数据辑盒</td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="24" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="12" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="8" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="4" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="2" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="1" min="0" inputmode="numeric"></td></tr>
+          <tr><td><img class="box-icon" src="assets/m/box_credit.webp" alt="信用点盒">信用点盒</td><td><input type="number" class="fixed" data-label="信用点盒" data-h="24" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="12" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="8" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="4" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="2" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="1" min="0" inputmode="numeric"></td></tr>
+          <tr><td><img class="box-icon" src="assets/m/box_growth.webp" alt="成长套组">成长套组</td><td><input type="number" class="fixed" data-label="成长套组" data-h="24" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="12" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="8" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="4" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="2" min="0" inputmode="numeric"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="1" min="0" inputmode="numeric"></td></tr>
+        </tbody>
+      </table>
+    </fieldset>
+
+    <fieldset class="grp-d">
+      <legend>自选箱数量</legend>
+      <div class="grid g3">
+        <label><span class="box-name"><img class="box-icon" src="assets/m/mbox_ark.webp" alt="方舟官方补给物资Ⅰ">方舟官方补给物资Ⅰ</span><input type="number" id="f_ark" min="0" step="1" value="870" inputmode="numeric"></label>
+        <label><span class="box-name"><img class="box-icon" src="assets/m/mbox_30d.webp" alt="30天成长补给箱">30天成长补给箱</span><input type="number" id="f_growth" min="0" step="1" value="27" inputmode="numeric"></label>
+        <label><span class="box-name"><img class="box-icon" src="assets/m/mbox_challenger.webp" alt="挑战者成长宝箱">挑战者成长宝箱</span><input type="number" id="f_challenger" min="0" step="1" value="340" inputmode="numeric"></label>
+      </div>
+      <p class="hint">挑战者成长宝箱为固定数值奖励，默认全部消耗（不受基地等级影响）。</p>
+    </fieldset>
+
+    <button id="btnCalc" class="btn btn-primary btn-big">开始计算</button>
+  </section>
+
+  <!-- 移动端吸底「开始计算」（始终显示；桌面才隐藏） -->
+  <button id="btnCalcFab" class="btn btn-primary btn-calc-fab">开始计算</button>
+
+  <!-- ============ 结果区 ============ -->
+  <section id="resultSection" class="result-panel" style="display:none">
+    <nav class="tabs">
+      <button class="tab active" data-tab="tabResult">计算结果</button>
+      <button class="tab" data-tab="tabExtra">补充信息</button>
+      <button class="tab" data-tab="tabRaw">原始 JSON</button>
+      <button id="btnExportImg" class="btn btn-export">📷 导出图片</button>
+    </nav>
+    <div id="tabResult" class="tab-panel active"></div>
+    <div id="tabExtra" class="tab-panel"></div>
+    <div id="tabRaw" class="tab-panel"></div>
+  </section>
+</div>
+
+<div id="progressPanel" class="progress-panel" style="display:none">
+  <div class="pp-head">表单填写进度 <span id="ppCount"></span><button id="ppClose" class="pp-close">✕</button></div>
+  <ul id="ppList"></ul>
+</div>
+</section>
+
+<!-- 其余工具的视图容器由 js/shell.js 从 tools.json 动态创建 -->
+
+<script src="js/core.js?v=20260917c"></script>
+<script src="js/events.js?v=20261012a"></script>
+<script src="js/outpost.js?v=20260917c"></script>
+<script src="js/boxes.js?v=20261005a"></script>
+<script src="js/scenarios.js?v=20261009a"></script>
+<script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
+<script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
+<script src="js/app.js?v=20261012b"></script>
+<!-- 顶层功能切换沿用桌面版外壳脚本（tools.json 驱动）；移动版只把导航用 CSS 固定到屏幕底部 -->
+<script src="js/shell.js?v=20261009b"></script>
+<script>
+/* 云同步不参与首屏关键路径：Supabase SDK（218KB）+ sync.js（19KB）合计 gzip ≈62KB，
+   占首屏静态资源的 15%。改为 load 之后再注入，弱网下首屏更快。
+   sync.js 的 init() 自带 readyState 判断（否则会永远等不到 DOMContentLoaded），延后加载同样能完成初始化；
+   mod_stats 子页在加载完成后仍可通过父页 __nikkeSync 打开云同步。 */
+window.addEventListener("load", function () {
+  ["assets/js/supabase.min.js?v=20260920e", "js/sync.js?v=20260920d"].forEach(function (src) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.async = false; /* 保持先后顺序：supabase 必须先于 sync.js */
+    document.body.appendChild(s);
+  });
+});
+</script>
+</body>
+</html>

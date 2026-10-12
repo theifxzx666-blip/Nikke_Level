@@ -1,0 +1,310 @@
+/* ============================================================
+   NIKKE 资源规划计算器 · 安卓竖屏移动版样式
+   仅由 mobile.html 引用（作用域全部限定在 body.m-body）
+   ------------------------------------------------------------
+   设计原则
+   1. 桌面站零影响：本文件不被 index.html 引用，且每条规则都带 body.m-body 前缀
+   2. 美术风格完全沿用 css/style.css：同一个 :root 变量表、同一份 MaiYuan 子集字体、
+      同一张 hero 背景图、同样的卡片 / 省流卡 / 结果表 / 分组配色，只重排布局
+   3. 布局只改三处：
+      ① 383px 高的大 hero  → 56px 顶部固定栏（首屏直接进表单）
+      ② 顶部横向导航       → 底部 Tab 栏（拇指自然可达）
+      ③ 吸底「开始计算」    → 抬到底部 Tab 之上，不再被遮
+   4. 安卓适配：viewport-fit=cover + env(safe-area-inset-*)（刘海 / 手势条）；
+      触控目标 ≥ 44px；输入框 16px 字号（防聚焦自动缩放）；输入类型带 inputmode（调数字键盘）
+   5. 已知取舍：表单分组折叠由 app.js 在 ≤700px 自动启用（安卓竖屏 360–430px 必然命中）
+   ============================================================ */
+
+/* ---------- 页面骨架 ---------- */
+body.m-body {
+  min-height: 100svh;
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  /* 背景横幅换用移动版轻量图：原型 1920×1109 / 355KB，移动端只用得上 ≤960 宽 →
+     assets/m/hero.webp 960×554 / 87KB（省 268KB）。视觉一致（此处仅作固定背景与顶栏底图）。 */
+  --hero-bg: url("../assets/m/hero.webp");
+}
+
+/* 内容区：单列居中 + 底部留白（吸底按钮 58px + 底部 Tab 56px + 安全区），保证最后一项不被遮挡 */
+body.m-body .layout {
+  padding: 8px 12px calc(132px + env(safe-area-inset-bottom, 0px));
+  max-width: 720px;
+}
+/* 桌面在「有结果」时切右侧双列；移动版一律单列，结果排在表单下方 */
+body.m-body .layout.has-result {
+  display: block;
+  max-width: 720px;
+}
+body.m-body .form-panel,
+body.m-body .result-panel { padding: 10px; border-radius: 12px; }
+
+/* ---------- 顶部固定栏（替代 383px 的 hero） ---------- */
+body.m-body .m-top {
+  position: sticky;
+  top: 0;
+  z-index: 9400;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 56px;
+  padding: calc(6px + env(safe-area-inset-top, 0px)) 12px 6px;
+  /* 延续 hero 图作为背景条，保持 NIKKE 视觉又不占屏 */
+  background-image:
+    linear-gradient(100deg, rgba(10, 26, 20, 0.88) 0%, rgba(10, 26, 20, 0.66) 55%, rgba(10, 26, 20, 0.46) 100%),
+    var(--hero-bg);
+  background-size: cover, cover;
+  background-position: center, center 30%;
+  background-repeat: no-repeat, no-repeat;
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+body.m-body .m-top-text { min-width: 0; flex: 1 1 auto; }
+body.m-body .m-top-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+body.m-body .m-top-sub {
+  margin: 1px 0 0;
+  font-size: 10px;
+  opacity: 0.82;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+body.m-body .m-top-act { display: flex; gap: 6px; flex: 0 0 auto; }
+body.m-body .m-top-btn {
+  min-height: 36px;
+  padding: 8px 13px;
+  font-family: inherit;
+  font-size: 12.5px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.93);
+  color: #1b2b25;
+  cursor: pointer;
+  transition: background .15s;
+}
+body.m-body .m-top-btn:active { background: #fff; }
+body.m-body .m-top-btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+body.m-body .m-top-btn-primary:active { background: var(--primary-dark); border-color: var(--primary-dark); }
+
+/* 桌面专属工具（XLSX 导入导出 / 导出图片）：保留 DOM 供脚本绑定，界面隐藏 */
+body.m-body .m-hidden { display: none !important; }
+body.m-body #btnExportImg { display: none !important; }
+
+/* ---------- 底部 Tab 栏（由桌面版顶部导航经 CSS 搬运而来） ---------- */
+body.m-body .app-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 9500;
+  width: 100%;
+  max-width: 720px;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.97);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.08);
+}
+body.m-body .app-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 50px;
+  padding: 5px 2px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.15;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+body.m-body .app-nav-btn:active { background: #edf4f1; }
+body.m-body .app-nav-btn.active {
+  background: #e6f6f0;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+body.m-body .app-nav-icon {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border-radius: 6px;
+  vertical-align: 0;
+  object-fit: cover;
+}
+
+/* ---------- 吸底「开始计算」抬到 Tab 之上 ---------- */
+body.m-body #btnCalc { display: none; }
+body.m-body .btn-calc-fab {
+  display: block;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  z-index: 9000;
+  width: min(92vw, 440px);
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+}
+body.m-body .btn-calc-fab:active { background: var(--primary-dark); }
+/* 切到子工具视图时收起（子工具页无此按钮，避免叠在 Tab 上） */
+body.m-body.tool-mode .btn-calc-fab,
+body.m-body.avatar-full .btn-calc-fab { display: none; }
+
+/* 表单填写进度球：常驻顶栏右侧。
+   原先的右下角浮层（bottom:140px）在竖屏下正好压住输入框右侧，挪进顶栏后不再遮挡内容。 */
+body.m-body .m-top .progress-fab {
+  position: static;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+body.m-body .m-top .progress-fab svg { width: 38px; height: 38px; }
+/* 进度明细面板：从顶栏下方弹出（不再从屏幕底部往上弹） */
+body.m-body .progress-panel {
+  right: 10px;
+  top: calc(64px + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  width: min(300px, 90vw);
+}
+
+/* 子工具视图隐藏计算器顶栏 —— 与桌面版「进入子工具即隐藏 hero 与工具栏」同一行为，
+   当前所在工具由底部 Tab 的高亮直接体现；腾出的顶部空间改由容器自身补安全区。 */
+body.m-body.tool-mode .m-top,
+body.m-body.avatar-full .m-top { display: none; }
+
+/* ---------- 子工具视图（iframe）底部留白 + 顶部安全区 ---------- */
+body.m-body #appModStats,
+body.m-body #appRerollStats,
+body.m-body #appAvatarFrame {
+  padding: 8px 10px calc(72px + env(safe-area-inset-bottom, 0px));
+  max-width: 720px;
+}
+/* 子工具模式顶栏被隐藏，容器自己补顶部安全区（刘海 / 状态栏） */
+body.m-body.tool-mode #appModStats,
+body.m-body.tool-mode #appRerollStats,
+body.m-body.avatar-full #appAvatarFrame {
+  padding-top: calc(8px + env(safe-area-inset-top, 0px));
+}
+body.m-body #modStatsFrame,
+body.m-body #rerollStatsFrame,
+body.m-body #avatarFrame {
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+/* 头像预览为「全屏工具」（子页内部自己滚动）：父页锁高，同时给底部 Tab 让出空间 */
+body.m-body.avatar-full { height: 100svh; }
+body.m-body.avatar-full #appAvatarFrame {
+  padding: 0 8px calc(64px + env(safe-area-inset-bottom, 0px));
+  max-width: 720px;
+}
+body.m-body.avatar-full #avatarFrame { height: 100%; }
+
+/* ---------- 触控与可读性（不限断点，移动版恒生效） ---------- */
+/* 竖屏字段保持两列：style.css 在 ≤420px 会把 .g2/.g3/.g4 降为单列，
+   在 390 宽下会让表单页被拉长近一倍（滚动手感明显变差）；≤340px 再降单列，见文件末尾。
+   列宽必须用 minmax(0, 1fr) 而非 1fr —— 后者最小尺寸是 auto，会被 <input type="date">
+   的固有宽度撑开，导致右列输入框溢出卡片。 */
+body.m-body .g2,
+body.m-body .g3,
+body.m-body .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.m-body .grid label { min-width: 0; }
+body.m-body .grid label input,
+body.m-body .grid label select { min-width: 0; width: 100%; }
+body.m-body input,
+body.m-body select {
+  min-height: 44px;
+  font-size: 16px; /* ≥16px：安卓 Chrome 聚焦时不放大页面 */
+  padding: 10px 10px;
+  border-radius: 9px;
+}
+body.m-body .btn { min-height: 44px; }
+body.m-body .btn-big { padding: 14px; font-size: 16px; }
+body.m-body .tab { padding: 11px 10px; font-size: 13.5px; }
+body.m-body .app-nav-btn { min-height: 50px; }
+
+/* 结果表 / 固定箱表 / 分档预览：横向滑动（恒生效，不只依赖 ≤700px 断点） */
+body.m-body .tbl-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  position: relative;
+}
+body.m-body .fixed-table,
+body.m-body .cost-preview table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+body.m-body .fixed-table { font-size: 13px; }
+body.m-body .fixed-table input { width: 58px; min-height: 40px; text-align: center; }
+body.m-body .result-panel table th,
+body.m-body .result-panel table td { white-space: nowrap; }
+body.m-body .result-panel table td.wrap { white-space: normal; word-break: break-word; min-width: 132px; max-width: 58vw; }
+body.m-body .tbl-scroll::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.92));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+}
+body.m-body .tbl-scroll.scrollable::after { opacity: 1; }
+
+/* 结果区留白与结论卡：竖屏单列下扩大行距、收窄留白 */
+body.m-body .summary-card,
+body.m-body .target-card { padding: 12px; }
+body.m-body .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+body.m-body .card .num { font-size: 22px; }
+body.m-body .card .lbl { font-size: 12px; }
+body.m-body h3.sec { font-size: 15px; }
+body.m-body .compare { grid-template-columns: 1fr; }
+body.m-body .modal { width: 100%; max-height: 86svh; }
+body.m-body .modal-body { padding: 14px; }
+
+/* 超窄屏（≤340px，如 320dp 老机型 / 分屏）：字段全部单列，避免两列挤压。
+   阈值定在 340 而非 360 —— 360dp 是安卓主流宽度，两列每列仍有约 150px，足够放数值输入； */
+@media (max-width: 340px) {
+  body.m-body .g2, body.m-body .g3, body.m-body .g4 { grid-template-columns: 1fr; }
+  body.m-body .app-nav-btn { font-size: 10px; }
+  body.m-body .m-top-title { font-size: 14px; }
+}
