@@ -31,14 +31,19 @@ function check(name, actual, expect, tol) {
 function fixedOf(tot, lab, h) { return (tot.fixed[lab] && tot.fixed[lab][h]) || 0; }
 function selOf(tot, name) { return tot.selectable[name] || 0; }
 
-/* ---------- 9.1 三档模板总产出（含每日任务 + 签到；与起始日无关） ---------- */
+/* ---------- 9.1 三档模板总产出（含每日任务 + 签到；与起始日无关） ----------
+   2026-10-12 口径修正后的基线（官方拆包复核）：
+     · 挑战关卡开放日 = 首通 + 通关（引擎 aggregate 改动）→ battle/dust/challenger 上调
+     · 任务代币 large 6050 → 21天 5300+地图1200 / 28天 5600
+     · 补 14/28 天官方签到；新增 12h 三资源盒
+     · 挑战关数值改为官方精确值（不再 K 取整）；挑战 1-2/1-3 补高品质铸模×5（不涉三资源） */
 const BASE = {
-  small14: { days: 14, credit: 2086640, battle: 10516000, dust: 192, challenger: 159,
-             c1: 10, b1: 10, d1: 324, b2: 12, d2: 12, g1: 14, g8: 0, g12: 0, ark: 0 },
-  large21: { days: 21, credit: 3969120, battle: 10516000, dust: 192, challenger: 360,
-             c1: 35, b1: 14, d1: 493, b2: 15, d2: 15, g1: 21, g8: 1, g12: 1, ark: 46 },
-  large28: { days: 28, credit: 5012120, battle: 10516000, dust: 192, challenger: 535,
-             c1: 14, b1: 14, d1: 612, b2: 15, d2: 15, g1: 28, g8: 0, g12: 0, ark: 0 },
+  small14: { days: 14, credit: 2398520, battle: 13149806, dust: 240, challenger: 205,
+             c1: 10, c12: 1, b1: 10, b12: 1, d1: 324, d12: 1, b2: 12, d2: 12, g1: 14, g8: 0, g12: 0, ark: 24 },
+  large21: { days: 21, credit: 4580500, battle: 13149806, dust: 240, challenger: 450,
+             c1: 35, c12: 0, b1: 14, b12: 0, d1: 493, d12: 0, b2: 15, d2: 15, g1: 21, g8: 1, g12: 1, ark: 46 },
+  large28: { days: 28, credit: 5447420, battle: 13149806, dust: 240, challenger: 625,
+             c1: 14, c12: 0, b1: 14, b12: 0, d1: 612, d12: 0, b2: 15, d2: 15, g1: 28, g8: 1, g12: 1, ark: 15 },
 };
 
 /* 起始日无关性：三个不同起始日总量必须逐项一致 */
@@ -63,8 +68,11 @@ Object.keys(BASE).forEach(function (id) {
     check(tag + " dust", t.res.core_dust, exp.dust);
     check(tag + " 挑战者箱", selOf(t, "挑战者成长宝箱"), exp.challenger);
     check(tag + " 信用点盒1h", fixedOf(t, "信用点盒", 1), exp.c1);
+    check(tag + " 信用点盒12h", fixedOf(t, "信用点盒", 12), exp.c12);
     check(tag + " 战斗数据辑盒1h", fixedOf(t, "战斗数据辑盒", 1), exp.b1);
+    check(tag + " 战斗数据辑盒12h", fixedOf(t, "战斗数据辑盒", 12), exp.b12);
     check(tag + " 芯尘盒1h", fixedOf(t, "芯尘盒", 1), exp.d1);
+    check(tag + " 芯尘盒12h", fixedOf(t, "芯尘盒", 12), exp.d12);
     check(tag + " 战斗数据辑盒2h", fixedOf(t, "战斗数据辑盒", 2), exp.b2);
     check(tag + " 芯尘盒2h", fixedOf(t, "芯尘盒", 2), exp.d2);
     check(tag + " 成长套组1h", fixedOf(t, "成长套组", 1), exp.g1);
@@ -73,6 +81,58 @@ Object.keys(BASE).forEach(function (id) {
     check(tag + " 方舟官方补给物资Ⅰ", selOf(t, "方舟官方补给物资Ⅰ"), exp.ark);
   });
 });
+
+/* ---------- 挑战关卡：开放日 = 首通 + 通关（#6 守卫） ---------- */
+(function () {
+  const t0 = "2026-09-10";
+  const mini = {
+    event: "mini-challenge", type: "large28", duration: 3, rush_buy: {}, stage_target: "",
+    challenges: [{ id: "1-1", open_day: 0, first: { credit: 100, challenger_box: 7 }, sweep: { credit: 10, challenger_box: 2 } }],
+    stages: [], stage_blocks: [], tasks: {},
+    base_income: { credit: 1, battle: 1, dust: 1 },
+  };
+  const days = EV.aggregate(EV.instantiate(mini, t0), t0, EV.addDays(t0, 2), 1, 5, "dust");
+  check("开放日 credit = first + sweep（#6）", days[t0].credit, 110, 0);
+  check("开放日 challenger_box = first + sweep（#6）", days[t0].challenger_box, 9, 0);
+  check("开放日次日 credit = 仅 sweep", days[EV.addDays(t0, 1)].credit, 10, 0);
+  check("开放日次日 challenger_box = 仅 sweep", days[EV.addDays(t0, 1)].challenger_box, 2, 0);
+  check("窗口最后一天仍走 sweep", days[EV.addDays(t0, 2)].credit, 10, 0);
+})();
+
+/* ---------- 12h 三资源盒键必须被引擎识别（否则静默丢弃） ---------- */
+(function () {
+  const t0 = "2026-09-10";
+  const mini = {
+    event: "mini-12h", type: "small14", duration: 3, rush_buy: {}, stage_target: "",
+    challenges: [],
+    stages: [{ id: "S1", open_day: 0, tokens: 0,
+               reward: { credit_box_12h: 2, battle_box_12h: 3, dust_box_12h: 4, growth_box_12h: 5 } }],
+    stage_blocks: [{ id: "A", open_day: 0, rush: false, chapters: ["S1"] }],
+    tasks: {}, base_income: { credit: 1, battle: 1, dust: 1 },
+  };
+  const d = EV.aggregate(EV.instantiate(mini, t0), t0, EV.addDays(t0, 2), 1, 1, "dust")[t0] || {};
+  check("12h 信用点盒被识别", d.credit_box_12h, 2, 0);
+  check("12h 战斗数据辑盒被识别", d.battle_box_12h, 3, 0);
+  check("12h 芯尘盒被识别", d.dust_box_12h, 4, 0);
+  check("12h 成长套组被识别", d.growth_box_12h, 5, 0);
+})();
+
+/* ---------- 签到：14 / 28 天模板必须带 checkin（#4/#5 守卫） ---------- */
+(function () {
+  const s14 = TPL.templates.small14, l28 = TPL.templates.large28;
+  check("small14 缺 12h 三资源盒签到", (s14.checkin || []).some(function (c) {
+    const r = c.reward || {}; return r.credit_box_12h && r.battle_box_12h && r.dust_box_12h; }) ? 1 : 0, 1, 0);
+  check("small14 缺方舟 I×12 签到", (s14.checkin || []).filter(function (c) { return (c.reward || {}).ark_box === 12; }).length, 2, 0);
+  check("large28 checkin 项数 = 4", (l28.checkin || []).length, 4, 0);
+  check("large28 含成长套组8h/12h", (l28.checkin || []).some(function (c) { return (c.reward || {}).growth_box_8h; })
+    && (l28.checkin || []).some(function (c) { return (c.reward || {}).growth_box_12h; }) ? 1 : 0, 1, 0);
+  check("large21 签到仍为 4 项（官方 1008203）", (TPL.templates.large21.checkin || []).length, 4, 0);
+})();
+
+/* ---------- 任务代币口径（#1/#3 守卫） ---------- */
+check("small14 tasks.tokens = 8300", TPL.templates.small14.tasks.tokens, 8300, 0);
+check("large28 tasks.tokens = 5600（旧 6050 为笔误）", TPL.templates.large28.tasks.tokens, 5600, 0);
+check("large21 tasks.tokens = 5300 + 地图 1200", TPL.templates.large21.tasks.tokens, 6500, 0);
 
 /* ---------- 9.4 起算点 / 已结束 断言 ---------- */
 const T0 = "2026-10-09";

@@ -1,7 +1,11 @@
 {
   "_note": "活动收益模板库。结构与 活动收益引擎/skills/activity_income.py 的 instantiate/aggregate 兼容；数值源自 活动收益引擎/data/template_{small,large}.json（禁止手写）。duration = 活动窗口内「凌晨 04:00 服务器重置」的次数；结束时刻那次 04:00 不算新的一天。",
   "_source": "F:/Codex/Nikke/Nikke_Skills/等级计算/活动收益引擎/data/",
-  "schemaVersion": 1,
+  "_challenge_note": "挑战关卡开放日 = 首通奖励(first) + 通关奖励(sweep)，其后每日 = 通关奖励；由引擎 aggregate 实现。challenges 的 first/sweep 均为官方拆包精确值（EventDungeonStageTable 首通奖励 / 重复通关奖励），未取整。",
+  "_box_note": "引擎箱键含 1h/2h/12h 三资源盒与挑战者箱、成长套组 1h/8h/12h、方舟箱；12h 三资源盒来自 14 天活动签到（第5天）。",
+  "_map_note": "21 天变体的 tasks.tokens 含活动地图隐藏道具 1200（30 件、无前置，可全拿）；28 天蓝本 ABSOLUTE 无地图。",
+  "_verified": "2026-10-12 对照 5 份官方拆包表逐项复核（docs/活动模板-官方拆包数据核对报告.md）",
+  "schemaVersion": 2,
   "templates": {
     "small14": {
       "event": "小型活动收益模板（14天）",
@@ -17,13 +21,13 @@
           "open_day": 0,
           "first": {
             "credit": 19320,
-            "battle": 456000,
+            "battle": 456292,
             "dust": 16,
             "recruit_ticket": 1
           },
           "sweep": {
             "credit": 9660,
-            "battle": 228000,
+            "battle": 228146,
             "dust": 8
           }
         },
@@ -31,13 +35,14 @@
           "id": "1-2",
           "open_day": 3,
           "first": {
+            "quality_invite": 5,
             "credit": 58680,
-            "battle": 1634000,
+            "battle": 1634395,
             "dust": 32
           },
           "sweep": {
             "credit": 29340,
-            "battle": 817000,
+            "battle": 817197,
             "dust": 16
           }
         },
@@ -45,13 +50,14 @@
           "id": "1-3",
           "open_day": 6,
           "first": {
+            "quality_invite": 5,
             "credit": 97320,
-            "battle": 3168000,
+            "battle": 3169236,
             "dust": 48
           },
           "sweep": {
             "credit": 48660,
-            "battle": 1584000,
+            "battle": 1584618,
             "dust": 24
           }
         },
@@ -60,11 +66,11 @@
           "open_day": 9,
           "first": {
             "quality_invite": 5,
-            "credit": 206000,
+            "credit": 207960,
             "challenger_box": 42
           },
           "sweep": {
-            "credit": 103000,
+            "credit": 103980,
             "challenger_box": 21
           }
         },
@@ -73,11 +79,11 @@
           "open_day": 12,
           "first": {
             "quality_invite": 5,
-            "credit": 232000,
+            "credit": 232160,
             "challenger_box": 50
           },
           "sweep": {
-            "credit": 116000,
+            "credit": 116080,
             "challenger_box": 25
           }
         }
@@ -251,7 +257,7 @@
       "tasks": {
         "tokens": 8300,
         "one_time": true,
-        "note": "N1 1~5各300、6~11各350、H1 1~12各350、全部完成500"
+        "note": "官方 EventMissionListTable：Normal 1~5 各300、6~11 各350、Hard 1~12 各350、全部完成500 = 8300（与模板一致，未改）。"
       },
       "shop": {
         "items": [
@@ -406,12 +412,38 @@
         "battle": 600440,
         "dust": 91.95
       },
+      "checkin": [
+        {
+          "offset_day": 1,
+          "reward": {
+            "ark_box": 12
+          },
+          "note": "活动第2天 · 方舟官方补给物资 I×12"
+        },
+        {
+          "offset_day": 4,
+          "reward": {
+            "credit_box_12h": 1,
+            "battle_box_12h": 1,
+            "dust_box_12h": 1
+          },
+          "note": "活动第5天 · 信用点盒/战斗数据辑盒/芯尘盒（12小时收益）各1"
+        },
+        {
+          "offset_day": 5,
+          "reward": {
+            "ark_box": 12
+          },
+          "note": "活动第6天 · 方舟官方补给物资 I×12"
+        }
+      ],
       "label": "14天小活动",
       "daily_task": {
         "per_day": {
           "growth_box_1h": 1
         }
-      }
+      },
+      "_checkin_note": "官方 LoginEventTable（JUVENILE DAYS 10036 / WISDOM SPRING 10047 / COLORLESS 10037 三份一致）：第2、6天 方舟 I×12，第5天 信用点盒/战斗数据辑盒/芯尘盒（12小时收益）各1。签到逐期不同（方舟 I 有 12×2 与 10×1 两种），此处取典型值。"
     },
     "large21": {
       "event": "大型活动收益模板（28天基准；21天为时长变体）",
@@ -427,13 +459,13 @@
           "open_day": 0,
           "first": {
             "credit": 19320,
-            "battle": 456000,
+            "battle": 456292,
             "dust": 16,
             "recruit_ticket": 1
           },
           "sweep": {
             "credit": 9660,
-            "battle": 228000,
+            "battle": 228146,
             "dust": 8
           }
         },
@@ -441,13 +473,14 @@
           "id": "1-2",
           "open_day": 3,
           "first": {
+            "quality_invite": 5,
             "credit": 58680,
-            "battle": 1634000,
+            "battle": 1634395,
             "dust": 32
           },
           "sweep": {
             "credit": 29340,
-            "battle": 817000,
+            "battle": 817197,
             "dust": 16
           }
         },
@@ -455,13 +488,14 @@
           "id": "1-3",
           "open_day": 6,
           "first": {
+            "quality_invite": 5,
             "credit": 97320,
-            "battle": 3168000,
+            "battle": 3169236,
             "dust": 48
           },
           "sweep": {
             "credit": 48660,
-            "battle": 1584000,
+            "battle": 1584618,
             "dust": 24
           }
         },
@@ -483,11 +517,11 @@
           "open_day": 12,
           "first": {
             "quality_invite": 5,
-            "credit": 206000,
+            "credit": 207960,
             "challenger_box": 44
           },
           "sweep": {
-            "credit": 103000,
+            "credit": 103980,
             "challenger_box": 22
           }
         },
@@ -496,11 +530,11 @@
           "open_day": 15,
           "first": {
             "quality_invite": 5,
-            "credit": 222000,
+            "credit": 222360,
             "challenger_box": 46
           },
           "sweep": {
-            "credit": 111000,
+            "credit": 111180,
             "challenger_box": 23
           }
         },
@@ -509,11 +543,11 @@
           "open_day": 18,
           "first": {
             "quality_invite": 5,
-            "credit": 242000,
+            "credit": 243120,
             "challenger_box": 50
           },
           "sweep": {
-            "credit": 121000,
+            "credit": 121560,
             "challenger_box": 25
           }
         }
@@ -767,9 +801,9 @@
         }
       ],
       "tasks": {
-        "tokens": 6050,
+        "tokens": 6500,
         "one_time": true,
-        "note": "S1N1-12 额外送回忆胶卷；全部完成 900 代币已含"
+        "note": "一次性任务 5300（450+450+100×11+100×11+200×11，官方 Group 7503）+ 活动地图隐藏道具 1200（30 件、无前置）= 6500。旧值 6050 把地图「已拾取 750」混算进任务项。"
       },
       "shop": {
         "items": [
@@ -943,18 +977,6 @@
         "battle": 600440,
         "dust": 91.95
       },
-      "label": "21天大活动",
-      "daily_task": {
-        "per_day": {
-          "credit_box_1h": 1,
-          "dust_box_1h": 1,
-          "growth_box_1h": 1,
-          "ark_box": 1,
-          "token": 120
-        }
-      },
-      "_daily_note": "每日任务（2026-10-11 用户更新源 txt）：信用点盒1h、芯尘盒1h、成长套组1h、方舟官方补给物资Ⅰ 各1；token=120 代币/日由引擎逐日入店币池（先于商店结算）。",
-      "_checkin_note": "签到的 offset_day 为相对活动开始日的偏移（0 起算）；「活动第 N 天」= offset_day N-1",
       "checkin": [
         {
           "offset_day": 3,
@@ -980,7 +1002,19 @@
             "growth_box_12h": 1
           }
         }
-      ]
+      ],
+      "label": "21天大活动",
+      "daily_task": {
+        "per_day": {
+          "credit_box_1h": 1,
+          "dust_box_1h": 1,
+          "growth_box_1h": 1,
+          "ark_box": 1,
+          "token": 120
+        }
+      },
+      "_daily_note": "每日任务（2026-10-11 用户更新源 txt）：信用点盒1h、芯尘盒1h、成长套组1h、方舟官方补给物资Ⅰ 各1；token=120 代币/日由引擎逐日入店币池（先于商店结算）。",
+      "_checkin_note": "签到的 offset_day 为相对活动开始日的偏移（0 起算）；「活动第 N 天」= offset_day N-1"
     },
     "large28": {
       "event": "大型活动收益模板（28天基准；21天为时长变体）",
@@ -996,13 +1030,13 @@
           "open_day": 0,
           "first": {
             "credit": 19320,
-            "battle": 456000,
+            "battle": 456292,
             "dust": 16,
             "recruit_ticket": 1
           },
           "sweep": {
             "credit": 9660,
-            "battle": 228000,
+            "battle": 228146,
             "dust": 8
           }
         },
@@ -1010,13 +1044,14 @@
           "id": "1-2",
           "open_day": 3,
           "first": {
+            "quality_invite": 5,
             "credit": 58680,
-            "battle": 1634000,
+            "battle": 1634395,
             "dust": 32
           },
           "sweep": {
             "credit": 29340,
-            "battle": 817000,
+            "battle": 817197,
             "dust": 16
           }
         },
@@ -1024,13 +1059,14 @@
           "id": "1-3",
           "open_day": 6,
           "first": {
+            "quality_invite": 5,
             "credit": 97320,
-            "battle": 3168000,
+            "battle": 3169236,
             "dust": 48
           },
           "sweep": {
             "credit": 48660,
-            "battle": 1584000,
+            "battle": 1584618,
             "dust": 24
           }
         },
@@ -1052,11 +1088,11 @@
           "open_day": 12,
           "first": {
             "quality_invite": 5,
-            "credit": 206000,
+            "credit": 207960,
             "challenger_box": 44
           },
           "sweep": {
-            "credit": 103000,
+            "credit": 103980,
             "challenger_box": 22
           }
         },
@@ -1065,11 +1101,11 @@
           "open_day": 15,
           "first": {
             "quality_invite": 5,
-            "credit": 222000,
+            "credit": 222360,
             "challenger_box": 46
           },
           "sweep": {
-            "credit": 111000,
+            "credit": 111180,
             "challenger_box": 23
           }
         },
@@ -1078,11 +1114,11 @@
           "open_day": 18,
           "first": {
             "quality_invite": 5,
-            "credit": 242000,
+            "credit": 243120,
             "challenger_box": 50
           },
           "sweep": {
-            "credit": 121000,
+            "credit": 121560,
             "challenger_box": 25
           }
         }
@@ -1336,9 +1372,9 @@
         }
       ],
       "tasks": {
-        "tokens": 6050,
+        "tokens": 5600,
         "one_time": true,
-        "note": "S1N1-12 额外送回忆胶卷；全部完成 900 代币已含"
+        "note": "官方 EventMissionListTable Group 8603：12/24/36 关各 450/称号/450 = 900；36 关逐关 100×11（S1N）+ 100×12（S2N）+ 200×12（S2H）= 4700 → 合计 5600。旧值 6050 系笔误（模板自身分项和即为 5600）。"
       },
       "shop": {
         "items": [
@@ -1512,12 +1548,43 @@
         "battle": 600440,
         "dust": 91.95
       },
+      "checkin": [
+        {
+          "offset_day": 2,
+          "reward": {
+            "ark_box": 5
+          },
+          "note": "活动第3天 · 方舟官方补给物资 I×5"
+        },
+        {
+          "offset_day": 5,
+          "reward": {
+            "growth_box_8h": 1
+          },
+          "note": "活动第6天 · 成长套组：8H"
+        },
+        {
+          "offset_day": 8,
+          "reward": {
+            "ark_box": 10
+          },
+          "note": "活动第9天 · 方舟官方补给物资 I×10"
+        },
+        {
+          "offset_day": 11,
+          "reward": {
+            "growth_box_12h": 1
+          },
+          "note": "活动第12天 · 成长套组：12H"
+        }
+      ],
       "label": "28天大活动",
       "daily_task": {
         "per_day": {
           "growth_box_1h": 1
         }
-      }
+      },
+      "_checkin_note": "官方 LoginEventTable EventId 10061（ABSOLUTE）：第3天 方舟 I×5、第6天 成长套组8h、第9天 方舟 I×10、第12天 成长套组12h。"
     }
   }
 }

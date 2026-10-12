@@ -8,16 +8,17 @@
   var RESOURCES = C.RESOURCES;              // ["credit", "battle_data", "core_dust"]
   var RES = ["credit", "battle", "dust"];   // 引擎侧三资源键
 
-  /* 引擎箱键（含每日任务/签到用到的成长套组与方舟箱） */
+  /* 引擎箱键（含每日任务/签到用到的成长套组与方舟箱，以及 12h 三资源盒） */
   var BOX_KEYS = ["credit_box_1h", "battle_box_1h", "dust_box_1h",
                   "credit_box_2h", "battle_box_2h", "dust_box_2h", "challenger_box",
+                  "credit_box_12h", "battle_box_12h", "dust_box_12h",
                   "growth_box_1h", "growth_box_8h", "growth_box_12h", "ark_box"];
 
   /* 引擎箱键 → 计算器固定小时箱落点 */
   var FIXED_LABEL = {
-    credit_box_1h: ["信用点盒", 1], credit_box_2h: ["信用点盒", 2],
-    battle_box_1h: ["战斗数据辑盒", 1], battle_box_2h: ["战斗数据辑盒", 2],
-    dust_box_1h: ["芯尘盒", 1], dust_box_2h: ["芯尘盒", 2],
+    credit_box_1h: ["信用点盒", 1], credit_box_2h: ["信用点盒", 2], credit_box_12h: ["信用点盒", 12],
+    battle_box_1h: ["战斗数据辑盒", 1], battle_box_2h: ["战斗数据辑盒", 2], battle_box_12h: ["战斗数据辑盒", 12],
+    dust_box_1h: ["芯尘盒", 1], dust_box_2h: ["芯尘盒", 2], dust_box_12h: ["芯尘盒", 12],
     growth_box_1h: ["成长套组", 1], growth_box_8h: ["成长套组", 8], growth_box_12h: ["成长套组", 12],
   };
   /* 引擎箱键 → 计算器自选箱落点（禁止照搬引擎 box_value：挑战者走 units 数量口径） */
@@ -225,7 +226,8 @@
       var day = days[d], active = null;
       chs.forEach(function (c) { if (c.open <= d) active = c; });
       if (!active) return;
-      if (d === active.open) addInto(day, active.first);
+      /* 开放日 = 首通奖励 + 通关奖励（首通那次同时也给通关奖励），其后 = 扫荡 */
+      if (d === active.open) { addInto(day, active.first); addInto(day, active.sweep, sweeps); }
       else addInto(day, active.sweep, sweeps);
     });
 
