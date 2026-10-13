@@ -13,9 +13,12 @@
   var SUPABASE_ANON_KEY = "sb_publishable_6FzpENHzylm1M-NSvX6RBQ__Xlpv7Oc";
 
   /* ============ 数据源映射（feature id -> localStorage 键） ============ */
+  /* combat_power_beta 是内嵌 iframe（同源），其存档键与主页面共享同一 localStorage，
+     因此主页面直接读写即可；下载后整页 reload 会让 iframe 一并重载生效。 */
   var FEATURES = [
     { id: "planner",   name: "资源规划计算器", ls: "nikke_planner_form_v1" },
-    { id: "mod_stats", name: "定制模组统计",   ls: "nikke_mod_stats_v3" }
+    { id: "mod_stats", name: "定制模组统计",   ls: "nikke_mod_stats_v3" },
+    { id: "combat_power_beta", name: "战力计算Beta（角色练度 + 装备词条套装）", ls: "nikke_power_calc_v2" }
   ];
 
   var sdk = window.supabase;

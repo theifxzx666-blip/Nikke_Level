@@ -10,6 +10,8 @@
   var CORP = { 1: "极乐净土", 2: "米西利斯", 3: "泰特拉", 4: "朝圣者", 5: "反常", 6: "反常", 7: "反常" };
   var CLS = { 1: "火力型", 2: "防御型", 3: "辅助型" };
   var WEAPON = { 1: "AR 步枪", 2: "RL 发射器", 3: "SR 狙击", 4: "MG 机枪", 5: "SG 霰弹", 9: "SMG 冲锋" };
+  /* 稀有度：OriginalRare 1/2/3 → R/SR/SSR（拆包实地取值） */
+  var RARITY = { 1: "R", 2: "SR", 3: "SSR" };
   var EMPTY = { key: "", level: 0 };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -42,6 +44,9 @@
         cubeId: 1000301, cubeLv: 15, coll: "SR", collLv: 15,
         rp: 100, rc: 100, rk: 100, corpBonus: false, auto: true
       },
+      /* 角色级参数按 rid 记忆：切换角色时不会因为新角色档位更少而被清空
+         （R 只有 1 档 / SR 只有 3 档，切过去会把突破压到 0，切回来必须能恢复） */
+      byChar: {},
       panel: { attack: "", hp: "", defense: "", critRate: 15, critDamage: 150, extraBP: "", skill1: 10, skill2: 10, burst: 10 },
       gear: blankGear(),
       sim: { rolls: 5000, slots: 12, min: 1, max: 15, pool: D.overload.map(function (g) { return g.key; }) }
@@ -75,6 +80,7 @@
         if (Array.isArray(raw.sim.pool) && raw.sim.pool.length) d.sim.pool = raw.sim.pool;
       }
       if (raw.mode) d.mode = raw.mode;
+      if (raw.byChar && typeof raw.byChar === "object") d.byChar = raw.byChar;
       if (raw.loadout) {
         Object.keys(d.loadout).forEach(function (k) {
           if (raw.loadout[k] !== undefined && raw.loadout[k] !== null) d.loadout[k] = raw.loadout[k];
@@ -137,8 +143,8 @@
     }
     var corpName = CORP[hit.corp] || ("企业" + hit.corp);
     var clsName = CLS[hit.cls] || ("职业" + hit.cls);
-    $("char-meta").textContent = [corpName, clsName,
-      WEAPON[hit.weapon] || ("武器" + hit.weapon), "增强组 " + hit.enh].join(" · ");
+    $("char-meta").textContent = [(RARITY[hit.rarity] || ""), corpName, clsName,
+      WEAPON[hit.weapon] || ("武器" + hit.weapon), "增强组 " + hit.enh].filter(Boolean).join(" · ");
     // 循环室「职业研究 / 企业研究」按当前角色自动锚定
     $("anchor-cls").textContent = clsName;
     $("anchor-corp").textContent = corpName;
@@ -154,6 +160,8 @@
    * 点开只看到 1 条，等于没法选人。改为「筛选框 + 原生 <select>（按企业分组、拼音排序）」，
    * 当前角色永远保留在列表里，切人后立即用新 rid 重推面板。 */
   var CORP_ORDER = ["极乐净土", "米西利斯", "泰特拉", "朝圣者", "反常"];
+  /** 角色名前的稀有度标记（R/SR/SSR），让下拉里一眼可辨 */
+  function rarTag(r) { return "[" + (RARITY[r && r.rarity] || "?") + "] "; }
   function rosterSorted() {
     return D.roster.slice().sort(function (a, b) {
       return String(a.name).localeCompare(String(b.name), "zh-Hans-CN");
@@ -182,14 +190,14 @@
     var h = "";
     if (pinned && !shown) {
       h += '<optgroup label="当前角色"><option value="' + esc(pinned.name) + '">'
-        + esc(pinned.name) + "</option></optgroup>";
+        + esc(rarTag(pinned) + pinned.name) + "</option></optgroup>";
     }
     CORP_ORDER.concat(Object.keys(groups).filter(function (c) { return CORP_ORDER.indexOf(c) < 0; }))
       .forEach(function (c) {
         var arr = groups[c];
         if (!arr || !arr.length) return;
         h += '<optgroup label="' + esc(c) + "（" + arr.length + '）">'
-          + arr.map(function (r) { return '<option value="' + esc(r.name) + '">' + esc(r.name) + "</option>"; }).join("")
+          + arr.map(function (r) { return '<option value="' + esc(r.name) + '">' + esc(rarTag(r) + r.name) + "</option>"; }).join("")
           + "</optgroup>";
       });
     if (!h) h = '<option value="">（无匹配角色）</option>';
@@ -201,10 +209,26 @@
     if (el) el.textContent = kw ? (list.length + " / " + D.roster.length + " 名") : (D.roster.length + " 名角色");
     return list.length;
   }
-  /** 切换角色：先落 rid，再重挂依赖角色的下拉（突破档 / 收藏品），最后重推面板 */
+  /* 角色级参数记忆：突破档 / 收藏品会随角色重建下拉，若不记忆，切到低档角色再切回来会被清空 */
+  var CHAR_KEYS = ["bt", "coll"];
+  function rememberChar(rid) {
+    if (rid == null) return;
+    var o = {};
+    CHAR_KEYS.forEach(function (k) { o[k] = state.loadout[k]; });
+    state.byChar[String(rid)] = o;
+  }
+  function recallChar(rid) {
+    var d = defaults().loadout, saved = state.byChar[String(rid)];
+    CHAR_KEYS.forEach(function (k) {
+      state.loadout[k] = (saved && saved[k] !== undefined && saved[k] !== null) ? saved[k] : d[k];
+    });
+  }
+  /** 切换角色：记住旧角色 → 落新 rid → 恢复新角色的档位/收藏品 → 重挂依赖角色的下拉 → 重推面板 */
   function onCharPicked() {
+    rememberChar(state.loadout.rid);
     state.char = $("char-input").value.trim();
     state.loadout.rid = currentRid();
+    recallChar(state.loadout.rid);
     renderBreakthroughOptions(); renderCollOptions(); renderCharMeta();
     collectLoadout();
     if (state.mode === "loadout" && state.loadout.auto) derivePanel();
@@ -367,10 +391,10 @@
         var b = state.gear[slot].before[i], a = state.gear[slot].after[i];
         html += '<div class="opt-row" data-index="' + i + '"><div class="opt-idx" data-label>' + (i + 1) + "</div>"
           + '<div class="opt-sides">'
-          + '<div class="opt-side before"><select class="ty" data-side="before" data-index="' + i + '" aria-label="洗前词条类型">' + typeOptions(b.key) + "</select>"
-          + '<select class="lv" data-side="before" data-index="' + i + '" aria-label="洗前阶数">' + levelOptions(b.key, b.level) + "</select></div>"
-          + '<div class="opt-side after"><select class="ty" data-side="after" data-index="' + i + '" aria-label="洗后词条类型">' + typeOptions(a.key) + "</select>"
-          + '<select class="lv" data-side="after" data-index="' + i + '" aria-label="洗后阶数">' + levelOptions(a.key, a.level) + "</select></div>"
+          + '<div class="opt-side before"><i class="side-tag">当前</i><select class="ty" data-side="before" data-index="' + i + '" aria-label="当前装备词条类型">' + typeOptions(b.key) + "</select>"
+          + '<select class="lv" data-side="before" data-index="' + i + '" aria-label="当前装备阶数">' + levelOptions(b.key, b.level) + "</select></div>"
+          + '<div class="opt-side after"><i class="side-tag">目标</i><select class="ty" data-side="after" data-index="' + i + '" aria-label="洗练目标词条类型">' + typeOptions(a.key) + "</select>"
+          + '<select class="lv" data-side="after" data-index="' + i + '" aria-label="洗练目标阶数">' + levelOptions(a.key, a.level) + "</select></div>"
           + "</div></div>";
       }
       html += '<div class="gear-foot"><span>内部战力 / 战力变化</span><b data-gear-delta>--</b></div></article>';
@@ -648,7 +672,15 @@
 
     $("btn-copy-before").addEventListener("click", function () {
       C.SLOTS.forEach(function (s) { state.gear[s].after = clone(state.gear[s].before); });
-      renderGear(); compute(); save(true); setNotice("已把「洗前」复制到「洗后」", "ok");
+      renderGear(); compute(); save(true); setNotice("已把「当前装备」复制到「洗练目标」", "ok");
+    });
+    /* 洗练满意 → 把「洗练目标」固化为「当前装备」并保存（装备套装随存档一起落盘） */
+    $("btn-commit-after").addEventListener("click", function () {
+      if (!hasPanel()) { setNotice("请先填写攻击力 / 生命 / 防御力", "error"); return; }
+      if (!window.confirm("把「洗练目标」覆盖为「当前装备」并保存？原「当前装备」词条将被替换。")) return;
+      C.SLOTS.forEach(function (s) { state.gear[s].before = clone(state.gear[s].after); });
+      renderGear(); compute(); save(true);
+      setNotice("已用洗练结果覆盖「当前装备」——练度 + 整套装备词条已一并保存", "ok");
     });
     $("btn-save").addEventListener("click", function () { save(false); });
     $("btn-load").addEventListener("click", function () { load(); renderAll(); setMode(state.mode || "loadout"); setNotice("已读取本机保存", "ok"); });

@@ -76,15 +76,16 @@
       "name": "战力计算Beta",
       "icon": "assets/nav_combatpower.webp",
       "type": "web",
-      "entry": "combat_power_beta/index.html?v=20261013b",
+      "entry": "combat_power_beta/index.html?v=20261013c",
       "viewId": "appCombatPowerBeta",
       "frameId": "combatPowerBetaFrame",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "order": 50,
       "enabled": true,
       "sync": {
-        "enabled": false,
-        "storage": "none"
+        "enabled": true,
+        "storage": "localStorage",
+        "key": "nikke_power_calc_v2"
       }
     }
   ]

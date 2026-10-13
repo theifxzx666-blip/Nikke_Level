@@ -15,7 +15,6 @@
     </div>
     <div class="toolbar-actions">
       <button id="btn-calibrate" class="btn" type="button">按游戏内战力标定</button>
-      <button id="btn-copy-before" class="btn" type="button">洗后 ← 洗前</button>
       <button id="btn-save" class="btn" type="button">保存</button>
       <button id="btn-load" class="btn" type="button">读取</button>
       <button id="btn-export" class="btn" type="button">导出 JSON</button>
@@ -126,8 +125,15 @@
 
     <!-- ======== 中：词条 ======== -->
     <section class="panel center">
-      <div class="panel-head"><h2>装备词条洗练</h2><span class="tag">洗前 / 洗后</span></div>
-      <div class="panel-body" id="gear-grid"></div>
+      <div class="panel-head"><h2>装备词条洗练</h2><span class="tag">① 当前装备 → ② 洗练目标</span></div>
+      <div class="panel-body">
+        <p class="gear-tip">先录入你在游戏里的<b>当前装备词条</b>作为锚点（左列），再设置<b>洗练目标</b>（右列）实时对比战力；结果满意时点「确认洗练」把目标覆盖成当前装备并保存。</p>
+        <div class="gear-ops">
+          <button id="btn-copy-before" class="btn" type="button">洗练目标 ← 当前装备</button>
+          <button id="btn-commit-after" class="btn primary" type="button">确认洗练 → 覆盖当前装备</button>
+        </div>
+        <div id="gear-grid"></div>
+      </div>
     </section>
 
     <!-- ======== 右：结果 ======== -->
