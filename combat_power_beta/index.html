@@ -14,7 +14,8 @@
       <p class="subtitle">洗词条 · 实时看战力变化 · 公式取自客户端反编译源码</p>
     </div>
     <div class="toolbar-actions">
-      <button id="btn-calibrate" class="btn" type="button">按游戏内战力标定</button>
+      <!-- 手填面板已屏蔽（2026-10-13）：面板三围统一由练度参数推导，标定入口随之隐藏 -->
+      <button id="btn-calibrate" class="btn" type="button" hidden>按游戏内战力标定</button>
       <button id="btn-save" class="btn" type="button">保存</button>
       <button id="btn-load" class="btn" type="button">读取</button>
       <button id="btn-export" class="btn" type="button">导出 JSON</button>
@@ -31,9 +32,11 @@
     <section class="panel">
       <div class="panel-head"><h2>面板属性</h2><span class="tag" id="mode-tag">练度模式</span></div>
       <div class="panel-body">
-        <div class="mode-switch" id="mode-switch">
+        <!-- 手填面板先屏蔽：输入层统一为「练度参数 → 自动推导面板」。
+             保留 DOM（hidden）便于日后恢复；JS 侧另有 MANUAL_MODE_ENABLED 兜底。 -->
+        <div class="mode-switch" id="mode-switch" hidden>
           <label><input type="radio" name="pmode" value="loadout" checked><span>练度模式</span></label>
-          <label><input type="radio" name="pmode" value="manual"><span>手填面板</span></label>
+          <label><input type="radio" name="pmode" value="manual" disabled><span>手填面板</span></label>
         </div>
 
         <div id="loadout-box">
@@ -95,30 +98,35 @@
           </div>
           <p class="hint" id="derive-note">…</p>
 
+          <!-- 推导结果：六项全部由练度参数（含角色静态表）自动算出，锁定编辑 -->
+          <div class="grp" id="derived-box">
+            <div class="grp-h"><b>推导结果</b><em>只读 · 自动计算</em></div>
+            <div class="grid3">
+              <label class="cell locked"><span>攻击力</span><input id="p-attack" type="number" step="1" min="0" readonly tabindex="-1"></label>
+              <label class="cell locked"><span>生命</span><input id="p-hp" type="number" step="1" min="0" readonly tabindex="-1"></label>
+              <label class="cell locked"><span>防御力</span><input id="p-defense" type="number" step="1" min="0" readonly tabindex="-1"></label>
+            </div>
+            <div class="grid3">
+              <label class="cell locked"><span>暴击率 %</span><input id="p-critRate" type="number" step="0.01" min="0" readonly tabindex="-1"></label>
+              <label class="cell locked"><span>暴击伤害 %</span><input id="p-critDamage" type="number" step="0.01" min="0" readonly tabindex="-1"></label>
+              <label class="cell locked"><span>附加效果战力</span><input id="p-extraBP" type="number" step="1" readonly tabindex="-1"></label>
+            </div>
+            <p class="hint">以上六项由左侧练度参数自动推导，已锁定不可编辑：暴击 15 / 150 为全部角色共用的静态表常量；附加效果战力 = 魔方技能 + 收藏品技能内部战力。</p>
+          </div>
+
           <h3 class="mini-h">同步器档位预览</h3>
           <table class="tbl mini" id="tier-table"></table>
           <p class="hint">档位规则取自参考站实测：第 2 档 = 当前等级向上取整到 20 的倍数 + 1，其后各 +20。</p>
         </div>
 
-        <div id="manual-box" hidden>
-        <div class="grid3">
-          <label class="cell"><span>攻击力</span><input id="p-attack" type="number" step="1" min="0"></label>
-          <label class="cell"><span>生命</span><input id="p-hp" type="number" step="1" min="0"></label>
-          <label class="cell"><span>防御力</span><input id="p-defense" type="number" step="1" min="0"></label>
-        </div>
-        </div>
-
-        <div class="grid3">
-          <label class="cell"><span>暴击率 %</span><input id="p-critRate" type="number" step="0.01" min="0"></label>
-          <label class="cell"><span>暴击伤害 %</span><input id="p-critDamage" type="number" step="0.01" min="0"></label>
-          <label class="cell"><span>附加效果战力</span><input id="p-extraBP" type="number" step="1"></label>
-        </div>
-        <p class="hint">暴击 15 / 150 为全部角色的静态表常量。附加效果战力 = 魔方技能 + 收藏品技能内部战力（练度模式自动填入）；不知道就用「按游戏内战力标定」反解。</p>
-
-        <div class="grid3">
-          <label class="cell"><span>技能 1</span><input id="p-skill1" type="number" step="1" min="1" max="10"></label>
-          <label class="cell"><span>技能 2</span><input id="p-skill2" type="number" step="1" min="1" max="10"></label>
-          <label class="cell"><span>爆裂技能</span><input id="p-burst" type="number" step="1" min="1" max="10"></label>
+        <div class="grp">
+          <div class="grp-h"><b>技能等级</b><em>手动填写</em></div>
+          <div class="grid3">
+            <label class="cell"><span>技能 1</span><input id="p-skill1" type="number" step="1" min="1" max="10"></label>
+            <label class="cell"><span>技能 2</span><input id="p-skill2" type="number" step="1" min="1" max="10"></label>
+            <label class="cell"><span>爆裂技能</span><input id="p-burst" type="number" step="1" min="1" max="10"></label>
+          </div>
+          <p class="hint">技能等级参与战力系数，按游戏内实际等级填 1 ~ 10。</p>
         </div>
       </div>
     </section>

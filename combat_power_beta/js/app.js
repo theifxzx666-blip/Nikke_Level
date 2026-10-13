@@ -13,6 +13,9 @@
   /* 稀有度：OriginalRare 1/2/3 → R/SR/SSR（拆包实地取值） */
   var RARITY = { 1: "R", 2: "SR", 3: "SSR" };
   var EMPTY = { key: "", level: 0 };
+  /* 手填面板已屏蔽（2026-10-13）：面板三围一律由练度参数推导，输入层不再暴露 manual 模式。
+     改成 true 即可恢复双模式（DOM 里的 #mode-switch / 标定按钮已保留，仅 hidden）。 */
+  var MANUAL_MODE_ENABLED = false;
 
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); };
@@ -327,8 +330,7 @@
     var ch = P.findRoster(D, state.loadout.rid);
     if (ch) { state.panel.critRate = ch.critR / 100; state.panel.critDamage = ch.critD / 100; }
     renderPanelValues();
-    $("derive-note").innerHTML = "推导面板：" + fmt(d.atk) + " / " + fmt(d.hp) + " / " + fmt(d.def)
-      + "　·　魔方技能 " + fmt(d.detail.cubeBP) + " + 收藏技能 " + fmt(d.detail.collBP)
+    $("derive-note").innerHTML = "已按练度推导面板　·　魔方技能 " + fmt(d.detail.cubeBP) + " + 收藏技能 " + fmt(d.detail.collBP)
       + " = 附加效果战力 <b>" + fmt(d.extraBP) + "</b>"
       + (d.warn && d.warn.length ? "　⚠ " + esc(d.warn.join("；")) : "");
     renderTiers();
@@ -353,12 +355,14 @@
       }).join("") + "</tbody>";
   }
   function setMode(m) {
+    if (!MANUAL_MODE_ENABLED) m = "loadout";   // 手填面板已屏蔽：任何来源都被拉回练度模式
     state.mode = m;
     var load = m === "loadout";
     $("loadout-box").hidden = !load;
-    $("manual-box").hidden = load;
+    var mb = $("manual-box"); if (mb) mb.hidden = true;   // 旧 DOM 兜底（现已移除该容器）
     $("mode-tag").textContent = load ? "练度模式" : "手填面板";
-    Array.prototype.forEach.call($("mode-switch").querySelectorAll("input"), function (r) { r.checked = (r.value === m); });
+    var sw = $("mode-switch");
+    if (sw) Array.prototype.forEach.call(sw.querySelectorAll("input"), function (r) { r.checked = (r.value === m); });
     if (load) derivePanel(true);
     compute();
   }
@@ -427,12 +431,12 @@
       $("r-before").textContent = $("r-after").textContent = $("r-delta").textContent = "--";
       $("r-bp").textContent = $("r-totallevel").textContent = $("r-skillfactor").textContent = "--";
       $("r-gear-table").querySelector("tbody").innerHTML = "";
-      $("r-lines").innerHTML = '<p class="hint">请先填写攻击力 / 生命 / 防御力。</p>';
+      $("r-lines").innerHTML = '<p class="hint">请先完成左侧练度参数填写，面板三围为自动推导，无需手工输入。</p>';
       $("unit-table").innerHTML = "";
       $("m-minmax").textContent = $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = "--";
       $("m-hist").innerHTML = "";
       $("s-cur").textContent = $("s-tgt").textContent = $("s-delta").textContent = "--";
-      setNotice("等待面板数据：请填入攻击力 / 生命 / 防御力", "");
+      setNotice("等待面板数据：请先在左侧选好角色与练度参数（面板三围会自动推导）", "");
       return;
     }
     // 面板已就绪：清掉初始化阶段留下的「等待面板数据」提示
@@ -666,7 +670,8 @@
     $("char-input").addEventListener("change", onCharPicked);
     $("char-input").addEventListener("input", onCharPicked);
     $("char-search").addEventListener("input", function () { buildCharOptions($("char-search").value); });
-    Array.prototype.forEach.call($("mode-switch").querySelectorAll("input"), function (r) {
+    var sw = $("mode-switch");
+    if (sw) Array.prototype.forEach.call(sw.querySelectorAll("input"), function (r) {
       r.addEventListener("change", function () { collectLoadout(); setMode(r.value); save(true); });
     });
 
