@@ -25,6 +25,15 @@
 
   /* 装备等级（= 游戏内装备强化等级）上限：EquipmentGradeTable 里 T9/T10 的 MaxLevel = 5 */
   var GEAR_LV_MAX = 5;
+  /* 游戏内过载词条档位配色（实证口径）：
+   *   1 ~ 11 阶 → 默认色；12 ~ 14 阶 → 蓝字（Blue Label）；15 阶 → 黑底白字（Black Label）。
+   *   来源：Prydwen / Rappy-World / vortexgaming 的过载装备攻略，与游戏内显示一致。 */
+  function tierCls(level) {
+    var lv = Math.trunc(num(level));
+    if (lv >= 15) return "t-max";
+    if (lv >= 12) return "t-hi";
+    return "";
+  }
   function blankGear() {
     var g = {};
     C.SLOTS.forEach(function (s) {
@@ -435,14 +444,16 @@
     });
     return h;
   }
-  /** 阶数下拉：选项文本「N 阶 · X.XX%」；数值 = 静态表 FunctionValue ÷ 100（游戏内显示口径） */
+  /** 阶数下拉：选项文本「N 阶 · X.XX%」；数值 = 静态表 FunctionValue ÷ 100（游戏内显示口径）。
+   *  选项带游戏内档位配色类：T12~14 蓝字、T15 黑底白字。 */
   function levelOptions(key, selected) {
     var sel = Math.max(0, Math.min(15, Math.trunc(num(selected))));
     var h = '<option value="0"' + (sel === 0 ? " selected" : "") + ">— 无阶数</option>";
     if (!key) return h;
     for (var lv = 1; lv <= 15; lv++) {
       var vt = C.statValueText(D, key, lv);
-      h += '<option value="' + lv + '"' + (lv === sel ? " selected" : "") + ">" + lv + " 阶 · " + esc(vt) + "</option>";
+      var tc = tierCls(lv);
+      h += '<option value="' + lv + '"' + (tc ? ' class="' + tc + '"' : "") + (lv === sel ? " selected" : "") + ">" + lv + "阶·" + esc(vt) + "</option>";
     }
     return h;
   }
@@ -510,7 +521,7 @@
         html += '<div class="opt-row" data-index="' + i + '"><div class="opt-idx" data-label>' + (i + 1) + "</div>"
           + '<div class="opt-side solo before">'
           + '<select class="ty" data-side="before" data-index="' + i + '" aria-label="当前装备词条类型">' + typeOptions(b.key, beforeSiblingKeys(slot, i)) + "</select>"
-          + '<select class="lv" data-side="before" data-index="' + i + '" aria-label="当前装备阶数">' + levelOptions(b.key, b.level) + "</select>"
+          + '<select class="lv ' + tierCls(b.level) + '" data-side="before" data-index="' + i + '" aria-label="当前装备阶数">' + levelOptions(b.key, b.level) + "</select>"
           + "</div></div>";
       }
       html += "</article>";
@@ -540,11 +551,11 @@
         var ref = curRefText(b);
         html += '<div class="opt-row" data-index="' + i + '"><div class="opt-idx" data-label>' + (i + 1) + "</div>"
           + '<div class="opt-cmp">'
-          + '<span class="cur-ref' + (b.level ? "" : " empty") + '" title="当前装备：' + esc(ref) + '">' + esc(ref) + "</span>"
+          + '<span class="cur-ref ' + tierCls(b.level) + (b.level ? "" : " empty") + '" title="当前装备：' + esc(ref) + '">' + esc(ref) + "</span>"
           + '<span class="arrow">→</span>'
           + '<div class="opt-side solo after">'
           + '<select class="ty" data-side="after" data-index="' + i + '" aria-label="洗练目标词条类型">' + typeOptions(a.key) + "</select>"
-          + '<select class="lv" data-side="after" data-index="' + i + '" aria-label="洗练目标阶数">' + levelOptions(a.key, a.level) + "</select>"
+          + '<select class="lv ' + tierCls(a.level) + '" data-side="after" data-index="' + i + '" aria-label="洗练目标阶数">' + levelOptions(a.key, a.level) + "</select>"
           + "</div></div></div>";
       }
       html += '<div class="gear-foot"><span>内部战力 / 战力变化</span><b data-gear-delta>--</b></div></article>';
@@ -578,6 +589,8 @@
       lv.innerHTML = levelOptions(ty.value, Math.trunc(num(lv.value)));
     }
     state.gear[slot][side][idx] = { key: ty.value, level: Math.max(0, Math.min(15, Math.trunc(num(lv.value)))) };
+    // 阶数下拉本体也带上档位配色（T12~14 蓝字 / T15 黑底白字），与游戏内显示一致
+    lv.className = "lv " + tierCls(state.gear[slot][side][idx].level);
     // 当前装备被改动 → 标记「未保存」；同步刷新洗练面板左列的参照文本；
     // 并重算同部位各行的类型下拉（把被占用的重复类型置灰 / 释放）
     if (side === "before") {
@@ -596,7 +609,7 @@
     var b = state.gear[slot].before[idx], txt = curRefText(b);
     ref.textContent = txt;
     ref.title = "当前装备：" + txt;
-    ref.className = "cur-ref" + (b.level ? "" : " empty");
+    ref.className = "cur-ref " + tierCls(b.level) + (b.level ? "" : " empty");
   }
 
   /* ---------------- 计算与渲染 ---------------- */
@@ -611,6 +624,7 @@
       $("m-cur").textContent = $("m-slotcur").textContent = $("m-minmax").textContent = "--";
       $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = $("m-pctgain").textContent = "--";
       $("m-hist").innerHTML = "";
+      $("c-per").textContent = $("c-p").textContent = $("c-rolls").textContent = $("c-exp").textContent = "--";
       setNotice("等待面板数据：请先在左侧选好角色与练度参数（面板三围会自动推导）", "");
       return;
     }
@@ -626,7 +640,7 @@
     dEl.className = res.powerDelta > 0 ? "pos" : (res.powerDelta < 0 ? "neg" : "");
     $("r-bp").textContent = fmt(res.before.bp) + " → " + fmt(res.after.bp) + "（" + sfmt(res.bpDelta) + "）";
     $("r-totallevel").textContent = res.totalLevelBefore.toFixed(1) + " → " + res.totalLevelAfter.toFixed(1);
-    $("r-skillfactor").textContent = res.afterPower.skillFactor.toFixed(4);
+    $("r-skillfactor").textContent = "技能系数 " + res.afterPower.skillFactor.toFixed(4);
 
     // 部位归因
     $("r-gear-table").querySelector("tbody").innerHTML = res.gearRows.map(function (r) {
@@ -641,7 +655,8 @@
         var b = res.before.slots[slot].rows[i], a = res.after.slots[slot].rows[i];
         var d = a.bp - b.bp;
         if (b.level === 0 && a.level === 0) continue;
-        lines.push('<div class="line"><span class="nm">' + SLOT_LABEL[slot] + " 词条" + (i + 1) + "　" + esc(b.name) + " " + lvlText(b) + " → " + esc(a.name) + " " + lvlText(a) + "</span><b class=\""
+        lines.push('<div class="line"><span class="nm">' + SLOT_LABEL[slot] + " 词条" + (i + 1) + "　" + esc(b.name) + " " + lvlText(b) + " → "
+          + '<span class="' + tierCls(a.level) + '">' + esc(a.name) + " " + lvlText(a) + "</span></span><b class=\""
           + (d > 0 ? "pos" : d < 0 ? "neg" : "") + '">参数 ' + sfmt(d) + "</b></div>");
       }
     });
@@ -665,13 +680,13 @@
   function renderUnitTable(pf) {
     var tbl = C.unitTable(D.config, pf, D);
     var head = "<thead><tr><th>词条类型</th>";
-    for (var lv = 1; lv <= 15; lv++) head += "<th>" + lv + "</th>";
+    for (var lv = 1; lv <= 15; lv++) head += '<th class="' + tierCls(lv) + '">' + lv + "</th>";
     head += "</tr></thead><tbody>";
     var body = tbl.map(function (g) {
       var tr = "<tr><td>" + esc(g.name) + (g.isElement ? " ★" : "") + "</td>";
       g.rows.forEach(function (r) {
         var vt = C.statValueText(D, g.key, r.level);
-        tr += "<td>" + fmt(r.powerDelta) + (vt ? '<span class="sub">' + esc(vt) + "</span>" : "") + "</td>";
+        tr += "<td>" + fmt(r.powerDelta) + (vt ? '<span class="sub ' + tierCls(r.level) + '">' + esc(vt) + "</span>" : "") + "</td>";
       });
       return tr + "</tr>";
     }).join("");
@@ -700,7 +715,7 @@
       var r = C.resolveOption(D, b.key, b.level);
       var txt = r.level ? (esc(r.name) + " " + r.level + " 阶" + (r.valueText ? " · " + esc(r.valueText) : "")) : "空（无词条）";
       html += '<label class="' + (act[i] ? "on" : "") + '"><input type="checkbox" data-idx="' + i + '"' + (act[i] ? " checked" : "") + ">"
-        + "<em>词条" + (i + 1) + "</em><b class=\"" + (r.level ? "" : "empty") + "\">" + txt + "</b></label>";
+        + "<em>词条" + (i + 1) + "</em><b class=\"" + (r.level ? tierCls(r.level) : "empty") + "\">" + txt + "</b></label>";
     }
     el.innerHTML = html;
     el.querySelectorAll("input").forEach(function (cb) {
@@ -730,6 +745,7 @@
       $("m-cur").textContent = $("m-slotcur").textContent = $("m-minmax").textContent = "--";
       $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = $("m-pctgain").textContent = "--";
       $("m-hist").innerHTML = "";
+      $("c-per").textContent = $("c-p").textContent = $("c-rolls").textContent = $("c-exp").textContent = "--";
       return;
     }
     var slot = state.sim.slot;
@@ -771,6 +787,32 @@
     sim.values.forEach(function (v) { var i = Math.min(B - 1, Math.floor((v - lo) / span * B)); buckets[i]++; });
     var m = Math.max.apply(null, buckets) || 1;
     $("m-hist").innerHTML = buckets.map(function (c) { return '<i style="height:' + Math.max(2, Math.round(c / m * 100)) + 'px"></i>'; }).join("");
+
+    /* ---- 定制模组消耗预估 ----
+     * 游戏规则（Prydwen / Rappy-World 实测）：重洗一次消耗 = 锁定条数 + 1 颗定制模组。
+     *   · 锁定条数 = 本部位「未勾选参与重洗」且当前有词条的行数（空行没有可保住的值，不计费）。
+     *   · 「优于现状」= 单次洗后整套战力 > 当前整套战力（只重洗被勾选的行）。
+     *   · 期望次数取几何分布 1/p，即「洗到第一次变好就停」的平均投入次数。 */
+    var lockCount = 0;
+    for (var j = 0; j < 3; j++) {
+      if (!act[j] && slotCur.rows[j] && slotCur.rows[j].level > 0) lockCount++;
+    }
+    var perRoll = lockCount + 1;
+    var better = 0;
+    for (var q = 0; q < sim.values.length; q++) { if (sim.values[q] > cur) better++; }
+    var pw = sim.values.length ? better / sim.values.length : 0;
+    $("c-per").textContent = perRoll + " 颗" + (lockCount ? "（锁定 " + lockCount + " 条）" : "（不锁定）");
+    var pEl = $("c-p");
+    pEl.textContent = sim.values.length ? (pw * 100).toFixed(1) + "%" : "--";
+    pEl.className = pw > 0 ? "pos" : "neg";
+    if (pw > 0) {
+      $("c-rolls").textContent = "≈ " + (1 / pw).toFixed(1) + " 次";
+      var expCost = perRoll / pw;
+      $("c-exp").textContent = "≈ " + (expCost >= 100 ? fmt(Math.round(expCost)) : expCost.toFixed(1)) + " 颗";
+    } else {
+      $("c-rolls").textContent = "—";
+      $("c-exp").textContent = "该池已无法超越现状";
+    }
   }
 
   /* ---------------- 标定 ---------------- */
@@ -842,14 +884,14 @@
     d.mode = "loadout";
     d.loadout = { rid: 16, level: 492, bt: 10, attr: 40,
       cubeId: 1000301, cubeLv: 15, coll: "SR", collLv: 15, rp: 100, rc: 100, rk: 100, corpBonus: false, auto: true };
-    d.gear.head.before = [opt("优越代码伤害", 5), opt("攻击力", 3), opt("暴击伤害", 2)];
-    d.gear.body.before = [opt("攻击力", 5), opt("暴击率", 3), opt("防御力", 1)];
-    d.gear.arms.before = [opt("最大装弹数", 5), opt("攻击力", 2), opt("命中率", 2)];
-    d.gear.legs.before = [opt("优越代码伤害", 3), opt("攻击力", 4), opt("蓄力伤害", 2)];
-    d.gear.head.after = [opt("攻击力", 5), opt("攻击力", 3), opt("暴击伤害", 2)];
-    d.gear.body.after = [opt("攻击力", 5), opt("暴击率", 5), opt("防御力", 1)];
-    d.gear.arms.after = [opt("最大装弹数", 5), opt("攻击力", 5), opt("命中率", 2)];
-    d.gear.legs.after = [opt("优越代码伤害", 3), opt("攻击力", 4), opt("优越代码伤害", 5)];
+    d.gear.head.before = [opt("优越代码伤害", 15), opt("攻击力", 12), opt("暴击伤害", 8)];
+    d.gear.body.before = [opt("攻击力", 14), opt("最大装弹数", 10), opt("防御力", 5)];
+    d.gear.arms.before = [opt("攻击力", 13), opt("命中率", 9), opt("蓄力伤害", 6)];
+    d.gear.legs.before = [opt("攻击力", 11), opt("优越代码伤害", 15), opt("暴击率", 4)];
+    d.gear.head.after = [opt("优越代码伤害", 15), opt("攻击力", 15), opt("暴击伤害", 12)];
+    d.gear.body.after = [opt("攻击力", 15), opt("最大装弹数", 14), opt("防御力", 5)];
+    d.gear.arms.after = [opt("攻击力", 15), opt("命中率", 13), opt("蓄力伤害", 6)];
+    d.gear.legs.after = [opt("攻击力", 15), opt("优越代码伤害", 15), opt("暴击率", 12)];
     d.gearByChar = { "16": clone(d.gear) };   // 装备词条按角色记录，示例角色 rid=16
     return d;
   }
