@@ -1868,7 +1868,7 @@
         }).catch(function () { COST_TIERS = []; });
       })
       .then(function () {
-        return fetch("data/stage_clear_resources.json?v=20261012b").then(function (r) { return r.json(); }).then(function (d) {
+        return fetch("data/stage_clear_resources.json?v=20261014a").then(function (r) { return r.json(); }).then(function (d) {
           state.stageClearEntries = (d && d.chapters) || {};
           state.stageClearFallback = (d && d.fallback_chapter) || null;
         }).catch(function () { state.stageClearEntries = {}; state.stageClearFallback = null; });
