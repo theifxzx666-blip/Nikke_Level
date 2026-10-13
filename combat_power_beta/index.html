@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NIKKE 战力计算器</title>
-<link rel="stylesheet" href="css/style.css?v=20261014a">
+<link rel="stylesheet" href="css/style.css?v=20261014b">
 </head>
 <body>
 <main class="page">
@@ -135,7 +135,8 @@
         <div class="panel-head"><h2>① 当前装备（装备等级 + 词条）</h2><span class="tag" id="gear-save-tag">未录入</span></div>
         <div class="panel-body">
           <p class="gear-tip">先选好角色，再把该角色在游戏里的<b>整套装备</b>录入这里并<b>保存</b>：每个部位先填<b>装备等级</b>（强化 0 ~ 5，每级 +10% 装备基础属性），
-            再填 3 条<b>装备词条</b>。这份记录是下方「装备词条洗练」的<b>基准</b>，且<b>按角色分别记录</b>——换角色会自动切到该角色自己的装备。</p>
+            再填 3 条<b>装备词条</b>。同一件装备<b>不会出现重复词条</b>，被本部位其它行选走的类型会自动置灰。
+            这份记录是下方「装备词条洗练」的<b>基准</b>，且<b>按角色分别记录</b>——换角色会自动切到该角色自己的装备。</p>
           <div class="gear-ops">
             <button id="btn-save-gear" class="btn primary" type="button">保存当前装备</button>
             <button id="btn-clear-gear" class="btn" type="button">清空</button>
@@ -149,7 +150,7 @@
         <div class="panel-head"><h2>② 装备词条洗练</h2><span class="tag">基于当前装备</span></div>
         <div class="panel-body">
           <p class="gear-tip">左列是上面已保存的<b>当前装备</b>（只读参照），右列是<b>洗练目标</b>：改动右侧即实时对比战力；
-            结果满意时点「确认洗练」把目标覆盖成当前装备并保存。</p>
+            结果满意时点「确认洗练」把目标覆盖成当前装备并保存。洗练目标<b>不做去重限制</b>——洗练时词条位置可能被打乱，重复类型在这里是允许的。</p>
           <div class="gear-ops">
             <button id="btn-copy-before" class="btn" type="button">洗练目标 ← 当前装备</button>
             <button id="btn-commit-after" class="btn primary" type="button">确认洗练 → 覆盖当前装备</button>
@@ -184,48 +185,39 @@
     </section>
   </div>
 
-  <div class="row2">
-    <!-- 单条词条试算 -->
-    <section class="panel">
-      <div class="panel-head"><h2>单条词条试算</h2><span class="tag">只有这一条变化</span></div>
-      <div class="panel-body">
-        <div class="grid4">
-          <label class="cell"><span>部位</span><select id="s-slot"></select></label>
-          <label class="cell"><span>词条位</span><select id="s-index"></select></label>
-          <label class="cell"><span>换成类型</span><select id="s-type"></select></label>
-          <label class="cell"><span>阶数（数值）</span><select id="s-level"></select></label>
-        </div>
-        <div class="card" id="s-result">
-          <div class="kv"><span>当前</span><b id="s-cur">--</b></div>
-          <div class="kv"><span>换成</span><b id="s-tgt">--</b></div>
-          <div class="kv big delta"><span>战力变化</span><b id="s-delta">--</b></div>
-        </div>
-        <p class="hint">基准 = 当前「洗前」配置的其余词条保持不变。</p>
-      </div>
-    </section>
-
-    <!-- 洗练期望模拟 -->
-    <section class="panel">
-      <div class="panel-head"><h2>洗练期望模拟</h2><span class="tag">蒙特卡洛</span></div>
-      <div class="panel-body">
-        <div class="grid4">
+  <!-- 洗练模拟（按部位）：选定一件装备，模拟其词条重洗后的战力分布 -->
+  <section class="panel">
+    <div class="panel-head"><h2>洗练模拟（按部位）</h2><span class="tag">蒙特卡洛</span></div>
+    <div class="panel-body sim-cols">
+      <div class="sim-ctl">
+        <div class="grid2">
+          <label class="cell"><span>部位</span><select id="m-slot"></select></label>
           <label class="cell"><span>模拟次数</span><input id="m-rolls" type="number" min="100" max="200000" step="100" value="5000"></label>
-          <label class="cell"><span>参与词条位</span><input id="m-slots" type="number" min="1" max="12" step="1" value="12"></label>
+        </div>
+        <div class="grid2">
           <label class="cell"><span>最低阶</span><input id="m-min" type="number" min="1" max="15" step="1" value="1"></label>
           <label class="cell"><span>最高阶</span><input id="m-max" type="number" min="1" max="15" step="1" value="15"></label>
         </div>
+        <p class="hint tight">勾选该部位<b>参与重洗</b>的词条位（没勾的视为<b>锁定保留</b>）：</p>
+        <div id="m-active" class="locks"></div>
+        <p class="hint tight">洗练可能出现的词条类型：</p>
         <div id="m-pool" class="pool"></div>
+      </div>
+      <div class="sim-out">
         <div class="card">
-          <div class="kv"><span>最低 / 最高</span><b id="m-minmax">--</b></div>
-          <div class="kv"><span>P10 / P50 / P90</span><b id="m-pct">--</b></div>
-          <div class="kv"><span>平均战力</span><b id="m-mean">--</b></div>
-          <div class="kv"><span>相对当前洗前</span><b id="m-vs">--</b></div>
+          <div class="kv"><span>当前整套战力</span><b id="m-cur">--</b></div>
+          <div class="kv"><span>该部位现状</span><b id="m-slotcur">--</b></div>
+          <div class="kv"><span>洗后最低 / 最高</span><b id="m-minmax">--</b></div>
+          <div class="kv"><span>洗后 P10 / P50 / P90</span><b id="m-pct">--</b></div>
+          <div class="kv"><span>洗后平均战力</span><b id="m-mean">--</b></div>
+          <div class="kv delta"><span>平均提升</span><b id="m-vs">--</b></div>
+          <div class="kv delta"><span>提升 P10 / P50 / P90</span><b id="m-pctgain">--</b></div>
         </div>
         <div id="m-hist" class="hist"></div>
-        <p class="hint">阶数在 [最低阶, 最高阶] 内均匀抽取（可调）。<b>该分布为模拟假设，不是游戏实测概率</b>；结果仅用于估算相对高低。</p>
+        <p class="hint">每次模拟只重洗该部位被勾选的词条位，其余词条（含另外三个部位）保持现状不变；类型在勾选池内等概率抽取，阶数在 [最低阶, 最高阶] 内均匀抽取。<b>该分布是模拟假设，不是游戏实测概率</b>，只用来估算相对高低。</p>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
 
   <!-- 单价表 -->
   <section class="panel">
@@ -242,9 +234,9 @@
   </footer>
 </main>
 
-<script src="data/data.bundle.js?v=20261014a"></script>
-<script src="js/core.js?v=20261014a"></script>
-<script src="js/panel.js?v=20261014a"></script>
-<script src="js/app.js?v=20261014a"></script>
+<script src="data/data.bundle.js?v=20261014b"></script>
+<script src="js/core.js?v=20261014b"></script>
+<script src="js/panel.js?v=20261014b"></script>
+<script src="js/app.js?v=20261014b"></script>
 </body>
 </html>

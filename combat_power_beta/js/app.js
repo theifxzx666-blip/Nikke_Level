@@ -33,16 +33,25 @@
     return g;
   }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  /** 清洗任意来源的装备结构（存档 / byChar）为规范形状，缺项补空；lv = 该部位的装备等级 0~5 */
+  /** 清洗任意来源的装备结构（存档 / byChar）为规范形状，缺项补空；lv = 该部位的装备等级 0~5。
+   *  ① 当前装备（before）侧额外去重：同一件装备不可能出现重复词条，重复的保留首个、其余置空。
+   *  ② 洗练目标（after）侧不去重 —— 洗练时词条位置可能被打乱，重复类型是允许的。 */
   function normalizeGear(g) {
     var out = blankGear();
     C.SLOTS.forEach(function (s) {
       if (!g || !g[s]) return;
       out[s].lv = Math.max(0, Math.min(GEAR_LV_MAX, Math.trunc(num(g[s].lv, GEAR_LV_MAX))));
       ["before", "after"].forEach(function (side) {
+        var seen = {};
         ((g[s] && g[s][side]) || []).slice(0, 3).forEach(function (row, i) {
           if (!row) return;
-          out[s][side][i] = { key: String(row.key || ""), level: Math.max(0, Math.min(15, Math.trunc(num(row.level)))) };
+          var key = String(row.key || "");
+          var lv = Math.max(0, Math.min(15, Math.trunc(num(row.level))));
+          if (side === "before" && key) {
+            if (seen[key]) { key = ""; lv = 0; }
+            else seen[key] = 1;
+          }
+          out[s][side][i] = { key: key, level: lv };
         });
       });
     });
@@ -72,7 +81,14 @@
       gearByChar: {},
       panel: { attack: "", hp: "", defense: "", critRate: 15, critDamage: 150, extraBP: "", skill1: 10, skill2: 10, burst: 10 },
       gear: blankGear(),
-      sim: { rolls: 5000, slots: 12, min: 1, max: 15, pool: D.overload.map(function (g) { return g.key; }) }
+      /* 洗练模拟（按部位）：只重洗「该部位被勾选的词条位」，其余词条保持现状。
+         active[部位] = 该部位 3 条词条的「参与重洗」开关（1 = 参与，0 = 锁定保留）。 */
+      sim: {
+        slot: "head",
+        active: { head: [1, 1, 1], body: [1, 1, 1], arms: [1, 1, 1], legs: [1, 1, 1] },
+        rolls: 5000, min: 1, max: 15,
+        pool: D.overload.map(function (g) { return g.key; })
+      }
     };
   }
 
@@ -98,11 +114,20 @@
         });
       }
       if (raw.sim) {
+        if (C.SLOTS.indexOf(raw.sim.slot) >= 0) d.sim.slot = raw.sim.slot;   // 旧存档无 slot → 默认 head
         d.sim.rolls = num(raw.sim.rolls, d.sim.rolls);
-        d.sim.slots = num(raw.sim.slots, d.sim.slots);
         d.sim.min = num(raw.sim.min, d.sim.min);
         d.sim.max = num(raw.sim.max, d.sim.max);
         if (Array.isArray(raw.sim.pool) && raw.sim.pool.length) d.sim.pool = raw.sim.pool;
+        if (raw.sim.active && typeof raw.sim.active === "object") {
+          C.SLOTS.forEach(function (s) {
+            var a = raw.sim.active[s];
+            if (Array.isArray(a) && a.length === 3) {
+              var norm = a.map(function (v) { return v ? 1 : 0; });
+              d.sim.active[s] = norm.some(Boolean) ? norm : [1, 1, 1];
+            }
+          });
+        }
       }
       if (raw.mode) d.mode = raw.mode;
       if (raw.byChar && typeof raw.byChar === "object") d.byChar = raw.byChar;
@@ -397,10 +422,16 @@
   }
 
   /* ---------------- 词条编辑 ---------------- */
-  function typeOptions(selected) {
+  /** 词条类型下拉。
+   *  exclude = 同部位其它行已占用的 key —— 同一件装备不可能出现重复词条，这些项置灰不可选。
+   *  仅 ① 当前装备（before）侧传 exclude；② 洗练目标（after）侧不传 —— 洗练时词条位置可能被打乱，
+   *  重复类型在目标侧是允许的，不做限制。 */
+  function typeOptions(selected, exclude) {
+    var ex = {};
+    (exclude || []).forEach(function (k) { if (k && k !== selected) ex[k] = 1; });
     var h = '<option value="">空（无词条）</option>';
     D.overload.forEach(function (g) {
-      h += '<option value="' + esc(g.key) + '"' + (g.key === selected ? " selected" : "") + '>' + esc(g.name) + "</option>";
+      h += '<option value="' + esc(g.key) + '"' + (g.key === selected ? " selected" : "") + (ex[g.key] ? " disabled" : "") + '>' + esc(g.name) + "</option>";
     });
     return h;
   }
@@ -458,7 +489,17 @@
     return '<span class="lv-wrap"><em>装备等级</em><select class="slot-lv" data-slot="'
       + slot + '" aria-label="' + SLOT_LABEL[slot] + '装备等级">' + gearLvOptions(cur) + "</select></span>";
   }
-  /* ① 当前装备：整块可编辑，是洗练的锚点记录（每部位 = 装备等级 + 3 条词条） */
+  /** 同一部位里「除第 idx 行以外」已被占用的词条类型（用于把类型下拉里的重复项置灰） */
+  function beforeSiblingKeys(slot, idx) {
+    var out = [];
+    for (var j = 0; j < 3; j++) {
+      if (j === idx) continue;
+      var k = state.gear[slot].before[j] && state.gear[slot].before[j].key;
+      if (k) out.push(k);
+    }
+    return out;
+  }
+  /* ① 当前装备：整块可编辑，是洗练的锚点记录（每部位 = 装备等级 + 3 条词条，词条类型同部位不重复） */
   function renderGearCurrent() {
     var html = "";
     C.SLOTS.forEach(function (slot) {
@@ -468,7 +509,7 @@
         var b = state.gear[slot].before[i];
         html += '<div class="opt-row" data-index="' + i + '"><div class="opt-idx" data-label>' + (i + 1) + "</div>"
           + '<div class="opt-side solo before">'
-          + '<select class="ty" data-side="before" data-index="' + i + '" aria-label="当前装备词条类型">' + typeOptions(b.key) + "</select>"
+          + '<select class="ty" data-side="before" data-index="' + i + '" aria-label="当前装备词条类型">' + typeOptions(b.key, beforeSiblingKeys(slot, i)) + "</select>"
           + '<select class="lv" data-side="before" data-index="' + i + '" aria-label="当前装备阶数">' + levelOptions(b.key, b.level) + "</select>"
           + "</div></div>";
       }
@@ -476,6 +517,18 @@
     });
     $("gear-current").innerHTML = html;
     bindGearSelects($("gear-current"));
+  }
+  /** ① 当前装备：某行类型变化后，重算同部位各行的类型下拉（刷新「已被占用」的置灰项） */
+  function refreshBeforeTypes(slot) {
+    var card = $("gear-current").querySelector('[data-slot="' + slot + '"]');
+    if (!card) return;
+    for (var i = 0; i < 3; i++) {
+      var row = card.querySelectorAll(".opt-row")[i];
+      if (!row) continue;
+      var ty = row.querySelector('select.ty[data-side="before"]');
+      if (!ty) continue;
+      ty.innerHTML = typeOptions(state.gear[slot].before[i].key, beforeSiblingKeys(slot, i));
+    }
   }
   /* ② 装备词条洗练：左=当前（只读参照） → 右=洗练目标（可编辑） */
   function renderGearTarget() {
@@ -525,9 +578,11 @@
       lv.innerHTML = levelOptions(ty.value, Math.trunc(num(lv.value)));
     }
     state.gear[slot][side][idx] = { key: ty.value, level: Math.max(0, Math.min(15, Math.trunc(num(lv.value)))) };
-    // 当前装备被改动 → 标记「未保存」，并同步刷新洗练面板左列的参照文本
+    // 当前装备被改动 → 标记「未保存」；同步刷新洗练面板左列的参照文本；
+    // 并重算同部位各行的类型下拉（把被占用的重复类型置灰 / 释放）
     if (side === "before") {
       gearDirty = true; renderGearState(); syncTargetRef(slot, idx);
+      if (e.target.classList.contains("ty")) refreshBeforeTypes(slot);
     }
     compute();
   }
@@ -553,9 +608,9 @@
       $("r-gear-table").querySelector("tbody").innerHTML = "";
       $("r-lines").innerHTML = '<p class="hint">请先完成左侧练度参数填写，面板三围为自动推导，无需手工输入。</p>';
       $("unit-table").innerHTML = "";
-      $("m-minmax").textContent = $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = "--";
+      $("m-cur").textContent = $("m-slotcur").textContent = $("m-minmax").textContent = "--";
+      $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = $("m-pctgain").textContent = "--";
       $("m-hist").innerHTML = "";
-      $("s-cur").textContent = $("s-tgt").textContent = $("s-delta").textContent = "--";
       setNotice("等待面板数据：请先在左侧选好角色与练度参数（面板三围会自动推导）", "");
       return;
     }
@@ -603,7 +658,7 @@
 
     renderUnitTable(pf);
     renderSim(pf);
-    renderSingle(pf);
+    renderActiveLocks();
   }
 
   /* ---------------- 单价表 ---------------- */
@@ -624,31 +679,40 @@
     $("unit-sub").textContent = "上排战力增量 / 下排词条数值";
   }
 
-  /* ---------------- 单条试算 ---------------- */
-  function renderSingleOptions(preferLevel) {
-    $("s-slot").innerHTML = C.SLOTS.map(function (s) { return '<option value="' + s + '">' + SLOT_LABEL[s] + "</option>"; }).join("");
-    $("s-index").innerHTML = [1, 2, 3].map(function (i) { return '<option value="' + (i - 1) + '">词条 ' + i + "</option>"; }).join("");
-    $("s-type").innerHTML = '<option value="">空（无词条）</option>' + D.overload.map(function (g) { return '<option value="' + esc(g.key) + '">' + esc(g.name) + "</option>"; }).join("");
-    var lv = preferLevel == null ? 1 : Math.max(0, Math.min(15, Math.trunc(num(preferLevel, 1))));
-    $("s-level").innerHTML = levelOptions($("s-type").value, lv);
+  /* ---------------- 洗练模拟（按部位） ----------------
+   * 对照游戏实际：洗练是「针对一件装备」做的 —— 可以锁住部分词条、只重洗其余。
+   * 因此这里按部位模拟：只重洗该部位被勾选的词条位，其余词条（含另外三个部位）保持
+   * 当前记录不变，输出洗后战力分布，用来判断「这件装备值不值得继续洗」。 */
+  function renderSimSlotOptions() {
+    $("m-slot").innerHTML = C.SLOTS.map(function (s) {
+      return '<option value="' + s + '"' + (s === state.sim.slot ? " selected" : "") + ">" + SLOT_LABEL[s] + "</option>";
+    }).join("");
   }
-  function oneText(r) {
-    return r.level ? (r.name + " " + r.level + " 阶 " + (r.valueText || "") + "（内部战力 " + fmt(r.bp) + "）") : (r.name + "（无词条）");
+  /** 该部位 3 条词条的「参与重洗」勾选（勾选 = 会被随机重洗；不勾 = 锁定保留现状） */
+  function renderActiveLocks() {
+    var el = $("m-active");
+    if (!el) return;
+    var slot = state.sim.slot;
+    var act = state.sim.active[slot] || [1, 1, 1];
+    var html = "";
+    for (var i = 0; i < 3; i++) {
+      var b = state.gear[slot].before[i];
+      var r = C.resolveOption(D, b.key, b.level);
+      var txt = r.level ? (esc(r.name) + " " + r.level + " 阶" + (r.valueText ? " · " + esc(r.valueText) : "")) : "空（无词条）";
+      html += '<label class="' + (act[i] ? "on" : "") + '"><input type="checkbox" data-idx="' + i + '"' + (act[i] ? " checked" : "") + ">"
+        + "<em>词条" + (i + 1) + "</em><b class=\"" + (r.level ? "" : "empty") + "\">" + txt + "</b></label>";
+    }
+    el.innerHTML = html;
+    el.querySelectorAll("input").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var arr = Array.prototype.map.call(el.querySelectorAll("input"), function (x) { return x.checked ? 1 : 0; });
+        if (!arr.some(Boolean)) { cb.checked = true; setNotice("至少要勾选 1 条词条参与重洗", "error"); return; }
+        state.sim.active[state.sim.slot] = arr;
+        Array.prototype.forEach.call(el.querySelectorAll("label"), function (l, i) { l.className = arr[i] ? "on" : ""; });
+        collectPanel(); renderSim(profile()); save(true);
+      });
+    });
   }
-  function renderSingle(pf) {
-    var slot = $("s-slot").value || "head";
-    var idx = Number($("s-index").value || 0);
-    var key = $("s-type").value;
-    var lv = Math.max(0, Math.min(15, Math.trunc(num($("s-level").value))));
-    var r = C.singleSwap(D.config, pf, D, flatGear("before"), slot, idx, key, lv);
-    $("s-cur").textContent = oneText(r.current);
-    $("s-tgt").textContent = oneText(r.target);
-    var el = $("s-delta");
-    el.textContent = sfmt(r.powerDelta) + "　(" + fmt(r.basePower) + " → " + fmt(r.afterPower) + ")";
-    el.className = r.powerDelta > 0 ? "pos" : r.powerDelta < 0 ? "neg" : "";
-  }
-
-  /* ---------------- 洗练模拟 ---------------- */
   function renderPool() {
     $("m-pool").innerHTML = D.overload.map(function (g) {
       var on = state.sim.pool.indexOf(g.key) >= 0;
@@ -657,34 +721,56 @@
     $("m-pool").querySelectorAll("input").forEach(function (cb) {
       cb.addEventListener("change", function () {
         state.sim.pool = Array.prototype.slice.call($("m-pool").querySelectorAll("input:checked")).map(function (x) { return x.value; });
-        renderSim(profile());
+        collectPanel(); renderSim(profile());
       });
     });
   }
   function renderSim(pf) {
-    if (!hasPanel()) { $("m-minmax").textContent = $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = "--"; $("m-hist").innerHTML = ""; return; }
+    if (!hasPanel()) {
+      $("m-cur").textContent = $("m-slotcur").textContent = $("m-minmax").textContent = "--";
+      $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = $("m-pctgain").textContent = "--";
+      $("m-hist").innerHTML = "";
+      return;
+    }
+    var slot = state.sim.slot;
     var pool = state.sim.pool.length ? state.sim.pool : D.overload.map(function (g) { return g.key; });
     var rolls = Math.max(100, Math.min(200000, Math.trunc(num($("m-rolls").value, 5000))));
-    var slots = Math.max(1, Math.min(12, Math.trunc(num($("m-slots").value, 12))));
     var minL = Math.max(1, Math.min(15, Math.trunc(num($("m-min").value, 1))));
     var maxL = Math.max(minL, Math.min(15, Math.trunc(num($("m-max").value, 15))));
-    // 未参与洗练的部位保留「洗前」词条的内部战力
-    var keepAll = C.gearSummary(D, flatGear("before")).bp;
-    var sim = C.simulate(D.config, pf, D, { pool: pool, rolls: rolls, slots: slots, minLevel: minL, maxLevel: maxL, keepBP: keepAll });
+    var base = C.gearSummary(D, flatGear("before"));
+    var cur = C.calcBattlePower(D.config, pf, base.bp).value;
+    var slotCur = base.slots[slot];
+    var act = state.sim.active[slot] || [1, 1, 1];
+    var activeIdx = [];
+    for (var i = 0; i < 3; i++) if (act[i]) activeIdx.push(i);
+    if (!activeIdx.length) activeIdx = [0, 1, 2];
+    var activeBP = 0;
+    activeIdx.forEach(function (i) { activeBP += slotCur.rows[i].bp; });
+    // 被锁定的词条（其它三个部位 + 本部位未勾选的词条）内部战力保持现状
+    var keepBP = base.bp - activeBP;
+    var sim = C.simulate(D.config, pf, D, {
+      pool: pool, rolls: rolls, slots: activeIdx.length,
+      minLevel: minL, maxLevel: maxL, keepBP: keepBP
+    });
+    $("m-cur").textContent = fmt(cur);
+    $("m-slotcur").textContent = SLOT_LABEL[slot] + " 内部战力 " + fmt(slotCur.bp) + " · 等效总阶 " + slotCur.totalLevel.toFixed(1)
+      + " · 重洗 " + activeIdx.length + " 条";
     $("m-minmax").textContent = fmt(sim.min) + " / " + fmt(sim.max);
     $("m-pct").textContent = fmt(sim.p10) + " / " + fmt(sim.p50) + " / " + fmt(sim.p90);
     $("m-mean").textContent = fmt(Math.round(sim.mean));
-    var cur = C.calcBattlePower(D.config, pf, keepAll).value;
     var dv = Math.round(sim.mean) - cur;
     var el = $("m-vs");
     el.textContent = sfmt(dv);
     el.className = dv > 0 ? "pos" : dv < 0 ? "neg" : "";
-    // 直方图（20 桶）
+    var g = $("m-pctgain");
+    g.textContent = sfmt(sim.p10 - cur) + " / " + sfmt(sim.p50 - cur) + " / " + sfmt(sim.p90 - cur);
+    g.className = (sim.p50 - cur) > 0 ? "pos" : (sim.p50 - cur) < 0 ? "neg" : "";
+    // 直方图（20 桶，横轴 = 洗后战力，从最低到最高）
     var B = 20, lo = sim.min, hi = sim.max, span = (hi - lo) || 1;
     var buckets = new Array(B).fill(0);
     sim.values.forEach(function (v) { var i = Math.min(B - 1, Math.floor((v - lo) / span * B)); buckets[i]++; });
     var m = Math.max.apply(null, buckets) || 1;
-    $("m-hist").innerHTML = buckets.map(function (c) { return '<i style="height:' + Math.max(2, Math.round(c / m * 66)) + 'px"></i>'; }).join("");
+    $("m-hist").innerHTML = buckets.map(function (c) { return '<i style="height:' + Math.max(2, Math.round(c / m * 100)) + 'px"></i>'; }).join("");
   }
 
   /* ---------------- 标定 ---------------- */
@@ -736,9 +822,9 @@
     renderPanel();
     renderGear();
     renderGearState();
-    renderSingleOptions();
+    renderSimSlotOptions();
+    renderActiveLocks();
     $("m-rolls").value = state.sim.rolls;
-    $("m-slots").value = state.sim.slots;
     $("m-min").value = state.sim.min;
     $("m-max").value = state.sim.max;
     renderPool();
@@ -911,18 +997,14 @@
     });
     $("btn-calibrate").addEventListener("click", calibrate);
 
-    ["s-slot", "s-index"].forEach(function (id) {
-      $(id).addEventListener("change", function () { collectPanel(); renderSingle(profile()); });
+    /* 洗练模拟（按部位）：部位切换 → 重绘该部位的勾选区 → 重算分布 */
+    $("m-slot").addEventListener("change", function () {
+      state.sim.slot = C.SLOTS.indexOf($("m-slot").value) >= 0 ? $("m-slot").value : "head";
+      collectPanel(); renderActiveLocks(); renderSim(profile()); save(true);
     });
-    $("s-type").addEventListener("change", function () {
-      $("s-level").innerHTML = levelOptions($("s-type").value, 1); // 换类型 → 阶数下拉整体重算（文本带数值）
-      collectPanel(); renderSingle(profile());
-    });
-    $("s-level").addEventListener("change", function () { collectPanel(); renderSingle(profile()); });
-    ["m-rolls", "m-slots", "m-min", "m-max"].forEach(function (id) {
+    ["m-rolls", "m-min", "m-max"].forEach(function (id) {
       $(id).addEventListener("input", function () {
         state.sim.rolls = num($("m-rolls").value, 5000);
-        state.sim.slots = num($("m-slots").value, 12);
         state.sim.min = num($("m-min").value, 1);
         state.sim.max = num($("m-max").value, 15);
         collectPanel(); renderSim(profile());
