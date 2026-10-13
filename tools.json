@@ -74,7 +74,7 @@
     {
       "id": "combat_power_beta",
       "name": "战力计算Beta",
-      "icon": "assets/nav_modstats.webp",
+      "icon": "assets/nav_combatpower.webp",
       "type": "web",
       "entry": "combat_power_beta/index.html?v=20261013a",
       "viewId": "appCombatPowerBeta",
