@@ -792,13 +792,16 @@
         return;
       }
       setNotice("正在同步到云端…", "");
+      // 先把「当前页面所见」静默落盘再上传：本页若从未交互过，localStorage 里还没有存档，
+      // 直接上传会得到「本地无数据」。这样点一下 = 同步当前状态，不用先手动点「保存」。
+      try { save(true); } catch (e) { /* 落盘失败也让上传按现有存档走，由 reason=empty 兜底 */ }
       var p = api.quickUpload(CLOUD_FID);
       if (p && typeof p.then === "function") {
         p.then(function (r) {
           paint();
           if (r && r.ok) setNotice("已同步到云端 · " + new Date().toLocaleTimeString("zh-CN", { hour12: false }), "ok");
           else if (r && (r.reason === "nologin" || r.reason === "noconfig" || r.reason === "noclient")) setNotice("未同步：请在弹出的账号面板中完成登录后重试", "error");
-          else if (r && r.reason === "empty") setNotice("本机暂无数据可同步，请先「保存」本页数据", "error");
+          else if (r && r.reason === "empty") setNotice("本机暂无数据可同步（存档为空）", "error");
           else setNotice("同步失败：" + ((r && r.message) || "未知错误"), "error");
         });
       }
