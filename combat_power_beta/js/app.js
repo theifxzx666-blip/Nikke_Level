@@ -149,10 +149,75 @@
     return state.loadout.rid;
   }
 
+  /* ---------------- 角色选择器 ----------------
+   * 原实现是 <input list=datalist>：输入框被预填成「拉毗：小红帽」，浏览器按当前值过滤候选，
+   * 点开只看到 1 条，等于没法选人。改为「筛选框 + 原生 <select>（按企业分组、拼音排序）」，
+   * 当前角色永远保留在列表里，切人后立即用新 rid 重推面板。 */
+  var CORP_ORDER = ["极乐净土", "米西利斯", "泰特拉", "朝圣者", "反常"];
+  function rosterSorted() {
+    return D.roster.slice().sort(function (a, b) {
+      return String(a.name).localeCompare(String(b.name), "zh-Hans-CN");
+    });
+  }
+  /** 重建角色下拉；kw 为筛选关键字（子串匹配，空=全量）。返回匹配人数。 */
+  function buildCharOptions(kw) {
+    var sel = $("char-input");
+    kw = String(kw || "").trim();
+    var keep = (sel.value || state.char || "").trim();
+    var list = rosterSorted();
+    if (kw) list = list.filter(function (r) { return String(r.name).indexOf(kw) >= 0; });
+
+    var pinned = null;
+    for (var i = 0; i < D.roster.length; i++) {
+      if (D.roster[i].name === keep) { pinned = D.roster[i]; break; }
+    }
+    var shown = pinned && list.some(function (r) { return r.rid === pinned.rid; });
+
+    var groups = {};
+    list.forEach(function (r) {
+      var c = CORP[r.corp] || ("企业" + r.corp);
+      (groups[c] = groups[c] || []).push(r);
+    });
+
+    var h = "";
+    if (pinned && !shown) {
+      h += '<optgroup label="当前角色"><option value="' + esc(pinned.name) + '">'
+        + esc(pinned.name) + "</option></optgroup>";
+    }
+    CORP_ORDER.concat(Object.keys(groups).filter(function (c) { return CORP_ORDER.indexOf(c) < 0; }))
+      .forEach(function (c) {
+        var arr = groups[c];
+        if (!arr || !arr.length) return;
+        h += '<optgroup label="' + esc(c) + "（" + arr.length + '）">'
+          + arr.map(function (r) { return '<option value="' + esc(r.name) + '">' + esc(r.name) + "</option>"; }).join("")
+          + "</optgroup>";
+      });
+    if (!h) h = '<option value="">（无匹配角色）</option>';
+
+    sel.innerHTML = h;
+    if (pinned) sel.value = pinned.name;
+
+    var el = $("char-count");
+    if (el) el.textContent = kw ? (list.length + " / " + D.roster.length + " 名") : (D.roster.length + " 名角色");
+    return list.length;
+  }
+  /** 切换角色：先落 rid，再重挂依赖角色的下拉（突破档 / 收藏品），最后重推面板 */
+  function onCharPicked() {
+    state.char = $("char-input").value.trim();
+    state.loadout.rid = currentRid();
+    renderBreakthroughOptions(); renderCollOptions(); renderCharMeta();
+    collectLoadout();
+    if (state.mode === "loadout" && state.loadout.auto) derivePanel();
+    save(true);
+  }
+
   /* ---------------- 练度模式 ---------------- */
   function renderLoadout() {
     var lo = state.loadout;
-    $("char-input").value = state.char || "";
+    var sel = $("char-input");
+    if (!sel.options.length) buildCharOptions("");
+    sel.value = state.char || "";
+    if (!sel.value && sel.options.length) { sel.selectedIndex = 0; state.char = sel.value; lo.rid = currentRid(); }
     $("l-level").value = lo.level;
     $("l-attr").value = lo.attr;
     $("l-e1").value = lo.e1; $("l-e2").value = lo.e2; $("l-e3").value = lo.e3; $("l-e4").value = lo.e4;
@@ -346,6 +411,8 @@
       setNotice("等待面板数据：请填入攻击力 / 生命 / 防御力", "");
       return;
     }
+    // 面板已就绪：清掉初始化阶段留下的「等待面板数据」提示
+    if ($("notice").textContent.indexOf("等待面板数据") === 0) setNotice("", "");
     var pf = profile();
     var res = C.compare(D.config, pf, D, flatGear("before"), flatGear("after"));
 
@@ -556,12 +623,12 @@
       setNotice("运行错误：" + e.message + " @ " + String(e.filename || "").split("/").pop() + ":" + e.lineno, "error");
     });
     if (!D || !C || !P) { setNotice("数据或内核加载失败", "error"); return; }
-    $("char-list").innerHTML = D.roster.map(function (r) { return '<option value="' + esc(r.name) + '"></option>'; }).join("");
     load();
     if (/[?&]demo=1/.test(window.location.search)) state = applyDemo();
+    buildCharOptions("");   // 角色下拉必须在 load() 之后建，否则选不中存档里的角色
     renderAll();
     setMode(state.mode || "loadout");
-    if (/[?&]demo=1/.test(window.location.search)) setNotice("已载入示例（拉毗：小红帽 · 同步器 492 · SR15 收藏 · 魔方15）—— 直接改中间栏词条即可看战力变化", "ok");
+    if (/[?&]demo=1/.test(window.location.search)) setNotice("已载入示例（拉毗：小红帽 · 同步器 492 · SR15 收藏 · 魔方15）—— 左上「角色」可切换全部 " + D.roster.length + " 名角色，改中间栏词条即可看战力变化", "ok");
 
     panelFields().forEach(function (p) { $(p[1]).addEventListener("input", compute); });
 
@@ -572,11 +639,9 @@
     });
     $("l-auto").addEventListener("change", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); });
     $("btn-derive").addEventListener("click", function () { collectLoadout(); derivePanel(); save(true); setNotice("已按练度参数重新推导面板", "ok"); });
-    $("char-input").addEventListener("input", function () {
-      state.char = $("char-input").value.trim();
-      renderBreakthroughOptions(); renderCollOptions(); renderCharMeta();
-      if (state.mode === "loadout" && state.loadout.auto) derivePanel();
-    });
+    $("char-input").addEventListener("change", onCharPicked);
+    $("char-input").addEventListener("input", onCharPicked);
+    $("char-search").addEventListener("input", function () { buildCharOptions($("char-search").value); });
     Array.prototype.forEach.call($("mode-switch").querySelectorAll("input"), function (r) {
       r.addEventListener("change", function () { collectLoadout(); setMode(r.value); save(true); });
     });

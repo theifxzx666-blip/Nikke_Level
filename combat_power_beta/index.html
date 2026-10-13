@@ -38,11 +38,17 @@
         </div>
 
         <div id="loadout-box">
-          <label class="row"><span>角色</span>
-            <input id="char-input" list="char-list" type="text" placeholder="输入角色名，如 拉毗：小红帽" autocomplete="off">
-          </label>
-          <datalist id="char-list"></datalist>
-          <p id="char-meta" class="meta">未选择角色</p>
+          <div class="grp">
+            <div class="grp-h"><b>角色</b><em id="char-count">—</em></div>
+            <label class="row"><span>筛选</span>
+              <input id="char-search" type="text" placeholder="输入关键字过滤，如 拉毗 / 小红帽 / 麦斯威尔" autocomplete="off">
+            </label>
+            <label class="row"><span>选择</span>
+              <select id="char-input"></select>
+            </label>
+            <p id="char-meta" class="meta">未选择角色</p>
+            <p class="hint">下拉按<b>企业</b>分组、按拼音排序；也可先在「筛选」框输入关键字缩小范围。切换角色后，职业研究 / 企业研究锚点与面板数值会立即重算。</p>
+          </div>
 
           <div class="grp">
             <div class="grp-h"><b>账号级参数</b><em>所有角色共用</em></div>
