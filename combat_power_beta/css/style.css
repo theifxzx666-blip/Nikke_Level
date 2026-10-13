@@ -32,6 +32,11 @@ code{background:rgba(226,232,240,.6);padding:1px 5px;border-radius:4px;font-size
 .btn:hover{border-color:#94a3b8;transform:translateY(-1px)}
 .btn.primary{border-color:transparent;background:var(--accent);color:#fff}
 .btn.danger{border-color:rgba(225,29,72,.3);color:#c2344f;background:rgba(255,241,244,.9)}
+/* 云同步按钮：绿色系（与父页面「账号同步」配色一致），未登录时描边态、已登录时实心态 */
+.btn.cloud{border-color:transparent;background:#1d9e75;color:#fff}
+.btn.cloud:hover{background:#178a64;border-color:transparent}
+.btn.cloud[data-state="out"]{background:#fff;color:#0f6e56;border-color:rgba(29,158,117,.5)}
+.btn.cloud[data-state="out"]:hover{background:#f0faf6;border-color:#1d9e75}
 
 .notice{min-height:22px;margin:0 4px 12px;font-size:12.5px;font-weight:600;color:var(--muted)}
 .notice.error{color:var(--down)} .notice.ok{color:var(--accent)}

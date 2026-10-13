@@ -114,8 +114,22 @@
     document.body.appendChild($ov);
   }
 
-  function open() { buildUI(); injectStyle(); $ov.classList.add("show"); render(); }
-  function close() { if ($ov) $ov.classList.remove("show"); }
+  /* open(focusFid)：可选传入功能 id，面板打开后自动定位并高亮该功能卡片
+     （供同源 iframe——如「战力计算Beta」——从自己的 Tab 直接唤起同步面板）。 */
+  var pendingFocus = null;
+  function open(focusFid) {
+    if (focusFid) pendingFocus = focusFid;
+    buildUI(); injectStyle(); $ov.classList.add("show"); render();
+  }
+  function close() { if ($ov) $ov.classList.remove("show"); pendingFocus = null; }
+  function highlightFeature(fid) {
+    var card = $inner.querySelector('[data-fid="' + fid + '"]');
+    if (!card) return;
+    try { card.scrollIntoView({ block: "nearest" }); } catch (e) {}
+    card.style.transition = "box-shadow .25s";
+    card.style.boxShadow = "0 0 0 2px #1d9e75";
+    setTimeout(function () { card.style.boxShadow = ""; }, 1800);
+  }
   function tip(msg) {
     var t = document.getElementById("toast");
     if (!t) { t = document.createElement("div"); t.id = "toast"; t.className = "toast"; document.body.appendChild(t); }
@@ -236,6 +250,12 @@
     for (i = 0; i < states.length; i++) {
       attachFeaEvents(wrap, states[i].f.id, states[i].cloud, states[i].ok);
     }
+    // 由 iframe 唤起时定位到对应功能卡片（refreshFeatures 是异步重建的，只能在这里消费）
+    if (pendingFocus) {
+      var focusFid = pendingFocus;
+      pendingFocus = null;
+      highlightFeature(focusFid);
+    }
   }
 
   function feaCard(fid, name, local, cloudAt) {
@@ -290,6 +310,56 @@
     });
   }
 
+  /* ============ 对外直连接口（供同源 iframe 在自己的 Tab 里快速同步） ============
+     典型调用方：combat_power_beta/index.html（战力计算Beta）的工具栏按钮。
+     - status()            → { configured, loggedIn, email }
+     - quickUpload(fid)    → 已登录：直接把本地存档推到云端；未登录/未配置：打开面板引导
+     - open(fid)           → 打开完整面板（上传 / 下载覆盖 / 查看云端时间）并定位到该功能
+     注意：面板未打开过时 supabase 客户端可能还没建，这里做一次兜底创建。 */
+  function featureById(id) {
+    for (var i = 0; i < FEATURES.length; i++) if (FEATURES[i].id === id) return FEATURES[i];
+    return null;
+  }
+  function status() {
+    return { configured: configured(), loggedIn: !!curUser, email: curUser ? (curUser.email || curUser.id || "") : "" };
+  }
+  function ensureClient() {
+    if (supabase) return true;
+    if (!configured()) return false;
+    try { supabase = sdk.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { supabase = null; }
+    return !!supabase;
+  }
+  async function currentUser() {
+    if (curUser) return curUser;
+    try {
+      var r = await supabase.auth.getSession();
+      curUser = r && r.data && r.data.session ? r.data.session.user : null;
+    } catch (e) { /* 忽略，按未登录处理 */ }
+    return curUser;
+  }
+  async function quickUpload(fid) {
+    var f = featureById(fid);
+    if (!f) { tip("未知的功能：" + fid); return { ok: false, reason: "unknown" }; }
+    if (!configured()) { tip("云同步功能当前未配置，暂时无法使用"); return { ok: false, reason: "noconfig" }; }
+    if (!ensureClient()) { tip("同步组件加载失败，请刷新页面后重试"); return { ok: false, reason: "noclient" }; }
+    if (!(await currentUser())) {
+      open(fid);                                   // 未登录 → 打开面板走登录（登录后点「上传本地」）
+      tip("请先登录账号，登录后点「上传本地」即可同步");
+      return { ok: false, reason: "nologin" };
+    }
+    var obj = parseSafe(getLocal(f));
+    if (!obj) { tip("本地暂无有效数据，无法上传"); return { ok: false, reason: "empty" }; }
+    try {
+      var r = await uploadOne(f, obj);
+      if (r.error) throw r.error;
+      tip("「" + f.name + "」已同步到云端");
+      return { ok: true, at: new Date().toISOString() };
+    } catch (e) {
+      tip("同步失败：" + (e.message || "未知错误"));
+      return { ok: false, reason: "error", message: e.message };
+    }
+  }
+
   /* ============ 认证 ============ */
   async function doAuth(mode) {
     var email = $inner.querySelector("#nkEmail").value.trim();
@@ -335,7 +405,7 @@
     b.textContent = "👤 账号同步";
     b.title = "登录后云端同步你的数据";
     b.classList.add("nk-acc-btn");
-    b.addEventListener("click", open);
+    b.addEventListener("click", function () { open(); });
     toolbar.appendChild(b);
   }
 
@@ -380,8 +450,17 @@
     }
   }
 
-  /* 暴露给同源 iframe（定制模组统计页）复用账号同步面板；放在 init 之前，不依赖初始化是否成功 */
-  window.__nikkeSync = { open: open };
+  /* 暴露给同源 iframe 复用账号同步能力（定制模组统计页 / 战力计算Beta 等）；
+     放在 init 之前，不依赖初始化是否成功。 */
+  window.__nikkeSync = {
+    open: function (focusFid) { open(focusFid); },
+    close: close,
+    status: status,
+    quickUpload: quickUpload,
+    features: function () {
+      return FEATURES.map(function (f) { return { id: f.id, name: f.name, ls: f.ls }; });
+    }
+  };
 
   init();
 })();

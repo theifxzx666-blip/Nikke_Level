@@ -735,6 +735,78 @@
     return d;
   }
 
+  /* ---------------- 云端同步（同源 iframe 内直连父页面的账号同步模块） ----------------
+   * 本页在「工具箱」里是以同源 iframe 打开的，父页面（资源规划计算器）的 js/sync.js 通过
+   * window.__nikkeSync 暴露了账号状态与「快速上传」。因此这里不需要重复一套登录 UI：
+   *   · 已登录 → 一键把本 Tab 的练度 + 整套装备词条（localStorage: KEY）推到云端；
+   *   · 未登录 → 唤起父页面账号面板完成登录（面板会自动定位到「战力计算Beta」卡片）；
+   *   · 单独打开本页（没有父页面接口）→ 两个按钮保持隐藏，不误导用户。
+   */
+  var CLOUD_FID = "combat_power_beta";
+
+  function cloudApi() {
+    try {
+      if (window.parent && window.parent !== window && window.parent.__nikkeSync) return window.parent.__nikkeSync;
+    } catch (e) { /* 跨域等异常：视为不可用 */ }
+    return null;
+  }
+  function cloudStatus(api) {
+    try { return (api && api.status) ? api.status() : null; } catch (e) { return null; }
+  }
+
+  function initCloudSync() {
+    var api = cloudApi();
+    var btnQuick = $("btn-cloud-sync");
+    var btnAcct = $("btn-account");
+    if (!btnQuick && !btnAcct) return;
+    if (!api) {                              // 独立打开：本页不适用云同步入口
+      if (btnQuick) btnQuick.hidden = true;
+      if (btnAcct) btnAcct.hidden = true;
+      return;
+    }
+    if (btnQuick) btnQuick.hidden = false;
+    if (btnAcct) btnAcct.hidden = false;
+
+    function paint() {
+      var st = cloudStatus(api);
+      var on = !!(st && st.loggedIn);
+      if (btnQuick) {
+        btnQuick.dataset.state = on ? "in" : "out";
+        btnQuick.title = on
+          ? "把本页的角色练度 + 整套装备词条一键同步到云端" + (st.email ? "（" + st.email + "）" : "")
+          : "尚未登录：点击后打开账号面板，登录后可一键同步";
+      }
+      if (btnAcct) btnAcct.title = on ? "打开账号云同步面板（可下载覆盖 / 查看云端时间）" : "登录并管理云端数据";
+    }
+
+    paint();
+    window.addEventListener("focus", paint);
+    document.addEventListener("visibilitychange", paint);
+
+    if (btnQuick) btnQuick.addEventListener("click", function () {
+      var st = cloudStatus(api);
+      if (!st || !st.configured) { setNotice("云同步暂不可用（组件未就绪或网络受限）", "error"); return; }
+      if (!st.loggedIn) {
+        api.open(CLOUD_FID);                 // 打开面板走登录；面板会高亮本功能卡片
+        setNotice("请先登录账号，登录后点「上传本地」即可同步", "");
+        return;
+      }
+      setNotice("正在同步到云端…", "");
+      var p = api.quickUpload(CLOUD_FID);
+      if (p && typeof p.then === "function") {
+        p.then(function (r) {
+          paint();
+          if (r && r.ok) setNotice("已同步到云端 · " + new Date().toLocaleTimeString("zh-CN", { hour12: false }), "ok");
+          else if (r && (r.reason === "nologin" || r.reason === "noconfig" || r.reason === "noclient")) setNotice("未同步：请在弹出的账号面板中完成登录后重试", "error");
+          else if (r && r.reason === "empty") setNotice("本机暂无数据可同步，请先「保存」本页数据", "error");
+          else setNotice("同步失败：" + ((r && r.message) || "未知错误"), "error");
+        });
+      }
+    });
+
+    if (btnAcct) btnAcct.addEventListener("click", function () { api.open(CLOUD_FID); });
+  }
+
   function init() {
     window.addEventListener("error", function (e) {
       setNotice("运行错误：" + e.message + " @ " + String(e.filename || "").split("/").pop() + ":" + e.lineno, "error");
@@ -826,6 +898,8 @@
       + " 人 · 词条 " + D.overload.length + " 类 × 15 阶 · 魔方 " + D.cubes.length + " · 属性曲线组 "
       + Object.keys(D.curves).length + " · CharacterStatTable <code>" + esc((s.CharacterStatTable || "").slice(0, 8))
       + "</code> · ConfigGameTable <code>" + esc((s.ConfigGameTable || "").slice(0, 8)) + "</code>";
+
+    initCloudSync();
   }
   document.addEventListener("DOMContentLoaded", init);
 })();
