@@ -29,6 +29,20 @@
     return g;
   }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  /** 清洗任意来源的装备结构（存档 / byChar）为规范形状，缺项补空 */
+  function normalizeGear(g) {
+    var out = blankGear();
+    C.SLOTS.forEach(function (s) {
+      if (!g || !g[s]) return;
+      ["before", "after"].forEach(function (side) {
+        ((g[s] && g[s][side]) || []).slice(0, 3).forEach(function (row, i) {
+          if (!row) return;
+          out[s][side][i] = { key: String(row.key || ""), level: Math.max(0, Math.min(15, Math.trunc(num(row.level)))) };
+        });
+      });
+    });
+    return out;
+  }
   /** state.gear 按位分开存，内核按 {head:[…],body:[…],…} 取用，这里做扁平化 */
   function flatGear(side) {
     var o = {};
@@ -48,8 +62,10 @@
         rp: 100, rc: 100, rk: 100, corpBonus: false, auto: true
       },
       /* 角色级参数按 rid 记忆：切换角色时不会因为新角色档位更少而被清空
-         （R 只有 1 档 / SR 只有 3 档，切过去会把突破压到 0，切回来必须能恢复） */
+         （R 只有 1 档 / SR 只有 3 档，切过去会把突破压到 0，切回来必须能恢复）；
+         gear 一并按角色记忆 —— 每个角色各有自己的整套装备词条。 */
       byChar: {},
+      gearByChar: {},
       panel: { attack: "", hp: "", defense: "", critRate: 15, critDamage: 150, extraBP: "", skill1: 10, skill2: 10, burst: 10 },
       gear: blankGear(),
       sim: { rolls: 5000, slots: 12, min: 1, max: 15, pool: D.overload.map(function (g) { return g.key; }) }
@@ -66,15 +82,7 @@
       var d = defaults();
       if (raw.char) d.char = raw.char;
       Object.keys(d.panel).forEach(function (k) { if (raw.panel && raw.panel[k] !== undefined && raw.panel[k] !== null) d.panel[k] = raw.panel[k]; });
-      C.SLOTS.forEach(function (s) {
-        if (!raw.gear || !raw.gear[s]) return;
-        ["before", "after"].forEach(function (side) {
-          (raw.gear[s][side] || []).slice(0, 3).forEach(function (row, i) {
-            if (!row) return;
-            d.gear[s][side][i] = { key: String(row.key || ""), level: Math.max(0, Math.min(15, Math.trunc(num(row.level)))) };
-          });
-        });
-      });
+      d.gear = normalizeGear(raw.gear);
       if (raw.sim) {
         d.sim.rolls = num(raw.sim.rolls, d.sim.rolls);
         d.sim.slots = num(raw.sim.slots, d.sim.slots);
@@ -84,16 +92,23 @@
       }
       if (raw.mode) d.mode = raw.mode;
       if (raw.byChar && typeof raw.byChar === "object") d.byChar = raw.byChar;
+      if (raw.gearByChar && typeof raw.gearByChar === "object") d.gearByChar = raw.gearByChar;
       if (raw.loadout) {
         Object.keys(d.loadout).forEach(function (k) {
           if (raw.loadout[k] !== undefined && raw.loadout[k] !== null) d.loadout[k] = raw.loadout[k];
         });
       }
       state = d;
+      // 装备词条按角色恢复：该角色有记录就用它；没有则把工作副本回写成它的记录（兼容旧存档）
+      var gb = state.gearByChar[String(state.loadout.rid)];
+      if (gb) state.gear = normalizeGear(gb);
+      else state.gearByChar[String(state.loadout.rid)] = clone(state.gear);
     } catch (e) { /* 忽略损坏存档 */ }
   }
   function save(silent) {
     collectPanel();
+    // 落盘前把「当前角色的工作副本」写回按角色的记录，保证云同步/导出都带上整套装备词条
+    state.gearByChar[String(state.loadout.rid)] = clone(state.gear);
     try { localStorage.setItem(KEY, JSON.stringify(state)); if (!silent) setNotice("已保存到本机浏览器", "ok"); }
     catch (e) { setNotice("保存失败：" + e.message, "error"); }
   }
@@ -212,12 +227,13 @@
     if (el) el.textContent = kw ? (list.length + " / " + D.roster.length + " 名") : (D.roster.length + " 名角色");
     return list.length;
   }
-  /* 角色级参数记忆：突破档 / 收藏品会随角色重建下拉，若不记忆，切到低档角色再切回来会被清空 */
+  /* 角色级记忆：突破档 / 收藏品 / 整套装备词条 —— 都随角色切换而存取 */
   var CHAR_KEYS = ["bt", "coll"];
   function rememberChar(rid) {
     if (rid == null) return;
     var o = {};
     CHAR_KEYS.forEach(function (k) { o[k] = state.loadout[k]; });
+    o.gear = clone(state.gear);       // 该角色的整套装备词条（当前 + 洗练目标）
     state.byChar[String(rid)] = o;
   }
   function recallChar(rid) {
@@ -225,14 +241,17 @@
     CHAR_KEYS.forEach(function (k) {
       state.loadout[k] = (saved && saved[k] !== undefined && saved[k] !== null) ? saved[k] : d[k];
     });
+    // 恢复该角色的装备词条；没记录就从零录入（新角色各录各的）
+    state.gear = (saved && saved.gear) ? normalizeGear(saved.gear) : blankGear();
   }
-  /** 切换角色：记住旧角色 → 落新 rid → 恢复新角色的档位/收藏品 → 重挂依赖角色的下拉 → 重推面板 */
+  /** 切换角色：记住旧角色 → 落新 rid → 恢复新角色的档位/收藏品/装备 → 重挂下拉 → 重推面板 */
   function onCharPicked() {
     rememberChar(state.loadout.rid);
     state.char = $("char-input").value.trim();
     state.loadout.rid = currentRid();
     recallChar(state.loadout.rid);
     renderBreakthroughOptions(); renderCollOptions(); renderCharMeta();
+    renderGear(); gearDirty = false; renderGearState();
     collectLoadout();
     if (state.mode === "loadout" && state.loadout.auto) derivePanel();
     save(true);
@@ -387,26 +406,78 @@
     return h;
   }
   function lvlText(r) { return r.level ? (r.level + " 阶 " + (r.valueText || "")) : "空"; }
-  function renderGear() {
+  function overloadName(key) {
+    for (var i = 0; i < D.overload.length; i++) if (D.overload[i].key === key) return D.overload[i].name;
+    return "";
+  }
+  /** 洗练面板左列的「当前装备」只读参照文本 */
+  function curRefText(r) {
+    if (!r || !r.level || !r.key) return "空";
+    var vt = C.statValueText(D, r.key, r.level);
+    return (overloadName(r.key) || "—") + " " + r.level + " 阶" + (vt ? " · " + vt : "");
+  }
+  /* 当前装备记录的保存状态（「未录入 / 未保存 / 已保存」） */
+  var gearDirty = false;
+  function gearFilled() {
+    var any = false;
+    C.SLOTS.forEach(function (s) {
+      state.gear[s].before.forEach(function (r) { if (r.key && r.level) any = true; });
+    });
+    return any;
+  }
+  function renderGearState() {
+    var el = $("gear-save-tag");
+    if (!el) return;
+    var txt, warn = false;
+    if (!gearFilled()) txt = "未录入";
+    else if (gearDirty) { txt = "未保存"; warn = true; }
+    else txt = "已保存";
+    el.textContent = txt;
+    el.className = "tag" + (warn ? " warn" : "");
+  }
+  function renderGear() { renderGearCurrent(); renderGearTarget(); }
+  /* ① 当前装备词条：整块可编辑，是洗练的锚点记录 */
+  function renderGearCurrent() {
     var html = "";
     C.SLOTS.forEach(function (slot) {
-      html += '<article class="gear-card" data-slot="' + slot + '"><h3>' + SLOT_LABEL[slot] + "</h3>";
+      html += '<article class="gear-card" data-grid="before" data-slot="' + slot + '"><h3>' + SLOT_LABEL[slot] + "</h3>";
+      for (var i = 0; i < 3; i++) {
+        var b = state.gear[slot].before[i];
+        html += '<div class="opt-row" data-index="' + i + '"><div class="opt-idx" data-label>' + (i + 1) + "</div>"
+          + '<div class="opt-side solo before">'
+          + '<select class="ty" data-side="before" data-index="' + i + '" aria-label="当前装备词条类型">' + typeOptions(b.key) + "</select>"
+          + '<select class="lv" data-side="before" data-index="' + i + '" aria-label="当前装备阶数">' + levelOptions(b.key, b.level) + "</select>"
+          + "</div></div>";
+      }
+      html += "</article>";
+    });
+    $("gear-current").innerHTML = html;
+    bindGearSelects($("gear-current"));
+  }
+  /* ② 装备词条洗练：左=当前（只读参照） → 右=洗练目标（可编辑） */
+  function renderGearTarget() {
+    var html = "";
+    C.SLOTS.forEach(function (slot) {
+      html += '<article class="gear-card" data-grid="after" data-slot="' + slot + '"><h3>' + SLOT_LABEL[slot] + "</h3>";
       for (var i = 0; i < 3; i++) {
         var b = state.gear[slot].before[i], a = state.gear[slot].after[i];
+        var ref = curRefText(b);
         html += '<div class="opt-row" data-index="' + i + '"><div class="opt-idx" data-label>' + (i + 1) + "</div>"
-          + '<div class="opt-sides">'
-          + '<div class="opt-side before"><i class="side-tag">当前</i><select class="ty" data-side="before" data-index="' + i + '" aria-label="当前装备词条类型">' + typeOptions(b.key) + "</select>"
-          + '<select class="lv" data-side="before" data-index="' + i + '" aria-label="当前装备阶数">' + levelOptions(b.key, b.level) + "</select></div>"
-          + '<div class="opt-side after"><i class="side-tag">目标</i><select class="ty" data-side="after" data-index="' + i + '" aria-label="洗练目标词条类型">' + typeOptions(a.key) + "</select>"
-          + '<select class="lv" data-side="after" data-index="' + i + '" aria-label="洗练目标阶数">' + levelOptions(a.key, a.level) + "</select></div>"
-          + "</div></div>";
+          + '<div class="opt-cmp">'
+          + '<span class="cur-ref' + (b.level ? "" : " empty") + '" title="当前装备：' + esc(ref) + '">' + esc(ref) + "</span>"
+          + '<span class="arrow">→</span>'
+          + '<div class="opt-side solo after">'
+          + '<select class="ty" data-side="after" data-index="' + i + '" aria-label="洗练目标词条类型">' + typeOptions(a.key) + "</select>"
+          + '<select class="lv" data-side="after" data-index="' + i + '" aria-label="洗练目标阶数">' + levelOptions(a.key, a.level) + "</select>"
+          + "</div></div></div>";
       }
       html += '<div class="gear-foot"><span>内部战力 / 战力变化</span><b data-gear-delta>--</b></div></article>';
     });
-    $("gear-grid").innerHTML = html;
-    $("gear-grid").querySelectorAll("select").forEach(function (el) {
-      el.addEventListener("change", onGearChange);
-    });
+    $("gear-target").innerHTML = html;
+    bindGearSelects($("gear-target"));
+  }
+  function bindGearSelects(root) {
+    root.querySelectorAll("select").forEach(function (el) { el.addEventListener("change", onGearChange); });
   }
   function onGearChange(e) {
     var card = e.target.closest(".gear-card");
@@ -421,7 +492,23 @@
       lv.innerHTML = levelOptions(ty.value, Math.trunc(num(lv.value)));
     }
     state.gear[slot][side][idx] = { key: ty.value, level: Math.max(0, Math.min(15, Math.trunc(num(lv.value)))) };
+    // 当前装备被改动 → 标记「未保存」，并同步刷新洗练面板左列的参照文本
+    if (side === "before") {
+      gearDirty = true; renderGearState(); syncTargetRef(slot, idx);
+    }
     compute();
+  }
+  /** 只更新洗练面板某一行的「当前」参照文本，避免整块重绘打断编辑 */
+  function syncTargetRef(slot, idx) {
+    var card = $("gear-target").querySelector('[data-slot="' + slot + '"]');
+    if (!card) return;
+    var row = card.querySelectorAll('.opt-row[data-index="' + idx + '"]')[0];
+    var ref = row && row.querySelector(".cur-ref");
+    if (!ref) return;
+    var b = state.gear[slot].before[idx], txt = curRefText(b);
+    ref.textContent = txt;
+    ref.title = "当前装备：" + txt;
+    ref.className = "cur-ref" + (b.level ? "" : " empty");
   }
 
   /* ---------------- 计算与渲染 ---------------- */
@@ -472,9 +559,9 @@
     });
     $("r-lines").innerHTML = lines.length ? lines.join("") : '<p class="hint">尚未设置任何词条。</p>';
 
-    // 每个部位脚的汇总
+    // 每个部位脚的汇总（挂在洗练面板的部位卡上）
     C.SLOTS.forEach(function (slot) {
-      var card = $("gear-grid").querySelector('[data-slot="' + slot + '"]');
+      var card = $("gear-target").querySelector('[data-slot="' + slot + '"]');
       var row = res.gearRows.filter(function (x) { return x.slot === slot; })[0];
       var b = card.querySelector("[data-gear-delta]");
       b.textContent = sfmt(row.bpDelta) + " / " + sfmt(row.powerDelta);
@@ -615,6 +702,7 @@
   function renderAll() {
     renderPanel();
     renderGear();
+    renderGearState();
     renderSingleOptions();
     $("m-rolls").value = state.sim.rolls;
     $("m-slots").value = state.sim.slots;
@@ -643,6 +731,7 @@
     d.gear.body.after = [opt("攻击力", 5), opt("暴击率", 5), opt("防御力", 1)];
     d.gear.arms.after = [opt("最大装弹数", 5), opt("攻击力", 5), opt("命中率", 2)];
     d.gear.legs.after = [opt("优越代码伤害", 3), opt("攻击力", 4), opt("优越代码伤害", 5)];
+    d.gearByChar = { "16": clone(d.gear) };   // 装备词条按角色记录，示例角色 rid=16
     return d;
   }
 
@@ -679,12 +768,27 @@
       C.SLOTS.forEach(function (s) { state.gear[s].after = clone(state.gear[s].before); });
       renderGear(); compute(); save(true); setNotice("已把「当前装备」复制到「洗练目标」", "ok");
     });
+    /* ① 保存「当前装备词条」记录（每角色一套，随存档 / 云同步一起走） */
+    $("btn-save-gear").addEventListener("click", function () {
+      collectLoadout();
+      gearDirty = false;
+      save(false);
+      renderGearState();
+      setNotice("已保存「" + (state.char || "当前角色") + "」的当前装备词条（4 部位 × 3 条，按角色分别记录）", "ok");
+    });
+    $("btn-clear-gear").addEventListener("click", function () {
+      if (!window.confirm("清空「" + (state.char || "当前角色") + "」的整套装备词条（当前装备 + 洗练目标）？")) return;
+      state.gear = blankGear(); gearDirty = false;
+      renderGear(); compute(); renderGearState(); save(true);
+      setNotice("已清空当前角色的装备词条", "ok");
+    });
     /* 洗练满意 → 把「洗练目标」固化为「当前装备」并保存（装备套装随存档一起落盘） */
     $("btn-commit-after").addEventListener("click", function () {
-      if (!hasPanel()) { setNotice("请先填写攻击力 / 生命 / 防御力", "error"); return; }
+      if (!hasPanel()) { setNotice("请先在左侧选好角色与练度参数（面板三围会自动推导）", "error"); return; }
       if (!window.confirm("把「洗练目标」覆盖为「当前装备」并保存？原「当前装备」词条将被替换。")) return;
       C.SLOTS.forEach(function (s) { state.gear[s].before = clone(state.gear[s].after); });
-      renderGear(); compute(); save(true);
+      gearDirty = false;
+      renderGear(); compute(); renderGearState(); save(true);
       setNotice("已用洗练结果覆盖「当前装备」——练度 + 整套装备词条已一并保存", "ok");
     });
     $("btn-save").addEventListener("click", function () { save(false); });
@@ -694,7 +798,8 @@
     $("file-import").addEventListener("change", function () { if (this.files && this.files[0]) importJson(this.files[0]); this.value = ""; });
     $("btn-reset").addEventListener("click", function () {
       if (!window.confirm("清空当前全部输入并重置？")) return;
-      localStorage.removeItem(KEY); state = defaults(); renderAll(); setMode(state.mode); setNotice("已重置", "ok");
+      localStorage.removeItem(KEY); state = defaults(); gearDirty = false;
+      renderAll(); setMode(state.mode); setNotice("已重置", "ok");
     });
     $("btn-calibrate").addEventListener("click", calibrate);
 

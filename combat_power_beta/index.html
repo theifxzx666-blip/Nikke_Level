@@ -131,18 +131,36 @@
       </div>
     </section>
 
-    <!-- ======== 中：词条 ======== -->
-    <section class="panel center">
-      <div class="panel-head"><h2>装备词条洗练</h2><span class="tag">① 当前装备 → ② 洗练目标</span></div>
-      <div class="panel-body">
-        <p class="gear-tip">先录入你在游戏里的<b>当前装备词条</b>作为锚点（左列），再设置<b>洗练目标</b>（右列）实时对比战力；结果满意时点「确认洗练」把目标覆盖成当前装备并保存。</p>
-        <div class="gear-ops">
-          <button id="btn-copy-before" class="btn" type="button">洗练目标 ← 当前装备</button>
-          <button id="btn-commit-after" class="btn primary" type="button">确认洗练 → 覆盖当前装备</button>
+    <!-- ======== 中：装备词条（① 当前记录 / ② 洗练，分开展示） ======== -->
+    <div class="center center-stack">
+      <!-- ① 当前装备词条：选好角色后先录入并保存，它是洗练的基准 -->
+      <section class="panel">
+        <div class="panel-head"><h2>① 当前装备词条</h2><span class="tag" id="gear-save-tag">未录入</span></div>
+        <div class="panel-body">
+          <p class="gear-tip">先选好角色，再把该角色在游戏里的<b>整套装备词条</b>（4 部位 × 3 条）录入这里并<b>保存</b>。
+            这份记录是下方「装备词条洗练」的<b>基准</b>，且<b>按角色分别记录</b>——换角色会自动切到该角色自己的装备。</p>
+          <div class="gear-ops">
+            <button id="btn-save-gear" class="btn primary" type="button">保存当前装备词条</button>
+            <button id="btn-clear-gear" class="btn" type="button">清空</button>
+          </div>
+          <div id="gear-current"></div>
         </div>
-        <div id="gear-grid"></div>
-      </div>
-    </section>
+      </section>
+
+      <!-- ② 装备词条洗练：基于上面的当前记录设定目标并实时对比 -->
+      <section class="panel">
+        <div class="panel-head"><h2>② 装备词条洗练</h2><span class="tag">基于当前装备</span></div>
+        <div class="panel-body">
+          <p class="gear-tip">左列是上面已保存的<b>当前装备</b>（只读参照），右列是<b>洗练目标</b>：改动右侧即实时对比战力；
+            结果满意时点「确认洗练」把目标覆盖成当前装备并保存。</p>
+          <div class="gear-ops">
+            <button id="btn-copy-before" class="btn" type="button">洗练目标 ← 当前装备</button>
+            <button id="btn-commit-after" class="btn primary" type="button">确认洗练 → 覆盖当前装备</button>
+          </div>
+          <div id="gear-target"></div>
+        </div>
+      </section>
+    </div>
 
     <!-- ======== 右：结果 ======== -->
     <section class="panel result">

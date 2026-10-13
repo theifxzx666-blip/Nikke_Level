@@ -63,7 +63,9 @@ input[type=number]{text-align:right}
 .meta{margin:2px 0 12px;font-size:12px;color:var(--muted)}
 .hint{margin:8px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5}
 
-/* 词条 */
+/* 词条（中栏：当前记录 / 洗练 两块） */
+.center-stack{display:grid;gap:14px}
+.tag.warn{color:var(--warn);background:rgba(180,83,9,.10)}
 .gear-tip{margin:0 0 10px;font-size:11.5px;color:var(--muted);line-height:1.55}
 .gear-tip b{color:#334155;font-weight:700}
 .gear-ops{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -74,14 +76,20 @@ input[type=number]{text-align:right}
 .opt-row{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;
   padding:7px 0;border-top:1px dashed var(--line)}
 .opt-row:first-of-type{border-top:0}
-.opt-sides{display:grid;gap:5px}
 .opt-side{display:grid;grid-template-columns:40px 1fr 118px;gap:6px;align-items:center}
+.opt-side.solo{grid-template-columns:minmax(0,1fr) 118px}
 .side-tag{font-style:normal;font-size:11px;font-weight:700;color:#94a3b8;text-align:center;
   background:rgba(241,245,249,.9);border-radius:var(--r-sm);padding:3px 0;line-height:1}
 .opt-side.after .side-tag{color:var(--accent);background:var(--accent-soft)}
 .opt-side select.lv{font-size:11.5px;padding:2px 4px;font-variant-numeric:tabular-nums}
 .opt-side.before select{border-left:3px solid #cbd5e1}
 .opt-side.after select{border-left:3px solid var(--accent)}
+/* 洗练面板：左「当前」只读参照 → 右「目标」可编辑 */
+.opt-cmp{display:grid;grid-template-columns:minmax(0,1fr) 16px minmax(0,1.05fr);gap:6px;align-items:center}
+.opt-cmp .arrow{text-align:center;color:#94a3b8;font-weight:700;font-size:12px}
+.cur-ref{font-size:11.5px;line-height:1.35;color:#475569;background:rgba(241,245,249,.9);
+  border-radius:var(--r-sm);padding:4px 8px;overflow-wrap:anywhere;border-left:3px solid #cbd5e1}
+.cur-ref.empty{color:#94a3b8;font-style:italic}
 .opt-delta{font-size:11.5px;color:var(--muted);text-align:right}
 .opt-idx{display:flex;align-items:center;justify-content:center;height:26px;border-radius:var(--r-sm);
   background:rgba(241,245,249,.9);color:#64748b;font-size:11.5px;font-weight:700}
