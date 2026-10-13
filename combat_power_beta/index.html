@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIKKE 战力计算器</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="page">
+  <header class="toolbar">
+    <div>
+      <h1>NIKKE 战力计算器</h1>
+      <p class="subtitle">洗词条 · 实时看战力变化 · 公式取自客户端反编译源码</p>
+    </div>
+    <div class="toolbar-actions">
+      <button id="btn-calibrate" class="btn" type="button">按游戏内战力标定</button>
+      <button id="btn-copy-before" class="btn" type="button">洗后 ← 洗前</button>
+      <button id="btn-save" class="btn" type="button">保存</button>
+      <button id="btn-load" class="btn" type="button">读取</button>
+      <button id="btn-export" class="btn" type="button">导出 JSON</button>
+      <button id="btn-import" class="btn" type="button">导入 JSON</button>
+      <button id="btn-reset" class="btn danger" type="button">重置</button>
+      <input id="file-import" type="file" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <p id="notice" class="notice" role="status" aria-live="polite"></p>
+
+  <div class="layout">
+    <!-- ======== 左：面板 ======== -->
+    <section class="panel">
+      <div class="panel-head"><h2>面板属性</h2><span class="tag" id="mode-tag">练度模式</span></div>
+      <div class="panel-body">
+        <div class="mode-switch" id="mode-switch">
+          <label><input type="radio" name="pmode" value="loadout" checked><span>练度模式</span></label>
+          <label><input type="radio" name="pmode" value="manual"><span>手填面板</span></label>
+        </div>
+
+        <div id="loadout-box">
+          <label class="row"><span>角色</span>
+            <input id="char-input" list="char-list" type="text" placeholder="输入角色名，如 拉毗：小红帽" autocomplete="off">
+          </label>
+          <datalist id="char-list"></datalist>
+          <p id="char-meta" class="meta">未选择角色</p>
+
+          <div class="grp">
+            <div class="grp-h"><b>账号级参数</b><em>所有角色共用</em></div>
+            <div class="grid2">
+              <label class="cell"><span>同步器等级</span><input id="l-level" type="number" min="1" max="1400" step="1" value="492"></label>
+              <label class="cell"><span>通用研究</span><input id="l-rp" type="number" min="0" step="1" value="100"></label>
+            </div>
+            <div class="grid2">
+              <label class="cell"><span>职业研究 <i class="anchor" id="anchor-cls">—</i></span><input id="l-rc" type="number" min="0" step="1" value="100"></label>
+              <label class="cell"><span>企业研究 <i class="anchor" id="anchor-corp">—</i></span><input id="l-rk" type="number" min="0" step="1" value="100"></label>
+            </div>
+            <p class="hint">循环室三项（通用 / 职业 / 企业研究）为账号级研究等级，全角色共享；后两项按当前角色的职业与企业生效，已自动锚定。</p>
+          </div>
+
+          <div class="grp">
+            <div class="grp-h"><b>角色级参数</b><em>仅当前角色</em></div>
+            <div class="grid2">
+              <label class="cell"><span>突破档</span><select id="l-bt"></select></label>
+              <label class="cell"><span>好感度</span><input id="l-attr" type="number" min="0" max="40" step="1" value="40"></label>
+            </div>
+
+            <div class="grid4">
+              <label class="cell"><span>头 强化</span><input id="l-e1" type="number" min="0" max="5" step="1" value="5"></label>
+              <label class="cell"><span>胸 强化</span><input id="l-e2" type="number" min="0" max="5" step="1" value="5"></label>
+              <label class="cell"><span>臂 强化</span><input id="l-e3" type="number" min="0" max="5" step="1" value="5"></label>
+              <label class="cell"><span>腿 强化</span><input id="l-e4" type="number" min="0" max="5" step="1" value="5"></label>
+            </div>
+
+            <div class="grid2">
+              <label class="cell"><span>魔方</span><select id="l-cube"></select></label>
+              <label class="cell"><span>魔方等级</span><input id="l-cubelv" type="number" min="0" max="15" step="1" value="15"></label>
+            </div>
+
+            <div class="grid2">
+              <label class="cell"><span>收藏品</span><select id="l-coll"></select></label>
+              <label class="cell"><span>收藏等级</span><input id="l-colllv" type="number" min="0" max="15" step="1" value="15"></label>
+            </div>
+
+            <label class="check"><input id="l-corpbonus" type="checkbox"><span>装备同厂加成 ×1.3（客户端逻辑，参考站未开）</span></label>
+          </div>
+
+          <div class="derive-row">
+            <button id="btn-derive" class="btn primary" type="button">重新推导面板</button>
+            <label class="check"><input id="l-auto" type="checkbox" checked><span>改动即推导</span></label>
+          </div>
+          <p class="hint" id="derive-note">…</p>
+
+          <h3 class="mini-h">同步器档位预览</h3>
+          <table class="tbl mini" id="tier-table"></table>
+          <p class="hint">档位规则取自参考站实测：第 2 档 = 当前等级向上取整到 20 的倍数 + 1，其后各 +20。</p>
+        </div>
+
+        <div id="manual-box" hidden>
+        <div class="grid3">
+          <label class="cell"><span>攻击力</span><input id="p-attack" type="number" step="1" min="0"></label>
+          <label class="cell"><span>生命</span><input id="p-hp" type="number" step="1" min="0"></label>
+          <label class="cell"><span>防御力</span><input id="p-defense" type="number" step="1" min="0"></label>
+        </div>
+        </div>
+
+        <div class="grid3">
+          <label class="cell"><span>暴击率 %</span><input id="p-critRate" type="number" step="0.01" min="0"></label>
+          <label class="cell"><span>暴击伤害 %</span><input id="p-critDamage" type="number" step="0.01" min="0"></label>
+          <label class="cell"><span>附加效果战力</span><input id="p-extraBP" type="number" step="1"></label>
+        </div>
+        <p class="hint">暴击 15 / 150 为全部角色的静态表常量。附加效果战力 = 魔方技能 + 收藏品技能内部战力（练度模式自动填入）；不知道就用「按游戏内战力标定」反解。</p>
+
+        <div class="grid3">
+          <label class="cell"><span>技能 1</span><input id="p-skill1" type="number" step="1" min="1" max="10"></label>
+          <label class="cell"><span>技能 2</span><input id="p-skill2" type="number" step="1" min="1" max="10"></label>
+          <label class="cell"><span>爆裂技能</span><input id="p-burst" type="number" step="1" min="1" max="10"></label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======== 中：词条 ======== -->
+    <section class="panel center">
+      <div class="panel-head"><h2>装备词条洗练</h2><span class="tag">洗前 / 洗后</span></div>
+      <div class="panel-body" id="gear-grid"></div>
+    </section>
+
+    <!-- ======== 右：结果 ======== -->
+    <section class="panel result">
+      <div class="panel-head"><h2>结果</h2></div>
+      <div class="panel-body">
+        <div class="card">
+          <div class="kv big"><span>洗前战力</span><b id="r-before">--</b></div>
+          <div class="kv big"><span>洗后战力</span><b id="r-after">--</b></div>
+          <div class="kv big delta"><span>战力变化</span><b id="r-delta">--</b></div>
+        </div>
+        <div class="card">
+          <div class="kv"><span>内部词条战力</span><b id="r-bp">--</b></div>
+          <div class="kv"><span>等效总阶数（优越×1.2）</span><b id="r-totallevel">--</b></div>
+          <div class="kv"><span>技能系数 num5</span><b id="r-skillfactor">--</b></div>
+        </div>
+        <h3>部位归因</h3>
+        <table class="tbl" id="r-gear-table">
+          <thead><tr><th>部位</th><th>内部战力变化</th><th>战力变化</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <h3>词条行明细</h3>
+        <div id="r-lines" class="lines"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="row2">
+    <!-- 单条词条试算 -->
+    <section class="panel">
+      <div class="panel-head"><h2>单条词条试算</h2><span class="tag">只有这一条变化</span></div>
+      <div class="panel-body">
+        <div class="grid4">
+          <label class="cell"><span>部位</span><select id="s-slot"></select></label>
+          <label class="cell"><span>词条位</span><select id="s-index"></select></label>
+          <label class="cell"><span>换成类型</span><select id="s-type"></select></label>
+          <label class="cell"><span>阶数（数值）</span><select id="s-level"></select></label>
+        </div>
+        <div class="card" id="s-result">
+          <div class="kv"><span>当前</span><b id="s-cur">--</b></div>
+          <div class="kv"><span>换成</span><b id="s-tgt">--</b></div>
+          <div class="kv big delta"><span>战力变化</span><b id="s-delta">--</b></div>
+        </div>
+        <p class="hint">基准 = 当前「洗前」配置的其余词条保持不变。</p>
+      </div>
+    </section>
+
+    <!-- 洗练期望模拟 -->
+    <section class="panel">
+      <div class="panel-head"><h2>洗练期望模拟</h2><span class="tag">蒙特卡洛</span></div>
+      <div class="panel-body">
+        <div class="grid4">
+          <label class="cell"><span>模拟次数</span><input id="m-rolls" type="number" min="100" max="200000" step="100" value="5000"></label>
+          <label class="cell"><span>参与词条位</span><input id="m-slots" type="number" min="1" max="12" step="1" value="12"></label>
+          <label class="cell"><span>最低阶</span><input id="m-min" type="number" min="1" max="15" step="1" value="1"></label>
+          <label class="cell"><span>最高阶</span><input id="m-max" type="number" min="1" max="15" step="1" value="15"></label>
+        </div>
+        <div id="m-pool" class="pool"></div>
+        <div class="card">
+          <div class="kv"><span>最低 / 最高</span><b id="m-minmax">--</b></div>
+          <div class="kv"><span>P10 / P50 / P90</span><b id="m-pct">--</b></div>
+          <div class="kv"><span>平均战力</span><b id="m-mean">--</b></div>
+          <div class="kv"><span>相对当前洗前</span><b id="m-vs">--</b></div>
+        </div>
+        <div id="m-hist" class="hist"></div>
+        <p class="hint">阶数在 [最低阶, 最高阶] 内均匀抽取（可调）。<b>该分布为模拟假设，不是游戏实测概率</b>；结果仅用于估算相对高低。</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- 单价表 -->
+  <section class="panel">
+    <div class="panel-head"><h2>九类词条战力单价表</h2><span class="tag" id="unit-sub">相对 0 词条</span></div>
+    <div class="panel-body scroll-x">
+      <table class="tbl unit" id="unit-table"></table>
+      <p class="hint">上排数字 = 相对 0 词条的<b>战力增量</b>；下排小字 = 该阶词条在游戏内显示的<b>数值</b>（过载词条统一为百分比，= 静态表 FunctionValue ÷ 100）。优越代码伤害为唯一 1.2 倍词条。</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p id="src-line">数据源加载中…</p>
+    <p>公式：反编译 <code>NK_Common_System_Stat_StatUtility.CalcBattlePower</code>；常量：<code>ConfigGameTable</code>；词条显示数值口径经 nikke.gg / gamevika / gamewith / rappy-world 四源 T1·T15 逐位核对。本工具离线运行，不联网、不上传。</p>
+  </footer>
+</main>
+
+<script src="data/data.bundle.js"></script>
+<script src="js/core.js"></script>
+<script src="js/panel.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

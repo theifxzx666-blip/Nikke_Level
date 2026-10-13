@@ -1,0 +1,624 @@
+/* app.js — NIKKE 战力计算器 前端 */
+(function () {
+  "use strict";
+  var D = window.NIKKE_POWER_DATA;
+  var C = window.NikkePowerCore;
+  var P = window.NikkePanel;
+  var KEY = "nikke_power_calc_v2";
+  var SLOT_LABEL = { head: "头部", body: "衣服", arms: "手部", legs: "鞋子" };
+  /* 企业与职业枚举：取自 CharacterTable.Corporation / .Class（实测取值 1/2/3/4/7 与 1/2/3） */
+  var CORP = { 1: "极乐净土", 2: "米西利斯", 3: "泰特拉", 4: "朝圣者", 5: "反常", 6: "反常", 7: "反常" };
+  var CLS = { 1: "火力型", 2: "防御型", 3: "辅助型" };
+  var WEAPON = { 1: "AR 步枪", 2: "RL 发射器", 3: "SR 狙击", 4: "MG 机枪", 5: "SG 霰弹", 9: "SMG 冲锋" };
+  var EMPTY = { key: "", level: 0 };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); };
+  var fmt = function (v) { return Number(v || 0).toLocaleString("zh-CN"); };
+  var sfmt = function (v) { return (v > 0 ? "+" : "") + fmt(v); };
+  function num(v, d) { var n = Number(v); return Number.isFinite(n) ? n : (d === undefined ? 0 : d); }
+
+  function blankGear() {
+    var g = {};
+    C.SLOTS.forEach(function (s) { g[s] = { before: [clone(EMPTY), clone(EMPTY), clone(EMPTY)], after: [clone(EMPTY), clone(EMPTY), clone(EMPTY)] }; });
+    return g;
+  }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  /** state.gear 按位分开存，内核按 {head:[…],body:[…],…} 取用，这里做扁平化 */
+  function flatGear(side) {
+    var o = {};
+    C.SLOTS.forEach(function (s) { o[s] = state.gear[s][side]; });
+    return o;
+  }
+
+  function defaults() {
+    return {
+      schemaVersion: 2,
+      mode: "loadout",
+      char: "拉毗：小红帽",
+      loadout: {
+        rid: 16, level: 492, bt: 10, attr: 40,
+        e1: 5, e2: 5, e3: 5, e4: 5,
+        cubeId: 1000301, cubeLv: 15, coll: "SR", collLv: 15,
+        rp: 100, rc: 100, rk: 100, corpBonus: false, auto: true
+      },
+      panel: { attack: "", hp: "", defense: "", critRate: 15, critDamage: 150, extraBP: "", skill1: 10, skill2: 10, burst: 10 },
+      gear: blankGear(),
+      sim: { rolls: 5000, slots: 12, min: 1, max: 15, pool: D.overload.map(function (g) { return g.key; }) }
+    };
+  }
+
+  var state = defaults();
+
+  /* ---------------- 状态读写 ---------------- */
+  function load() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (!raw) return;
+      var d = defaults();
+      if (raw.char) d.char = raw.char;
+      Object.keys(d.panel).forEach(function (k) { if (raw.panel && raw.panel[k] !== undefined && raw.panel[k] !== null) d.panel[k] = raw.panel[k]; });
+      C.SLOTS.forEach(function (s) {
+        if (!raw.gear || !raw.gear[s]) return;
+        ["before", "after"].forEach(function (side) {
+          (raw.gear[s][side] || []).slice(0, 3).forEach(function (row, i) {
+            if (!row) return;
+            d.gear[s][side][i] = { key: String(row.key || ""), level: Math.max(0, Math.min(15, Math.trunc(num(row.level)))) };
+          });
+        });
+      });
+      if (raw.sim) {
+        d.sim.rolls = num(raw.sim.rolls, d.sim.rolls);
+        d.sim.slots = num(raw.sim.slots, d.sim.slots);
+        d.sim.min = num(raw.sim.min, d.sim.min);
+        d.sim.max = num(raw.sim.max, d.sim.max);
+        if (Array.isArray(raw.sim.pool) && raw.sim.pool.length) d.sim.pool = raw.sim.pool;
+      }
+      if (raw.mode) d.mode = raw.mode;
+      if (raw.loadout) {
+        Object.keys(d.loadout).forEach(function (k) {
+          if (raw.loadout[k] !== undefined && raw.loadout[k] !== null) d.loadout[k] = raw.loadout[k];
+        });
+      }
+      state = d;
+    } catch (e) { /* 忽略损坏存档 */ }
+  }
+  function save(silent) {
+    collectPanel();
+    try { localStorage.setItem(KEY, JSON.stringify(state)); if (!silent) setNotice("已保存到本机浏览器", "ok"); }
+    catch (e) { setNotice("保存失败：" + e.message, "error"); }
+  }
+  function setNotice(t, k) { var el = $("notice"); el.textContent = t || ""; el.className = "notice" + (k ? " " + k : ""); }
+
+  /* ---------------- 面板 ---------------- */
+  function panelFields() {
+    return [
+      ["attack", "p-attack"], ["hp", "p-hp"], ["defense", "p-defense"],
+      ["critRate", "p-critRate"], ["critDamage", "p-critDamage"], ["extraBP", "p-extraBP"],
+      ["skill1", "p-skill1"], ["skill2", "p-skill2"], ["burst", "p-burst"]
+    ];
+  }
+  function renderPanelValues() {
+    panelFields().forEach(function (p) { $(p[1]).value = state.panel[p[0]] === 0 ? 0 : (state.panel[p[0]] || ""); });
+  }
+  function renderPanel() {
+    renderPanelValues();
+    renderLoadout();
+  }
+  function collectPanel() {
+    panelFields().forEach(function (p) {
+      var el = $(p[1]);
+      state.panel[p[0]] = el.value === "" ? "" : num(el.value);
+    });
+    if (state.mode !== "loadout") state.char = $("char-input").value.trim();
+  }
+  function profile() {
+    // 客户端静态表常量：CriticalRatio=1500 / CriticalDamage=15000（全部 1927 角色一致）
+    // 界面按「百分比」输入（15 / 150），此处 ×100 还原为表值。
+    return {
+      attack: state.panel.attack, hp: state.panel.hp, defense: state.panel.defense,
+      critRatio: num(state.panel.critRate) * 100,
+      critDamage: num(state.panel.critDamage) * 100,
+      skill1: state.panel.skill1, skill2: state.panel.skill2, burst: state.panel.burst,
+      extraBP: state.panel.extraBP
+    };
+  }
+  function hasPanel() {
+    return state.panel.attack !== "" && state.panel.hp !== "" && state.panel.defense !== "";
+  }
+
+  function renderCharMeta() {
+    var rid = currentRid();
+    var hit = P.findRoster(D, rid);
+    if (!hit) {
+      $("char-meta").textContent = "未在角色目录中匹配到（请从下拉里选）";
+      $("anchor-cls").textContent = "—"; $("anchor-corp").textContent = "—";
+      return;
+    }
+    var corpName = CORP[hit.corp] || ("企业" + hit.corp);
+    var clsName = CLS[hit.cls] || ("职业" + hit.cls);
+    $("char-meta").textContent = [corpName, clsName,
+      WEAPON[hit.weapon] || ("武器" + hit.weapon), "增强组 " + hit.enh].join(" · ");
+    // 循环室「职业研究 / 企业研究」按当前角色自动锚定
+    $("anchor-cls").textContent = clsName;
+    $("anchor-corp").textContent = corpName;
+  }
+  function currentRid() {
+    var name = $("char-input").value.trim();
+    for (var i = 0; i < D.roster.length; i++) if (D.roster[i].name === name) return D.roster[i].rid;
+    return state.loadout.rid;
+  }
+
+  /* ---------------- 练度模式 ---------------- */
+  function renderLoadout() {
+    var lo = state.loadout;
+    $("char-input").value = state.char || "";
+    $("l-level").value = lo.level;
+    $("l-attr").value = lo.attr;
+    $("l-e1").value = lo.e1; $("l-e2").value = lo.e2; $("l-e3").value = lo.e3; $("l-e4").value = lo.e4;
+    $("l-cubelv").value = lo.cubeLv;
+    $("l-colllv").value = lo.collLv;
+    $("l-rp").value = lo.rp; $("l-rc").value = lo.rc; $("l-rk").value = lo.rk;
+    $("l-corpbonus").checked = !!lo.corpBonus;
+    $("l-auto").checked = lo.auto !== false;
+    renderBreakthroughOptions();
+    renderCubeOptions();
+    renderCollOptions();
+    renderCharMeta();
+  }
+  function renderBreakthroughOptions() {
+    var lim = P.limits(D, currentRid());
+    if (!lim) { $("l-bt").innerHTML = ""; return; }
+    $("l-bt").innerHTML = lim.map(function (x) {
+      var star = x.breakthrough + 1;
+      var tag = x.core > 0 ? ("突破" + star + "（核心 +" + x.core + "）") : ("突破" + star);
+      return '<option value="' + x.breakthrough + '"' + (x.breakthrough === Math.trunc(state.loadout.bt) ? " selected" : "") + ">" + tag + "</option>";
+    }).join("");
+  }
+  function renderCubeOptions() {
+    $("l-cube").innerHTML = D.cubes.map(function (c) {
+      var nm = String(c.name || "").replace(/^Locale_Item:/, "");
+      return '<option value="' + c.id + '"' + (c.id === Math.trunc(state.loadout.cubeId) ? " selected" : "") + ">" + esc(nm) + "</option>";
+    }).join("");
+  }
+  function renderCollOptions() {
+    var ch = P.findRoster(D, currentRid());
+    var opts = [['<option value="">无</option>']];
+    if (ch && ch.coll) {
+      if (ch.coll.R) opts.push('<option value="R">R 级收藏品</option>');
+      if (ch.coll.SR) opts.push('<option value="SR">SR 级收藏品</option>');
+      if (ch.coll.SSR) opts.push('<option value="SSR">SSR 专属收藏品</option>');
+    }
+    $("l-coll").innerHTML = opts.join("");
+    $("l-coll").value = state.loadout.coll || "";
+    if (!$("l-coll").value && state.loadout.coll) state.loadout.coll = "";
+  }
+  function collectLoadout() {
+    var lo = state.loadout;
+    state.char = $("char-input").value.trim();
+    lo.rid = currentRid();
+    lo.level = Math.max(1, Math.trunc(num($("l-level").value, 492)));
+    lo.bt = Math.max(0, Math.min(10, Math.trunc(num($("l-bt").value, 0))));
+    lo.attr = Math.max(0, Math.trunc(num($("l-attr").value, 0)));
+    lo.e1 = Math.max(0, Math.min(5, Math.trunc(num($("l-e1").value, 0))));
+    lo.e2 = Math.max(0, Math.min(5, Math.trunc(num($("l-e2").value, 0))));
+    lo.e3 = Math.max(0, Math.min(5, Math.trunc(num($("l-e3").value, 0))));
+    lo.e4 = Math.max(0, Math.min(5, Math.trunc(num($("l-e4").value, 0))));
+    lo.cubeId = Math.trunc(num($("l-cube").value, 1000301));
+    lo.cubeLv = Math.max(0, Math.min(15, Math.trunc(num($("l-cubelv").value, 0))));
+    lo.coll = $("l-coll").value || null;
+    lo.collLv = Math.max(0, Math.trunc(num($("l-colllv").value, 0)));
+    lo.rp = Math.max(0, Math.trunc(num($("l-rp").value, 0)));
+    lo.rc = Math.max(0, Math.trunc(num($("l-rc").value, 0)));
+    lo.rk = Math.max(0, Math.trunc(num($("l-rk").value, 0)));
+    lo.corpBonus = $("l-corpbonus").checked;
+    lo.auto = $("l-auto").checked;
+  }
+  function loadoutOf() {
+    var lo = state.loadout;
+    return {
+      rid: lo.rid, level: lo.level, breakthrough: lo.bt, attrLv: lo.attr,
+      equip: { 1: lo.e1, 2: lo.e2, 3: lo.e3, 4: lo.e4 },
+      cubeId: lo.cubeId, cubeLv: lo.cubeLv,
+      collRarity: lo.coll, collLv: lo.collLv,
+      recycle: { personal: lo.rp, cls: lo.rc, corp: lo.rk },
+      corpBonus: lo.corpBonus
+    };
+  }
+  var lastDerive = null;
+  function derivePanel(silent) {
+    var d = P.derive(D, loadoutOf());
+    if (d.error) { $("derive-note").textContent = "推导失败：" + d.error; return null; }
+    lastDerive = d;
+    state.panel.attack = d.atk;
+    state.panel.hp = d.hp;
+    state.panel.defense = d.def;
+    state.panel.extraBP = d.extraBP;
+    // 暴击取自角色静态表
+    var ch = P.findRoster(D, state.loadout.rid);
+    if (ch) { state.panel.critRate = ch.critR / 100; state.panel.critDamage = ch.critD / 100; }
+    renderPanelValues();
+    $("derive-note").innerHTML = "推导面板：" + fmt(d.atk) + " / " + fmt(d.hp) + " / " + fmt(d.def)
+      + "　·　魔方技能 " + fmt(d.detail.cubeBP) + " + 收藏技能 " + fmt(d.detail.collBP)
+      + " = 附加效果战力 <b>" + fmt(d.extraBP) + "</b>"
+      + (d.warn && d.warn.length ? "　⚠ " + esc(d.warn.join("；")) : "");
+    renderTiers();
+    if (!silent) compute();
+    return d;
+  }
+  /** 4 档位预览：tier2 = ceil(level/20)*20+1，其后 +20 / +40（规则实测自参考站） */
+  function tierLevels(level) {
+    var base = Math.ceil(level / 20) * 20 + 1;
+    return [level, base, base + 20, base + 40];
+  }
+  function renderTiers() {
+    var lo = loadoutOf();
+    var lv = [lo.level].concat(tierLevels(lo.level).slice(1));
+    var res = P.tierPreview(D, Object.assign({}, lo, {
+      skill1: Math.trunc(num(state.panel.skill1, 1)), skill2: Math.trunc(num(state.panel.skill2, 1)), burst: Math.trunc(num(state.panel.burst, 1))
+    }), D.config, C, lv);
+    $("tier-table").innerHTML = "<thead><tr><th>同步器</th><th>攻击</th><th>生命</th><th>防御</th><th>战力</th></tr></thead><tbody>"
+      + res.map(function (r) {
+        return "<tr><td>" + r.level + (r.level === lo.level ? " <span class=\"tag\">当前</span>" : "") + "</td><td>"
+          + fmt(r.atk) + "</td><td>" + fmt(r.hp) + "</td><td>" + fmt(r.def) + "</td><td><b>" + fmt(r.bp) + "</b></td></tr>";
+      }).join("") + "</tbody>";
+  }
+  function setMode(m) {
+    state.mode = m;
+    var load = m === "loadout";
+    $("loadout-box").hidden = !load;
+    $("manual-box").hidden = load;
+    $("mode-tag").textContent = load ? "练度模式" : "手填面板";
+    Array.prototype.forEach.call($("mode-switch").querySelectorAll("input"), function (r) { r.checked = (r.value === m); });
+    if (load) derivePanel(true);
+    compute();
+  }
+
+  /* ---------------- 词条编辑 ---------------- */
+  function typeOptions(selected) {
+    var h = '<option value="">空（无词条）</option>';
+    D.overload.forEach(function (g) {
+      h += '<option value="' + esc(g.key) + '"' + (g.key === selected ? " selected" : "") + '>' + esc(g.name) + "</option>";
+    });
+    return h;
+  }
+  /** 阶数下拉：选项文本「N 阶 · X.XX%」；数值 = 静态表 FunctionValue ÷ 100（游戏内显示口径） */
+  function levelOptions(key, selected) {
+    var sel = Math.max(0, Math.min(15, Math.trunc(num(selected))));
+    var h = '<option value="0"' + (sel === 0 ? " selected" : "") + ">— 无阶数</option>";
+    if (!key) return h;
+    for (var lv = 1; lv <= 15; lv++) {
+      var vt = C.statValueText(D, key, lv);
+      h += '<option value="' + lv + '"' + (lv === sel ? " selected" : "") + ">" + lv + " 阶 · " + esc(vt) + "</option>";
+    }
+    return h;
+  }
+  function lvlText(r) { return r.level ? (r.level + " 阶 " + (r.valueText || "")) : "空"; }
+  function renderGear() {
+    var html = "";
+    C.SLOTS.forEach(function (slot) {
+      html += '<article class="gear-card" data-slot="' + slot + '"><h3>' + SLOT_LABEL[slot] + "</h3>";
+      for (var i = 0; i < 3; i++) {
+        var b = state.gear[slot].before[i], a = state.gear[slot].after[i];
+        html += '<div class="opt-row" data-index="' + i + '"><div class="opt-idx" data-label>' + (i + 1) + "</div>"
+          + '<div class="opt-sides">'
+          + '<div class="opt-side before"><select class="ty" data-side="before" data-index="' + i + '" aria-label="洗前词条类型">' + typeOptions(b.key) + "</select>"
+          + '<select class="lv" data-side="before" data-index="' + i + '" aria-label="洗前阶数">' + levelOptions(b.key, b.level) + "</select></div>"
+          + '<div class="opt-side after"><select class="ty" data-side="after" data-index="' + i + '" aria-label="洗后词条类型">' + typeOptions(a.key) + "</select>"
+          + '<select class="lv" data-side="after" data-index="' + i + '" aria-label="洗后阶数">' + levelOptions(a.key, a.level) + "</select></div>"
+          + "</div></div>";
+      }
+      html += '<div class="gear-foot"><span>内部战力 / 战力变化</span><b data-gear-delta>--</b></div></article>';
+    });
+    $("gear-grid").innerHTML = html;
+    $("gear-grid").querySelectorAll("select").forEach(function (el) {
+      el.addEventListener("change", onGearChange);
+    });
+  }
+  function onGearChange(e) {
+    var card = e.target.closest(".gear-card");
+    var slot = card.dataset.slot;
+    var side = e.target.dataset.side;
+    var idx = Number(e.target.dataset.index);
+    var row = card.querySelectorAll('.opt-row[data-index="' + idx + '"]')[0];
+    var ty = row.querySelector('select.ty[data-side="' + side + '"]');
+    var lv = row.querySelector('select.lv[data-side="' + side + '"]');
+    // 类型变化 → 重算该行阶数下拉（文本带数值）；越界阶数自动收敛
+    if (e.target.classList.contains("ty")) {
+      lv.innerHTML = levelOptions(ty.value, Math.trunc(num(lv.value)));
+    }
+    state.gear[slot][side][idx] = { key: ty.value, level: Math.max(0, Math.min(15, Math.trunc(num(lv.value)))) };
+    compute();
+  }
+
+  /* ---------------- 计算与渲染 ---------------- */
+  function compute() {
+    collectPanel();
+    if (!hasPanel()) {
+      $("r-before").textContent = $("r-after").textContent = $("r-delta").textContent = "--";
+      $("r-bp").textContent = $("r-totallevel").textContent = $("r-skillfactor").textContent = "--";
+      $("r-gear-table").querySelector("tbody").innerHTML = "";
+      $("r-lines").innerHTML = '<p class="hint">请先填写攻击力 / 生命 / 防御力。</p>';
+      $("unit-table").innerHTML = "";
+      $("m-minmax").textContent = $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = "--";
+      $("m-hist").innerHTML = "";
+      $("s-cur").textContent = $("s-tgt").textContent = $("s-delta").textContent = "--";
+      setNotice("等待面板数据：请填入攻击力 / 生命 / 防御力", "");
+      return;
+    }
+    var pf = profile();
+    var res = C.compare(D.config, pf, D, flatGear("before"), flatGear("after"));
+
+    $("r-before").textContent = fmt(res.beforePower.value);
+    $("r-after").textContent = fmt(res.afterPower.value);
+    var dEl = $("r-delta");
+    dEl.textContent = sfmt(res.powerDelta);
+    dEl.className = res.powerDelta > 0 ? "pos" : (res.powerDelta < 0 ? "neg" : "");
+    $("r-bp").textContent = fmt(res.before.bp) + " → " + fmt(res.after.bp) + "（" + sfmt(res.bpDelta) + "）";
+    $("r-totallevel").textContent = res.totalLevelBefore.toFixed(1) + " → " + res.totalLevelAfter.toFixed(1);
+    $("r-skillfactor").textContent = res.afterPower.skillFactor.toFixed(4);
+
+    // 部位归因
+    $("r-gear-table").querySelector("tbody").innerHTML = res.gearRows.map(function (r) {
+      return "<tr><td>" + SLOT_LABEL[r.slot] + "</td><td>" + sfmt(r.bpDelta) + "</td><td class='"
+        + (r.powerDelta > 0 ? "pos" : r.powerDelta < 0 ? "neg" : "") + "'>" + sfmt(r.powerDelta) + "</td></tr>";
+    }).join("");
+
+    // 词条行明细
+    var lines = [];
+    C.SLOTS.forEach(function (slot) {
+      for (var i = 0; i < 3; i++) {
+        var b = res.before.slots[slot].rows[i], a = res.after.slots[slot].rows[i];
+        var d = a.bp - b.bp;
+        if (b.level === 0 && a.level === 0) continue;
+        lines.push('<div class="line"><span class="nm">' + SLOT_LABEL[slot] + " 词条" + (i + 1) + "　" + esc(b.name) + " " + lvlText(b) + " → " + esc(a.name) + " " + lvlText(a) + "</span><b class=\""
+          + (d > 0 ? "pos" : d < 0 ? "neg" : "") + '">参数 ' + sfmt(d) + "</b></div>");
+      }
+    });
+    $("r-lines").innerHTML = lines.length ? lines.join("") : '<p class="hint">尚未设置任何词条。</p>';
+
+    // 每个部位脚的汇总
+    C.SLOTS.forEach(function (slot) {
+      var card = $("gear-grid").querySelector('[data-slot="' + slot + '"]');
+      var row = res.gearRows.filter(function (x) { return x.slot === slot; })[0];
+      var b = card.querySelector("[data-gear-delta]");
+      b.textContent = sfmt(row.bpDelta) + " / " + sfmt(row.powerDelta);
+      b.className = row.powerDelta > 0 ? "pos" : row.powerDelta < 0 ? "neg" : "";
+    });
+
+    renderUnitTable(pf);
+    renderSim(pf);
+    renderSingle(pf);
+  }
+
+  /* ---------------- 单价表 ---------------- */
+  function renderUnitTable(pf) {
+    var tbl = C.unitTable(D.config, pf, D);
+    var head = "<thead><tr><th>词条类型</th>";
+    for (var lv = 1; lv <= 15; lv++) head += "<th>" + lv + "</th>";
+    head += "</tr></thead><tbody>";
+    var body = tbl.map(function (g) {
+      var tr = "<tr><td>" + esc(g.name) + (g.isElement ? " ★" : "") + "</td>";
+      g.rows.forEach(function (r) {
+        var vt = C.statValueText(D, g.key, r.level);
+        tr += "<td>" + fmt(r.powerDelta) + (vt ? '<span class="sub">' + esc(vt) + "</span>" : "") + "</td>";
+      });
+      return tr + "</tr>";
+    }).join("");
+    $("unit-table").innerHTML = head + body + "</tbody>";
+    $("unit-sub").textContent = "上排战力增量 / 下排词条数值";
+  }
+
+  /* ---------------- 单条试算 ---------------- */
+  function renderSingleOptions(preferLevel) {
+    $("s-slot").innerHTML = C.SLOTS.map(function (s) { return '<option value="' + s + '">' + SLOT_LABEL[s] + "</option>"; }).join("");
+    $("s-index").innerHTML = [1, 2, 3].map(function (i) { return '<option value="' + (i - 1) + '">词条 ' + i + "</option>"; }).join("");
+    $("s-type").innerHTML = '<option value="">空（无词条）</option>' + D.overload.map(function (g) { return '<option value="' + esc(g.key) + '">' + esc(g.name) + "</option>"; }).join("");
+    var lv = preferLevel == null ? 1 : Math.max(0, Math.min(15, Math.trunc(num(preferLevel, 1))));
+    $("s-level").innerHTML = levelOptions($("s-type").value, lv);
+  }
+  function oneText(r) {
+    return r.level ? (r.name + " " + r.level + " 阶 " + (r.valueText || "") + "（内部战力 " + fmt(r.bp) + "）") : (r.name + "（无词条）");
+  }
+  function renderSingle(pf) {
+    var slot = $("s-slot").value || "head";
+    var idx = Number($("s-index").value || 0);
+    var key = $("s-type").value;
+    var lv = Math.max(0, Math.min(15, Math.trunc(num($("s-level").value))));
+    var r = C.singleSwap(D.config, pf, D, flatGear("before"), slot, idx, key, lv);
+    $("s-cur").textContent = oneText(r.current);
+    $("s-tgt").textContent = oneText(r.target);
+    var el = $("s-delta");
+    el.textContent = sfmt(r.powerDelta) + "　(" + fmt(r.basePower) + " → " + fmt(r.afterPower) + ")";
+    el.className = r.powerDelta > 0 ? "pos" : r.powerDelta < 0 ? "neg" : "";
+  }
+
+  /* ---------------- 洗练模拟 ---------------- */
+  function renderPool() {
+    $("m-pool").innerHTML = D.overload.map(function (g) {
+      var on = state.sim.pool.indexOf(g.key) >= 0;
+      return '<label><input type="checkbox" value="' + esc(g.key) + '"' + (on ? " checked" : "") + ">" + esc(g.name) + "</label>";
+    }).join("");
+    $("m-pool").querySelectorAll("input").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        state.sim.pool = Array.prototype.slice.call($("m-pool").querySelectorAll("input:checked")).map(function (x) { return x.value; });
+        renderSim(profile());
+      });
+    });
+  }
+  function renderSim(pf) {
+    if (!hasPanel()) { $("m-minmax").textContent = $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = "--"; $("m-hist").innerHTML = ""; return; }
+    var pool = state.sim.pool.length ? state.sim.pool : D.overload.map(function (g) { return g.key; });
+    var rolls = Math.max(100, Math.min(200000, Math.trunc(num($("m-rolls").value, 5000))));
+    var slots = Math.max(1, Math.min(12, Math.trunc(num($("m-slots").value, 12))));
+    var minL = Math.max(1, Math.min(15, Math.trunc(num($("m-min").value, 1))));
+    var maxL = Math.max(minL, Math.min(15, Math.trunc(num($("m-max").value, 15))));
+    // 未参与洗练的部位保留「洗前」词条的内部战力
+    var keepAll = C.gearSummary(D, flatGear("before")).bp;
+    var sim = C.simulate(D.config, pf, D, { pool: pool, rolls: rolls, slots: slots, minLevel: minL, maxLevel: maxL, keepBP: keepAll });
+    $("m-minmax").textContent = fmt(sim.min) + " / " + fmt(sim.max);
+    $("m-pct").textContent = fmt(sim.p10) + " / " + fmt(sim.p50) + " / " + fmt(sim.p90);
+    $("m-mean").textContent = fmt(Math.round(sim.mean));
+    var cur = C.calcBattlePower(D.config, pf, keepAll).value;
+    var dv = Math.round(sim.mean) - cur;
+    var el = $("m-vs");
+    el.textContent = sfmt(dv);
+    el.className = dv > 0 ? "pos" : dv < 0 ? "neg" : "";
+    // 直方图（20 桶）
+    var B = 20, lo = sim.min, hi = sim.max, span = (hi - lo) || 1;
+    var buckets = new Array(B).fill(0);
+    sim.values.forEach(function (v) { var i = Math.min(B - 1, Math.floor((v - lo) / span * B)); buckets[i]++; });
+    var m = Math.max.apply(null, buckets) || 1;
+    $("m-hist").innerHTML = buckets.map(function (c) { return '<i style="height:' + Math.max(2, Math.round(c / m * 66)) + 'px"></i>'; }).join("");
+  }
+
+  /* ---------------- 标定 ---------------- */
+  function calibrate() {
+    collectPanel();
+    if (!hasPanel()) { setNotice("请先填写攻击力 / 生命 / 防御力", "error"); return; }
+    var target = window.prompt("输入游戏内当前显示的战力（整数）：", "");
+    if (target === null) return;
+    var t = Math.trunc(num(target));
+    if (!t) { setNotice("战力需为正整数", "error"); return; }
+    var beforeBP = C.gearSummary(D, flatGear("before")).bp;
+    var r = C.calibrate(D.config, profile(), t, beforeBP);
+    state.panel.extraBP = r.extraBP;
+    renderPanel();
+    setNotice(r.exact
+      ? ("标定成功：附加效果战力 = " + r.extraBP + "（复算战力 " + fmt(r.achieved) + "）")
+      : ("已按解析值填入 " + r.extraBP + "，但无法完全命中 " + fmt(t) + "（复算 " + fmt(r.achieved) + "）请核对面板三围。"),
+      r.exact ? "ok" : "error");
+    compute();
+    save(true);
+  }
+
+  /* ---------------- 导入导出 ---------------- */
+  function exportJson() {
+    collectPanel();
+    var blob = new Blob([JSON.stringify({ schemaVersion: 1, dataVersion: D.generatedAt, config: state }, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "NIKKE战力计算配置.json";
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  function importJson(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var raw = JSON.parse(String(reader.result || "{}"));
+        var cfg = raw.config || raw;
+        localStorage.setItem(KEY, JSON.stringify(cfg));
+        load(); renderAll(); save(true);
+        setNotice("导入成功", "ok");
+      } catch (e) { setNotice("导入失败：" + e.message, "error"); }
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  /* ---------------- 初始化 ---------------- */
+  function renderAll() {
+    renderPanel();
+    renderGear();
+    renderSingleOptions();
+    $("m-rolls").value = state.sim.rolls;
+    $("m-slots").value = state.sim.slots;
+    $("m-min").value = state.sim.min;
+    $("m-max").value = state.sim.max;
+    renderPool();
+    compute();
+  }
+  /* ---------------- 示例数据（?demo=1）---------------- */
+  function keyOf(name) {
+    var g = D.overload.filter(function (x) { return x.name === name; })[0];
+    return g ? g.key : "";
+  }
+  function applyDemo() {
+    function opt(name, lv) { return { key: keyOf(name), level: lv }; }
+    var d = defaults();
+    d.char = "拉毗：小红帽";
+    d.mode = "loadout";
+    d.loadout = { rid: 16, level: 492, bt: 10, attr: 40, e1: 5, e2: 5, e3: 5, e4: 5,
+      cubeId: 1000301, cubeLv: 15, coll: "SR", collLv: 15, rp: 100, rc: 100, rk: 100, corpBonus: false, auto: true };
+    d.gear.head.before = [opt("优越代码伤害", 5), opt("攻击力", 3), opt("暴击伤害", 2)];
+    d.gear.body.before = [opt("攻击力", 5), opt("暴击率", 3), opt("防御力", 1)];
+    d.gear.arms.before = [opt("最大装弹数", 5), opt("攻击力", 2), opt("命中率", 2)];
+    d.gear.legs.before = [opt("优越代码伤害", 3), opt("攻击力", 4), opt("蓄力伤害", 2)];
+    d.gear.head.after = [opt("攻击力", 5), opt("攻击力", 3), opt("暴击伤害", 2)];
+    d.gear.body.after = [opt("攻击力", 5), opt("暴击率", 5), opt("防御力", 1)];
+    d.gear.arms.after = [opt("最大装弹数", 5), opt("攻击力", 5), opt("命中率", 2)];
+    d.gear.legs.after = [opt("优越代码伤害", 3), opt("攻击力", 4), opt("优越代码伤害", 5)];
+    return d;
+  }
+
+  function init() {
+    window.addEventListener("error", function (e) {
+      setNotice("运行错误：" + e.message + " @ " + String(e.filename || "").split("/").pop() + ":" + e.lineno, "error");
+    });
+    if (!D || !C || !P) { setNotice("数据或内核加载失败", "error"); return; }
+    $("char-list").innerHTML = D.roster.map(function (r) { return '<option value="' + esc(r.name) + '"></option>'; }).join("");
+    load();
+    if (/[?&]demo=1/.test(window.location.search)) state = applyDemo();
+    renderAll();
+    setMode(state.mode || "loadout");
+    if (/[?&]demo=1/.test(window.location.search)) setNotice("已载入示例（拉毗：小红帽 · 同步器 492 · SR15 收藏 · 魔方15）—— 直接改中间栏词条即可看战力变化", "ok");
+
+    panelFields().forEach(function (p) { $(p[1]).addEventListener("input", compute); });
+
+    // 练度模式联动
+    ["l-level", "l-attr", "l-e1", "l-e2", "l-e3", "l-e4", "l-cubelv", "l-colllv", "l-rp", "l-rc", "l-rk", "l-cube", "l-coll", "l-bt", "l-corpbonus"].forEach(function (id) {
+      $(id).addEventListener("input", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); else { renderTiers(); compute(); } save(true); });
+      $(id).addEventListener("change", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); else { renderTiers(); compute(); } save(true); });
+    });
+    $("l-auto").addEventListener("change", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); });
+    $("btn-derive").addEventListener("click", function () { collectLoadout(); derivePanel(); save(true); setNotice("已按练度参数重新推导面板", "ok"); });
+    $("char-input").addEventListener("input", function () {
+      state.char = $("char-input").value.trim();
+      renderBreakthroughOptions(); renderCollOptions(); renderCharMeta();
+      if (state.mode === "loadout" && state.loadout.auto) derivePanel();
+    });
+    Array.prototype.forEach.call($("mode-switch").querySelectorAll("input"), function (r) {
+      r.addEventListener("change", function () { collectLoadout(); setMode(r.value); save(true); });
+    });
+
+    $("btn-copy-before").addEventListener("click", function () {
+      C.SLOTS.forEach(function (s) { state.gear[s].after = clone(state.gear[s].before); });
+      renderGear(); compute(); save(true); setNotice("已把「洗前」复制到「洗后」", "ok");
+    });
+    $("btn-save").addEventListener("click", function () { save(false); });
+    $("btn-load").addEventListener("click", function () { load(); renderAll(); setMode(state.mode || "loadout"); setNotice("已读取本机保存", "ok"); });
+    $("btn-export").addEventListener("click", exportJson);
+    $("btn-import").addEventListener("click", function () { $("file-import").click(); });
+    $("file-import").addEventListener("change", function () { if (this.files && this.files[0]) importJson(this.files[0]); this.value = ""; });
+    $("btn-reset").addEventListener("click", function () {
+      if (!window.confirm("清空当前全部输入并重置？")) return;
+      localStorage.removeItem(KEY); state = defaults(); renderAll(); setMode(state.mode); setNotice("已重置", "ok");
+    });
+    $("btn-calibrate").addEventListener("click", calibrate);
+
+    ["s-slot", "s-index"].forEach(function (id) {
+      $(id).addEventListener("change", function () { collectPanel(); renderSingle(profile()); });
+    });
+    $("s-type").addEventListener("change", function () {
+      $("s-level").innerHTML = levelOptions($("s-type").value, 1); // 换类型 → 阶数下拉整体重算（文本带数值）
+      collectPanel(); renderSingle(profile());
+    });
+    $("s-level").addEventListener("change", function () { collectPanel(); renderSingle(profile()); });
+    ["m-rolls", "m-slots", "m-min", "m-max"].forEach(function (id) {
+      $(id).addEventListener("input", function () {
+        state.sim.rolls = num($("m-rolls").value, 5000);
+        state.sim.slots = num($("m-slots").value, 12);
+        state.sim.min = num($("m-min").value, 1);
+        state.sim.max = num($("m-max").value, 15);
+        collectPanel(); renderSim(profile());
+      });
+    });
+
+    var s = D.sources || {};
+    $("src-line").innerHTML = "数据版本 " + esc(D.generatedAt) + "（" + esc(D.sourcePack || "") + "） · 角色 " + D.roster.length
+      + " 人 · 词条 " + D.overload.length + " 类 × 15 阶 · 魔方 " + D.cubes.length + " · 属性曲线组 "
+      + Object.keys(D.curves).length + " · CharacterStatTable <code>" + esc((s.CharacterStatTable || "").slice(0, 8))
+      + "</code> · ConfigGameTable <code>" + esc((s.ConfigGameTable || "").slice(0, 8)) + "</code>";
+  }
+  document.addEventListener("DOMContentLoaded", init);
+})();
