@@ -77,7 +77,12 @@ input[type=number]{text-align:right}
 .gear-ops .btn{font-size:12.5px}
 .gear-card{border:1px solid rgba(226,232,240,.9);border-radius:var(--r-md);background:var(--card);
   padding:10px 12px;margin-bottom:10px}
-.gear-card h3{margin:0 0 8px}
+.gear-card h3{margin:0 0 8px;display:flex;align-items:center;gap:9px}
+/* ① 部位卡头部的「装备等级」控件（进装备基础属性 → 面板 → 战力） */
+.lv-wrap{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#64748b;margin-left:auto}
+.lv-wrap em{font-style:normal}
+.lv-wrap select.slot-lv{width:auto;min-width:52px;height:26px;padding:1px 4px;font-size:11.5px;font-weight:700;
+  color:#1d4ed8;background:rgba(47,127,224,.08);border-color:rgba(47,127,224,.4);text-align:center}
 .opt-row{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;
   padding:7px 0;border-top:1px dashed var(--line)}
 .opt-row:first-of-type{border-top:0}

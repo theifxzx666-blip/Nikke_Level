@@ -23,17 +23,22 @@
   var sfmt = function (v) { return (v > 0 ? "+" : "") + fmt(v); };
   function num(v, d) { var n = Number(v); return Number.isFinite(n) ? n : (d === undefined ? 0 : d); }
 
+  /* 装备等级（= 游戏内装备强化等级）上限：EquipmentGradeTable 里 T9/T10 的 MaxLevel = 5 */
+  var GEAR_LV_MAX = 5;
   function blankGear() {
     var g = {};
-    C.SLOTS.forEach(function (s) { g[s] = { before: [clone(EMPTY), clone(EMPTY), clone(EMPTY)], after: [clone(EMPTY), clone(EMPTY), clone(EMPTY)] }; });
+    C.SLOTS.forEach(function (s) {
+      g[s] = { lv: GEAR_LV_MAX, before: [clone(EMPTY), clone(EMPTY), clone(EMPTY)], after: [clone(EMPTY), clone(EMPTY), clone(EMPTY)] };
+    });
     return g;
   }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  /** 清洗任意来源的装备结构（存档 / byChar）为规范形状，缺项补空 */
+  /** 清洗任意来源的装备结构（存档 / byChar）为规范形状，缺项补空；lv = 该部位的装备等级 0~5 */
   function normalizeGear(g) {
     var out = blankGear();
     C.SLOTS.forEach(function (s) {
       if (!g || !g[s]) return;
+      out[s].lv = Math.max(0, Math.min(GEAR_LV_MAX, Math.trunc(num(g[s].lv, GEAR_LV_MAX))));
       ["before", "after"].forEach(function (side) {
         ((g[s] && g[s][side]) || []).slice(0, 3).forEach(function (row, i) {
           if (!row) return;
@@ -57,13 +62,12 @@
       char: "拉毗：小红帽",
       loadout: {
         rid: 16, level: 492, bt: 10, attr: 40,
-        e1: 5, e2: 5, e3: 5, e4: 5,
         cubeId: 1000301, cubeLv: 15, coll: "SR", collLv: 15,
         rp: 100, rc: 100, rk: 100, corpBonus: false, auto: true
       },
       /* 角色级参数按 rid 记忆：切换角色时不会因为新角色档位更少而被清空
          （R 只有 1 档 / SR 只有 3 档，切过去会把突破压到 0，切回来必须能恢复）；
-         gear 一并按角色记忆 —— 每个角色各有自己的整套装备词条。 */
+         gear 一并按角色记忆 —— 每个角色各有自己的整套装备（4 个部位的装备等级 + 词条）。 */
       byChar: {},
       gearByChar: {},
       panel: { attack: "", hp: "", defense: "", critRate: 15, critDamage: 150, extraBP: "", skill1: 10, skill2: 10, burst: 10 },
@@ -83,6 +87,16 @@
       if (raw.char) d.char = raw.char;
       Object.keys(d.panel).forEach(function (k) { if (raw.panel && raw.panel[k] !== undefined && raw.panel[k] !== null) d.panel[k] = raw.panel[k]; });
       d.gear = normalizeGear(raw.gear);
+      // 旧存档迁移：装备等级原先存在 loadout.e1..e4（不随角色记忆），现统一进 gear[slot].lv
+      if (raw.loadout) {
+        var legacyEq = [raw.loadout.e1, raw.loadout.e2, raw.loadout.e3, raw.loadout.e4];
+        C.SLOTS.forEach(function (s, i) {
+          var had = raw.gear && raw.gear[s] && raw.gear[s].lv !== undefined && raw.gear[s].lv !== null;
+          if (!had && legacyEq[i] !== undefined && legacyEq[i] !== null) {
+            d.gear[s].lv = Math.max(0, Math.min(GEAR_LV_MAX, Math.trunc(num(legacyEq[i], GEAR_LV_MAX))));
+          }
+        });
+      }
       if (raw.sim) {
         d.sim.rolls = num(raw.sim.rolls, d.sim.rolls);
         d.sim.slots = num(raw.sim.slots, d.sim.slots);
@@ -233,7 +247,7 @@
     if (rid == null) return;
     var o = {};
     CHAR_KEYS.forEach(function (k) { o[k] = state.loadout[k]; });
-    o.gear = clone(state.gear);       // 该角色的整套装备词条（当前 + 洗练目标）
+    o.gear = clone(state.gear);       // 该角色的整套装备：4 部位装备等级 + 当前词条 + 洗练目标
     state.byChar[String(rid)] = o;
   }
   function recallChar(rid) {
@@ -241,7 +255,7 @@
     CHAR_KEYS.forEach(function (k) {
       state.loadout[k] = (saved && saved[k] !== undefined && saved[k] !== null) ? saved[k] : d[k];
     });
-    // 恢复该角色的装备词条；没记录就从零录入（新角色各录各的）
+    // 恢复该角色的整套装备（含装备等级）；没记录就从零录入（新角色各录各的，等级默认满级 5）
     state.gear = (saved && saved.gear) ? normalizeGear(saved.gear) : blankGear();
   }
   /** 切换角色：记住旧角色 → 落新 rid → 恢复新角色的档位/收藏品/装备 → 重挂下拉 → 重推面板 */
@@ -266,7 +280,6 @@
     if (!sel.value && sel.options.length) { sel.selectedIndex = 0; state.char = sel.value; lo.rid = currentRid(); }
     $("l-level").value = lo.level;
     $("l-attr").value = lo.attr;
-    $("l-e1").value = lo.e1; $("l-e2").value = lo.e2; $("l-e3").value = lo.e3; $("l-e4").value = lo.e4;
     $("l-cubelv").value = lo.cubeLv;
     $("l-colllv").value = lo.collLv;
     $("l-rp").value = lo.rp; $("l-rc").value = lo.rc; $("l-rk").value = lo.rk;
@@ -311,10 +324,6 @@
     lo.level = Math.max(1, Math.trunc(num($("l-level").value, 492)));
     lo.bt = Math.max(0, Math.min(10, Math.trunc(num($("l-bt").value, 0))));
     lo.attr = Math.max(0, Math.trunc(num($("l-attr").value, 0)));
-    lo.e1 = Math.max(0, Math.min(5, Math.trunc(num($("l-e1").value, 0))));
-    lo.e2 = Math.max(0, Math.min(5, Math.trunc(num($("l-e2").value, 0))));
-    lo.e3 = Math.max(0, Math.min(5, Math.trunc(num($("l-e3").value, 0))));
-    lo.e4 = Math.max(0, Math.min(5, Math.trunc(num($("l-e4").value, 0))));
     lo.cubeId = Math.trunc(num($("l-cube").value, 1000301));
     lo.cubeLv = Math.max(0, Math.min(15, Math.trunc(num($("l-cubelv").value, 0))));
     lo.coll = $("l-coll").value || null;
@@ -329,7 +338,8 @@
     var lo = state.loadout;
     return {
       rid: lo.rid, level: lo.level, breakthrough: lo.bt, attrLv: lo.attr,
-      equip: { 1: lo.e1, 2: lo.e2, 3: lo.e3, 4: lo.e4 },
+      /* 装备等级（每部位 0~5）取自「① 当前装备」的按角色记录 —— 它进装备基础属性 → 面板三围 → 战力 */
+      equip: { 1: state.gear.head.lv, 2: state.gear.body.lv, 3: state.gear.arms.lv, 4: state.gear.legs.lv },
       cubeId: lo.cubeId, cubeLv: lo.cubeLv,
       collRarity: lo.coll, collLv: lo.collLv,
       recycle: { personal: lo.rp, cls: lo.rc, corp: lo.rk },
@@ -436,11 +446,24 @@
     el.className = "tag" + (warn ? " warn" : "");
   }
   function renderGear() { renderGearCurrent(); renderGearTarget(); }
-  /* ① 当前装备词条：整块可编辑，是洗练的锚点记录 */
+  /** 装备等级下拉（0 ~ 5；T9/T10 的 MaxLevel = 5，取自 EquipmentGradeTable） */
+  function gearLvOptions(sel) {
+    var s = Math.max(0, Math.min(GEAR_LV_MAX, Math.trunc(num(sel, GEAR_LV_MAX))));
+    var h = "";
+    for (var lv = 0; lv <= GEAR_LV_MAX; lv++) h += '<option value="' + lv + '"' + (lv === s ? " selected" : "") + ">" + lv + "</option>";
+    return h;
+  }
+  /** 部位卡头部的「装备等级」控件（挂在 ① 的每张部位卡上） */
+  function gearLvControl(slot, cur) {
+    return '<span class="lv-wrap"><em>装备等级</em><select class="slot-lv" data-slot="'
+      + slot + '" aria-label="' + SLOT_LABEL[slot] + '装备等级">' + gearLvOptions(cur) + "</select></span>";
+  }
+  /* ① 当前装备：整块可编辑，是洗练的锚点记录（每部位 = 装备等级 + 3 条词条） */
   function renderGearCurrent() {
     var html = "";
     C.SLOTS.forEach(function (slot) {
-      html += '<article class="gear-card" data-grid="before" data-slot="' + slot + '"><h3>' + SLOT_LABEL[slot] + "</h3>";
+      html += '<article class="gear-card" data-grid="before" data-slot="' + slot + '"><h3>'
+        + SLOT_LABEL[slot] + gearLvControl(slot, state.gear[slot].lv) + "</h3>";
       for (var i = 0; i < 3; i++) {
         var b = state.gear[slot].before[i];
         html += '<div class="opt-row" data-index="' + i + '"><div class="opt-idx" data-label>' + (i + 1) + "</div>"
@@ -481,6 +504,16 @@
   }
   function onGearChange(e) {
     var card = e.target.closest(".gear-card");
+    // 部位卡头部的「装备等级」：进 state.gear[slot].lv → 直接影响面板三围 → 战力
+    if (e.target.classList.contains("slot-lv")) {
+      var sl = (card && card.dataset.slot) || e.target.dataset.slot;
+      state.gear[sl].lv = Math.max(0, Math.min(GEAR_LV_MAX, Math.trunc(num(e.target.value, 0))));
+      gearDirty = true; renderGearState();
+      collectLoadout();
+      if (state.loadout.auto) derivePanel(); else { renderTiers(); compute(); }
+      save(true);
+      return;
+    }
     var slot = card.dataset.slot;
     var side = e.target.dataset.side;
     var idx = Number(e.target.dataset.index);
@@ -721,7 +754,7 @@
     var d = defaults();
     d.char = "拉毗：小红帽";
     d.mode = "loadout";
-    d.loadout = { rid: 16, level: 492, bt: 10, attr: 40, e1: 5, e2: 5, e3: 5, e4: 5,
+    d.loadout = { rid: 16, level: 492, bt: 10, attr: 40,
       cubeId: 1000301, cubeLv: 15, coll: "SR", collLv: 15, rp: 100, rc: 100, rk: 100, corpBonus: false, auto: true };
     d.gear.head.before = [opt("优越代码伤害", 5), opt("攻击力", 3), opt("暴击伤害", 2)];
     d.gear.body.before = [opt("攻击力", 5), opt("暴击率", 3), opt("防御力", 1)];
@@ -825,7 +858,7 @@
     panelFields().forEach(function (p) { $(p[1]).addEventListener("input", compute); });
 
     // 练度模式联动
-    ["l-level", "l-attr", "l-e1", "l-e2", "l-e3", "l-e4", "l-cubelv", "l-colllv", "l-rp", "l-rc", "l-rk", "l-cube", "l-coll", "l-bt", "l-corpbonus"].forEach(function (id) {
+    ["l-level", "l-attr", "l-cubelv", "l-colllv", "l-rp", "l-rc", "l-rk", "l-cube", "l-coll", "l-bt", "l-corpbonus"].forEach(function (id) {
       $(id).addEventListener("input", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); else { renderTiers(); compute(); } save(true); });
       $(id).addEventListener("change", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); else { renderTiers(); compute(); } save(true); });
     });
@@ -849,13 +882,13 @@
       gearDirty = false;
       save(false);
       renderGearState();
-      setNotice("已保存「" + (state.char || "当前角色") + "」的当前装备词条（4 部位 × 3 条，按角色分别记录）", "ok");
+      setNotice("已保存「" + (state.char || "当前角色") + "」的当前装备（4 部位的装备等级 + 3 条词条，按角色分别记录）", "ok");
     });
     $("btn-clear-gear").addEventListener("click", function () {
-      if (!window.confirm("清空「" + (state.char || "当前角色") + "」的整套装备词条（当前装备 + 洗练目标）？")) return;
+      if (!window.confirm("清空「" + (state.char || "当前角色") + "」的整套装备？装备等级会恢复为满级 5，词条清空。")) return;
       state.gear = blankGear(); gearDirty = false;
-      renderGear(); compute(); renderGearState(); save(true);
-      setNotice("已清空当前角色的装备词条", "ok");
+      renderGear(); derivePanel(); renderGearState(); save(true);
+      setNotice("已清空当前角色的装备（词条清空，装备等级回到 5）", "ok");
     });
     /* 洗练满意 → 把「洗练目标」固化为「当前装备」并保存（装备套装随存档一起落盘） */
     $("btn-commit-after").addEventListener("click", function () {
@@ -863,8 +896,8 @@
       if (!window.confirm("把「洗练目标」覆盖为「当前装备」并保存？原「当前装备」词条将被替换。")) return;
       C.SLOTS.forEach(function (s) { state.gear[s].before = clone(state.gear[s].after); });
       gearDirty = false;
-      renderGear(); compute(); renderGearState(); save(true);
-      setNotice("已用洗练结果覆盖「当前装备」——练度 + 整套装备词条已一并保存", "ok");
+      renderGear(); derivePanel(); renderGearState(); save(true);
+      setNotice("已用洗练结果覆盖「当前装备」——练度 + 整套装备（等级 + 词条）已一并保存", "ok");
     });
     $("btn-save").addEventListener("click", function () { save(false); });
     $("btn-load").addEventListener("click", function () { load(); renderAll(); setMode(state.mode || "loadout"); setNotice("已读取本机保存", "ok"); });

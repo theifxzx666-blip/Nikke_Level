@@ -76,7 +76,7 @@
       "name": "战力计算Beta",
       "icon": "assets/nav_combatpower.webp",
       "type": "web",
-      "entry": "combat_power_beta/index.html?v=20261013f",
+      "entry": "combat_power_beta/index.html?v=20261014a",
       "viewId": "appCombatPowerBeta",
       "frameId": "combatPowerBetaFrame",
       "version": "1.0.1",

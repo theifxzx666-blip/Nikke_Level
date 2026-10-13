@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NIKKE 战力计算器</title>
-<link rel="stylesheet" href="css/style.css?v=20261013f">
+<link rel="stylesheet" href="css/style.css?v=20261014a">
 </head>
 <body>
 <main class="page">
@@ -76,13 +76,6 @@
               <label class="cell"><span>好感度</span><input id="l-attr" type="number" min="0" max="40" step="1" value="40"></label>
             </div>
 
-            <div class="grid4">
-              <label class="cell"><span>头 强化</span><input id="l-e1" type="number" min="0" max="5" step="1" value="5"></label>
-              <label class="cell"><span>胸 强化</span><input id="l-e2" type="number" min="0" max="5" step="1" value="5"></label>
-              <label class="cell"><span>臂 强化</span><input id="l-e3" type="number" min="0" max="5" step="1" value="5"></label>
-              <label class="cell"><span>腿 强化</span><input id="l-e4" type="number" min="0" max="5" step="1" value="5"></label>
-            </div>
-
             <div class="grid2">
               <label class="cell"><span>魔方</span><select id="l-cube"></select></label>
               <label class="cell"><span>魔方等级</span><input id="l-cubelv" type="number" min="0" max="15" step="1" value="15"></label>
@@ -139,12 +132,12 @@
     <div class="center center-stack">
       <!-- ① 当前装备词条：选好角色后先录入并保存，它是洗练的基准 -->
       <section class="panel">
-        <div class="panel-head"><h2>① 当前装备词条</h2><span class="tag" id="gear-save-tag">未录入</span></div>
+        <div class="panel-head"><h2>① 当前装备（装备等级 + 词条）</h2><span class="tag" id="gear-save-tag">未录入</span></div>
         <div class="panel-body">
-          <p class="gear-tip">先选好角色，再把该角色在游戏里的<b>整套装备词条</b>（4 部位 × 3 条）录入这里并<b>保存</b>。
-            这份记录是下方「装备词条洗练」的<b>基准</b>，且<b>按角色分别记录</b>——换角色会自动切到该角色自己的装备。</p>
+          <p class="gear-tip">先选好角色，再把该角色在游戏里的<b>整套装备</b>录入这里并<b>保存</b>：每个部位先填<b>装备等级</b>（强化 0 ~ 5，每级 +10% 装备基础属性），
+            再填 3 条<b>装备词条</b>。这份记录是下方「装备词条洗练」的<b>基准</b>，且<b>按角色分别记录</b>——换角色会自动切到该角色自己的装备。</p>
           <div class="gear-ops">
-            <button id="btn-save-gear" class="btn primary" type="button">保存当前装备词条</button>
+            <button id="btn-save-gear" class="btn primary" type="button">保存当前装备</button>
             <button id="btn-clear-gear" class="btn" type="button">清空</button>
           </div>
           <div id="gear-current"></div>
@@ -249,9 +242,9 @@
   </footer>
 </main>
 
-<script src="data/data.bundle.js?v=20261013f"></script>
-<script src="js/core.js?v=20261013f"></script>
-<script src="js/panel.js?v=20261013f"></script>
-<script src="js/app.js?v=20261013f"></script>
+<script src="data/data.bundle.js?v=20261014a"></script>
+<script src="js/core.js?v=20261014a"></script>
+<script src="js/panel.js?v=20261014a"></script>
+<script src="js/app.js?v=20261014a"></script>
 </body>
 </html>
