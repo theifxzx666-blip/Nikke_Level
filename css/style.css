@@ -147,20 +147,32 @@ input:focus, select:focus { outline: 2px solid #9fe1cb; border-color: var(--prim
 .fixed-table.plan td.on { color: var(--primary-dark); font-weight: 600; }
 .fixed-table.plan td.off { color: var(--muted); }
 
-/* 自选箱分配卡片：PC 与移动版统一（5 列表格在 400px 结果栏 / 314px 竖屏里都要横滑且明细被截断） */
-.box-cards { display: grid; gap: 8px; margin: 8px 0 10px; }
+/* 自选箱分配卡片：一行三列（挑战者成长宝箱 / 30天成长补给箱 / 方舟官方补给物资Ⅰ）
+   与「固定小时箱数量」矩阵同思路 —— 容器最窄仅 310px（视口 1200 附近），故用紧凑排版 + 允许折行。
+   min-width:0：grid item 默认 min-width:auto 会被 min-content 撑住，必须显式归零才能收进窄栏。 */
+.box-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 8px 0 10px; }
 .box-card {
+  min-width: 0;
   border: 1px solid var(--border);
   border-left: 4px solid var(--primary);
   border-radius: 9px;
-  padding: 9px 10px;
+  padding: 8px 9px;
   background: #fbfdfc;
 }
-.bc-name { font-size: 13.5px; font-weight: 600; color: var(--primary-dark); margin-bottom: 5px; }
-.bc-nums { display: flex; gap: 16px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
-.bc-nums b { color: #1a1a1a; font-size: 14px; }
-.bc-detail { font-size: 12.5px; line-height: 1.5; word-break: break-word; }
-.bc-note { font-size: 11.5px; color: var(--muted); font-style: italic; margin-top: 5px; }
+.bc-name { font-size: 12.5px; font-weight: 600; color: var(--primary-dark); margin-bottom: 5px; line-height: 1.3; word-break: break-word; text-wrap: balance; }
+.bc-nums { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
+.bc-nums b { color: #1a1a1a; font-size: 13px; }
+.bc-detail { font-size: 11.5px; line-height: 1.45; word-break: break-word; }
+.bc-note { font-size: 10.5px; color: var(--muted); font-style: italic; margin-top: 5px; line-height: 1.35; }
+/* 窄屏（手机竖屏 / 结果栏 ~314px、每卡 ~99px）再压一档，靠折行消化而非横滑 */
+@media (max-width: 820px) {
+  .box-card { padding: 7px 7px; }
+  .bc-name { font-size: 11.5px; margin-bottom: 4px; }
+  .bc-nums { font-size: 11px; gap: 2px 8px; }
+  .bc-nums b { font-size: 12.5px; }
+  .bc-detail { font-size: 11px; }
+  .bc-note { font-size: 10px; margin-top: 4px; }
+}
 
 .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 12px; flex-wrap: wrap; }
 .tab {
