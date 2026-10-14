@@ -133,6 +133,7 @@
       ark: "1159", growth: "56", challenger: "1125",
       activities: [],         // 活动收益：[{ template: "small14"|"large21"|"large28", start_date: "YYYY-MM-DD" }]
       monthly_card: "否",     // 月卡：等待期内每日到账 1 个「30 天成长补给箱」（默认关闭）
+      keep_one_box: "否",     // 每种箱子各保留 1 个不开（收藏向；默认关闭）
       saved_at: "",       // 最近一次「保存当前表单」的日期（YYYY-MM-DD）
       capture_time: "",   // 每日采集时刻（HH:MM）
       collected_before: "是", // 采集前是否已回收基地收益（是/否）
@@ -177,6 +178,7 @@
     f.cost_credit = val("f_cost_credit"); f.cost_battle = val("f_cost_battle"); f.cost_dust = val("f_cost_dust");
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
     f.monthly_card = val("f_monthly_card");
+    f.keep_one_box = val("f_keep_one_box");
     f.saved_at = val("f_saved_at");
     f.collected_before = val("f_collected_before");
     syncActivitiesFromRows();
@@ -476,6 +478,7 @@
     setVal("f_cost_credit", f.cost_credit); setVal("f_cost_battle", f.cost_battle); setVal("f_cost_dust", f.cost_dust);
     setVal("f_ark", f.ark); setVal("f_growth", f.growth); setVal("f_challenger", f.challenger);
     setVal("f_monthly_card", f.monthly_card || "否");
+    setVal("f_keep_one_box", f.keep_one_box || "否");
     document.querySelectorAll(".fixed").forEach(function (inp) {
       var label = inp.dataset.label, h = inp.dataset.h;
       inp.value = (f.fixed[label] && f.fixed[label][h] !== undefined) ? f.fixed[label][h] : 0;
@@ -872,9 +875,13 @@
       activities: (f.activities || []).map(function (a) { return { template: a.template, start_date: a.start_date }; }),
       // 月卡（默认否）：等待期内每日 1 个「30 天成长补给箱」并入开放日箱量
       monthly_card: f.monthly_card === "是",
+      // 每种箱子各保留 1 个不开：仅影响计算（由 calculate() 生成保留后的快照），表单仍显示原始库存
+      keep_one_box: f.keep_one_box === "是",
     };
     return snap;
   }
+
+  /* 「每种箱保留 1 个」的实现已移到 js/scenarios.js（S.applyKeepOneBox），以便 node 侧可直接测试 */
 
   /* ---------- 结果渲染 ---------- */
   function el(tag, html, cls) {
@@ -1179,6 +1186,38 @@
     box.appendChild(table(["资源", "新主线开启前最大等级", "新主线开启后最大等级"], prRows));
     box.appendChild(el("p", "以上为「固定小时箱 + 资源自选箱」（全箱梭哈）口径下，三类资源各自单独计算能升到的最大等级（只看单资源）；开启前不含「预计新主线推图收益」（属新主线开放后的一次性资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。", "caption"));
 
+    // 2.5 三资源配平诊断：全箱梭哈后谁拖后腿、还缺多少个 1H 箱
+    //     口径参考 pinkuro.top「NIKKE 同步器配平计算器」的「缺少 1H箱×N」
+    box.appendChild(el("h3", "三资源配平诊断（全箱梭哈口径）", "sec"));
+    var prRes = result.per_resource && result.per_resource._res && result.per_resource._res.selectable;
+    if (!result.per_resource || !result.per_resource.selectable || !prRes) {
+      box.appendChild(el("p", "缺少三资源可用量数据（旧版结果），请重新计算。", "caption"));
+    } else {
+      var RLb = C.RESOURCE_LABELS || { credit: "信用点", battle_data: "战斗数据辑", core_dust: "红球" };
+      var ONE_H_BOX = { credit: "信用点盒", battle_data: "战斗数据辑盒", core_dust: "芯尘盒" };
+      var incB = snap.income_per_hour || {};
+      var curLvB = snap.current_sync_level;
+      var lvOfB = {}, lvListB = [];
+      C.RESOURCES.forEach(function (r) { lvOfB[r] = result.per_resource.selectable[r]; lvListB.push(lvOfB[r]); });
+      var hiLv = Math.max.apply(null, lvListB), loLv = Math.min.apply(null, lvListB);
+      var hiSteps = Math.max(0, hiLv - curLvB);
+      var hiNeed = hiSteps > 0 ? C.costForLevels(snap, curLvB, hiSteps) : C.zeroRes();
+      var diagRows = C.RESOURCES.map(function (r) {
+        var gap = Math.max(0, (hiNeed[r] || 0) - (prRes[r] || 0));
+        var per1h = incB[r] || 0;
+        var miss = (gap > 0 && per1h > 0) ? Math.ceil(gap / per1h - 1e-9) : 0;
+        return [RLb[r], "同步器 " + lvOfB[r], lvOfB[r] === loLv ? "✅ 瓶颈" : "",
+          miss > 0 ? ("还缺 <b>" + fmtNum(miss) + " 个</b> 1H " + ONE_H_BOX[r]) : "—"];
+      });
+      box.appendChild(table(["资源", "全箱梭哈能到", "是否瓶颈", "想追平 " + hiLv + " 级还需"], diagRows));
+      var bottB = C.RESOURCES.filter(function (r) { return lvOfB[r] === loLv; })
+        .map(function (r) { return RLb[r]; }).join(" / ");
+      box.appendChild(el("p", hiLv > loLv
+        ? ("三资源并不同步：最高 <b>同步器 " + hiLv + "</b>，最低 <b>同步器 " + loLv + "</b>（" + bottB + "）→ <b>全箱梭哈实际只能升到 " + loLv + " 级</b>；若想一路升到 " + hiLv + " 级，需按上表补足对应数量的 1H 箱。")
+        : ("三资源恰好同步，全箱梭哈可到 <b>同步器 " + loLv + "</b>。"), "caption"));
+      box.appendChild(el("p", "算法：以三资源中<b>最高</b>可达到的等级 " + hiLv + " 为目标，逐资源比较「升到该等级的累计消耗」与「全箱梭哈可用量（裸资源 + 固定小时箱全开 + 自选箱全部按该资源最优选择）」；差额按 <b>1H 该资源产量</b>折算成「1H 箱」个数。不含「预计新主线推图收益」与活动收益（同现状口径）。", "caption"));
+    }
+
     // 3. 固定小时箱收益折算（含差值换算）
     box.appendChild(el("h3", "固定小时箱收益折算（开主线前 vs 开主线后）", "sec"));
     var before = result.fixed.fixed || {};
@@ -1446,11 +1485,13 @@
   function calculate() {
     try {
       var snap = buildSnapshot();
+      // 「每种箱保留 1 个」：计算用保留后的快照（表单与页面显示仍为原始库存）
+      var snapCalc = S.applyKeepOneBox(snap);
       state.lastSnapshot = snap;
-      state.lastResult = S.evaluate(snap);
+      state.lastResult = S.evaluate(snapCalc);
       $("resultSection").style.display = "";
-      renderResult(state.lastResult, snap);
-      renderExtra(state.lastResult, snap);
+      renderResult(state.lastResult, snapCalc);
+      renderExtra(state.lastResult, snapCalc);
       renderRaw(state.lastResult);
       saveForm();
       // 标记可横向滑动的结果表（内容溢出时显示右缘渐隐提示）

@@ -40,6 +40,25 @@
     return snap;
   }
 
+  /* 「每种箱保留 1 个」：对固定小时箱（箱型 × 档位）与自选箱（按名称）各减 1，下限 0。
+     返回新快照（浅拷贝 + 箱对象深拷贝），不改原快照 —— 供「收藏向」开关使用。
+     注意不能用 JSON 深拷贝（会把 recorded_at 等 Date 转成字符串）。 */
+  function applyKeepOneBox(snapshot) {
+    if (!snapshot || !snapshot.keep_one_box) return snapshot;
+    var out = Object.assign({}, snapshot);
+    out.fixed_boxes = {};
+    Object.keys(snapshot.fixed_boxes || {}).forEach(function (label) {
+      var row = snapshot.fixed_boxes[label] || {}, copy = {};
+      Object.keys(row).forEach(function (h) { copy[h] = Math.max(0, (row[h] || 0) - 1); });
+      out.fixed_boxes[label] = copy;
+    });
+    out.selectable_boxes = (snapshot.selectable_boxes || []).map(function (b) {
+      return Object.assign({}, b, { quantity: Math.max(0, (b.quantity || 0) - 1) });
+    });
+    out.keep_one_box_applied = true;
+    return out;
+  }
+
   function daysToTarget(shortage, daily) {
     var days = {};
     RESOURCES.forEach(function (r) {
@@ -381,7 +400,13 @@
       selRes[r] = rv;
     });
     var perResource = {
-      bare: {}, fixed: {}, selectable: {}
+      bare: {}, fixed: {}, selectable: {},
+      // 三资源的「全箱梭哈口径可用量」（与上面三组单资源等级同源）：
+      // 供上层做缺口折算（还缺多少个 1H 箱）与配平诊断；不参与任何既有数值。
+      //   bare     = 裸资源（现状口径：不含推图收益、不含活动）
+      //   fixed    = 裸资源 + 固定小时箱全开
+      //   selectable = 裸资源 + 固定小时箱全开 + 自选箱（每箱按该资源最优选项）
+      _res: { bare: bareRes, fixed: fixedRes, selectable: selRes }
     };
     RESOURCES.forEach(function (r) {
       perResource.bare[r] = snapshot.current_sync_level + C.affordableLevelsSingle(bareRes, snapshot, snapshot.current_sync_level, r);
@@ -444,6 +469,7 @@
     futureSnapshot: futureSnapshot,
     futureMainStoryScenario: futureMainStoryScenario,
     monthlyCardBoxCount: monthlyCardBoxCount,
+    applyKeepOneBox: applyKeepOneBox,
     planForTarget: planForTarget,
     scenarioF: scenarioF,
     naturalToTarget: naturalToTarget,
