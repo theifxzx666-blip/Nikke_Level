@@ -165,7 +165,10 @@ Promise.all([
     };
     const rOff = S.futureMainStoryScenario(orig(false));
     const rOn = S.futureMainStoryScenario(orig(true));
-    chk("关闭 → 开放日 583（与导出一致）", rOff.result.level, 583);
+    // 2026-10-14 口径修正：推图收益此前被 boxes.js 内部重复叠加成 ×2，开放日全箱梭哈等级虚高 1 级
+    // （583 → 582）。修正后开放日口径 = 裸资源 + 等待期积累 + 推图收益 ×1。
+    chk("关闭 → 开放日 582（推图收益 ×1 口径）", rOff.result.level, 582);
+    // 开启 63 个 30 天箱后可达等级更高：同一份固定缺口在高等级下不足一级，故仍为 586
     chk("开启（63 天）→ 开放日 586", rOn.result.level, 586);
     chk("monthly_card_boxes = 63", rOn.monthly_card_boxes, 63);
     chk("箱量增量 = 63 个", qtyOf(rOn.projected_snapshot) - qtyOf(rOff.projected_snapshot), 63);

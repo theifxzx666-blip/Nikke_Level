@@ -200,8 +200,10 @@
   }
 
   /* 指定目标等级的「开够即停」自选箱方案
-     mode = "now"（当前基地收益，不含推图收益）| "future"（开放日新基地收益 + 等待期自然积累 + 推图收益）
-     与 immediateLevels 同口径：可用资源 = 裸资源 + 固定小时箱 */
+     mode = "now"（当前基地收益，**不含推图收益**）| "future"（开放日新基地收益 + 等待期自然积累 + 推图收益）
+     与 immediateLevels 同口径：可用资源 = 裸资源 + 固定小时箱
+     推图收益（stage_clear_resources）只在 future 口径计入，且**只计一次** ——
+     现状口径一律不计（项目铁律 5），boxes.js 侧也不再叠加（2026-10-14 修 ×2） */
   function planForTarget(snapshot, targetLevel, mode) {
     var snap2 = snapshot;
     if (mode === "future") {
@@ -209,7 +211,8 @@
       snap2 = futureSnapshot(snapshot);
     }
     var steps = Math.max(0, targetLevel - snapshot.current_sync_level);
-    var base = addRes(snap2.bare_resources, snapshot.stage_clear_resources || {});
+    var base = snap2.bare_resources;
+    if (mode === "future") base = addRes(base, snapshot.stage_clear_resources || {});
     return B.optimizeSelectableForTarget(snap2, base, steps, snap2.income_per_hour);
   }
 
@@ -275,16 +278,20 @@
     };
   }
 
-  function scenarioF(snapshot, target) {
+  /* 场景 F（三方案对比）
+     stageClear：原始推图收益（evaluate 传入的是已置零的 snapNow，故必须显式透传）。
+     口径：立即行（现状）不计推图收益；「等新主线开放后再开箱」行计入推图收益 ×1 */
+  function scenarioF(snapshot, target, stageClear) {
     target = target || snapshot.alternate_target_level;
     var start = new Date(snapshot.recorded_at.getTime());
     var currentIncome = snapshot.income_per_hour;
     var futureIncome = snapshot.future_income_per_hour || currentIncome;
-    var stage = snapshot.stage_clear_resources || {};
+    var stageNow = snapshot.stage_clear_resources || {};
+    var stageFuture = stageClear || stageNow;
 
-    var immediatePlan = B.optimizeSelectableForTarget(snapshot, addRes(snapshot.bare_resources, stage), target - snapshot.current_sync_level, currentIncome);
+    var immediatePlan = B.optimizeSelectableForTarget(snapshot, snapshot.bare_resources, target - snapshot.current_sync_level, currentIncome);
     var immediateFixed = B.fixedBoxResources(snapshot, currentIncome);
-    var allBoxesRes = addRes(addRes(snapshot.bare_resources, stage), immediateFixed);
+    var allBoxesRes = addRes(addRes(snapshot.bare_resources, stageNow), immediateFixed);
     var immediateLevelAfter = snapshot.current_sync_level + C.affordableLevels(allBoxesRes, snapshot, snapshot.current_sync_level);
     if (immediatePlan.feasible) immediateLevelAfter = Math.max(immediateLevelAfter, target);
     var immediate = {
@@ -306,7 +313,7 @@
       RESOURCES.forEach(function (r) {
         natural[r] += (currentIncome[r] || 0.0) * wipeoutHours * Math.floor(daysF);
       });
-      var postBase = addRes(snapshot.bare_resources, natural);
+      var postBase = addRes(addRes(snapshot.bare_resources, natural), stageFuture);
       var postPlan = B.optimizeSelectableForTarget(snapshot, postBase, target - snapshot.current_sync_level, futureIncome);
       var postFixed = B.fixedBoxResources(snapshot, futureIncome);
       var postLevelAfter = snapshot.current_sync_level + C.affordableLevels(addRes(postBase, postFixed), snapshot, snapshot.current_sync_level);
@@ -442,6 +449,9 @@
       perResource.future_bare = {};
       perResource.future_fixed = {};
       perResource.future_selectable = {};
+      // 未来口径的三资源可用量（裸 + 等待期积累 + 推图 ×1 + 固定箱全开 + 自选箱全给该项）
+      // 供「三资源配平诊断」开放日口径折算 1H 箱；不参与任何既有数值。
+      perResource._res.future_selectable = fSel;
       RESOURCES.forEach(function (r) {
         perResource.future_bare[r] = snapshot.current_sync_level + C.affordableLevelsSingle(fBare, snapshot, snapshot.current_sync_level, r);
         perResource.future_fixed[r] = snapshot.current_sync_level + C.affordableLevelsSingle(fFixed, snapshot, snapshot.current_sync_level, r);
@@ -451,9 +461,9 @@
     return {
       no_box: noBox, bare: bare, fixed: fixed, selectable: selectable,
       future_main_story: future,
-      scenario_f: scenarioF(snapNow, snapshot.alternate_target_level),
-      scenario_f_target: scenarioF(snapNow, snapshot.target_sync_level),
-      scenario_f_alt: scenarioF(snapNow, snapshot.alternate_target_level),
+      scenario_f: scenarioF(snapNow, snapshot.alternate_target_level, stage),
+      scenario_f_target: scenarioF(snapNow, snapshot.target_sync_level, stage),
+      scenario_f_alt: scenarioF(snapNow, snapshot.alternate_target_level, stage),
       per_resource: perResource,
       // 目标等级口径的自选箱分配（当前收益 / 新主线后）
       target_selectable_now: targetPlanNow,

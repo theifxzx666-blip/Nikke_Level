@@ -73,10 +73,12 @@
   }
 
   /* 固定小时箱按需计算：从最大时长箱开始，开够「达到 target」所需的最少固定箱数量。
+     baseResources 必须是**完整底盘**（裸资源 + 可选等待期自然积累 + 可选推图收益），
+     本函数不再自行叠加推图收益 —— 否则会与调用方叠加成 ×2（2026-10-14 修）。
      preConsumed（可选）：开箱顺序①挑战者成长宝箱已贡献的资源，先从缺口中扣除 */
   function fixedBoxesNeeded(snapshot, baseResources, targetSteps, incomePerHour, preConsumed) {
     var needed = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
-    var balance = addRes(baseResources, snapshot.stage_clear_resources || {});
+    var balance = baseResources;
     var gaps = {};
     RESOURCES.forEach(function (r) {
       var g = Math.max(0.0, needed[r] - balance[r]);
@@ -113,10 +115,14 @@
   }
 
   /* 自选箱优化（开箱顺序：①挑战者成长宝箱全开 → ②固定小时箱按需 → ③方舟/30天自选箱按需）
-     baseResources = 裸资源（调用方决定是否含推图/等待期积累） */
+     baseResources = **完整底盘**，由调用方决定口径：
+       现状（now）  = 裸资源（**不含**推图收益，见项目铁律 5）
+       开放日（future）= 裸资源 + 等待期自然积累 + 推图收益 ×1
+     本函数不再自行叠加 stage_clear_resources —— 否则会与调用方叠加成 ×2，
+     凭空多出一份推图收益（2026-10-14 修：曾导致「达成目标方案」漏开信用点盒）。 */
   function optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour) {
     var needed = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
-    var base = addRes(baseResources, snapshot.stage_clear_resources || {});
+    var base = baseResources;
     var shortage = {};
     RESOURCES.forEach(function (r) { shortage[r] = Math.max(0.0, needed[r] - base[r]); });
     // 裸资源已满足目标：什么都不开（挑战者也保留）
@@ -299,6 +305,27 @@
     return best;
   }
 
+  /* 目标不可达时的「最优均衡」回退方案
+     直接按目标等级调用 optimizeSelectableForTarget 时，若不可达会退化成「把全部自选箱
+     堆给最难补的那一项」（贪心按 remaining/value 比值的自然结果），该分配既不能最大化
+     可达等级、剩余缺口也偏悲观。
+     本函数二分「联合优化器能达成的最大步数」，返回该步数下的方案：
+       { found, steps, plan } —— found=false 表示连 1 级都开不出来。
+     仅在目标不可达时调用（调用方已知 feasible=false），避免与 immediateLevels 的
+     外层二分叠加造成 O(log²) 重复枚举。 */
+  function bestEffortPlan(snapshot, baseResources, targetSteps, incomePerHour) {
+    var hi = Math.max(0, targetSteps - 1);
+    if (hi <= 0) return { found: false, steps: 0, plan: null };
+    var lo = 1, best = null;
+    while (lo <= hi) {
+      var mid = Math.floor((lo + hi) / 2);
+      var p = optimizeSelectableForTarget(snapshot, baseResources, mid, incomePerHour);
+      if (p && p.feasible) { best = p; best.target_steps = mid; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    return best ? { found: true, steps: best.target_steps, plan: best } : { found: false, steps: 0, plan: null };
+  }
+
   global.NikkeBoxes = {
     fixedBoxResources: fixedBoxResources,
     fixedBoxesNeeded: fixedBoxesNeeded,
@@ -307,6 +334,7 @@
     optionValue: optionValue,
     single: single,
     optimizeSelectableForTarget: optimizeSelectableForTarget,
+    bestEffortPlan: bestEffortPlan,
     fastThreeTwoFlexiblePlan: fastThreeTwoFlexiblePlan,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = global.NikkeBoxes;
