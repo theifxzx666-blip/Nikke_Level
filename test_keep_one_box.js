@@ -1,7 +1,9 @@
 /* 「每种箱保留 1 个」开关（S.applyKeepOneBox）回归验证
-   + 三资源配平诊断的核心算式（per_resource._res.selectable → 缺口折算 1H 箱）
+   + 三资源配平诊断的核心算式（planForTarget → remaining_shortage → 折算 1H 箱）
    口径：保留 = 固定小时箱按「箱型 × 档位」逐格 -1、自选箱按名称 -1，下限 0；
         仅影响计算用的快照副本，不污染原快照。
+        配平诊断 = 以「目标同步器等级」为基准，开完全部可用箱子后仍缺的资源量
+        （planForTarget.remaining_shortage）÷ 该资源 1H 箱产量 → 「缺少 1H箱×N」。
    运行：node test_keep_one_box.js   （期望 ALL KEEP-ONE-BOX TESTS PASSED） */
 "use strict";
 const fs = require("fs");
@@ -147,22 +149,27 @@ Promise.all([
   chk("no_box 缺口不变", rOn.no_box.shortage, rOff.no_box.shortage);
   chk("no_box 需要天数不变", rOn.no_box.days, rOff.no_box.days);
 
-  console.log("\n--- 7) 配平诊断算式：per_resource._res + 缺口折算 1H 箱 ---");
-  const r = S.evaluate(off);
-  const res = r.per_resource._res && r.per_resource._res.selectable;
-  truthy("_res.selectable 存在", !!res);
-  chk("_res 三资源齐全", res ? C.RESOURCES.filter((k) => typeof res[k] === "number").length : 0, 3);
-  const lv = C.RESOURCES.map((k) => r.per_resource.selectable[k]);
-  const hi = Math.max.apply(null, lv), lo = Math.min.apply(null, lv);
-  const steps = Math.max(0, hi - off.current_sync_level);
-  const need = steps > 0 ? C.costForLevels(off, off.current_sync_level, steps) : C.zeroRes();
-  const gaps = C.RESOURCES.map((k) => Math.max(0, (need[k] || 0) - (res[k] || 0)));
-  truthy("最高等级那个资源缺口为 0", gaps[lv.indexOf(hi)] === 0, "lv=" + JSON.stringify(lv) + " gaps=" + JSON.stringify(gaps));
-  truthy("实际可达 = 三资源最低单资源等级", lo === Math.min.apply(null, lv), "hi=" + hi + " lo=" + lo);
-  const missBy = C.RESOURCES.map((k, i) => gaps[i] > 0 ? Math.ceil(gaps[i] / (off.income_per_hour[k] || 1) - 1e-9) : 0);
-  truthy("缺口折算 1H 箱为非负整数", missBy.every((v) => Number.isInteger(v) && v >= 0) && missBy.some((v) => v > 0), JSON.stringify(missBy));
+  console.log("\n--- 7) 配平诊断算式：planForTarget.remaining_shortage → 折算 1H 箱 ---");
+  const tgt = off.target_sync_level;                       // 501
+  const p7 = S.planForTarget(off, tgt, "now");
+  truthy("planForTarget 返回 remaining_shortage", !!(p7 && p7.remaining_shortage));
+  chk("remaining_shortage 三资源齐全",
+    C.RESOURCES.filter((k) => typeof p7.remaining_shortage[k] === "number").length, 3);
+  truthy("feasible 为布尔", typeof p7.feasible === "boolean", "feasible=" + p7.feasible);
+  const sh7 = p7.remaining_shortage;
+  truthy("feasible=true ⇒ 三资源缺口全为 0",
+    !p7.feasible || C.RESOURCES.every((k) => sh7[k] <= 1e-6), JSON.stringify(sh7));
+  const miss7 = C.RESOURCES.map((k) => sh7[k] > 1e-6 ? Math.ceil(sh7[k] / (off.income_per_hour[k] || 1) - 1e-9) : 0);
+  truthy("缺口折算 1H 箱为非负整数", miss7.every((v) => Number.isInteger(v) && v >= 0), JSON.stringify(miss7));
 
-  console.log("\n--- 8) 构造「红球/信用点够、经验箱不够」的瓶颈场景 ---");
+  console.log("\n--- 7b) 目标等级越高，缺口单调不减 ---");
+  const t2 = 520, t3 = 560;
+  const p2 = S.planForTarget(off, t2, "now"), p3 = S.planForTarget(off, t3, "now");
+  truthy("目标 " + t2 + " → " + t3 + " 的缺口逐资源不减",
+    C.RESOURCES.every((k) => p3.remaining_shortage[k] >= p2.remaining_shortage[k] - 1e-6),
+    JSON.stringify(C.RESOURCES.map((k) => [k, p2.remaining_shortage[k], p3.remaining_shortage[k]])));
+
+  console.log("\n--- 8) 构造「红球/信用点够、经验箱不够」的瓶颈场景（目标不可达） ---");
   const asym = makeSnapshot({
     fixed_boxes: {
       "芯尘盒":       { 24: 0, 12: 0, 8: 0, 4: 0, 2: 0, 1: 400 },
@@ -178,8 +185,18 @@ Promise.all([
   truthy("红球能到的等级高于战斗数据辑",
     ra.per_resource.selectable.core_dust > ra.per_resource.selectable.battle_data,
     "dust=" + ra.per_resource.selectable.core_dust + " battle=" + ra.per_resource.selectable.battle_data);
-  const hiA = Math.max.apply(null, lva), loA = Math.min.apply(null, lva);
-  truthy("瓶颈场景 hi > lo（配平诊断会给出缺口）", hiA > loA, "hi=" + hiA + " lo=" + loA);
+  // 目标取「全箱梭哈也到不了」的等级 → 诊断必须报出缺口
+  const far = ra.selectable.level + 20;
+  const p8 = S.planForTarget(asym, far, "now");
+  truthy("目标 " + far + " 级不可达（feasible=false）", p8.feasible === false, "feasible=" + p8.feasible);
+  truthy("经验（战斗数据辑）缺口 > 0",
+    p8.remaining_shortage.battle_data > 0,
+    JSON.stringify(p8.remaining_shortage));
+  const miss8 = Math.ceil(p8.remaining_shortage.battle_data / asym.income_per_hour.battle_data - 1e-9);
+  truthy("折算出的 1H 战斗数据辑盒为正整数", Number.isInteger(miss8) && miss8 > 0, "miss=" + miss8);
+  truthy("该资源单项上限 < 目标等级（解释「只到多少级」）",
+    ra.per_resource.selectable.battle_data < far,
+    "cap=" + ra.per_resource.selectable.battle_data + " far=" + far);
 
   console.log("\n" + (fail === 0 ? "ALL KEEP-ONE-BOX TESTS PASSED" : (fail + " TEST(S) FAILED")));
   process.exit(fail === 0 ? 0 : 1);

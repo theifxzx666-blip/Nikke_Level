@@ -55,6 +55,11 @@
     return v.toFixed(v % 1 ? 1 : 0);
   }
   function fmtDays(d) { return (typeof d === "number" && isFinite(d)) ? d.toFixed(1) : "-"; }
+  /* 「箱个数」用千分位，不用 K/M/B 压缩 —— 计数被压成「25K 个」会看不清量级 */
+  function fmtInt(v) {
+    var n = Math.round(Number(v) || 0);
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
   /* 把 UTC 的 isoMinutes 字符串（YYYY-MM-DDTHH:mm）转成本地日期 YYYY-MM-DD，避免 slice(0,10) 时区偏移一天 */
   function localDateStr(s) {
     if (!s) return "";
@@ -969,8 +974,18 @@
     var income = future ? (snap.future_income_per_hour || snap.income_per_hour) : snap.income_per_hour;
     var baseRes = future ? result.future_main_story.projected_bare : snap.bare_resources;
     var steps = Math.max(0, tgt - snap.current_sync_level);
+    /* 三资源配平诊断（目标等级口径）：
+       perRes = 把自选箱全部按该项资源选择时的「单项资源上限」；
+       shortage = 开完全部可用箱子后仍缺的资源量（来自 planForTarget.remaining_shortage）→ 折算 1H 箱 */
+    var perResLv = pr[prefix + "selectable"] || pr.selectable || {};
+    var ZERO_SH = { credit: 0.0, battle_data: 0.0, core_dust: 0.0 };
+    function diagOf(shortage) {
+      var sh = shortage || ZERO_SH;
+      return { shortage: sh, perRes: perResLv,
+        feasible: C.RESOURCES.every(function (r) { return (sh[r] || 0.0) <= 1e-6; }) };
+    }
     // ① 当前资源储备已足够
-    if (minL(bare) >= tgt) return { days: "0", date: immediate, plan: "无需开箱（当前资源已足够）" };
+    if (minL(bare) >= tgt) return { days: "0", date: immediate, plan: "无需开箱（当前资源已足够）", diag: diagOf(null) };
     // ② 挑战者成长宝箱（开箱顺序①，固定数值奖励）全开即可达成
     var chalRes = B.challengerUnitsResources(snap);
     var lvChal = snap.current_sync_level + C.affordableLevels(
@@ -984,6 +999,7 @@
         return { days: "0", date: immediate,
           plan: "只开挑战者成长宝箱（" + n2 + " 个）即可达成（固定小时箱与方舟/30天箱无需开启）",
           selectablePlan: plan2 ? plan2.selectable : null,
+          diag: diagOf(plan2 && plan2.remaining_shortage),
           selCaption: "开箱方案（只开挑战者成长宝箱）：" };
       }
     }
@@ -996,7 +1012,7 @@
       });
       return { days: "0", date: immediate,
         plan: "挑战者成长宝箱全开 + 固定小时箱按需开启 " + n + " 个即可达成（无需开方舟/30天箱）",
-        fixedNeed: need.used || {} };
+        fixedNeed: need.used || {}, diag: diagOf(null) };
     }
     // ④ 全箱梭哈可达成：按「当前正在渲染的这个目标等级」现算开够即停方案
     //   （此前误用 target_selectable_* —— 那是按「目标同步器等级」预计算的，导致「后续追求目标等级」显示的是别个目标的方案）
@@ -1005,11 +1021,40 @@
       var arr = plan ? plan.selectable : null;
       return { days: "0", date: immediate, plan: boxPlanText(arr, true), selectablePlan: arr,
         fixedNeed: plan ? plan.fixed_used : null,
+        diag: diagOf(plan && plan.remaining_shortage),
         selCaption: "开箱方案（挑战者全开 → 固定小时箱按需 → 自选箱按下表逐箱开启）：" };
     }
-    // ⑤ 全资源投入也无法达成
+    // ⑤ 全资源投入也无法达成：给出三资源缺口（开完全部箱子后仍缺多少 → 折算 1H 箱）
     var gap = tgt - maxLv;
-    return { days: "-", date: "全箱梭哈也无法达成", plan: "全资源投入后仍差 " + gap + " 级（需补充资源）" };
+    var plan5 = S.planForTarget(snap, tgt, future ? "future" : "now");
+    return { days: "-", date: "全箱梭哈也无法达成",
+      plan: "全资源投入后仍差 " + gap + " 级（需补充资源）",
+      diag: diagOf(plan5 && plan5.remaining_shortage),
+      fixedNeed: plan5 ? plan5.fixed_used : null,
+      selectablePlan: plan5 ? plan5.selectable : null };
+  }
+
+  /* 三资源配平诊断（目标等级口径，参考 pinkuro.top「缺少 1H箱×N」）
+     逐资源给出「单项资源上限」（把自选箱全给该项时能到的等级）
+     与「达成目标等级还缺多少个 1H 箱」（开完全部可用箱子后的剩余缺口 ÷ 1H 箱产量） */
+  function balanceDiagTable(diag, tgt, income) {
+    var RLb = C.RESOURCE_LABELS || { credit: "信用点", battle_data: "战斗数据辑", core_dust: "红球" };
+    var ONE_H_BOX = { credit: "信用点盒", battle_data: "战斗数据辑盒", core_dust: "芯尘盒" };
+    var sh = (diag && diag.shortage) || {};
+    var per = (diag && diag.perRes) || {};
+    var inc = income || {};
+    var rows = C.RESOURCES.map(function (r) {
+      var lv = per[r];
+      var cap = (lv === undefined || lv === null) ? "—" : ("同步器 " + lv);
+      var need = sh[r] || 0.0;
+      var per1h = inc[r] || 0.0;
+      var miss = (need > 1e-6 && per1h > 0) ? Math.ceil(need / per1h - 1e-9) : 0;
+      var cell = miss > 0
+        ? ("还缺 <b>" + fmtInt(miss) + " 个</b> 1H " + ONE_H_BOX[r])
+        : "✅ 足够";
+      return [RLb[r], cap, cell];
+    });
+    return table(["资源", "单项资源上限", "达成目标 " + tgt + " 级"], rows);
   }
 
   function renderResult(result, snap) {
@@ -1050,11 +1095,14 @@
   function renderTargetPlans(result, snap) {
     var wrap = el("div", "", "target-card");
     wrap.appendChild(el("div", "达成目标方案", "target-title"));
+    wrap.appendChild(el("p", "「<b>三资源配平诊断</b>」以你填写的目标等级为基准：<b>单项资源上限</b> = 把自选箱全部按该项资源选择、单独看这一项能到的等级（三资源共享同一批自选箱，故实际以「还缺」列为准）；<b>还缺</b> = 按开箱顺序（挑战者全开 → 固定小时箱按需 → 自选箱按需）开完全部可用箱子后仍缺的资源量，除以该资源 <b>1H 箱产量</b>，即还需补多少个 1H 箱。", "caption"));
     var targets = [
       { lv: snap.target_sync_level, name: "目标同步器等级" },
       { lv: snap.alternate_target_level, name: "后续追求目标等级" }
     ];
     var futureAvail = result.future_main_story.available;
+    var incNow = snap.income_per_hour;
+    var incFut = snap.future_income_per_hour || snap.income_per_hour;
     targets.forEach(function (t) {
       var b = el("div", "", "summary-block");
       b.appendChild(el("div", t.name + " " + t.lv, "sb-head"));
@@ -1062,14 +1110,22 @@
       var nowOk = np.days !== "-";
       var fp = null, fOk = false;
       if (futureAvail) { fp = planByLevels(result, snap, t.lv, true); fOk = fp.days !== "-"; }
-      // 现状与未来都无法达成 → 只提示，不展开方案
+      /* 供目标等级用的「三资源配平诊断」：现状口径一份；现状不可达而开放日可达时，再补一份未来口径 */
+      function pushDiag(p, inc, label) {
+        b.appendChild(el("div", label, "sb-plan"));
+        b.appendChild(balanceDiagTable(p.diag, t.lv, inc));
+      }
+      // 现状与未来都无法达成 → 给缺口诊断，不展开方案
       if (!nowOk && !fOk) {
-        b.appendChild(el("div", "❌ 无法达成：" + np.plan + "。", "sb-text"));
+        b.appendChild(el("div", "❌ 无法达成：全箱梭哈也只到 " + result.selectable.level + " 级，距目标仍差 " + (t.lv - result.selectable.level) + " 级。", "sb-text"));
+        pushDiag(np, incNow, "三资源配平诊断（现状口径，已开完全部可用箱子）");
+        b.appendChild(el("p", "上表为「把挑战者 / 固定小时箱 / 方舟 / 30天箱全部开完」后仍然缺少的资源量，按 1H 箱产量折算。按上表补足对应数量的 1H 箱后即可达成目标。", "caption"));
         wrap.appendChild(b);
         return;
       }
       if (nowOk) {
         b.appendChild(el("div", "现状可达（" + np.date + "）", "sb-big"));
+        pushDiag(np, incNow, "三资源配平诊断（现状口径）");
         if (np.plan) b.appendChild(el("div", np.plan, "sb-text"));
         if (np.fixedNeed && Object.keys(np.fixedNeed).length) b.appendChild(fixedPlanTable(np.fixedNeed));
         var sel = np.selectablePlan;
@@ -1079,9 +1135,12 @@
           b.appendChild(selectableBoxTable(sel));
         }
       } else {
-        // 现状不可达但未来可达：保留「开放日（预期日期）可达」+ 表格
+        // 现状不可达但未来可达：先给现状缺口，再给开放日口径
+        b.appendChild(el("div", "现状不可达（全箱梭哈只到 " + result.selectable.level + " 级）", "sb-text"));
+        pushDiag(np, incNow, "三资源配平诊断（现状口径）");
         var futDate = result.future_main_story.open_at ? localDateStr(result.future_main_story.open_at) : "";
         b.appendChild(el("div", "开放日（" + futDate + "）可达", "sb-big"));
+        pushDiag(fp, incFut, "三资源配平诊断（开放日口径：新基地收益 + 等待期自然积累 + 推图收益）");
         if (fp && fp.plan) b.appendChild(el("div", fp.plan, "sb-text"));
         if (fp && fp.fixedNeed && Object.keys(fp.fixedNeed).length) b.appendChild(fixedPlanTable(fp.fixedNeed));
         var fsel = fp ? fp.selectablePlan : null;
@@ -1185,38 +1244,6 @@
     });
     box.appendChild(table(["资源", "新主线开启前最大等级", "新主线开启后最大等级"], prRows));
     box.appendChild(el("p", "以上为「固定小时箱 + 资源自选箱」（全箱梭哈）口径下，三类资源各自单独计算能升到的最大等级（只看单资源）；开启前不含「预计新主线推图收益」（属新主线开放后的一次性资源）；开启后 = 新主线开放日按未来收益 + 等待期自然积累。", "caption"));
-
-    // 2.5 三资源配平诊断：全箱梭哈后谁拖后腿、还缺多少个 1H 箱
-    //     口径参考 pinkuro.top「NIKKE 同步器配平计算器」的「缺少 1H箱×N」
-    box.appendChild(el("h3", "三资源配平诊断（全箱梭哈口径）", "sec"));
-    var prRes = result.per_resource && result.per_resource._res && result.per_resource._res.selectable;
-    if (!result.per_resource || !result.per_resource.selectable || !prRes) {
-      box.appendChild(el("p", "缺少三资源可用量数据（旧版结果），请重新计算。", "caption"));
-    } else {
-      var RLb = C.RESOURCE_LABELS || { credit: "信用点", battle_data: "战斗数据辑", core_dust: "红球" };
-      var ONE_H_BOX = { credit: "信用点盒", battle_data: "战斗数据辑盒", core_dust: "芯尘盒" };
-      var incB = snap.income_per_hour || {};
-      var curLvB = snap.current_sync_level;
-      var lvOfB = {}, lvListB = [];
-      C.RESOURCES.forEach(function (r) { lvOfB[r] = result.per_resource.selectable[r]; lvListB.push(lvOfB[r]); });
-      var hiLv = Math.max.apply(null, lvListB), loLv = Math.min.apply(null, lvListB);
-      var hiSteps = Math.max(0, hiLv - curLvB);
-      var hiNeed = hiSteps > 0 ? C.costForLevels(snap, curLvB, hiSteps) : C.zeroRes();
-      var diagRows = C.RESOURCES.map(function (r) {
-        var gap = Math.max(0, (hiNeed[r] || 0) - (prRes[r] || 0));
-        var per1h = incB[r] || 0;
-        var miss = (gap > 0 && per1h > 0) ? Math.ceil(gap / per1h - 1e-9) : 0;
-        return [RLb[r], "同步器 " + lvOfB[r], lvOfB[r] === loLv ? "✅ 瓶颈" : "",
-          miss > 0 ? ("还缺 <b>" + fmtNum(miss) + " 个</b> 1H " + ONE_H_BOX[r]) : "—"];
-      });
-      box.appendChild(table(["资源", "全箱梭哈能到", "是否瓶颈", "想追平 " + hiLv + " 级还需"], diagRows));
-      var bottB = C.RESOURCES.filter(function (r) { return lvOfB[r] === loLv; })
-        .map(function (r) { return RLb[r]; }).join(" / ");
-      box.appendChild(el("p", hiLv > loLv
-        ? ("三资源并不同步：最高 <b>同步器 " + hiLv + "</b>，最低 <b>同步器 " + loLv + "</b>（" + bottB + "）→ <b>全箱梭哈实际只能升到 " + loLv + " 级</b>；若想一路升到 " + hiLv + " 级，需按上表补足对应数量的 1H 箱。")
-        : ("三资源恰好同步，全箱梭哈可到 <b>同步器 " + loLv + "</b>。"), "caption"));
-      box.appendChild(el("p", "算法：以三资源中<b>最高</b>可达到的等级 " + hiLv + " 为目标，逐资源比较「升到该等级的累计消耗」与「全箱梭哈可用量（裸资源 + 固定小时箱全开 + 自选箱全部按该资源最优选择）」；差额按 <b>1H 该资源产量</b>折算成「1H 箱」个数。不含「预计新主线推图收益」与活动收益（同现状口径）。", "caption"));
-    }
 
     // 3. 固定小时箱收益折算（含差值换算）
     box.appendChild(el("h3", "固定小时箱收益折算（开主线前 vs 开主线后）", "sec"));
