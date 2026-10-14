@@ -10,6 +10,36 @@
   var addRes = C.addRes;
   var subRes = C.subRes;
 
+  /* ---------- 月卡（默认关闭） ----------
+     月卡每日到账 1 个「30 天成长补给箱」，属自选箱（芯尘 10h / 信用 30h / 战斗 10h 三选一）。
+     计入区间 = [数据日期, 新主线开放日]，天数与等待期自然积累同口径（等待 N 天 → N 个）。
+     只并入「开放日快照」（future 口径）；现状四档与 box_gain_vs_now 均不涉及。 */
+  var MONTHLY_CARD_BOX = "30天成长补给箱";
+  var MONTHLY_CARD_OPTIONS = [
+    { label: "芯尘", rewards: { core_dust: 10 }, mode: "hours" },
+    { label: "信用点", rewards: { credit: 30 }, mode: "hours" },
+    { label: "战斗数据辑", rewards: { battle_data: 10 }, mode: "hours" },
+  ];
+  /* 等待期天数 → 月卡箱总数（未开启/天数为 0 或负 → 0） */
+  function monthlyCardBoxCount(snapshot, days) {
+    if (!snapshot || !snapshot.monthly_card) return 0;
+    var per = snapshot.monthly_card_per_day;
+    if (per === undefined || per === null || per === "") per = 1;
+    per = Number(per);
+    if (!isFinite(per) || per <= 0) return 0;
+    return Math.round(Math.max(0, Math.round(days)) * per);   // 箱数取整，避免出现小数个箱
+  }
+  /* 把月卡箱并入快照的自选箱（就地改副本，调用方保证是副本） */
+  function addMonthlyCardBoxes(snap, count) {
+    if (!(count > 0)) return snap;
+    var list = snap.selectable_boxes || (snap.selectable_boxes = []);
+    var hit = null;
+    list.forEach(function (b) { if (b.name === MONTHLY_CARD_BOX) hit = b; });
+    if (hit) hit.quantity = (hit.quantity || 0) + count;
+    else list.push({ name: MONTHLY_CARD_BOX, quantity: count, options: MONTHLY_CARD_OPTIONS });
+    return snap;
+  }
+
   function daysToTarget(shortage, daily) {
     var days = {};
     RESOURCES.forEach(function (r) {
@@ -116,6 +146,10 @@
       var sched = EV.schedule(snapshot);
       if (sched.dates.length) future = EV.inject(future, sched, EV.localISO(openAt));
     }
+    // 月卡（默认关闭）：等待期每日 1 个「30 天成长补给箱」并入开放日箱量
+    var mcCount = monthlyCardBoxCount(snapshot, days);
+    if (mcCount > 0) addMonthlyCardBoxes(future, mcCount);
+    future.monthly_card_boxes = mcCount;
     return future;
   }
 
@@ -141,6 +175,7 @@
       natural_before_open: subRes(future.bare_resources, snapshot.bare_resources),
       projected_bare: future.bare_resources, result: fixed,
       box_gain_vs_now: boxGain,
+      monthly_card_boxes: future.monthly_card_boxes || 0,   // 月卡并入开放日快照的箱数（0 = 未开启）
       projected_snapshot: future,   // 开放日快照（含活动箱；供 future 口径算箱量）
     };
   }
@@ -408,6 +443,7 @@
     immediateLevels: immediateLevels,
     futureSnapshot: futureSnapshot,
     futureMainStoryScenario: futureMainStoryScenario,
+    monthlyCardBoxCount: monthlyCardBoxCount,
     planForTarget: planForTarget,
     scenarioF: scenarioF,
     naturalToTarget: naturalToTarget,

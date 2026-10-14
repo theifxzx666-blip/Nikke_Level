@@ -388,21 +388,9 @@ body.m-body .result-panel table td.wrap {
 body.m-body .result-panel table th:first-child,
 body.m-body .result-panel table td:first-child { min-width: 72px; }
 
-/* ---------- 分配表：移动版换成卡片（由 app.js 的 isMobileShell 分支产出） ----------
-   5 列表在 314px 容器里需横滑 145px 且「分配明细」被截断；卡片零横滑、长文本可换行。 */
-body.m-body .box-cards { display: grid; gap: 8px; margin: 8px 0 10px; }
-body.m-body .box-card {
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--primary);
-  border-radius: 9px;
-  padding: 9px 10px;
-  background: #fbfdfc;
-}
-body.m-body .bc-name { font-size: 13.5px; font-weight: 600; color: var(--primary-dark); margin-bottom: 5px; }
-body.m-body .bc-nums { display: flex; gap: 16px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
-body.m-body .bc-nums b { color: #1a1a1a; font-size: 14px; }
-body.m-body .bc-detail { font-size: 12.5px; line-height: 1.5; word-break: break-word; }
-body.m-body .bc-note { font-size: 11.5px; color: var(--muted); font-style: italic; margin-top: 5px; }
+/* ---------- 分配表：PC 与移动版统一用卡片 ----------
+   5 列表在 400px（桌面结果栏）/ 314px（竖屏）里都要横滑且「分配明细」被截断；卡片零横滑、长文本可换行。
+   .box-cards / .box-card / .bc-* 的基础样式已在 css/style.css（两页共用），此处不再重复。 */
 body.m-body .tbl-scroll::after {
   content: "";
   position: absolute;

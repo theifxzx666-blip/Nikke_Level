@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261009b">
+<link rel="stylesheet" href="css/style.css?v=20261014a">
 <!-- html2canvas（导出结果图用，gzip ≈46KB）与 xlsx（导入/导出 Excel 用，gzip ≈316KB）改为「用到才加载」，
      由 js/app.js 的 ensureVendor() 在点击导出/导入时注入，首屏不再跨境外拉 CDN，也不拖慢首屏 -->
 </head>
@@ -114,6 +114,10 @@
       <div class="grid g2">
         <label>预计新主线开放日期<input type="date" id="f_future_open"></label>
         <div><p class="hint">选择下方「预计普通/困难主线关卡」章节后，自动推算预计新基地等级与收益。</p></div>
+      </div>
+      <div class="grid g2">
+        <label>月卡（30天成长补给箱）<select id="f_monthly_card"><option>否</option><option>是</option></select></label>
+        <div><p class="hint">月卡每日到账 <b>1 个「30天成长补给箱」</b>（自选箱：芯尘 10h / 信用 30h / 战斗 10h）。开启后按「数据日期 → 新主线开放日」的天数自动并入<b>开放日</b>箱量，不影响现状口径。</p></div>
       </div>
       <div class="grid g2">
         <div><label>预计普通主线关卡</label><select id="f_future_normal_chapter"></select><select id="f_future_normal_stage"></select></div>
@@ -235,10 +239,10 @@
 <script src="js/events.js?v=20261012a"></script>
 <script src="js/outpost.js?v=20260917c"></script>
 <script src="js/boxes.js?v=20261005a"></script>
-<script src="js/scenarios.js?v=20261009a"></script>
+<script src="js/scenarios.js?v=20261014a"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261012c"></script>
+<script src="js/app.js?v=20261014a"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/sync.js?v=20261013b"></script>
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->

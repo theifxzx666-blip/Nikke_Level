@@ -132,6 +132,7 @@
       fixed: JSON.parse(JSON.stringify(DEFAULT_FIXED)),
       ark: "1159", growth: "56", challenger: "1125",
       activities: [],         // 活动收益：[{ template: "small14"|"large21"|"large28", start_date: "YYYY-MM-DD" }]
+      monthly_card: "否",     // 月卡：等待期内每日到账 1 个「30 天成长补给箱」（默认关闭）
       saved_at: "",       // 最近一次「保存当前表单」的日期（YYYY-MM-DD）
       capture_time: "",   // 每日采集时刻（HH:MM）
       collected_before: "是", // 采集前是否已回收基地收益（是/否）
@@ -175,6 +176,7 @@
     f.stage_clear_task_credit = val("f_stage_task_credit"); f.stage_clear_task_battle = val("f_stage_task_battle"); f.stage_clear_task_dust = val("f_stage_task_dust");
     f.cost_credit = val("f_cost_credit"); f.cost_battle = val("f_cost_battle"); f.cost_dust = val("f_cost_dust");
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
+    f.monthly_card = val("f_monthly_card");
     f.saved_at = val("f_saved_at");
     f.collected_before = val("f_collected_before");
     syncActivitiesFromRows();
@@ -473,6 +475,7 @@
     setVal("f_stage_task_credit", f.stage_clear_task_credit); setVal("f_stage_task_battle", f.stage_clear_task_battle); setVal("f_stage_task_dust", f.stage_clear_task_dust);
     setVal("f_cost_credit", f.cost_credit); setVal("f_cost_battle", f.cost_battle); setVal("f_cost_dust", f.cost_dust);
     setVal("f_ark", f.ark); setVal("f_growth", f.growth); setVal("f_challenger", f.challenger);
+    setVal("f_monthly_card", f.monthly_card || "否");
     document.querySelectorAll(".fixed").forEach(function (inp) {
       var label = inp.dataset.label, h = inp.dataset.h;
       inp.value = (f.fixed[label] && f.fixed[label][h] !== undefined) ? f.fixed[label][h] : 0;
@@ -867,6 +870,8 @@
       stage_clear_resources: stage,
       // 活动收益（按日期计入；空数组 = 不开启本功能，行为与改动前一致）
       activities: (f.activities || []).map(function (a) { return { template: a.template, start_date: a.start_date }; }),
+      // 月卡（默认否）：等待期内每日 1 个「30 天成长补给箱」并入开放日箱量
+      monthly_card: f.monthly_card === "是",
     };
     return snap;
   }
@@ -1236,26 +1241,18 @@
     return res;
   }
 
-  /* 自选箱分配表（无标题；供达成目标方案与省流卡复用，格式统一）
+  /* 自选箱分配（无标题；供达成目标方案与省流卡复用，格式统一）
      planArr = 开箱方案条目数组（含 name/used/keep/choices） */
   function selectableBoxTable(planArr, note) {
     note = note || "无需开箱（现有资源 + 固定小时箱已满足目标）";
-    var rows = [];
-    var hasUsed = false;
-    (planArr || []).forEach(function (p) {
-      if (p.used > 0) hasUsed = true;
-      var detail = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
-        .map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
-      var note2 = p.name.indexOf("挑战者") >= 0 ? "固定数值奖励，默认全部消耗（不受基地等级影响）" : "";
-      rows.push([p.name, p.used, p.keep, detail, note2]);
-    });
+    var hasUsed = (planArr || []).some(function (p) { return p.used > 0; });
     if (!planArr || !planArr.length || !hasUsed) return el("p", note, "caption");
-    // 移动版：表格 → 卡片（5 列在 314px 容器里需横滑约 145px，且「分配明细」列会被截断）
-    if (isMobileShell()) return selectableBoxCards(planArr);
-    return table(["箱子", "使用", "保留", "分配明细", "备注"], rows);
+    // PC 与移动版统一走卡片：5 列表格在 400px（桌面结果栏）与 314px（竖屏）里都要横滑、
+    // 且「分配明细」「备注」被截断；卡片竖排零横滑、长文本不截断
+    return selectableBoxCards(planArr);
   }
 
-  /* 移动版分配表：一箱一张卡（数值 + 明细 + 备注竖排，零横滑、长文本不截断） */
+  /* 分配表卡片：一箱一张（数值 + 明细 + 备注竖排） */
   function selectableBoxCards(planArr) {
     var box = el("div", "", "box-cards");
     (planArr || []).forEach(function (p) {
@@ -1274,20 +1271,47 @@
     return box;
   }
 
-  /* 固定小时箱按需开启明细表：need.used[箱名][时长]=数量，输出 箱子/时长/数量 */
+  /* 固定小时箱按需开启明细：与「固定小时箱数量」输入表【同形状】的 6 时长矩阵
+     （行 = 箱类按输入表顺序、列 = 24h…1h、格 = 开启数量；0 记作 —）
+     此前是 30 行「箱子/时长/数量」三列表，一屏放不下且无法和输入值对照 */
+  var FIXED_BOX_ORDER = ["芯尘盒", "战斗数据辑盒", "信用点盒", "成长套组"];
+  var FIXED_BOX_ICON = {
+    "芯尘盒": "box_core_dust.webp", "战斗数据辑盒": "box_battle.webp",
+    "信用点盒": "box_credit.webp", "成长套组": "box_growth.webp"
+  };
+  var FIXED_BOX_HOURS = [24, 12, 8, 4, 2, 1];
+  /* 图标目录跟随页面上输入表实际使用的资源目录（桌面 assets/、移动版 assets/m/） */
+  function fixedIconDir() {
+    var img = document.querySelector(".fixed-table td:first-child img.box-icon");
+    var src = img ? (img.getAttribute("src") || "") : "";
+    return src ? src.replace(/[^/]*$/, "") : "";
+  }
   function fixedPlanTable(need) {
-    var rows = [], total = 0;
-    (need && Object.keys(need).forEach ? Object.keys(need) : []).forEach(function (nm) {
-      var map = need[nm] || {}, sub = 0;
-      [24, 12, 8, 4, 2, 1].forEach(function (h) {
-        var c = map[String(h)] || 0;
-        if (c > 0) { rows.push([nm, h + "h", c]); sub += c; total += c; }
-      });
+    var names = FIXED_BOX_ORDER.filter(function (nm) {
+      var m = need && need[nm];
+      if (!m) return false;
+      return FIXED_BOX_HOURS.some(function (h) { return (m[String(h)] || 0) > 0; });
+    });
+    var total = 0;
+    names.forEach(function (nm) {
+      FIXED_BOX_HOURS.forEach(function (h) { total += (need[nm][String(h)] || 0); });
     });
     var wrap = el("div", "", "sb-plan");
-    if (!rows.length) { wrap.appendChild(el("div", "无需开启固定小时箱（现有资源已足够）。", "sb-text")); return wrap; }
-    wrap.appendChild(el("div", "固定小时箱按需开启明细：", "sb-plan"));
-    wrap.appendChild(table(["固定小时箱", "时长", "开启数量"], rows));
+    if (!total) { wrap.appendChild(el("div", "无需开启固定小时箱（现有资源已足够）。", "sb-text")); return wrap; }
+    var dir = fixedIconDir();
+    var head = "<tr><th>箱子 \\ 小时</th>" + FIXED_BOX_HOURS.map(function (h) { return "<th>" + h + "h</th>"; }).join("") + "</tr>";
+    var body = names.map(function (nm) {
+      var map = need[nm] || {};
+      var tds = FIXED_BOX_HOURS.map(function (h) {
+        var c = map[String(h)] || 0;
+        return c > 0 ? '<td class="on">' + c + "</td>" : '<td class="off">—</td>';
+      }).join("");
+      var icon = (dir && FIXED_BOX_ICON[nm]) ? '<img class="box-icon" alt="" src="' + dir + FIXED_BOX_ICON[nm] + '">' : "";
+      return "<tr><td>" + icon + esc(nm) + "</td>" + tds + "</tr>";
+    }).join("");
+    var t = el("table", "<thead>" + head + "</thead><tbody>" + body + "</tbody>", "fixed-table plan");
+    wrap.appendChild(el("div", "固定小时箱按需开启明细（与上方「固定小时箱数量」同表形）：", "sb-plan"));
+    wrap.appendChild(t);
     wrap.appendChild(el("div", "共需开启固定小时箱 <b>" + total + "</b> 个。", "caption"));
     return wrap;
   }

@@ -113,7 +113,9 @@ body.has-result .hero-banner { max-width: 760px; }
 }
 
 .form-panel, .result-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
-fieldset { border: 1px solid var(--border); border-radius: 10px; margin: 0 0 14px; padding: 10px 12px; }
+/* min-inline-size:0 —— 浏览器 UA 默认 min-inline-size:min-content 会把内部宽表的「最小内容宽度」
+   一路上传到整页布局视口（Chrome 移动端把 390 撑成 628）；折叠态正常、展开就异常即此因。 */
+fieldset { border: 1px solid var(--border); border-radius: 10px; margin: 0 0 14px; padding: 10px 12px; min-inline-size: 0; min-width: 0; }
 legend { font-weight: 600; color: var(--primary-dark); padding: 2px 8px; border-radius: 6px; }
 /* 表单内 label 下的 input/select 占满容器，避免文字过长时控件越界 */
 .grid label input, .grid label select { width: 100%; }
@@ -139,6 +141,26 @@ input:focus, select:focus { outline: 2px solid #9fe1cb; border-color: var(--prim
 .fixed-table td:first-child { text-align: left; white-space: nowrap; }
 .box-name { display: inline-flex; align-items: center; gap: 6px; }
 .box-name .box-icon { margin-right: 0; }
+
+/* 固定小时箱「按需开启明细」矩阵：与输入表同表形（.fixed-table），格内是数量而非输入框 */
+.fixed-table.plan { margin: 4px 0 6px; }
+.fixed-table.plan td.on { color: var(--primary-dark); font-weight: 600; }
+.fixed-table.plan td.off { color: var(--muted); }
+
+/* 自选箱分配卡片：PC 与移动版统一（5 列表格在 400px 结果栏 / 314px 竖屏里都要横滑且明细被截断） */
+.box-cards { display: grid; gap: 8px; margin: 8px 0 10px; }
+.box-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 9px;
+  padding: 9px 10px;
+  background: #fbfdfc;
+}
+.bc-name { font-size: 13.5px; font-weight: 600; color: var(--primary-dark); margin-bottom: 5px; }
+.bc-nums { display: flex; gap: 16px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+.bc-nums b { color: #1a1a1a; font-size: 14px; }
+.bc-detail { font-size: 12.5px; line-height: 1.5; word-break: break-word; }
+.bc-note { font-size: 11.5px; color: var(--muted); font-style: italic; margin-top: 5px; }
 
 .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 12px; flex-wrap: wrap; }
 .tab {
@@ -292,13 +314,27 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
   }
 
-  /* 表格横向滚动（结果表用 .tbl-scroll 容器；固定箱表 / 分档预览用 display:block） */
+  /* 表格横向滚动（结果表用 .tbl-scroll 容器；分档预览用 display:block） */
   .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
-  .fixed-table, .cost-preview table {
+  .cost-preview table {
     display: block; width: 100%; max-width: 100%; overflow-x: auto;
     white-space: nowrap; -webkit-overflow-scrolling: touch;
   }
-  .fixed-table input { width: 52px; }
+  /* 固定小时箱表：一屏 7 列平分铺满，不再横滑（与移动版 css/mobile.css 同口径）
+     旧规则 display:block + overflow-x:auto 会让表格退化成 431px、需滑 107px、1h 列被切 */
+  .fixed-table {
+    display: table; table-layout: fixed; width: 100%; max-width: 100%;
+    overflow: visible; white-space: normal; font-size: 12px;
+  }
+  .fixed-table th, .fixed-table td { padding: 2px 1px; font-size: 11px; text-align: center; }
+  .fixed-table th:first-child, .fixed-table td:first-child {
+    width: 27%; white-space: normal; font-size: 10.5px; line-height: 1.15; text-align: left;
+  }
+  .fixed-table input {
+    width: 100%; min-width: 0; min-height: 40px; padding: 4px 1px;
+    font-size: 13px; border-radius: 6px; text-align: center; box-sizing: border-box;
+  }
+  .fixed-table.plan td.on, .fixed-table.plan td.off { padding: 3px 1px; }
   /* 结果区/对比区/方案区所有大表横向滚动，避免列被截断 */
   .result-panel > div { max-width: 100%; }
   /* 不再强制所有 table 变 block（旧规则会造成嵌套滚动 + 必须横滑）；
@@ -376,6 +412,12 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .hero-toolbar .btn { flex: 1 1 40%; }
   .compare .col { padding: 8px; }
   .cost-preview { padding: 8px; }
+}
+
+/* 超小屏（≤340px）：固定小时箱矩阵单格只剩 ~30px，回收字号与内边距保 7 列全在屏内 */
+@media (max-width: 340px) {
+  .fixed-table input { font-size: 11px; padding: 4px 0; }
+  .fixed-table th, .fixed-table td { font-size: 10px; }
 }
 
 /* 移动端：body 背景图去掉模糊改纯色遮罩（避免低端机卡顿） */
