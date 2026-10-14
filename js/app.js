@@ -1307,7 +1307,10 @@
       box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], cmpRows));
       var levelDiff = result.future_main_story.result.level - result.selectable.level;
       var bgExtra = result.future_main_story.box_gain_vs_now || 0;
-      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + localDateStr(result.future_main_story.open_at) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级：其中开箱收益对比 +" + bgExtra + " 级，其余 " + Math.max(0, levelDiff - bgExtra) + " 级为等待期自然积累）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
+      var gsE = levelGainSplit(result);
+      var wvE = (gsE.waitLv !== null) ? Math.min(gsE.waitLv, Math.max(0, levelDiff)) : Math.max(0, levelDiff - bgExtra);
+      var ovE = Math.max(0, levelDiff - wvE - bgExtra);
+      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + localDateStr(result.future_main_story.open_at) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级：等待期到账资源 +" + wvE + " 级，开箱 +" + ovE + " 级；箱子按新收益折算另 +" + bgExtra + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
       var hasFutIncome2 = (futIncome2.credit || 0) > 0 || (futIncome2.battle_data || 0) > 0 || (futIncome2.core_dust || 0) > 0;
       if (!hasFutIncome2) {
         box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
@@ -1427,6 +1430,36 @@
   }
 
   /* ---------- 省流版结论（置顶摘要卡） ---------- */
+  /* 「较现状多升 N 级」的分层拆解（三资源取 min = 瓶颈）：
+     裸资源可到 → ＋固定小时箱 → ＋自选箱；再配 box_gain_vs_now（箱子按新收益折算）。
+       waitLv     = 裸资源层的抬升 = 「等待期到账资源」（与是否开箱无关）
+       fixedDelta/selDelta = 固定小时箱 / 自选箱 在开放日相对现状多出的边际等级（= 开箱贡献）
+     任一字段为 null 表示 per_resource 数据不足，调用方自行兜底 */
+  function levelGainSplit(result) {
+    var pr = (result && result.per_resource) || {};
+    function lvMinOf(o) {
+      if (!o) return null;
+      var v = null;
+      C.RESOURCES.forEach(function (r) {
+        if (typeof o[r] === "number") v = (v === null ? o[r] : Math.min(v, o[r]));
+      });
+      return v;
+    }
+    var out = {
+      NB: lvMinOf(pr.bare), NF: lvMinOf(pr.fixed), NS: lvMinOf(pr.selectable),
+      FB: lvMinOf(pr.future_bare), FF: lvMinOf(pr.future_fixed), FS: lvMinOf(pr.future_selectable),
+      waitLv: null, fixedDelta: null, selDelta: null
+    };
+    if (out.NB !== null && out.FB !== null) out.waitLv = Math.max(0, out.FB - out.NB);
+    if (out.NB !== null && out.NF !== null && out.FB !== null && out.FF !== null) {
+      out.fixedDelta = (out.FF - out.FB) - (out.NF - out.NB);
+    }
+    if (out.NF !== null && out.NS !== null && out.FF !== null && out.FS !== null) {
+      out.selDelta = (out.FS - out.FF) - (out.NS - out.NF);
+    }
+    return out;
+  }
+
   function renderSummary(result, snap) {
     var wrap = el("div", "", "summary-card");
     wrap.appendChild(el("div", "即刻飞升（不做规划，直接梭哈）", "summary-title"));
@@ -1437,6 +1470,7 @@
     var fut = result.future_main_story;
     var hasFut = !!(fut && fut.available && fut.result);
     var futLv = hasFut ? fut.result.level : null;
+    var gs = levelGainSplit(result);
 
     // Block ① 现状（当前基地 · 直接全箱梭哈）
     var b1 = el("div", "", "summary-block");
@@ -1468,14 +1502,20 @@
       var diff = futLv - nowLv;
       var big2 = "开放日（" + date + "）全箱梭哈最高可到 <b>同步器 " + futLv + "</b>";
       if (diff > 0) {
-        // 「较现状多升」只计开箱收益对比（同一资源底盘下，箱子按新基地收益折算多出的等级）；
-        // 等待期自然积累与是否开箱无关，单独列出
+        // 分层拆解：「等待期到账资源」（不开箱也有）与「开箱贡献」分开列，
+        // 避免旧的「另有等待期自然积累 N 级」被误读成「这 N 级都不用开箱」
         var boxGain = fut.box_gain_vs_now || 0;
-        var waitGain = Math.max(0, diff - boxGain);
-        big2 += "（开箱收益对比：较现状多升 <b>" + boxGain + "</b> 级；另有等待期自然积累 " + waitGain + " 级）";
+        var wv = (gs.waitLv !== null) ? gs.waitLv : Math.max(0, diff - boxGain);
+        var ov = Math.max(0, diff - wv - boxGain);
+        big2 += "（较现状多 <b>" + diff + "</b> 级 = 等待期到账资源 <b>+" + wv + "</b> 级 + 开箱 <b>+" + ov + "</b> 级；箱子按新收益折算另 +" + boxGain + " 级）";
       }
       if (futLv >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
       b2.appendChild(el("div", big2, "sb-big"));
+      if (diff > 0 && gs.NB !== null && gs.FB !== null) {
+        // 只用同口径的裸资源层（per_resource 的 bare 层与联合口径等价）
+        // 自选箱层是「全给单项」的乐观上界，与 futLv 不同口径，不能混用
+        b2.appendChild(el("div", "其中：不开箱可到 " + gs.NB + " → " + gs.FB + " 级；全箱梭哈 " + nowLv + " → " + futLv + " 级。", "sb-text"));
+      }
       // 与 Block① 对称：取「开放日全箱梭哈到该最高等级」的真实逐箱分配
       //   （此前误用 target_selectable_future —— 那是为「达成目标等级」优化的方案，目标被裸资源+固定箱满足时会是空表）
       var futPlanNode = (fut.result && fut.result.selectable) || null;
@@ -1507,7 +1547,9 @@
       var diff3 = futLv - nowLv;
       if (diff3 > 0) {
         var bg3 = fut.box_gain_vs_now || 0;
-        text3 = "💰 <b>建议等新主线开放后再全箱梭哈</b>：现在梭哈到 <b>同步器 " + nowLv + "</b>；等 " + date + " 再梭哈可到 <b>同步器 " + futLv + "</b>，多 <b>" + diff3 + "</b> 级（其中开箱收益对比 +" + bg3 + " 级，其余 " + Math.max(0, diff3 - bg3) + " 级为等待期自然积累）。";
+        var wv3 = (gs.waitLv !== null) ? Math.min(gs.waitLv, diff3) : Math.max(0, diff3 - bg3);
+        var ov3 = Math.max(0, diff3 - wv3 - bg3);
+        text3 = "💰 <b>建议等新主线开放后再全箱梭哈</b>：现在梭哈到 <b>同步器 " + nowLv + "</b>；等 " + date + " 再梭哈可到 <b>同步器 " + futLv + "</b>，多 <b>" + diff3 + "</b> 级（等待期到账资源 +" + wv3 + " 级，开箱 +" + ov3 + " 级；箱子按新收益折算另 +" + bg3 + " 级）。";
       } else {
         text3 = "现在全箱梭哈可到 <b>同步器 " + nowLv + "</b>；等新主线开放后再梭哈可到 <b>同步器 " + futLv + "</b>（收益相当，可立即梭哈）。";
       }
