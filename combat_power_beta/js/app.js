@@ -88,15 +88,18 @@
          gear 一并按角色记忆 —— 每个角色各有自己的整套装备（4 个部位的装备等级 + 词条）。 */
       byChar: {},
       gearByChar: {},
+      fav: [],              // 收藏角色 rid 列表（检索区「★ 收藏」范围用）
+      scope: "all",         // 角色检索范围：all | fav | recorded
       panel: { attack: "", hp: "", defense: "", critRate: 15, critDamage: 150, extraBP: "", skill1: 10, skill2: 10, burst: 10 },
       gear: blankGear(),
       /* 洗练模拟（按部位）：只重洗「该部位被勾选的词条位」，其余词条保持现状。
          active[部位] = 该部位 3 条词条的「参与重洗」开关（1 = 参与，0 = 锁定保留）。 */
       sim: {
         slot: "head",
+        mode: "change",   // change = 换词条（Change Effects）｜value = 只洗数值（Reset Attributes）
         active: { head: [1, 1, 1], body: [1, 1, 1], arms: [1, 1, 1], legs: [1, 1, 1] },
-        rolls: 5000, min: 1, max: 15,
-        pool: D.overload.map(function (g) { return g.key; })
+        rolls: 5000,
+        target: {}        // target[部位][行] = { key, level, autoKey, autoLevel }
       }
     };
   }
@@ -124,10 +127,8 @@
       }
       if (raw.sim) {
         if (C.SLOTS.indexOf(raw.sim.slot) >= 0) d.sim.slot = raw.sim.slot;   // 旧存档无 slot → 默认 head
-        d.sim.rolls = num(raw.sim.rolls, d.sim.rolls);
-        d.sim.min = num(raw.sim.min, d.sim.min);
-        d.sim.max = num(raw.sim.max, d.sim.max);
-        if (Array.isArray(raw.sim.pool) && raw.sim.pool.length) d.sim.pool = raw.sim.pool;
+        d.sim.rolls = Math.max(100, Math.min(200000, Math.trunc(num(raw.sim.rolls, d.sim.rolls))));
+        if (raw.sim.mode === "value") d.sim.mode = "value";
         if (raw.sim.active && typeof raw.sim.active === "object") {
           C.SLOTS.forEach(function (s) {
             var a = raw.sim.active[s];
@@ -137,10 +138,28 @@
             }
           });
         }
+        if (raw.sim.target && typeof raw.sim.target === "object") {
+          C.SLOTS.forEach(function (s) {
+            var arr = raw.sim.target[s];
+            if (!Array.isArray(arr)) return;
+            var out = [];
+            for (var i = 0; i < 3; i++) {
+              var t = arr[i] || {};
+              out.push({
+                key: String(t.key || ""),
+                level: Math.max(0, Math.min(15, Math.trunc(num(t.level)))),
+                autoKey: t.autoKey !== false, autoLevel: t.autoLevel !== false
+              });
+            }
+            d.sim.target[s] = out;
+          });
+        }
       }
       if (raw.mode) d.mode = raw.mode;
       if (raw.byChar && typeof raw.byChar === "object") d.byChar = raw.byChar;
       if (raw.gearByChar && typeof raw.gearByChar === "object") d.gearByChar = raw.gearByChar;
+      if (Array.isArray(raw.fav)) d.fav = raw.fav;
+      if (raw.scope === "fav" || raw.scope === "recorded") d.scope = raw.scope;
       if (raw.loadout) {
         Object.keys(d.loadout).forEach(function (k) {
           if (raw.loadout[k] !== undefined && raw.loadout[k] !== null) d.loadout[k] = raw.loadout[k];
@@ -203,7 +222,7 @@
     var rid = currentRid();
     var hit = P.findRoster(D, rid);
     if (!hit) {
-      $("char-meta").textContent = "未在角色目录中匹配到（请从下拉里选）";
+      $("char-meta").textContent = "未在角色目录中匹配到（请从搜索结果里选一个）";
       $("anchor-cls").textContent = "—"; $("anchor-corp").textContent = "—";
       return;
     }
@@ -221,59 +240,258 @@
     return state.loadout.rid;
   }
 
-  /* ---------------- 角色选择器 ----------------
-   * 原实现是 <input list=datalist>：输入框被预填成「拉毗：小红帽」，浏览器按当前值过滤候选，
-   * 点开只看到 1 条，等于没法选人。改为「筛选框 + 原生 <select>（按企业分组、拼音排序）」，
-   * 当前角色永远保留在列表里，切人后立即用新 rid 重推面板。 */
+  /* ---------------- 角色选择器（整合式搜索框） ----------------
+   * 旧实现是「筛选框 + 原生 <select>」两段式：先打关键词、再去下拉里翻第二次，用户反馈很别扭。
+   * 现在合并成一个控件：#char-search 输入即筛、#char-pop 浮层直接列候选、点一下就是选中。
+   * 原 #char-input（<select>）保留但隐藏 —— 它是「当前选中角色」的状态载体，
+   * currentRid() / collectLoadout() 等既有调用点一行都不用改。 */
   var CORP_ORDER = ["极乐净土", "米西利斯", "泰特拉", "朝圣者", "反常"];
-  /** 角色名前的稀有度标记（R/SR/SSR），让下拉里一眼可辨 */
-  function rarTag(r) { return "[" + (RARITY[r && r.rarity] || "?") + "] "; }
-  function rosterSorted() {
-    return D.roster.slice().sort(function (a, b) {
-      return String(a.name).localeCompare(String(b.name), "zh-Hans-CN");
+
+  /* ---- 归一化：小写 + 全角转半角 + 丢弃分隔符（保留中文 / 字母 / 数字）----
+   * 「拉毗：小红帽」「拉毗 小红帽」「拉毗:小红帽」「拉毗小红帽」归一化后都是「拉毗小红帽」。 */
+  function normChar(ch) {
+    var c = String(ch).toLowerCase();
+    if (c.charCodeAt(0) === 0x3000) return "";                       // 全角空格
+    var code = c.charCodeAt(0);
+    if (code >= 0xff01 && code <= 0xff5e) c = String.fromCharCode(code - 0xfee0);  // 全角 → 半角
+    return /[a-z0-9\u4e00-\u9fff]/.test(c) ? c : "";                 // 其余（冒号/括号/空白…）全丢
+  }
+  /** 归一化，并返回「归一化串下标 → 原串下标」的映射（用于在原文里做命中高亮） */
+  function normMap(s) {
+    var str = String(s == null ? "" : s), out = "", map = [];
+    for (var i = 0; i < str.length; i++) {
+      var n = normChar(str[i]);
+      if (!n) continue;
+      out += n;
+      for (var k = 0; k < n.length; k++) map.push(i);
+    }
+    return { norm: out, map: map };
+  }
+  function normText(s) { return normMap(s).norm; }
+  /** roster 每项挂上归一化串 / 全拼 / 首字母（只算一次，惰性） */
+  function decorateRoster() {
+    D.roster.forEach(function (r) {
+      if (r._nrm !== undefined) return;
+      var nm = String(r.name);
+      r._nrm = normText(nm);
+      r._py = String(r.py || r._nrm);
+      r._ini = String(r.ini || "");
+      r._py2 = String(r.py2 || "");     // 别名拼音（如「拉毗」圈内读「拉比」→ labi）
+      r._ini2 = String(r.ini2 || "");
     });
   }
-  /** 重建角色下拉；kw 为筛选关键字（子串匹配，空=全量）。返回匹配人数。 */
-  function buildCharOptions(kw) {
-    var sel = $("char-input");
-    kw = String(kw || "").trim();
-    var keep = (sel.value || state.char || "").trim();
-    var list = rosterSorted();
-    if (kw) list = list.filter(function (r) { return String(r.name).indexOf(kw) >= 0; });
-
-    var pinned = null;
-    for (var i = 0; i < D.roster.length; i++) {
-      if (D.roster[i].name === keep) { pinned = D.roster[i]; break; }
-    }
-    var shown = pinned && list.some(function (r) { return r.rid === pinned.rid; });
-
-    var groups = {};
-    list.forEach(function (r) {
-      var c = CORP[r.corp] || ("企业" + r.corp);
-      (groups[c] = groups[c] || []).push(r);
+  /** 输入串 → 归一化关键词数组（空白 / 逗号 / 顿号 分隔，AND 关系） */
+  function kwList(raw) {
+    return String(raw || "").split(/[\s,，、]+/).map(normText).filter(Boolean);
+  }
+  /** 单关键词命中：归一化名字 / 全拼 / 首字母缩写 / 别名拼音 */
+  function matchOne(r, kw) {
+    return r._nrm.indexOf(kw) >= 0 || r._py.indexOf(kw) >= 0 || (r._ini && r._ini.indexOf(kw) >= 0)
+      || (r._py2 && r._py2.indexOf(kw) >= 0) || (r._ini2 && r._ini2.indexOf(kw) >= 0);
+  }
+  function scoreOf(r, kws) {
+    var s = 0;
+    kws.forEach(function (k) {
+      var a = r._nrm.indexOf(k), b = r._py.indexOf(k), c = r._ini ? r._ini.indexOf(k) : -1;
+      var d = r._py2 ? r._py2.indexOf(k) : -1, e = r._ini2 ? r._ini2.indexOf(k) : -1;
+      if (a === 0) s += 100;
+      else if (a > 0) s += 60;
+      else if (b === 0 || d === 0) s += 45;
+      else if (c === 0 || e === 0) s += 35;
+      else if (b > 0 || d > 0) s += 25;
+      else if (c > 0 || e > 0) s += 15;
     });
-
-    var h = "";
-    if (pinned && !shown) {
-      h += '<optgroup label="当前角色"><option value="' + esc(pinned.name) + '">'
-        + esc(rarTag(pinned) + pinned.name) + "</option></optgroup>";
-    }
-    CORP_ORDER.concat(Object.keys(groups).filter(function (c) { return CORP_ORDER.indexOf(c) < 0; }))
-      .forEach(function (c) {
-        var arr = groups[c];
-        if (!arr || !arr.length) return;
-        h += '<optgroup label="' + esc(c) + "（" + arr.length + '）">'
-          + arr.map(function (r) { return '<option value="' + esc(r.name) + '">' + esc(rarTag(r) + r.name) + "</option>"; }).join("")
-          + "</optgroup>";
+    return s;
+  }
+  /* ---- 收藏 / 已记录 ---- */
+  function favSet() { var o = {}; (state.fav || []).forEach(function (r) { o[String(r)] = 1; }); return o; }
+  function isFav(rid) { return !!favSet()[String(rid)]; }
+  function toggleFav(rid) {
+    var id = String(rid), i = (state.fav || []).map(String).indexOf(id);
+    if (!state.fav) state.fav = [];
+    if (i >= 0) state.fav.splice(i, 1); else state.fav.push(rid);
+    save(true);
+  }
+  /** 「已记录」= 存档里真有内容的角色（填过词条 / 动过装备等级 / 改过突破档 / 存过收藏品） */
+  function recordedSet() {
+    var out = {}, defBt = defaults().loadout.bt;
+    function scanGear(g) {
+      if (!g) return false;
+      var hit = false;
+      C.SLOTS.forEach(function (s) {
+        if (!g[s]) return;
+        if (g[s].lv !== undefined && Math.trunc(num(g[s].lv, GEAR_LV_MAX)) !== GEAR_LV_MAX) hit = true;
+        ["before", "after"].forEach(function (side) {
+          ((g[s] && g[s][side]) || []).forEach(function (r) { if (r && r.key) hit = true; });
+        });
       });
-    if (!h) h = '<option value="">（无匹配角色）</option>';
-
-    sel.innerHTML = h;
-    if (pinned) sel.value = pinned.name;
-
+      return hit;
+    }
+    Object.keys(state.byChar || {}).forEach(function (k) {
+      var o = state.byChar[k]; if (!o) return;
+      if (scanGear(o.gear) || (o.bt !== undefined && Math.trunc(num(o.bt, defBt)) !== defBt) || o.coll) out[k] = 1;
+    });
+    Object.keys(state.gearByChar || {}).forEach(function (k) { if (scanGear(state.gearByChar[k])) out[k] = 1; });
+    return out;
+  }
+  /** 按「范围 + 关键词」筛出角色，并按命中质量 + 拼音序排序 */
+  function filterRoster() {
+    decorateRoster();
+    var kws = kwList($("char-search") ? $("char-search").value : "");
+    var pool = D.roster.slice();
+    if (state.scope === "fav") { var fs = favSet(); pool = pool.filter(function (r) { return fs[String(r.rid)]; }); }
+    else if (state.scope === "recorded") { var rs = recordedSet(); pool = pool.filter(function (r) { return rs[String(r.rid)]; }); }
+    var list = pool.filter(function (r) { return kws.every(function (k) { return matchOne(r, k); }); });
+    list.sort(function (a, b) {
+      var d = scoreOf(b, kws) - scoreOf(a, kws);
+      return d ? d : String(a.name).localeCompare(String(b.name), "zh-Hans-CN");
+    });
+    return { list: list, total: pool.length, kws: kws };
+  }
+  /** 在原始名字里把命中的关键词包成 <mark>（归一化下标 → 原串下标回映射） */
+  function highlightName(r, kws) {
+    var nm = String(r.name);
+    if (!kws.length) return esc(nm);
+    var nmMap = normMap(nm), marks = [];
+    kws.forEach(function (k) {
+      var from = 0, p;
+      while ((p = nmMap.norm.indexOf(k, from)) >= 0) {
+        marks.push([nmMap.map[p], nmMap.map[p + k.length - 1] + 1]);
+        from = p + 1;
+      }
+    });
+    if (!marks.length) return esc(nm);
+    marks.sort(function (a, b) { return a[0] - b[0] || b[1] - a[1]; });
+    var merged = [];
+    marks.forEach(function (m) {
+      var last = merged[merged.length - 1];
+      if (last && m[0] <= last[1]) last[1] = Math.max(last[1], m[1]);
+      else merged.push(m.slice());
+    });
+    var out = "", cur = 0;
+    merged.forEach(function (m) {
+      out += esc(nm.slice(cur, m[0])) + "<mark>" + esc(nm.slice(m[0], m[1])) + "</mark>";
+      cur = m[1];
+    });
+    return out + esc(nm.slice(cur));
+  }
+  /** 角色计数标签 */
+  function updateCharCount(f) {
     var el = $("char-count");
-    if (el) el.textContent = kw ? (list.length + " / " + D.roster.length + " 名") : (D.roster.length + " 名角色");
-    return list.length;
+    if (!el) return;
+    var raw = $("char-search") ? $("char-search").value.trim() : "";
+    el.textContent = (raw || (state.scope && state.scope !== "all"))
+      ? (f.list.length + " / " + f.total + " 名")
+      : (D.roster.length + " 名角色");
+  }
+  /** 渲染候选浮层（分组：★收藏置顶 + 按企业） */
+  function renderPicker() {
+    var pop = $("char-pop");
+    if (!pop) return;
+    var f = filterRoster();
+    updateCharCount(f);
+    var fs = favSet(), curRid = String(state.loadout.rid);
+    var groupTitle = { fav: "★ 收藏（{n}）", rec: "已记录（{n}）" };
+
+    function itemHTML(r) {
+      var on = String(r.rid) === curRid;
+      var fav = fs[String(r.rid)];
+      return '<button type="button" class="roster-item' + (on ? " cur" : "") + '" data-rid="' + r.rid + '"'
+        + ' role="option" aria-selected="' + (on ? "true" : "false") + '">'
+        + '<span class="rar r' + num(r.rarity, 1) + '">' + esc(RARITY[r.rarity] || "?") + "</span>"
+        + '<span class="nm">' + highlightName(r, f.kws) + "</span>"
+        + '<i class="fav' + (fav ? " on" : "") + '" data-fav="' + r.rid + '" title="'
+        + (fav ? "取消收藏" : "加入收藏") + '">' + (fav ? "★" : "☆") + "</i></button>";
+    }
+    var h = "";
+    if (state.scope === "fav") {
+      h = f.list.length ? f.list.map(itemHTML).join("") : "";
+    } else if (state.scope === "recorded") {
+      h = f.list.length ? f.list.map(itemHTML).join("") : "";
+    } else {
+      var favs = f.list.filter(function (r) { return fs[String(r.rid)]; });
+      var recs = {}, rs2 = recordedSet();
+      f.list.forEach(function (r) { if (rs2[String(r.rid)]) recs[String(r.rid)] = 1; });
+      var rest = f.list.filter(function (r) { return !fs[String(r.rid)]; });
+      if (favs.length) h += '<div class="roster-grp">' + groupTitle.fav.replace("{n}", favs.length) + "</div>" + favs.map(itemHTML).join("");
+      var groups = {};
+      rest.forEach(function (r) {
+        var c = CORP[r.corp] || ("企业" + r.corp);
+        (groups[c] = groups[c] || []).push(r);
+      });
+      CORP_ORDER.concat(Object.keys(groups).filter(function (c) { return CORP_ORDER.indexOf(c) < 0; }))
+        .forEach(function (c) {
+          var arr = groups[c];
+          if (!arr || !arr.length) return;
+          h += '<div class="roster-grp">' + esc(c) + "（" + arr.length + "）</div>" + arr.map(itemHTML).join("");
+        });
+    }
+    if (!h) h = '<div class="roster-empty">没有匹配的角色</div>';
+    pop.innerHTML = h;
+    pop.querySelectorAll("button.roster-item").forEach(function (b) {
+      b.addEventListener("mousedown", function (e) { e.preventDefault(); });   // 保住输入框焦点
+      b.addEventListener("click", function (e) {
+        if (e.target.classList.contains("fav")) {          // 点星标只切收藏，不选中
+          e.stopPropagation();
+          toggleFav(e.target.dataset.fav);
+          renderPicker();
+          return;
+        }
+        pickRoster(Number(b.dataset.rid));
+      });
+    });
+  }
+  function openPicker() { var p = $("char-pop"); if (p) { renderPicker(); p.hidden = false; } }
+  function closePicker() { var p = $("char-pop"); if (p) p.hidden = true; }
+  /** 选中某角色：写输入框 + 状态载体 → 走既有切角色流程 */
+  function pickRoster(rid) {
+    var hit = null;
+    for (var i = 0; i < D.roster.length; i++) if (D.roster[i].rid === rid) { hit = D.roster[i]; break; }
+    if (!hit) return;
+    $("char-search").value = String(hit.name);
+    $("char-input").value = String(hit.name);
+    closePicker();
+    onCharPicked();
+  }
+  /** ↑↓ 在候选里移动、Enter 选中、Esc 关闭 */
+  function pickerKey(e) {
+    var pop = $("char-pop");
+    if (!pop || pop.hidden) {
+      if (e.key === "ArrowDown") { openPicker(); e.preventDefault(); }
+      return;
+    }
+    var items = Array.prototype.slice.call(pop.querySelectorAll("button.roster-item"));
+    if (!items.length) return;
+    var cur = items.findIndex(function (b) { return b.classList.contains("active"); });
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      var next = e.key === "ArrowDown" ? Math.min(items.length - 1, cur + 1) : Math.max(0, cur - 1);
+      items.forEach(function (b) { b.classList.remove("active"); });
+      items[next].classList.add("active");
+      items[next].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      var t = cur >= 0 ? items[cur] : items[0];
+      pickRoster(Number(t.dataset.rid));
+    } else if (e.key === "Escape") {
+      closePicker();
+    }
+  }
+  /** 同步范围开关的选中态 */
+  function renderScopeSwitch() {
+    var box = $("char-scope");
+    if (!box) return;
+    Array.prototype.forEach.call(box.querySelectorAll("input"), function (r) {
+      r.checked = (r.value === (state.scope || "all"));
+    });
+  }
+  /** 切完角色后同步检索区：输入框文本 + 计数（浮层开着才重建浮层） */
+  function syncPickerUI() {
+    var si = $("char-search");
+    if (si && document.activeElement !== si) si.value = state.char || "";
+    var pop = $("char-pop");
+    if (pop && !pop.hidden) renderPicker();
+    else updateCharCount(filterRoster());
   }
   /* 角色级记忆：突破档 / 收藏品 / 整套装备词条 —— 都随角色切换而存取 */
   var CHAR_KEYS = ["bt", "coll"];
@@ -302,6 +520,7 @@
     renderGear(); gearDirty = false; renderGearState();
     collectLoadout();
     if (state.mode === "loadout" && state.loadout.auto) derivePanel();
+    syncPickerUI();
     save(true);
   }
 
@@ -309,9 +528,16 @@
   function renderLoadout() {
     var lo = state.loadout;
     var sel = $("char-input");
-    if (!sel.options.length) buildCharOptions("");
     sel.value = state.char || "";
-    if (!sel.value && sel.options.length) { sel.selectedIndex = 0; state.char = sel.value; lo.rid = currentRid(); }
+    if (!sel.value) {                     // 存档里的名字对不上目录（旧存档）→ 落到目录第一名
+      sel.value = (D.roster[0] && D.roster[0].name) || "";
+      state.char = sel.value;
+      lo.rid = currentRid();
+    }
+    decorateRoster();
+    var si = $("char-search"); if (si) si.value = state.char || "";
+    renderScopeSwitch();
+    updateCharCount(filterRoster());
     $("l-level").value = lo.level;
     $("l-attr").value = lo.attr;
     $("l-cubelv").value = lo.cubeLv;
@@ -405,17 +631,28 @@
     var base = Math.ceil(level / 20) * 20 + 1;
     return [level, base, base + 20, base + 40];
   }
+  /** 4 档位预览（A 方案 · 双行横条）：上行「档位 + 战力（+ 较当前增量）」，下行「攻 / 生 / 防」完整展开。
+   *  左栏内容宽只有 270px，5 列大数字表会溢出把「战力」列裁掉，故改为两行横条。 */
   function renderTiers() {
     var lo = loadoutOf();
     var lv = [lo.level].concat(tierLevels(lo.level).slice(1));
     var res = P.tierPreview(D, Object.assign({}, lo, {
       skill1: Math.trunc(num(state.panel.skill1, 1)), skill2: Math.trunc(num(state.panel.skill2, 1)), burst: Math.trunc(num(state.panel.burst, 1))
     }), D.config, C, lv);
-    $("tier-table").innerHTML = "<thead><tr><th>同步器</th><th>攻击</th><th>生命</th><th>防御</th><th>战力</th></tr></thead><tbody>"
-      + res.map(function (r) {
-        return "<tr><td>" + r.level + (r.level === lo.level ? " <span class=\"tag\">当前</span>" : "") + "</td><td>"
-          + fmt(r.atk) + "</td><td>" + fmt(r.hp) + "</td><td>" + fmt(r.def) + "</td><td><b>" + fmt(r.bp) + "</b></td></tr>";
-      }).join("") + "</tbody>";
+    var base = 0, found = false;
+    res.forEach(function (r) { if (r.level === lo.level && !r.error) { base = r.bp; found = true; } });
+    if (!found && res.length && !res[0].error) base = res[0].bp;
+    $("tier-list").innerHTML = res.map(function (r) {
+      if (r.error) return '<div class="tier-item"><div class="tier-top"><span class="tier-lv">' + r.level + "</span><b class=\"tier-bp\">" + esc(r.error) + "</b></div></div>";
+      var isCur = r.level === lo.level;
+      return '<div class="tier-item' + (isCur ? " cur" : "") + '">'
+        + '<div class="tier-top"><span class="tier-lv">' + r.level + (isCur ? '<i class="tier-cur">当前</i>' : "") + "</span>"
+        + '<b class="tier-bp">' + fmt(r.bp) + "</b>"
+        + (isCur ? "" : '<span class="tier-delta">' + sfmt(r.bp - base) + "</span>")
+        + "</div>"
+        + '<div class="tier-sub"><span>攻 ' + fmt(r.atk) + "</span><span>生 " + fmt(r.hp) + "</span><span>防 " + fmt(r.def) + "</span></div>"
+        + "</div>";
+    }).join("");
   }
   function setMode(m) {
     if (!MANUAL_MODE_ENABLED) m = "loadout";   // 手填面板已屏蔽：任何来源都被拉回练度模式
@@ -624,7 +861,8 @@
       $("m-cur").textContent = $("m-slotcur").textContent = $("m-minmax").textContent = "--";
       $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = $("m-pctgain").textContent = "--";
       $("m-hist").innerHTML = "";
-      $("c-per").textContent = $("c-p").textContent = $("c-rolls").textContent = $("c-exp").textContent = "--";
+      $("c-per").textContent = $("c-lock").textContent = $("c-p").textContent = "--";
+      $("c-rolls").textContent = $("c-exp").textContent = "--";
       setNotice("等待面板数据：请先在左侧选好角色与练度参数（面板三围会自动推导）", "");
       return;
     }
@@ -672,8 +910,8 @@
     });
 
     renderUnitTable(pf);
+    renderSimTargets();
     renderSim(pf);
-    renderActiveLocks();
   }
 
   /* ---------------- 单价表 ---------------- */
@@ -694,124 +932,251 @@
     $("unit-sub").textContent = "上排战力增量 / 下排词条数值";
   }
 
-  /* ---------------- 洗练模拟（按部位） ----------------
-   * 对照游戏实际：洗练是「针对一件装备」做的 —— 可以锁住部分词条、只重洗其余。
-   * 因此这里按部位模拟：只重洗该部位被勾选的词条位，其余词条（含另外三个部位）保持
-   * 当前记录不变，输出洗后战力分布，用来判断「这件装备值不值得继续洗」。 */
+  /* ---------------- 洗练模拟（按部位 · 目标驱动） ----------------
+   * 对照游戏实际：洗练是针对「一件装备」做的 —— 可以锁住满意的词条、只重洗其余。
+   * 交互顺序与游戏一致：① 选部位 → ② 选操作类型 → ③ 给参与重洗的行设定「目标词条 + 目标阶数」
+   *                      → ④ 输出「达成概率 / 期望次数 / 期望总消耗（含上锁一次性成本）」。
+   * 达成口径（Q2 裁决）：目标行的类型命中 且 阶数 ≥ 目标阶数（洗得更高也算成）。 */
   function renderSimSlotOptions() {
     $("m-slot").innerHTML = C.SLOTS.map(function (s) {
       return '<option value="' + s + '"' + (s === state.sim.slot ? " selected" : "") + ">" + SLOT_LABEL[s] + "</option>";
     }).join("");
   }
-  /** 该部位 3 条词条的「参与重洗」勾选（勾选 = 会被随机重洗；不勾 = 锁定保留现状） */
-  function renderActiveLocks() {
-    var el = $("m-active");
+  /** 该部位 3 行的目标。
+   *  ⚠ **必须原地修改并返回「同一个数组引用」** —— 目标行的下拉 change 闭包持有这个引用，
+   *  若每次都新建数组，闭包写进的是旧数组、`renderSim()` 读的是新数组，用户设定会被静默丢弃。
+   *  autoKey / autoLevel 为 true 时该字段跟随「当前装备」，用户手动改过就置 false 保留其设定。 */
+  function ensureTargets(slot) {
+    if (!state.sim.target || typeof state.sim.target !== "object") state.sim.target = {};
+    var arr = state.sim.target[slot];
+    if (!Array.isArray(arr)) { arr = []; state.sim.target[slot] = arr; }
+    while (arr.length > 3) arr.pop();
+    for (var i = 0; i < 3; i++) {
+      if (!arr[i] || typeof arr[i] !== "object") arr[i] = {};
+      var t = arr[i];
+      if (t.autoKey === undefined) t.autoKey = true;
+      if (t.autoLevel === undefined) t.autoLevel = true;
+      t.key = String(t.key || "");
+      t.level = Math.max(0, Math.min(15, Math.trunc(num(t.level))));
+      var b = state.gear[slot].before[i] || { key: "", level: 0 };
+      if (t.autoKey) t.key = b.key || "";
+      if (t.autoLevel) t.level = t.key ? Math.max(0, Math.min(15, Math.trunc(num(b.level)))) : 0;
+      else if (!t.key) t.level = 0;
+    }
+    return arr;
+  }
+  /* 洗练概率模型（社区实测口径，非官方）：类型权重 优越/攻击/暴伤/防御 = 10，其余 = 12；
+     阶数按段概率 60% / 35% / 5%，段内暂按平均占位（C.LEVEL_TABLE_AVG）。 */
+  var TYPE_WNAMES = { "优越代码伤害": 10, "命中率": 12, "最大装弹数": 12, "攻击力": 10, "蓄力伤害": 12,
+    "蓄力时间": 12, "暴击率": 12, "暴击伤害": 10, "防御力": 10 };
+  function typeWeights() {
+    var o = {};
+    D.overload.forEach(function (g) { o[g.key] = TYPE_WNAMES[g.name] !== undefined ? TYPE_WNAMES[g.name] : 12; });
+    return o;
+  }
+  /** 稳定哈希（FNV-1a 32 位）→ 模拟种子：同输入必得同输出，修掉「改任意词条分布就整体跳变」 */
+  function hashStr(s) {
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  /** 3 行「目标词条 + 目标阶数」，带「参与重洗」勾选（不勾 = 锁定保留现状） */
+  function renderSimTargets() {
+    var el = $("m-target");
     if (!el) return;
     var slot = state.sim.slot;
-    var act = state.sim.active[slot] || [1, 1, 1];
+    var act = (state.sim.active[slot] || [1, 1, 1]).slice(0, 3);
+    var tgt = ensureTargets(slot);
+    var isVal = state.sim.mode === "value";
     var html = "";
     for (var i = 0; i < 3; i++) {
-      var b = state.gear[slot].before[i];
-      var r = C.resolveOption(D, b.key, b.level);
-      var txt = r.level ? (esc(r.name) + " " + r.level + " 阶" + (r.valueText ? " · " + esc(r.valueText) : "")) : "空（无词条）";
-      html += '<label class="' + (act[i] ? "on" : "") + '"><input type="checkbox" data-idx="' + i + '"' + (act[i] ? " checked" : "") + ">"
-        + "<em>词条" + (i + 1) + "</em><b class=\"" + (r.level ? tierCls(r.level) : "empty") + "\">" + txt + "</b></label>";
+      var b = state.gear[slot].before[i] || { key: "", level: 0 };
+      var opts = '<option value="">空（无词条）</option>';
+      D.overload.forEach(function (g) {
+        opts += '<option value="' + esc(g.key) + '"' + (g.key === tgt[i].key ? " selected" : "") + ">" + esc(g.name) + "</option>";
+      });
+      html += '<div class="trow' + (act[i] ? " on" : "") + '" title="该部位现状：' + esc(curRefText(b)) + '">'
+        + '<label class="tchk" title="勾选 = 参与重洗；不勾 = 锁定保留现状（锁定要额外付费）">'
+        + '<input type="checkbox" data-act="' + i + '"' + (act[i] ? " checked" : "") + "><em>" + (i + 1) + "</em></label>"
+        + '<select class="ty" data-tgt="ty" data-idx="' + i + '" aria-label="目标词条 ' + (i + 1) + '"'
+        + (act[i] && !isVal ? "" : " disabled") + ">" + opts + "</select>"
+        + '<select class="lv ' + tierCls(tgt[i].level) + '" data-tgt="lv" data-idx="' + i + '" aria-label="目标阶数 ' + (i + 1) + '"'
+        + (act[i] ? "" : " disabled") + ">" + levelOptions(tgt[i].key, tgt[i].level) + "</select>"
+        + "</div>";
     }
     el.innerHTML = html;
-    el.querySelectorAll("input").forEach(function (cb) {
+
+    function setRowEnabled(i, on) {
+      var row = el.querySelectorAll(".trow")[i];
+      if (!row) return;
+      row.className = "trow" + (on ? " on" : "");
+      row.querySelectorAll("select").forEach(function (s) {
+        s.disabled = !on || (s.classList.contains("ty") && state.sim.mode === "value");
+      });
+    }
+    el.querySelectorAll("input[data-act]").forEach(function (cb) {
       cb.addEventListener("change", function () {
-        var arr = Array.prototype.map.call(el.querySelectorAll("input"), function (x) { return x.checked ? 1 : 0; });
-        if (!arr.some(Boolean)) { cb.checked = true; setNotice("至少要勾选 1 条词条参与重洗", "error"); return; }
-        state.sim.active[state.sim.slot] = arr;
-        Array.prototype.forEach.call(el.querySelectorAll("label"), function (l, i) { l.className = arr[i] ? "on" : ""; });
-        collectPanel(); renderSim(profile()); save(true);
+        var i = Number(cb.dataset.act);
+        if (!state.sim.active[slot]) state.sim.active[slot] = [1, 1, 1];
+        state.sim.active[slot][i] = cb.checked ? 1 : 0;
+        if (!state.sim.active[slot].some(Boolean)) {          // 不允许一条都不洗
+          cb.checked = true; state.sim.active[slot][i] = 1;
+          setNotice("至少要留 1 条词条参与重洗（不参与的行会被锁定，需要额外付费）", "error");
+        }
+        setRowEnabled(i, cb.checked);
+        renderSim(profile()); save(true);
+      });
+    });
+    el.querySelectorAll('select[data-tgt="ty"]').forEach(function (s) {
+      s.addEventListener("change", function () {
+        var i = Number(s.dataset.idx);
+        tgt[i].key = s.value; tgt[i].autoKey = false;            // 手动设过 → 不再跟随「当前装备」
+        if (!s.value) { tgt[i].level = 0; tgt[i].autoLevel = true; }
+        var lv = el.querySelector('select[data-tgt="lv"][data-idx="' + i + '"]');
+        lv.innerHTML = levelOptions(tgt[i].key, tgt[i].level);   // 类型换了 → 阶数文本的数值要跟着换
+        lv.className = "lv " + tierCls(tgt[i].level);
+        lv.disabled = !(state.sim.active[slot] || [1, 1, 1])[i];
+        renderSim(profile()); save(true);
+      });
+    });
+    el.querySelectorAll('select[data-tgt="lv"]').forEach(function (s) {
+      s.addEventListener("change", function () {
+        var i = Number(s.dataset.idx);
+        tgt[i].level = Math.max(0, Math.min(15, Math.trunc(num(s.value))));
+        tgt[i].autoLevel = false;                                // 手动设过 → 不再跟随「当前装备」
+        s.className = "lv " + tierCls(tgt[i].level);
+        renderSim(profile()); save(true);
       });
     });
   }
-  function renderPool() {
-    $("m-pool").innerHTML = D.overload.map(function (g) {
-      var on = state.sim.pool.indexOf(g.key) >= 0;
-      return '<label><input type="checkbox" value="' + esc(g.key) + '"' + (on ? " checked" : "") + ">" + esc(g.name) + "</label>";
-    }).join("");
-    $("m-pool").querySelectorAll("input").forEach(function (cb) {
-      cb.addEventListener("change", function () {
-        state.sim.pool = Array.prototype.slice.call($("m-pool").querySelectorAll("input:checked")).map(function (x) { return x.value; });
-        collectPanel(); renderSim(profile());
-      });
-    });
-  }
+  var lastSimKey = null, lastSim = null;
   function renderSim(pf) {
-    if (!hasPanel()) {
+    function blank() {
       $("m-cur").textContent = $("m-slotcur").textContent = $("m-minmax").textContent = "--";
       $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = $("m-pctgain").textContent = "--";
       $("m-hist").innerHTML = "";
-      $("c-per").textContent = $("c-p").textContent = $("c-rolls").textContent = $("c-exp").textContent = "--";
-      return;
+      $("c-per").textContent = $("c-lock").textContent = $("c-p").textContent = "--";
+      $("c-rolls").textContent = $("c-exp").textContent = "--";
+      lastSimKey = null; lastSim = null;
     }
+    if (!hasPanel()) { blank(); return; }
     var slot = state.sim.slot;
-    var pool = state.sim.pool.length ? state.sim.pool : D.overload.map(function (g) { return g.key; });
+    var mode = state.sim.mode === "value" ? "value" : "change";
+    var act = (state.sim.active[slot] || [1, 1, 1]).slice(0, 3);
+    var tgt = ensureTargets(slot);
     var rolls = Math.max(100, Math.min(200000, Math.trunc(num($("m-rolls").value, 5000))));
-    var minL = Math.max(1, Math.min(15, Math.trunc(num($("m-min").value, 1))));
-    var maxL = Math.max(minL, Math.min(15, Math.trunc(num($("m-max").value, 15))));
+
     var base = C.gearSummary(D, flatGear("before"));
     var cur = C.calcBattlePower(D.config, pf, base.bp).value;
     var slotCur = base.slots[slot];
-    var act = state.sim.active[slot] || [1, 1, 1];
+
+    // 参与重洗的行。「只洗数值」模式下「当前为空」的行没什么可洗，自动排除。
     var activeIdx = [];
-    for (var i = 0; i < 3; i++) if (act[i]) activeIdx.push(i);
-    if (!activeIdx.length) activeIdx = [0, 1, 2];
-    var activeBP = 0;
-    activeIdx.forEach(function (i) { activeBP += slotCur.rows[i].bp; });
-    // 被锁定的词条（其它三个部位 + 本部位未勾选的词条）内部战力保持现状
-    var keepBP = base.bp - activeBP;
-    var sim = C.simulate(D.config, pf, D, {
-      pool: pool, rolls: rolls, slots: activeIdx.length,
-      minLevel: minL, maxLevel: maxL, keepBP: keepBP
-    });
+    for (var i = 0; i < 3; i++) {
+      if (!act[i]) continue;
+      if (mode === "value" && !(slotCur.rows[i] && slotCur.rows[i].key)) continue;
+      activeIdx.push(i);
+    }
+    // 锁定条数 = 本部位「不参与重洗」且当前有词条的行（空行没有可保住的值，不计费）
+    var lockCount = 0;
+    for (var j = 0; j < 3; j++) if (!act[j] && slotCur.rows[j] && slotCur.rows[j].level > 0) lockCount++;
+    var perRoll = lockCount + 1;
+    var lockCost = lockCount * (lockCount + 3) / 2;   // 锁到 1 条 2 颗 / 2 条 5 颗 / 3 条 9 颗
+
     $("m-cur").textContent = fmt(cur);
     $("m-slotcur").textContent = SLOT_LABEL[slot] + " 内部战力 " + fmt(slotCur.bp) + " · 等效总阶 " + slotCur.totalLevel.toFixed(1)
-      + " · 重洗 " + activeIdx.length + " 条";
+      + " · 重洗 " + activeIdx.length + " 条" + (lockCount ? " · 锁定 " + lockCount + " 条" : "");
+    $("c-per").textContent = perRoll + " 颗" + (lockCount ? "（锁定 " + lockCount + " 条）" : "（不锁定）");
+    $("c-lock").textContent = lockCount ? (lockCost + " 颗（锁 " + lockCount + " 条 · 解锁不退）") : "0 颗（无需锁定）";
+
+    if (!activeIdx.length) {
+      $("m-minmax").textContent = $("m-pct").textContent = $("m-mean").textContent = "—";
+      $("m-vs").textContent = $("m-pctgain").textContent = "—";
+      $("m-hist").innerHTML = "";
+      $("c-p").textContent = "—（没有可洗的行）";
+      $("c-rolls").textContent = "—";
+      $("c-exp").textContent = "—";
+      lastSimKey = null; lastSim = null;
+      return;
+    }
+
+    var activeBP = 0;
+    activeIdx.forEach(function (i) { activeBP += slotCur.rows[i].bp; });
+    var keepBP = base.bp - activeBP;      // 锁定行 + 另外三个部位，保持现状
+
+    // 目标：参与行都要有「类型 + 阶数」，才谈得上「达成」
+    var target = [], tgtOK = true;
+    activeIdx.forEach(function (i, k) {
+      var t = tgt[i];
+      if (!t || !t.key || !(t.level > 0)) { tgtOK = false; return; }
+      target.push({ i: k, key: t.key, minLevel: t.level });
+    });
+    if (!tgtOK || !target.length) target = null;
+
+    var curKeys = activeIdx.map(function (i) { return (slotCur.rows[i] && slotCur.rows[i].key) || ""; });
+    /* 种子只由「模拟的随机部分」决定 —— 这样改其它部位 / 改面板时，抽样序列保持不变，
+     * 分布只会整体平移、形状稳定，不会再出现「点一下词条数值就整体乱跳」。
+     * 缓存键则用完整输入，保证该重算时一定重算。 */
+    var seedKey = [state.loadout.rid, slot, mode, act.join(""), activeIdx.join(","),
+      target ? target.map(function (t) { return t.key + "@" + t.minLevel; }).join(",") : "-",
+      curKeys.join(","), rolls].join("|");
+    var cacheKey = seedKey + "|" + keepBP
+      + "|" + Math.round(num(pf.attack)) + "|" + Math.round(num(pf.hp)) + "|" + Math.round(num(pf.defense))
+      + "|" + Math.round(num(pf.critRatio)) + "|" + Math.round(num(pf.critDamage))
+      + "|" + Math.round(num(pf.skill1)) + "|" + Math.round(num(pf.skill2)) + "|" + Math.round(num(pf.burst))
+      + "|" + Math.round(num(pf.extraBP));
+    if (cacheKey !== lastSimKey) {
+      lastSimKey = cacheKey;
+      lastSim = C.simulate(D.config, pf, D, {
+        pool: D.overload.map(function (g) { return g.key; }),
+        rolls: rolls, slots: activeIdx.length, keepBP: keepBP,
+        mode: mode, curKeys: curKeys, seed: hashStr(seedKey),
+        typeWeights: typeWeights(), levelTable: C.LEVEL_TABLE_AVG,
+        target: target
+      });
+    }
+    var sim = lastSim;
+
     $("m-minmax").textContent = fmt(sim.min) + " / " + fmt(sim.max);
     $("m-pct").textContent = fmt(sim.p10) + " / " + fmt(sim.p50) + " / " + fmt(sim.p90);
     $("m-mean").textContent = fmt(Math.round(sim.mean));
     var dv = Math.round(sim.mean) - cur;
-    var el = $("m-vs");
-    el.textContent = sfmt(dv);
-    el.className = dv > 0 ? "pos" : dv < 0 ? "neg" : "";
-    var g = $("m-pctgain");
-    g.textContent = sfmt(sim.p10 - cur) + " / " + sfmt(sim.p50 - cur) + " / " + sfmt(sim.p90 - cur);
-    g.className = (sim.p50 - cur) > 0 ? "pos" : (sim.p50 - cur) < 0 ? "neg" : "";
+    var vsEl = $("m-vs");
+    vsEl.textContent = sfmt(dv);
+    vsEl.className = dv > 0 ? "pos" : dv < 0 ? "neg" : "";
+    var gEl = $("m-pctgain");
+    gEl.textContent = sfmt(sim.p10 - cur) + " / " + sfmt(sim.p50 - cur) + " / " + sfmt(sim.p90 - cur);
+    gEl.className = (sim.p50 - cur) > 0 ? "pos" : (sim.p50 - cur) < 0 ? "neg" : "";
     // 直方图（20 桶，横轴 = 洗后战力，从最低到最高）
     var B = 20, lo = sim.min, hi = sim.max, span = (hi - lo) || 1;
     var buckets = new Array(B).fill(0);
-    sim.values.forEach(function (v) { var i = Math.min(B - 1, Math.floor((v - lo) / span * B)); buckets[i]++; });
-    var m = Math.max.apply(null, buckets) || 1;
-    $("m-hist").innerHTML = buckets.map(function (c) { return '<i style="height:' + Math.max(2, Math.round(c / m * 100)) + 'px"></i>'; }).join("");
+    sim.values.forEach(function (v) { var k = Math.min(B - 1, Math.floor((v - lo) / span * B)); buckets[k]++; });
+    var mx = Math.max.apply(null, buckets) || 1;
+    $("m-hist").innerHTML = buckets.map(function (c) { return '<i style="height:' + Math.max(2, Math.round(c / mx * 100)) + 'px"></i>'; }).join("");
 
     /* ---- 定制模组消耗预估 ----
-     * 游戏规则（Prydwen / Rappy-World 实测）：重洗一次消耗 = 锁定条数 + 1 颗定制模组。
-     *   · 锁定条数 = 本部位「未勾选参与重洗」且当前有词条的行数（空行没有可保住的值，不计费）。
-     *   · 「优于现状」= 单次洗后整套战力 > 当前整套战力（只重洗被勾选的行）。
-     *   · 期望次数取几何分布 1/p，即「洗到第一次变好就停」的平均投入次数。 */
-    var lockCount = 0;
-    for (var j = 0; j < 3; j++) {
-      if (!act[j] && slotCur.rows[j] && slotCur.rows[j].level > 0) lockCount++;
-    }
-    var perRoll = lockCount + 1;
-    var better = 0;
-    for (var q = 0; q < sim.values.length; q++) { if (sim.values[q] > cur) better++; }
-    var pw = sim.values.length ? better / sim.values.length : 0;
-    $("c-per").textContent = perRoll + " 颗" + (lockCount ? "（锁定 " + lockCount + " 条）" : "（不锁定）");
+     * 游戏规则（nikke.gg 口径）：
+     *   · 重洗一次   = 锁定条数 + 1 颗；
+     *   · 点「锁定」本身也要付费，同样是「锁到 N 条 = N+1 颗」，解锁不退 →
+     *     锁 1 条 2 颗 / 锁 2 条 2+3=5 颗 / 锁 3 条 2+3+4=9 颗（一次性）。
+     *   → 期望总消耗 = 上锁一次性成本 + 每次重洗成本 × 期望次数（1/p）。 */
     var pEl = $("c-p");
-    pEl.textContent = sim.values.length ? (pw * 100).toFixed(1) + "%" : "--";
-    pEl.className = pw > 0 ? "pos" : "neg";
-    if (pw > 0) {
+    var pw = sim.p;
+    if (pw === null || pw === undefined) {
+      pEl.textContent = "—（请给参与行设目标）"; pEl.className = "";
+      $("c-rolls").textContent = "—";
+      $("c-exp").textContent = "—";
+    } else if (pw > 0) {
+      pEl.textContent = (pw * 100).toFixed(1) + "%";
+      pEl.className = "pos";
       $("c-rolls").textContent = "≈ " + (1 / pw).toFixed(1) + " 次";
-      var expCost = perRoll / pw;
+      var expCost = lockCost + perRoll / pw;
       $("c-exp").textContent = "≈ " + (expCost >= 100 ? fmt(Math.round(expCost)) : expCost.toFixed(1)) + " 颗";
     } else {
+      pEl.textContent = "0.0%";
+      pEl.className = "neg";
       $("c-rolls").textContent = "—";
-      $("c-exp").textContent = "该池已无法超越现状";
+      $("c-exp").textContent = "该目标在 " + fmt(rolls) + " 次抽样内未出现（几乎不可能达成）";
     }
   }
 
@@ -865,11 +1230,9 @@
     renderGear();
     renderGearState();
     renderSimSlotOptions();
-    renderActiveLocks();
+    renderSimTargets();
     $("m-rolls").value = state.sim.rolls;
-    $("m-min").value = state.sim.min;
-    $("m-max").value = state.sim.max;
-    renderPool();
+    $("m-mode").value = state.sim.mode || "change";
     compute();
   }
   /* ---------------- 示例数据（?demo=1）---------------- */
@@ -978,7 +1341,7 @@
     if (!D || !C || !P) { setNotice("数据或内核加载失败", "error"); return; }
     load();
     if (/[?&]demo=1/.test(window.location.search)) state = applyDemo();
-    buildCharOptions("");   // 角色下拉必须在 load() 之后建，否则选不中存档里的角色
+    decorateRoster();       // 角色目录必须在 load() 之后装饰（存档里选中的角色得能命中）
     renderAll();
     setMode(state.mode || "loadout");
     if (/[?&]demo=1/.test(window.location.search)) setNotice("已载入示例（拉毗：小红帽 · 同步器 492 · SR15 收藏 · 魔方15）—— 左上「角色」可切换全部 " + D.roster.length + " 名角色，改中间栏词条即可看战力变化", "ok");
@@ -992,9 +1355,26 @@
     });
     $("l-auto").addEventListener("change", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); });
     $("btn-derive").addEventListener("click", function () { collectLoadout(); derivePanel(); save(true); setNotice("已按练度参数重新推导面板", "ok"); });
+    // 整合式角色搜索：输入即筛 → 浮层点选。#char-input 只作状态载体，change 仍触发切角色
     $("char-input").addEventListener("change", onCharPicked);
-    $("char-input").addEventListener("input", onCharPicked);
-    $("char-search").addEventListener("input", function () { buildCharOptions($("char-search").value); });
+    var si = $("char-search"), pop = $("char-pop");
+    if (si) {
+      si.addEventListener("focus", openPicker);
+      si.addEventListener("click", openPicker);
+      si.addEventListener("input", function () { renderPicker(); openPicker(); });
+      si.addEventListener("keydown", pickerKey);
+    }
+    if (pop) pop.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    document.addEventListener("mousedown", function (e) {
+      var pk = $("char-picker");
+      if (pk && !pk.contains(e.target)) closePicker();
+    });
+    var scopeBox = $("char-scope");
+    if (scopeBox) Array.prototype.forEach.call(scopeBox.querySelectorAll("input"), function (r) {
+      r.addEventListener("change", function () {
+        state.scope = r.value; save(true); renderPicker(); openPicker();
+      });
+    });
     var sw = $("mode-switch");
     if (sw) Array.prototype.forEach.call(sw.querySelectorAll("input"), function (r) {
       r.addEventListener("change", function () { collectLoadout(); setMode(r.value); save(true); });
@@ -1039,18 +1419,18 @@
     });
     $("btn-calibrate").addEventListener("click", calibrate);
 
-    /* 洗练模拟（按部位）：部位切换 → 重绘该部位的勾选区 → 重算分布 */
+    /* 洗练模拟（按部位 · 目标驱动）：切部位 → 重绘该部位的目标行 → 重算；操作类型同理 */
     $("m-slot").addEventListener("change", function () {
       state.sim.slot = C.SLOTS.indexOf($("m-slot").value) >= 0 ? $("m-slot").value : "head";
-      collectPanel(); renderActiveLocks(); renderSim(profile()); save(true);
+      collectPanel(); renderSimTargets(); renderSim(profile()); save(true);
     });
-    ["m-rolls", "m-min", "m-max"].forEach(function (id) {
-      $(id).addEventListener("input", function () {
-        state.sim.rolls = num($("m-rolls").value, 5000);
-        state.sim.min = num($("m-min").value, 1);
-        state.sim.max = num($("m-max").value, 15);
-        collectPanel(); renderSim(profile());
-      });
+    $("m-mode").addEventListener("change", function () {
+      state.sim.mode = $("m-mode").value === "value" ? "value" : "change";
+      renderSimTargets(); renderSim(profile()); save(true);
+    });
+    $("m-rolls").addEventListener("input", function () {
+      state.sim.rolls = num($("m-rolls").value, 5000);
+      collectPanel(); renderSim(profile());
     });
 
     var s = D.sources || {};

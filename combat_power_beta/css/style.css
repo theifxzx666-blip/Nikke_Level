@@ -82,9 +82,33 @@ input,select{height:31px;padding:2px 7px;border:1px solid var(--line);border-rad
   background:#fff;color:var(--ink);font:inherit;outline:none;width:100%;min-width:0}
 input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 input[type=number]{text-align:right}
-#char-input,#char-search{flex:1;height:33px;text-align:left}
-#char-input{cursor:pointer;font-weight:600}
-#char-search{font-size:12.5px}
+/* ---------- 角色检索：单一输入框 + 候选浮层（整合式，取代旧的「筛选框 + 下拉」两段式） ---------- */
+.picker{position:relative;display:flex;align-items:center;margin-bottom:7px}
+#char-search{height:33px;padding:2px 26px 2px 9px;font-size:12.5px;font-weight:600;text-align:left}
+.picker-caret{position:absolute;right:10px;color:#9aa8a2;font-size:11px;pointer-events:none}
+.picker-pop{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:268px;overflow:auto;
+  background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:4px;
+  box-shadow:0 14px 30px rgba(15,110,86,.18)}
+.roster-grp{position:sticky;top:0;z-index:1;background:#fff;padding:5px 8px 3px;
+  font-size:10.5px;font-weight:700;color:var(--accent-dark);letter-spacing:.3px}
+.roster-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:7px;align-items:center;
+  width:100%;padding:5px 8px;border:0;background:none;border-radius:var(--r-sm);
+  font:inherit;font-size:12.5px;color:var(--ink);cursor:pointer;text-align:left}
+.roster-item:hover,.roster-item.active{background:var(--accent-soft)}
+.roster-item.cur{background:var(--accent-soft);font-weight:700}
+.roster-item .rar{font-size:10px;font-weight:700;color:#9aa8a2;border:1px solid var(--line);border-radius:3px;padding:0 3px;line-height:1.5}
+.roster-item .rar.r3{color:var(--accent-dark);border-color:rgba(29,158,117,.45)}
+.roster-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roster-item mark{background:rgba(29,158,117,.22);color:var(--accent-dark);border-radius:3px;padding:0 1px}
+.roster-item .fav{font-style:normal;font-size:13px;color:#c7d0cb;cursor:pointer;padding:0 2px}
+.roster-item .fav.on{color:#e0a91b}
+.roster-empty{padding:12px;text-align:center;color:var(--muted);font-size:12px}
+.scope{display:flex;gap:6px;margin-bottom:9px}
+.scope label{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:5px 4px;
+  border:1px solid var(--line);border-radius:20px;background:#fff;font-size:11.5px;font-weight:600;
+  color:#4a5b54;cursor:pointer;user-select:none;white-space:nowrap}
+.scope label:has(input:checked){border-color:rgba(29,158,117,.55);background:var(--accent-soft);color:var(--accent-dark)}
+.scope input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
 .meta{margin:2px 0 10px;font-size:12px;color:var(--muted)}
 .hint{margin:8px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5}
 .hint.tight{margin:9px 0 5px}
@@ -151,20 +175,19 @@ input[type=number]{text-align:right}
 
 /* ---------- 洗练模拟（右栏内，纵排） ---------- */
 .sim-body .grid2{margin-bottom:8px}
-.locks{display:flex;flex-direction:column;gap:5px}
-.locks label{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:center;
-  font-size:12px;padding:5px 9px;border:1px solid var(--line);border-radius:var(--r-sm);
-  background:#fff;cursor:pointer;user-select:none}
-.locks label.on{border-color:rgba(29,158,117,.5);background:var(--accent-soft)}
-.locks label input{width:auto;height:auto;margin:0}
-.locks label em{font-style:normal;font-weight:700;color:var(--muted);white-space:nowrap}
-.locks label b{font-weight:600;color:#3d4d47;font-size:11.5px;text-align:right;overflow-wrap:anywhere}
-.locks label b.empty{color:#9aa8a2;font-style:italic;font-weight:400}
-.pool{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}
-.pool label{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:4px 9px;
-  border:1px solid var(--line);border-radius:20px;background:#fff;cursor:pointer;user-select:none}
-.pool label:has(input:checked){border-color:rgba(29,158,117,.5);background:var(--accent-soft);color:var(--accent-dark);font-weight:600}
-.pool input{width:auto;height:auto;margin:0}
+/* 洗练目标行：☑ 参与重洗 · 目标词条 · 目标阶数（不勾选 = 锁定保留现状） */
+.targets{display:flex;flex-direction:column;gap:6px;margin:8px 0 11px}
+.trow{display:grid;grid-template-columns:auto minmax(0,1fr) 126px;gap:6px;align-items:center;
+  padding:5px 7px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+.trow.on{border-color:rgba(29,158,117,.5);background:var(--accent-soft)}
+.tchk{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.tchk input{width:auto;height:auto;margin:0}
+.tchk em{font-style:normal;font-size:11px;font-weight:700;color:var(--muted)}
+.trow select{height:29px}
+.trow .ty{font-size:11.5px}
+.trow .lv{font-size:11px;padding:2px 2px 2px 5px;font-variant-numeric:tabular-nums}
+.trow select:disabled{opacity:.45;cursor:not-allowed}
+.sim-body>.cell{max-width:190px}
 .hist{display:flex;align-items:flex-end;gap:2px;height:84px;margin-top:8px}
 .hist i{flex:1;background:linear-gradient(180deg,#8fdcc0,var(--accent));border-radius:2px 2px 0 0;min-height:2px}
 .sim-out .kv{padding:2.5px 0}
@@ -206,10 +229,8 @@ input[type=number]{text-align:right}
 select.lv.t-hi,select.ty.t-hi{color:var(--tier-hi);font-weight:700}
 select.lv.t-max,select.ty.t-max{background:var(--tier-max);color:#fff;border-color:var(--tier-max)}
 select.lv.t-max option,select.ty.t-max option{background:#fff;color:var(--ink)}
-.locks label b.t-hi,.cur-ref.t-hi{color:var(--tier-hi)}
-.locks label b.t-hi{background:none;padding:0}
-.cur-ref.t-hi{background:rgba(43,124,255,.09);border-left-color:var(--tier-hi)}
-.cur-ref.t-max,.locks label b.t-max{color:#fff;background:var(--tier-max);border-left-color:var(--tier-max)}
+.cur-ref.t-hi{color:var(--tier-hi);background:rgba(43,124,255,.09);border-left-color:var(--tier-hi)}
+.cur-ref.t-max{color:#fff;background:var(--tier-max);border-left-color:var(--tier-max)}
 
 .footer{margin-top:16px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.7}
 
@@ -237,9 +258,21 @@ select.lv.t-max option,select.ty.t-max option{background:#fff;color:var(--ink)}
   user-select:none;margin-top:8px;line-height:1.4}
 .check input{width:auto;height:auto;margin:0}
 .mini-h{margin:14px 0 6px;font-size:12.5px;color:#3d4d47;font-weight:700}
-.tbl.mini td,.tbl.mini th{padding:4px 6px;font-size:12px}
-.tbl.mini td:first-child{white-space:nowrap}
-.tbl.mini b{font-variant-numeric:tabular-nums}
+/* ---------- 同步器档位预览（A 方案 · 双行横条） ----------
+ * 左栏内容宽仅 270px，5 列表格会溢出把「战力」列裁掉 → 改成两行：上行「档位 + 战力 + 较当前」，
+ * 下行「攻 / 生 / 防」完整展开，横向需求从 314px 降到约 205px。 */
+.tier-list{display:flex;flex-direction:column;gap:7px}
+.tier-item{background:var(--card);border:1px solid rgba(221,227,224,.95);border-left:3px solid transparent;
+  border-radius:var(--r-md);padding:7px 10px 8px}
+.tier-item.cur{border-color:rgba(29,158,117,.45);border-left-color:var(--accent);background:var(--accent-soft)}
+.tier-top{display:flex;align-items:baseline;gap:6px}
+.tier-lv{font-size:13px;font-weight:700}
+.tier-cur{font-style:normal;margin-left:6px;font-size:10.5px;font-weight:700;color:var(--accent-dark);
+  background:rgba(29,158,117,.14);border-radius:20px;padding:1px 8px}
+.tier-bp{margin-left:auto;font-size:15px;font-variant-numeric:tabular-nums}
+.tier-item.cur .tier-bp{color:var(--accent-dark)}
+.tier-delta{font-size:11px;font-weight:700;color:var(--accent-dark);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tier-sub{display:flex;gap:10px;margin-top:4px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 
 /* ===== 只读（自动推导）字段 ===== */
 input[readonly]{background:rgba(240,244,242,.95);color:#3d4d47;cursor:default;

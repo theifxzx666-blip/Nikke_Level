@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NIKKE 战力计算器</title>
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261014c">
+<link rel="stylesheet" href="css/style.css?v=20261015a">
 </head>
 <body>
 <main class="page">
@@ -47,12 +47,21 @@
         <div id="loadout-box">
           <div class="grp">
             <div class="grp-h"><b>角色</b><em id="char-count">—</em></div>
-            <label class="row"><span>筛选</span>
-              <input id="char-search" type="text" placeholder="关键字，如 拉毗 / 小红帽" autocomplete="off">
-            </label>
-            <label class="row"><span>选择</span>
-              <select id="char-input"></select>
-            </label>
+            <!-- 整合式检索：一个输入框搞定「筛 + 选」（旧版是「筛选框 → 下拉」两段式）。
+                 点开/聚焦即展开全部候选，输入即筛，点一下就是选中；#char-input 仅作状态载体。 -->
+            <div class="picker" id="char-picker">
+              <input id="char-search" type="text" placeholder="名字 / 拼音 / 缩写 · 如 拉毗 · labi · lb" autocomplete="off" spellcheck="false">
+              <b class="picker-caret" aria-hidden="true">▾</b>
+              <div class="picker-pop" id="char-pop" role="listbox" aria-label="角色候选" hidden></div>
+            </div>
+            <div class="scope" id="char-scope" role="group" aria-label="检索范围">
+              <label><input type="radio" name="cscope" value="all" checked><span>全部</span></label>
+              <label><input type="radio" name="cscope" value="fav"><span>★ 收藏</span></label>
+              <label><input type="radio" name="cscope" value="recorded"><span>已记录</span></label>
+            </div>
+            <!-- 状态载体：只存「当前选中角色的名字」，不参与渲染。
+                 原来是 <select>，但它没有 option 时赋值会被丢弃，故改为 hidden input。 -->
+            <input type="hidden" id="char-input" value="">
             <p id="char-meta" class="meta">未选择角色</p>
           </div>
 
@@ -117,7 +126,7 @@
           </div>
 
           <h3 class="mini-h">同步器档位预览</h3>
-          <table class="tbl mini" id="tier-table"></table>
+          <div id="tier-list" class="tier-list"></div>
         </div>
       </div>
     </section>
@@ -186,16 +195,15 @@
         <div class="panel-body sim-body">
           <div class="grid2">
             <label class="cell"><span>部位</span><select id="m-slot"></select></label>
-            <label class="cell"><span>模拟次数</span><input id="m-rolls" type="number" min="100" max="200000" step="100" value="5000"></label>
+            <label class="cell"><span>操作类型</span><select id="m-mode">
+              <option value="change">换词条（种类+数值）</option>
+              <option value="value">只洗数值（种类不变）</option>
+            </select></label>
           </div>
-          <div class="grid2">
-            <label class="cell"><span>最低阶</span><input id="m-min" type="number" min="1" max="15" step="1" value="1"></label>
-            <label class="cell"><span>最高阶</span><input id="m-max" type="number" min="1" max="15" step="1" value="15"></label>
-          </div>
-          <p class="hint tight">勾选该部位<b>参与重洗</b>的词条位（未勾选 = <b>锁定保留</b>）：</p>
-          <div id="m-active" class="locks"></div>
-          <p class="hint tight">洗练可能出现的词条类型：</p>
-          <div id="m-pool" class="pool"></div>
+          <p class="hint tight">每行 = 该部位的一条词条。勾选 = <b>参与重洗</b>，并设定<b>目标词条</b>与<b>目标阶数</b>（达成 = 类型命中且阶数 ≥ 目标）；
+            不勾选 = <b>锁定保留</b>现状。锁定要额外付费（见下）。</p>
+          <div id="m-target" class="targets"></div>
+          <label class="cell"><span>模拟次数</span><input id="m-rolls" type="number" min="100" max="200000" step="100" value="5000"></label>
 
           <div class="card sim-out" style="margin-top:12px">
             <div class="card-h">洗后战力分布</div>
@@ -212,13 +220,17 @@
           <div class="card cost">
             <div class="card-h">定制模组消耗预估</div>
             <div class="kv"><span>每次洗练消耗</span><b id="c-per">--</b></div>
-            <div class="kv"><span>单次「优于现状」概率</span><b id="c-p">--</b></div>
+            <div class="kv"><span>上锁一次性成本</span><b id="c-lock">--</b></div>
+            <div class="kv"><span>达成概率</span><b id="c-p">--</b></div>
             <div class="kv"><span>期望洗练次数</span><b id="c-rolls">--</b></div>
-            <div class="kv big"><span>洗出更好结果 · 期望消耗</span><b id="c-exp">--</b></div>
-            <p class="hint">消耗按游戏规则：<b>重洗一次 = 锁定条数 + 1 颗</b>定制模组（不锁定为 1 颗）。「优于现状」= 单次洗后整套战力高于当前；期望次数取几何分布 1/p，即「洗到第一次变好就停」的平均投入。</p>
+            <div class="kv big"><span>期望总消耗</span><b id="c-exp">--</b></div>
+            <p class="hint">游戏规则（nikke.gg 口径）：<b>重洗一次 = 锁定条数 + 1 颗</b>；<b>「点锁定」本身也要付</b>「锁到 N 条 = N+1 颗」，
+              且<b>解锁不退</b>。故总消耗 = <b>上锁一次性 + 每次重洗 × 期望次数</b>。
+              达成 = 参与重洗的词条行<b>全部</b>命中目标类型且阶数 ≥ 目标阶数。</p>
           </div>
 
-          <p class="hint">每次模拟只重洗该部位被勾选的词条位，其余词条（含另外三个部位）保持现状不变；类型在勾选池内等概率抽取，阶数在 [最低阶, 最高阶] 内均匀抽取。<b>该分布是模拟假设，不是游戏实测概率</b>，只用来估算相对高低与消耗量级。</p>
+          <p class="hint">类型概率按实测权重（优越/攻击/暴伤/防御 10，其余 12）；阶数按「1~5 阶 60% / 6~10 阶 35% / 11~15 阶 5%」分段，<b>段内暂按平均</b>占位。
+            同一输入必得同一结果（确定性种子）。<b>概率为社区实测口径，非官方公布值</b>，用于比较相对高低与消耗量级。</p>
         </div>
       </section>
     </div>
@@ -240,9 +252,9 @@
   </footer>
 </main>
 
-<script src="data/data.bundle.js?v=20261014c"></script>
-<script src="js/core.js?v=20261014c"></script>
-<script src="js/panel.js?v=20261014c"></script>
-<script src="js/app.js?v=20261014c"></script>
+<script src="data/data.bundle.js?v=20261015a"></script>
+<script src="js/core.js?v=20261015a"></script>
+<script src="js/panel.js?v=20261015a"></script>
+<script src="js/app.js?v=20261015a"></script>
 </body>
 </html>
