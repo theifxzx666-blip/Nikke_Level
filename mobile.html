@@ -10,10 +10,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/webp" href="assets/m/favicon.webp">
-<link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016a" as="font" type="font/woff2" crossorigin>
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
-<link rel="stylesheet" href="css/style.css?v=20261014b">
-<link rel="stylesheet" href="css/mobile.css?v=20261014a">
+<link rel="stylesheet" href="css/style.css?v=20261016a">
+<link rel="stylesheet" href="css/mobile.css?v=20261016a">
 </head>
 <body class="m-body">
 
@@ -65,9 +65,14 @@
     <fieldset class="grp-a">
       <legend>账号状态</legend>
       <div class="grid g4">
-        <label>数据日期<input type="date" id="f_recorded"></label>
-        <label>最近保存日期<input type="date" id="f_saved_at" readonly title="最后一次点击「保存当前表单」的日期，用于判断快照对应哪一天"></label>
-        <label>采集前已回收基地
+        <label>数据日期
+          <span class="input-row">
+            <input type="date" id="f_recorded">
+            <button type="button" id="btnToday" class="icon-btn" aria-label="更新为今天" title="更新为今天"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13.2 6.5A5.6 5.6 0 1 0 13.5 9.7" stroke-linecap="round"/><path d="M13.7 3.3v3.3h-3.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </span>
+        </label>
+        <label class="field-hidden">最近保存日期<input type="date" id="f_saved_at" readonly title="最后一次点击「保存当前表单」的日期，用于判断快照对应哪一天"></label>
+        <label class="field-hidden">采集前已回收基地
           <select id="f_collected_before"><option>是</option><option>否</option></select>
         </label>
         <label>当前同步器等级<input type="number" id="f_current" min="1" step="1" inputmode="numeric"></label>
@@ -79,26 +84,25 @@
     <fieldset class="grp-a">
       <legend>现有资源</legend>
       <div class="grid g3">
-        <label>信用点<input id="f_bare_credit" placeholder="25169K" inputmode="decimal"></label>
-        <label>战斗数据辑<input id="f_bare_battle" placeholder="274M" inputmode="decimal"></label>
-        <label>红球<input id="f_bare_dust" placeholder="12181" inputmode="decimal"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_credit.webp" alt="">信用点</span><input id="f_bare_credit" placeholder="25169K" inputmode="decimal"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_battle.webp" alt="">战斗数据辑</span><input id="f_bare_battle" placeholder="274M" inputmode="decimal"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_dust.webp" alt="">红球</span><input id="f_bare_dust" placeholder="12181" inputmode="decimal"></label>
       </div>
     </fieldset>
 
     <fieldset class="grp-a">
-      <legend>当前基地（前哨站 · 以手填等级为准）</legend>
+      <legend><span class="lg-main">当前基地等级<button type="button" class="info-tip" data-tip="tip-base" aria-label="查看说明" aria-expanded="false"></button></span></legend>
       <div class="grid g2">
         <label>前哨基地防御等级<input type="number" id="f_base" min="1" step="1" inputmode="numeric"></label>
         <label>战术学院是否满级
           <select id="f_tactics"><option>是</option><option>否</option></select>
         </label>
       </div>
-      <p class="hint" id="baseHint">推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。</p>
+      <p class="hint" id="baseHint"></p>
     </fieldset>
 
     <fieldset class="grp-b">
-      <legend>关卡进度（可选 · 用于推算基地等级）</legend>
-      <p class="hint">推算口径：每通关 5 关（普通+困难合计）基地等级 +1，基于国际服数据；国服统计进度约比国际服多 3 关，推算值可能偏高——建议以游戏内实际基地等级手填为准，选完进度后可点「采用推算值」。</p>
+      <legend><span class="lg-main">关卡进度<button type="button" class="info-tip" data-tip="tip-stage" aria-label="查看说明" aria-expanded="false"></button></span></legend>
       <div class="grid g2">
         <div>
           <label>普通主线关卡</label>
@@ -118,18 +122,18 @@
       <legend>当前收益与每日收益</legend>
       <p class="hint">下方三个收益字段随「当前基地」的等级与战术学院口径自动带出，可手动修改（例如一举歼灭折算等特殊情形）。</p>
       <div class="grid g3">
-        <label>信用点收益<input id="f_credit_rate" placeholder="57240/h" inputmode="decimal"></label>
-        <label>战斗数据辑收益<input id="f_battle_rate" placeholder="570180/h" inputmode="decimal"></label>
-        <label>红球收益<input id="f_dust_rate" placeholder="88/h" inputmode="decimal"></label>
-      </div>
-      <div class="grid g3">
-        <label>每日一举歼灭次数<input type="number" id="f_wipeouts" min="0" step="1" value="3" inputmode="numeric"></label>
-        <label>每次等价小时数<input type="number" id="f_wipeout_hours" min="0" step="0.5" value="2" inputmode="decimal"></label>
-        <label>今天已完成歼灭次数<input type="number" id="f_completed" min="0" step="1" value="3" inputmode="numeric"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_credit.webp" alt="">信用点收益</span><input id="f_credit_rate" placeholder="57240/h" inputmode="decimal"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_battle.webp" alt="">战斗数据辑收益</span><input id="f_battle_rate" placeholder="570180/h" inputmode="decimal"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_dust.webp" alt="">红球收益</span><input id="f_dust_rate" placeholder="88/h" inputmode="decimal"></label>
       </div>
       <div class="grid g2">
-        <label>后续是否每天完成全部次数<select id="f_daily_full"><option>是</option><option>否</option></select></label>
-        <label>服务器每日重置时间<input type="time" id="f_reset_time" value="04:00"></label>
+        <label>每日一举歼灭次数<input type="number" id="f_wipeouts" min="0" step="1" value="1" inputmode="numeric"></label>
+        <label>今天已完成歼灭次数<input type="number" id="f_completed" min="0" step="1" value="1" inputmode="numeric"></label>
+      </div>
+      <div class="grid g2">
+        <label class="field-hidden">每次等价小时数<input type="number" id="f_wipeout_hours" min="0" step="0.5" value="2" inputmode="decimal"></label>
+        <label class="field-hidden">后续是否每天完成全部次数<select id="f_daily_full"><option>是</option><option>否</option></select></label>
+        <label class="field-hidden">服务器每日重置时间<input type="time" id="f_reset_time" value="04:00"></label>
       </div>
     </fieldset>
 
@@ -138,10 +142,6 @@
       <div class="grid g2">
         <label>预计新主线开放日期<input type="date" id="f_future_open"></label>
         <div><p class="hint">选择下方「预计普通/困难主线关卡」章节后，自动推算预计新基地等级与收益。</p></div>
-      </div>
-      <div class="grid">
-        <label>月卡（30天成长补给箱）<select id="f_monthly_card"><option>否</option><option>是</option></select></label>
-        <p class="hint">月卡每日到账 <b>1 个「30天成长补给箱」</b>（自选箱：芯尘 10h / 信用 30h / 战斗 10h）。开启后按「数据日期 → 新主线开放日」的天数自动并入<b>开放日</b>箱量，不影响现状口径。</p>
       </div>
       <div class="grid g2">
         <div><label>预计普通主线关卡</label><select id="f_future_normal_chapter"></select><select id="f_future_normal_stage"></select></div>
@@ -156,9 +156,8 @@
     </fieldset>
 
     <fieldset class="grp-c">
-      <legend id="stageClearTitle">预计新主线推图收益（官方拆包逐章数据）</legend>
+      <legend id="stageClearTitle"><span class="lg-main"><span id="stageClearTitleText">预计新主线推图收益</span><button type="button" class="info-tip" data-tip="tip-stageclear" aria-label="查看说明" aria-expanded="false"></button></span></legend>
       <p class="hint">新主线推图给的一次性资源 = 该章关卡通关奖励 + 该章主线任务奖励；默认值随「预计普通主线关卡」所选章节自动带出。</p>
-      <p class="hint note">数据来源：官方拆包 CampaignStageTable（国际服 149，47 章 / 3,800 关）+ MainQuestTable（583 条主线任务），按章汇总。<b>信用点 / 战斗数据单位为 K</b>（1K = 1000），红球为个；免费珠宝、铸模、企业装备、双模组高级增强器等不计。若会连推多章，请把各章数值相加后填入。</p>
       <div class="grid g3">
         <label>计入范围<select id="f_stage_mode"><option>不计算</option><option>只计普通</option><option>普通+困难</option></select></label>
       </div>
@@ -181,8 +180,7 @@
     </fieldset>
 
     <fieldset class="grp-c">
-      <legend>活动收益（可选 · 按具体日期计入）</legend>
-      <p class="hint">⚠ 请按<b>当前实际持有量</b>填写上方箱数与现有资源（已领取的活动奖励已包含在内）；本功能只补充<b>数据日期之后</b>剩余天数的活动产出，不会重复计入。</p>
+      <legend><span class="lg-main">活动收益（可选 · 按具体日期计入）<button type="button" class="info-tip" data-tip="tip-event" aria-label="查看说明" aria-expanded="false"></button></span></legend>
       <div id="eventRows"></div>
       <button type="button" id="btnAddEvent" class="btn" style="font-size:13px;padding:6px 12px;">＋ 添加活动</button>
       <p class="hint" id="eventTotals">未添加活动。</p>
@@ -193,9 +191,9 @@
       <legend>升级消耗素材量</legend>
       <p class="hint">默认按内置阶梯表（每 50 级一档）随「当前同步器等级」自动写入，可手动覆盖。</p>
       <div class="grid g3">
-        <label>当前升1级所需信用点<input id="f_cost_credit" placeholder="随当前等级自动写入" inputmode="decimal"></label>
-        <label>当前升1级所需战斗数据<input id="f_cost_battle" placeholder="随当前等级自动写入" inputmode="decimal"></label>
-        <label>当前升1级所需红球<input id="f_cost_dust" placeholder="随当前等级自动写入" inputmode="decimal"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_credit.webp" alt="">当前升1级所需信用点</span><input id="f_cost_credit" placeholder="随当前等级自动写入" inputmode="decimal"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_battle.webp" alt="">当前升1级所需战斗数据</span><input id="f_cost_battle" placeholder="随当前等级自动写入" inputmode="decimal"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/m/res_dust.webp" alt="">当前升1级所需红球</span><input id="f_cost_dust" placeholder="随当前等级自动写入" inputmode="decimal"></label>
       </div>
       <div id="costPreviewWrap"></div>
     </fieldset>
@@ -220,10 +218,22 @@
         <label><span class="box-name"><img class="box-icon" src="assets/m/mbox_30d.webp" alt="30天成长补给箱">30天成长补给箱</span><input type="number" id="f_growth" min="0" step="1" value="27" inputmode="numeric"></label>
         <label><span class="box-name"><img class="box-icon" src="assets/m/mbox_challenger.webp" alt="挑战者成长宝箱">挑战者成长宝箱</span><input type="number" id="f_challenger" min="0" step="1" value="340" inputmode="numeric"></label>
       </div>
-      <p class="hint">挑战者成长宝箱为固定数值奖励，默认全部消耗（不受基地等级影响）。</p>
+      <p class="hint">挑战者成长宝箱为固定数值奖励；资源选择见下方「其他」段。</p>
+    </fieldset>
+
+    <fieldset class="grp-e">
+      <legend><span class="lg-main">其他<button type="button" class="info-tip" data-tip="tip-misc" aria-label="查看说明" aria-expanded="false"></button></span></legend>
       <div class="grid">
         <label>保留箱（每种留 1 个）<select id="f_keep_one_box"><option>否</option><option>是</option></select></label>
-        <p class="hint">开启后<b>每种箱子各保留 1 个不开</b>（固定小时箱按「箱型 × 档位」逐格、方舟/30天/挑战者按名称），全箱梭哈上限与开箱方案都按保留后的数量计算。适合想每种箱各留一枚收藏的玩家。</p>
+        <p class="hint">适合想每种箱各留一枚收藏的玩家，开启后每种箱子各保留 1 个不开。</p>
+      </div>
+      <div class="grid">
+        <label>月卡（30天成长补给箱）<select id="f_monthly_card"><option>否</option><option>是</option></select></label>
+        <p class="hint">月卡每日到账 <b>1 个「30天成长补给箱」</b>（自选箱：芯尘 10h / 信用 30h / 战斗 10h）。开启后按「数据日期 → 新主线开放日」的天数自动并入<b>开放日</b>箱量，不影响现状口径。</p>
+      </div>
+      <div class="grid">
+        <label>挑战者箱资源选择<select id="f_challenger_pref"><option value="auto">自动择优</option><option value="battle">战斗数据辑优先</option><option value="dust">芯尘优先</option></select></label>
+        <p class="hint" id="challengerNote">挑战者成长宝箱为固定数值（units）奖励，不随基地等级变化；默认「自动择优」按当前目标与库存挑更划算的一项，两项等价时优先芯尘（红球每小时产出最少，长期最稀缺）。</p>
       </div>
     </fieldset>
 
@@ -258,11 +268,11 @@
 <script src="js/core.js?v=20260917c"></script>
 <script src="js/events.js?v=20261012a"></script>
 <script src="js/outpost.js?v=20260917c"></script>
-<script src="js/boxes.js?v=20261014a"></script>
+<script src="js/boxes.js?v=20261016a"></script>
 <script src="js/scenarios.js?v=20261014c"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261014e"></script>
+<script src="js/app.js?v=20261016a"></script>
 <!-- 顶层功能切换沿用桌面版外壳脚本（tools.json 驱动）；移动版只把导航用 CSS 固定到屏幕底部 -->
 <script src="js/shell.js?v=20261009b"></script>
 <script>
@@ -271,7 +281,7 @@
    sync.js 的 init() 自带 readyState 判断（否则会永远等不到 DOMContentLoaded），延后加载同样能完成初始化；
    mod_stats 子页在加载完成后仍可通过父页 __nikkeSync 打开云同步。 */
 window.addEventListener("load", function () {
-  ["assets/js/supabase.min.js?v=20260920e", "js/sync.js?v=20261013a"].forEach(function (src) {
+  ["assets/js/supabase.min.js?v=20260920e", "js/sync.js?v=20261013b"].forEach(function (src) {
     var s = document.createElement("script");
     s.src = src;
     s.async = false; /* 保持先后顺序：supabase 必须先于 sync.js */

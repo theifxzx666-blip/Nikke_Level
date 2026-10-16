@@ -430,3 +430,19 @@ body.m-body .modal-body { padding: 14px; }
   body.m-body .fixed-table th:first-child,
   body.m-body .fixed-table td:first-child { font-size: 10px; }
 }
+
+/* ============================================================
+   2026-10-16 界面优化批（移动端微调）
+   ============================================================ */
+/* 资源图标：竖屏下小一号，避免 label 文本被挤到换行 */
+body.m-body .res-icon { width: 16px; height: 16px; margin-right: 4px; vertical-align: -3px; }
+/* 信息窗面板：固定宽度但左右各留 17px，实测 390 视口下右缘 373px —— 零横向溢出 */
+body.m-body .info-panel { width: min(340px, calc(100vw - 34px)); padding: 10px 11px; }
+body.m-body .info-panel .ip-title { font-size: 13px; }
+/* 活动行：移除按钮触控目标放大（34px 是密集列表下的折中，不取 44px） */
+body.m-body .ev-del { width: 34px; height: 34px; }
+body.m-body .ev-del svg { width: 15px; height: 15px; }
+body.m-body .ev-status { font-size: 12px; padding: 3px 10px; }
+/* 活动行的日期/模板在窄屏各占半行，避免三件挤成一行 */
+body.m-body .event-row .ev-template,
+body.m-body .event-row .ev-start { flex: 1 1 46%; }

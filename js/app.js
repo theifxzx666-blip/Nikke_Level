@@ -110,6 +110,7 @@
   var state = {
     form: null,               // localStorage 表单值
     normalManual: false,      // 用户手动改过困难（当前）
+    completedAuto: true,      // 「今天已完成歼灭次数」是否仍跟随「每日一举歼灭次数」（用户单独改过即置 false）
     futureNormalManual: false,
     futureHardManual: false,
     normalChapters: [], hardChapters: [],
@@ -126,7 +127,7 @@
       recorded: "2026-09-02", current: "489", target: "501", alternate: "521",
       normal_stage: "", hard_stage: "", base: "518", tactics: "是",
       credit_rate: "59860/h", battle_rate: "600440/h", dust_rate: "91.95/h",
-      wipeouts: "3", wipeout_hours: "2", completed: "3", daily_full: "是", reset_time: "04:00",
+      wipeouts: "1", wipeout_hours: "2", completed: "1", daily_full: "是", reset_time: "04:00",
       future_open: "2026-10-14", future_normal_stage: "", future_hard_stage: "", future_base: "535",
       future_credit: "61110/h", future_battle: "614880/h", future_dust: "102.41/h",
       bare_credit: "66605K", bare_battle: "302M", bare_dust: "13591",
@@ -139,6 +140,7 @@
       activities: [],         // 活动收益：[{ template: "small14"|"large21"|"large28", start_date: "YYYY-MM-DD" }]
       monthly_card: "否",     // 月卡：等待期内每日到账 1 个「30 天成长补给箱」（默认关闭）
       keep_one_box: "否",     // 每种箱子各保留 1 个不开（收藏向；默认关闭）
+      challenger_pref: "auto", // 挑战者箱资源选择：auto 自动择优 / battle 战斗数据辑优先 / dust 芯尘优先
       saved_at: "",       // 最近一次「保存当前表单」的日期（YYYY-MM-DD）
       capture_time: "",   // 每日采集时刻（HH:MM）
       collected_before: "是", // 采集前是否已回收基地收益（是/否）
@@ -184,6 +186,7 @@
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
     f.monthly_card = val("f_monthly_card");
     f.keep_one_box = val("f_keep_one_box");
+    f.challenger_pref = val("f_challenger_pref");
     f.saved_at = val("f_saved_at");
     f.collected_before = val("f_collected_before");
     syncActivitiesFromRows();
@@ -403,13 +406,48 @@
     state.form.activities = list;
   }
 
+  /* ---------- 活动收益（可选）：行渲染 / 状态列 / 奖励预览 ---------- */
+  var EV_DEL_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">'
+    + '<path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6" stroke-linecap="round"/></svg>';
+  /* 资源图标文件名（与 assets/res_*.webp 对应） */
+  var RES_ICON_FILE = { credit: "res_credit.webp", battle_data: "res_battle.webp", core_dust: "res_dust.webp" };
+  /* 资源图标目录：跟随页面上实际使用的目录（桌面 assets/、移动版 assets/m/） */
+  function resIconDir() {
+    var img = document.querySelector(".res-icon");
+    var src = img ? (img.getAttribute("src") || "") : "";
+    return src ? src.replace(/[^/]*$/, "") : "";
+  }
+  /* 资源图标 img 标签（目录跟随页面：桌面 assets/、移动 assets/m/）；拿不到目录时返回空串 */
+  function resIconHtml(r) {
+    var dir = resIconDir(), f = RES_ICON_FILE[r];
+    return (dir && f) ? '<img class="res-icon" alt="" src="' + dir + f + '">' : "";
+  }
+  /* 箱型图标 img 标签（同 fixedPlanTable 的取法） */
+  function boxIconHtml(name) {
+    var dir = fixedIconDir(), f = FIXED_BOX_ICON[name];
+    return (dir && f) ? '<img class="box-icon" alt="" src="' + dir + f + '">' : "";
+  }
+  /* 与「固定小时箱数量」同表形的简易表（表头 + 行，单元格内容原样注入） */
+  function simpleTable(headers, rows, cls) {
+    var head = "<tr>" + headers.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>";
+    var body = rows.map(function (r) {
+      return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+    }).join("");
+    return el("table", "<thead>" + head + "</thead><tbody>" + body + "</tbody>", cls || "fixed-table plan");
+  }
+  /* 两个 YYYY-MM-DD 的日差（a − b），按 UTC 零点解析避免时区偏移 */
+  function daysBetweenISO(a, b) {
+    var da = new Date(String(a) + "T00:00:00Z").getTime();
+    var db = new Date(String(b) + "T00:00:00Z").getTime();
+    if (isNaN(da) || isNaN(db)) return null;
+    return Math.round((da - db) / 86400000);
+  }
+
   function activityRowEl(a) {
     var row = document.createElement("div");
     row.className = "event-row";
-    row.style.cssText = "display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap;";
     var sel = document.createElement("select");
     sel.className = "ev-template";
-    sel.style.cssText = "flex:1 1 150px;padding:6px;";
     var tpls = EV ? EV.templateList() : [];
     if (!tpls.length) {
       var o0 = document.createElement("option");
@@ -425,15 +463,85 @@
     });
     var dt = document.createElement("input");
     dt.type = "date"; dt.className = "ev-start";
-    dt.style.cssText = "flex:1 1 130px;padding:6px;";
     dt.value = a.start_date || "";
     dt.title = "活动开始日期（服务器当日 04:00 起算）";
+    // 活动状态（R25）：未开始 / 剩余 N 天 / 已结束 —— 基准日 = 数据日期（与计入区间同基准）
+    var st = document.createElement("span");
+    st.className = "ev-status";
+    st.textContent = "—";
     var del = document.createElement("button");
     del.type = "button"; del.className = "ev-del";
-    del.style.cssText = "flex:0 0 auto;padding:6px 10px;cursor:pointer;";
-    del.textContent = "✕"; del.title = "移除该活动";
-    row.appendChild(sel); row.appendChild(dt); row.appendChild(del);
+    del.title = "移除该活动"; del.setAttribute("aria-label", "移除该活动");
+    del.innerHTML = EV_DEL_SVG;   // 圆形 ghost 按钮 + 细线 ✕（此前是纯文本 ✕ + 内联样式、CSS 里零样式）
+    row.appendChild(sel); row.appendChild(dt); row.appendChild(st); row.appendChild(del);
     return row;
+  }
+
+  /* 逐行刷新活动状态（按 schedule 的 meta.index 对齐，避免模板缺失时行序错位） */
+  function refreshActivityStatus(sched) {
+    var wrap = $("eventRows");
+    if (!wrap) return;
+    var rows = wrap.querySelectorAll(".event-row");
+    var t0 = val("f_recorded") || todayLocal();
+    var byIdx = {};
+    ((sched && sched.meta) || []).forEach(function (m) {
+      if (m && m.index !== undefined) byIdx[m.index] = m;
+    });
+    for (var i = 0; i < rows.length; i++) {
+      var st = rows[i].querySelector(".ev-status");
+      if (!st) continue;
+      var m = byIdx[i];
+      var cls = "", txt = "—";
+      if (!m) { txt = "—"; }
+      else if (m.error) { cls = "done"; txt = "⚠ 数据异常"; }
+      else if (t0 < m.start) { txt = "未开始"; }
+      else if (t0 > m.end) { cls = "done"; txt = "已结束"; }
+      else {
+        var n = daysBetweenISO(m.end, t0);
+        cls = "on";
+        txt = (n === null) ? "进行中" : (n > 0 ? ("剩余 " + n + " 天") : "今天最后一天");
+      }
+      st.className = "ev-status" + (cls ? " " + cls : "");
+      st.textContent = txt;
+    }
+  }
+
+  /* 活动奖励实时预览（R26）：由单行文本改为与「固定小时箱数量」同表形的表格 ——
+     资源三行 + 固定箱矩阵（含图标）+ 自选箱清单；与结果区活动段同口径。 */
+  function renderEventTotals(box, sched) {
+    box.innerHTML = "";
+    var t = sched.totals || {};
+    var n = sched.dates.length;
+    var wrap = el("div", "", "event-preview");
+    wrap.appendChild(el("div", "已计入 <b>" + n + "</b> 天（" + sched.dates[0] + " ~ " + sched.dates[n - 1] + "）", "ep-head"));
+    var dir = resIconDir();
+    var resRows = C.RESOURCES.map(function (r) {
+      var f = RES_ICON_FILE[r];
+      var icon = (dir && f) ? '<img class="res-icon" alt="" src="' + dir + f + '">' : "";
+      return [icon + esc(C.RESOURCE_LABELS[r] || r), fmtNum((t.res && t.res[r]) || 0)];
+    });
+    wrap.appendChild(simpleTable(["资源", "活动计入"], resRows));
+    // 固定小时箱矩阵（行 = 箱类含图标、列 = 24h…1h；0 记作 —），与输入表同表形
+    var bdir = fixedIconDir();
+    var frows = FIXED_BOX_ORDER.map(function (nm) {
+      var map = (t.fixed && t.fixed[nm]) || {};
+      var icon = (bdir && FIXED_BOX_ICON[nm]) ? '<img class="box-icon" alt="" src="' + bdir + FIXED_BOX_ICON[nm] + '">' : "";
+      return ["<td>" + icon + esc(nm) + "</td>"].concat(FIXED_BOX_HOURS.map(function (h) {
+        var c = map[String(h)] || 0;
+        return c > 0 ? '<td class="on">' + c + "</td>" : '<td class="off">—</td>';
+      }));
+    });
+    wrap.appendChild(el("div", "固定小时箱到账（按箱型 × 时长）", "ep-head"));
+    wrap.appendChild(simpleTable(["箱子 \\ 小时"].concat(FIXED_BOX_HOURS.map(function (h) { return h + "h"; })), frows));
+    // 自选箱清单
+    var selNames = Object.keys(t.selectable || {}).filter(function (k) { return (t.selectable[k] || 0) > 0; });
+    if (selNames.length) {
+      var srows = selNames.map(function (k) { return [esc(k), String(t.selectable[k])]; });
+      wrap.appendChild(el("div", "自选箱到账", "ep-head"));
+      wrap.appendChild(simpleTable(["自选箱", "活动计入"], srows));
+    }
+    wrap.appendChild(el("div", "活动期间的资源与箱子按日计入，并参与开箱顺序与全箱梭哈上限。", "ep-sum"));
+    box.appendChild(wrap);
   }
 
   function renderActivityRows() {
@@ -450,19 +558,19 @@
     if (!box) return;
     syncActivitiesFromRows();
     var acts = state.form.activities || [];
-    if (!acts.length) { box.textContent = "未添加活动。"; return; }
-    if (!EV || !EV.getTemplates()) { box.textContent = "活动模板加载失败，已按「不计入活动收益」处理，可刷新重试。"; return; }
+    if (!acts.length) { box.textContent = "未添加活动。"; refreshActivityStatus(null); return; }
+    if (!EV || !EV.getTemplates()) { box.textContent = "活动模板加载失败，已按「不计入活动收益」处理，可刷新重试。"; refreshActivityStatus(null); return; }
     var rec = val("f_recorded");
     var t0 = rec ? new Date(rec + "T00:00:00") : new Date();
     var sched;
     try { sched = EV.schedule({ recorded_at: t0, activities: acts }); }
-    catch (e) { box.textContent = "活动参数异常：" + e.message; return; }
+    catch (e) { box.textContent = "活动参数异常：" + e.message; refreshActivityStatus(null); return; }
+    refreshActivityStatus(sched);
     if (!sched.dates.length) {
       box.innerHTML = "已计入 <b>0</b> 天：所填活动均已结束（或尚未进入计入区间）。已到手的奖励请直接填进上方箱量。";
       return;
     }
-    box.innerHTML = "已计入 <b>" + sched.dates.length + "</b> 天（" + sched.dates[0] + " ~ " + sched.dates[sched.dates.length - 1] +
-      "）：" + esc(EV.totalsText(sched.totals)) + "。";
+    renderEventTotals(box, sched);
   }
 
   function renderForm() {
@@ -484,6 +592,7 @@
     setVal("f_ark", f.ark); setVal("f_growth", f.growth); setVal("f_challenger", f.challenger);
     setVal("f_monthly_card", f.monthly_card || "否");
     setVal("f_keep_one_box", f.keep_one_box || "否");
+    setVal("f_challenger_pref", f.challenger_pref || "auto");
     document.querySelectorAll(".fixed").forEach(function (inp) {
       var label = inp.dataset.label, h = inp.dataset.h;
       inp.value = (f.fixed[label] && f.fixed[label][h] !== undefined) ? f.fixed[label][h] : 0;
@@ -493,6 +602,8 @@
     fillSelect($("f_hard_chapter"), state.hardChapters, chapterOfSection(f.hard_stage) || state.hardChapters[state.hardChapters.length - 1]);
     fillSelect($("f_future_normal_chapter"), state.normalChapters, chapterOfSection(f.future_normal_stage) || state.normalChapters[state.normalChapters.length - 1]);
     fillSelect($("f_future_hard_chapter"), state.hardChapters, chapterOfSection(f.future_hard_stage) || state.hardChapters[state.hardChapters.length - 1]);
+    // 推图收益联动的章节下拉用美化版 label（键号 + 官方章名）；value 不变
+    fillStageChapterSelect($("f_future_normal_chapter"), state.normalChapters, val("f_future_normal_chapter") || chapterOfSection(f.future_normal_stage) || state.normalChapters[state.normalChapters.length - 1]);
     syncStageOptions("normal"); syncStageOptions("hard");
     syncStageOptions("future_normal"); syncStageOptions("future_hard");
     updateStageClearUI();
@@ -500,11 +611,30 @@
     renderActivityRows();
     // 回填不触发 change：补一次基地联动（手填为准，只在基地为空时自动填推算值）
     syncCurrentBase();
+    // 「今天已完成歼灭次数」默认跟随每日次数：回填时按值判定（相等即视为仍跟随，§9.5）
+    state.completedAuto = String(parseInt(f.completed, 10) || 0) === String(parseInt(f.wipeouts, 10) || 0);
   }
 
   function chapterOfSection(section) {
     if (!section) return null;
     return O.chapterOf(section);
+  }
+  /* 推图收益的章节下拉：option 文本同时写清「数据键号」与「官方章名」（R21）。
+     value 仍是 "Chapter N" —— 下游 chapterNum() / targetChapter() 依赖它，不能动。 */
+  function fillStageChapterSelect(sel, options, selected) {
+    if (!sel) return;
+    sel.innerHTML = "";
+    options.forEach(function (opt) {
+      var o = document.createElement("option");
+      o.value = opt;
+      var key = chapterNum(opt);
+      var e = (state.stageClearEntries || {})[String(key)];
+      o.textContent = e
+        ? ("键 " + key + " · 官方第 " + (e.official_chapter === undefined ? key + 1 : e.official_chapter) + " 章「" + e.name + "」")
+        : ("键 " + key);
+      if (opt === selected) o.selected = true;
+      sel.appendChild(o);
+    });
   }
   function chapterNum(ch) { var n = parseInt(String(ch || "").split(" ").pop(), 10); return isNaN(n) ? 0 : n; }
   function targetChapter(baseNum, chaptersArr) {
@@ -534,7 +664,8 @@
   }
   /* 以手填前哨基地等级为准：仅关卡进度变更（autoFill=true）且基地为空时才自动填推算值；
      手填路径只提示推算参考，不覆盖、不打断输入。
-     国服统计进度约比国际服多 3 关，推算值可能偏高 → 建议以游戏内实际等级为准 */
+     ⚠ 口径类长句（推算公式、国服偏差、与推算值一致的解释）已**移入标题后的信息窗**（R07/R08），
+       这里只保留「需要用户动作」的两类短提示：未填 → 点按钮采用；手填值与推算值不一致 → 提示两者。 */
   function syncCurrentBase(autoFill) {
     var level = currentCalculatedBase();
     var hint = $("baseHint");
@@ -543,24 +674,25 @@
     function showBtn(lv) {
       if (btn) { btn.style.display = ""; btn.textContent = "采用推算值 lv." + lv; }
     }
+    function setHint(t) { if (hint) hint.textContent = t || ""; }
     if (!level) {
-      hint.textContent = "推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。";
+      setHint("");
       if (btn) btn.style.display = "none";
       return;
     }
     if (!cur && autoFill) {
       setVal("f_base", level);
       syncIncomeFromBase();
-      hint.textContent = "已按关卡进度自动填入推算值 lv." + level + "（国际服口径，每通关 5 关 +1）。国服统计进度约比国际服多 3 关，推算值可能偏高，建议核对游戏内实际等级后手填修正。";
+      setHint("已按关卡进度自动填入推算值 lv." + level + "，建议核对游戏内实际等级后手填修正。");
       if (btn) btn.style.display = "none";
     } else if (!cur) {
-      hint.textContent = "基地等级未填。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，可能偏高），可直接点下方按钮采用，或手填游戏内实际等级。";
+      setHint("基地等级未填：点下方按钮采用关卡进度推算值 lv." + level + "，或手填游戏内实际等级。");
       showBtn(level);
     } else if (cur === level) {
-      hint.textContent = "基地等级 lv." + cur + "（收益按此计算），与关卡进度推算值一致（国际服口径）。";
+      setHint("");
       if (btn) btn.style.display = "none";
     } else {
-      hint.textContent = "以手填基地等级 lv." + cur + " 为准（收益按此计算）。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，推算值可能偏高）。";
+      setHint("以手填 lv." + cur + " 为准；关卡进度推算值为 lv." + level + "。");
       showBtn(level);
     }
   }
@@ -662,20 +794,28 @@
     updateStageClearNote(usedKey, entry, n);
   }
 
-  /* 图例与数据来源说明（随所选章节联动） */
+  /* 图例与数据来源说明（随所选章节联动）
+     R18/R19/R21：标题只写「数据键号 + 官方章名」，并把文字放进 #stageClearTitleText
+     这个 span —— legend 里还挂着信息图标，直接改 legend.textContent 会把图标抹掉。
+     数据键 = 官方章号 − 1（见 data/stage_clear_resources.json 的 key_note）：
+     键 41 → 官方第 42 章「诞生」，此前标题只显示「第 41 章」，用户看着差一章无从对应。 */
   function updateStageClearNote(usedKey, entry, n) {
-    var title = $("stageClearTitle"), note = $("stageClearNote");
+    var title = $("stageClearTitleText") || $("stageClearTitle"), note = $("stageClearNote");
     if (!entry) {
-      if (title) title.textContent = "预计新主线推图收益（官方拆包逐章数据）";
+      if (title) title.textContent = "预计新主线推图收益";
       if (note) note.textContent = (n === null || n === undefined) ? "" : "第 " + n + " 章暂无官方拆包数据，请手动填写。";
       return;
     }
     var same = String(usedKey) === String(n);
-    if (title) title.textContent = "预计新主线推图收益（第 " + usedKey + " 章「" + entry.name + "」· 官方拆包）";
+    var off = entry.official_chapter;
+    if (off === undefined || off === null) off = (parseInt(usedKey, 10) || 0) + 1;
+    if (title) {
+      title.textContent = "预计新主线推图收益（键 " + usedKey + " · 官方第 " + off + " 章「" + entry.name + "」）";
+    }
     if (note) {
       note.textContent =
-        (same ? "" : "第 " + n + " 章暂无官方拆包数据（已收录至第 " + maxOf(state.stageClearEntries) + " 章），暂按第 " + usedKey + " 章「" + entry.name + "」带出。") +
-        "本章 = 官方第 " + entry.official_chapter + " 章，普通 " + entry.n_normal + " 关 / 困难 " + entry.n_hard + " 关；该章主线任务 " + entry.task_count + " 条。";
+        (same ? "" : "键 " + n + " 暂无官方拆包数据（已收录至键 " + maxOf(state.stageClearEntries) + "），暂按键 " + usedKey + "「" + entry.name + "」带出。") +
+        "本章 = 官方第 " + off + " 章，普通 " + entry.n_normal + " 关 / 困难 " + entry.n_hard + " 关；该章主线任务 " + entry.task_count + " 条。";
     }
   }
 
@@ -882,6 +1022,8 @@
       monthly_card: f.monthly_card === "是",
       // 每种箱子各保留 1 个不开：仅影响计算（由 calculate() 生成保留后的快照），表单仍显示原始库存
       keep_one_box: f.keep_one_box === "是",
+      // 挑战者成长宝箱的资源选择偏好（auto / battle / dust）：随快照传给求解器，默认 auto
+      challenger_pref: f.challenger_pref || "auto",
     };
     return snap;
   }
@@ -926,6 +1068,139 @@
       s.classList.toggle("scrollable", s.scrollWidth > s.clientWidth + 2);
     }
   }
+
+  /* ---------- 信息窗（InfoTip） ----------
+     全站此前不存在任何 popover / tooltip 机制，「说明」一律是常驻可见的 p.hint。
+     本组件把「原理解释类」文案从页面收进图标后的浮层，点击才展开。
+       · HTML 端只写 <button type="button" class="info-tip" data-tip="tip-xxx" aria-label="查看说明" aria-expanded="false"></button>
+       · 图标（内联 SVG）与说明正文都由本文件注入 —— **说明文本集中在本表**，
+         避免 index.html / mobile.html 两端文案漂移（两端共用同一份 app.js）。
+     交互：点图标展开 / 再点收起 / 点面板外收起 / Esc 收起 / 同一时刻只允许一个面板。
+     ⚠ 图标可能位于 <legend> 内，而 legend 在移动端绑了「点击折叠整段」的监听（setupMobileForm），
+        所以必须 stopPropagation —— 否则点图标会连带把整个分组折叠起来。 */
+  var INFO_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">'
+    + '<circle cx="8" cy="8" r="6.4"/><path d="M8 7.4v4" stroke-linecap="round"/>'
+    + '<circle cx="8" cy="4.9" r="0.95" fill="currentColor" stroke="none"/></svg>';
+  var INFO_TEXTS = {
+    "tip-base": {
+      title: "当前基地等级",
+      html: "手填游戏内实际显示的<b>前哨基地防御等级</b>，收益表按此等级索引（与同步器等级在游戏内无联动）。"
+        + "也可选下方「关卡进度」自动推算后点「采用推算值」。<br>"
+        + "推算口径：每通关 5 关（普通 + 困难合计）基地等级 +1，基于国际服数据；"
+        + "国服统计进度约比国际服多 3 关，推算值可能偏高 —— <b>建议以游戏内实际等级为准</b>。"
+    },
+    "tip-stage": {
+      title: "关卡进度",
+      html: "推算口径：每通关 5 关（普通 + 困难合计）基地等级 +1，基于国际服数据；"
+        + "国服统计进度约比国际服多 3 关，推算值可能偏高 —— 建议以游戏内实际基地等级手填为准，"
+        + "选完进度后可点「采用推算值」。"
+    },
+    "tip-stageclear": {
+      title: "预计新主线推图收益",
+      html: "数据来源：官方拆包 CampaignStageTable（国际服 149，47 章 / 3,800 关）+ MainQuestTable（583 条主线任务），按章汇总。"
+        + "<b>信用点 / 战斗数据单位为 K</b>（1K = 1000），红球为个；免费珠宝、铸模、企业装备、双模组高级增强器等不计。<br>"
+        + "<b>若会连推多章，请把各章数值相加后填入。</b>"
+    },
+    "tip-event": {
+      title: "活动收益",
+      html: "⚠ 请按<b>当前实际持有量</b>填写上方箱数与现有资源（已领取的活动奖励已包含在内）；"
+        + "本功能只补充<b>数据日期之后</b>剩余天数的活动产出，不会重复计入。"
+    },
+    "tip-target": {
+      title: "达成目标方案",
+      html: "以你填写的目标等级为基准：<b>可行时</b>直接给出开箱方案；<b>不可行时</b>给出"
+        + "「按最优均衡分配开完全部箱子后仍缺的资源量」，并按该资源的 <b>1H 箱产量</b>折算。<br>"
+        + "三项缺口共用同一批自选箱、<b>需同时补足</b>（不是各自独立可补）；标记「← 瓶颈」的一项是缺口最大、最难补的。"
+        + "<br>现状口径<b>不含</b>新主线推图收益；开放日口径含推图收益 + 等待期自然积累 + 新基地收益。"
+    },
+    "tip-card-1": {
+      title: "① 当前同步器等级",
+      html: "当前等级（N）；仅用现有资源（不含新主线推图收益 · 不开箱）还可升到 M。"
+    },
+    "tip-card-2": {
+      title: "② 仅使用固定小时箱",
+      html: "只开固定小时箱能达到的等级（已计入成长套组）。"
+    },
+    "tip-card-3": {
+      title: "③ 全箱梭哈",
+      html: "按开箱顺序（挑战者成长宝箱全开 → 固定小时箱 → 自选箱）全部消耗能达到的等级。"
+    },
+    "tip-card-4": {
+      title: "④ 自然升级（不开箱）",
+      html: "完全不开箱，靠每日收益与一举歼灭自然增长，N 天到目标 T。"
+    },
+    "tip-misc": {
+      title: "其他",
+      html: "<b>保留箱</b>：每种箱子各保留 1 个不开（固定小时箱按「箱型 × 档位」逐格、方舟 / 30天 / 挑战者按名称），"
+        + "全箱梭哈上限与开箱方案都按保留后的数量计算。<br>"
+        + "<b>月卡</b>：开启后把「数据日期 → 新主线开放日」之间到账的 30 天成长补给箱一并计入开放日口径。<br>"
+        + "<b>挑战者箱资源选择</b>：自动择优会按当前目标与库存挑更划算的一项；两项对当前目标等价时优先芯尘"
+        + "（红球每小时产出最少，长期最稀缺）。"
+    },
+    "tip-block3": {
+      title: "整合结论口径",
+      html: "全箱梭哈 = 挑战者成长宝箱全开 + 固定小时箱与自选箱按开箱顺序开启至无法再升 1 级；"
+        + "结果区自选箱分配由引擎按资源最优计算（含各资源数量），可照表逐箱开启。"
+        + "「使用」即需开启的箱子数；「保留」为全开也无法再多升 1 级、故按其不开启计的余量。<br>"
+        + "「现在梭哈相对等到开放日少升的级数」与「提前升级可提前拿到的主线推图收益」互为取舍，"
+        + "两者都已在③整合结论中给出。"
+    }
+  };
+  var _openTip = null;
+
+  function closeInfoPanel() {
+    if (!_openTip) return;
+    var o = _openTip; _openTip = null;
+    if (o.panel && o.panel.parentNode) o.panel.parentNode.removeChild(o.panel);
+    if (o.btn) o.btn.setAttribute("aria-expanded", "false");
+  }
+
+  function openInfoPanel(btn) {
+    var def = INFO_TEXTS[btn.getAttribute("data-tip")] || { title: "", html: "" };
+    // 带动态数字的说明（如结果区四卡）在生成按钮时写进 data-tip-html，覆盖静态文案
+    var ov = btn.getAttribute("data-tip-html");
+    if (ov) def = { title: def.title, html: ov };
+    var host = btn.parentNode;
+    var panel = el("div", "", "info-panel");
+    panel.setAttribute("role", "dialog");
+    panel.innerHTML = '<button type="button" class="ip-close" aria-label="关闭">✕</button>'
+      + (def.title ? '<div class="ip-title">' + esc(def.title) + "</div>" : "")
+      + '<div class="ip-body">' + (def.html || "") + "</div>";
+    host.appendChild(panel);
+    _openTip = { btn: btn, panel: panel };
+    btn.setAttribute("aria-expanded", "true");
+    var cb = panel.querySelector(".ip-close");
+    if (cb) cb.addEventListener("click", function (e) { e.stopPropagation(); closeInfoPanel(); });
+  }
+
+  /* 幂等：可在每次渲染后重复调用（只绑未绑过的节点） */
+  function initInfoTips(root) {
+    var list = (root || document).querySelectorAll(".info-tip[data-tip]");
+    for (var i = 0; i < list.length; i++) {
+      var btn = list[i];
+      if (btn._tipBound) continue;
+      btn._tipBound = true;
+      if (!btn.firstChild) btn.innerHTML = INFO_SVG;
+      btn.addEventListener("click", function (e) {
+        // legend 的折叠监听挂在 legend 的冒泡阶段 —— 必须阻止冒泡，否则点图标会连整段一起折叠
+        e.stopPropagation();
+        e.preventDefault();
+        var self = this;
+        if (_openTip && _openTip.btn === self) { closeInfoPanel(); return; }
+        closeInfoPanel();
+        openInfoPanel(self);
+      });
+    }
+  }
+  /* 点面板外关闭（捕获阶段，先于目标元素的 handler） */
+  document.addEventListener("click", function (e) {
+    if (!_openTip) return;
+    if (_openTip.btn && _openTip.btn.contains(e.target)) return;  // 图标自身 → 交给它的 handler toggle
+    closeInfoPanel();
+  }, true);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" || e.key === "Esc") closeInfoPanel();
+  });
 
   /* 以凌晨4点为日界的自然日差 */
   function daysAnchor(dataDate, targetDate) {
@@ -1079,43 +1354,56 @@
 
   function renderResult(result, snap) {
     var box = $("tabResult"); box.innerHTML = "";
-    var resLabels = { credit: "信用点", battle_data: "战斗数据辑", core_dust: "红球" };
     var recDate = new Date(snap.recorded_at.getTime());
 
-    // 1. 整体等级概览
+    // 1. 整体等级概览（四卡各带一个信息图标；原来挤在一段说明里的 ①②③④ 移入各自卡片的信息窗，⑤ 活动收益说明删除）
     var cards = el("div", "", "cards");
-    function card(num, lbl, warn) {
-      return el("div", "<div class='num'>" + num + "</div><div class='lbl'>" + lbl + "</div>", "card" + (warn ? " warn" : ""));
+    function card(num, lbl, warn, tipId, tipHtml) {
+      var c = el("div", "<div class='num'>" + num + "</div><div class='lbl'>" + lbl + "</div>",
+        "card" + (warn ? " warn" : "") + (tipId ? " info-host" : ""));
+      if (tipId) {
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "info-tip";
+        b.setAttribute("data-tip", tipId);
+        b.setAttribute("aria-label", "查看说明");
+        b.setAttribute("aria-expanded", "false");
+        if (tipHtml) b.setAttribute("data-tip-html", tipHtml);
+        c.insertBefore(b, c.firstChild);
+      }
+      return c;
     }
-    cards.appendChild(card("同步器 " + snap.current_sync_level, "当前同步器等级"));
-    cards.appendChild(card("同步器 " + result.fixed.level, "仅使用固定小时箱"));
-    cards.appendChild(card("同步器 " + result.selectable.level, "全箱梭哈"));
-    cards.appendChild(card(fmtDays(result.no_box.days) + " 天", "自然升级（不开箱）", true));
+    cards.appendChild(card("同步器 " + snap.current_sync_level, "当前同步器等级", false, "tip-card-1",
+      "当前等级（" + snap.current_sync_level + "）；仅用现有资源（不含新主线推图收益 · 不开箱）还可升到 " + result.bare.level + "。"));
+    cards.appendChild(card("同步器 " + result.fixed.level, "仅使用固定小时箱", false, "tip-card-2",
+      "只开固定小时箱能达到的等级（已计入成长套组）。"));
+    cards.appendChild(card("同步器 " + result.selectable.level, "全箱梭哈", false, "tip-card-3",
+      "按开箱顺序（挑战者成长宝箱全开 → 固定小时箱 → 自选箱）全部消耗能达到的等级。"));
+    cards.appendChild(card(fmtDays(result.no_box.days) + " 天", "自然升级（不开箱）", true, "tip-card-4",
+      "完全不开箱，靠每日收益与一举歼灭自然增长，" + fmtDays(result.no_box.days) + " 天到目标 " + result.no_box.target + "。"));
     box.appendChild(cards);
-    var capLines = [
-      "① 当前同步器等级：当前等级（" + snap.current_sync_level + "）；仅用现有资源（不含新主线推图收益·不开箱）还可升到 " + result.bare.level + "。",
-      "② 仅使用固定小时箱：只开固定小时箱能达到的等级（已计入成长套组）；",
-      "③ 全箱梭哈：按开箱顺序（挑战者成长宝箱全开 → 固定小时箱 → 自选箱）全部消耗能达到的等级；",
-      "④ 自然升级（不开箱）：完全不开箱，" + fmtDays(result.no_box.days) + " 天到目标 " + result.no_box.target + "。",
-    ];
-    var es = result.event_summary;
-    if (es && es.available) {
-      capLines.push("⑤ 活动收益（" + es.days + " 天）：以上「现状」①②③ 均不含活动收益（活动从数据日期次日起到账）；活动已在「开放日/等待期」口径中计入，详见「补充信息 → 活动收益」。");
-    }
-    box.appendChild(el("div", capLines.join("<br>"), "cards-caption"));
 
     // 2. 省流版结论（全箱梭哈口径）
     box.appendChild(renderSummary(result, snap));
 
     // 3. 达成目标方案（按目标，样式参考省流版，独立区块）
     box.appendChild(renderTargetPlans(result, snap));
+
+    // 动态生成的图标按钮也要挂上点击行为（幂等）
+    initInfoTips(box);
   }
 
   /* ---------- 达成目标方案：目标同步器等级 / 后续追求目标等级（只展示可行方案） ---------- */
   function renderTargetPlans(result, snap) {
     var wrap = el("div", "", "target-card");
-    wrap.appendChild(el("div", "达成目标方案", "target-title"));
-    wrap.appendChild(el("p", "「<b>三资源配平诊断</b>」以你填写的目标等级为基准。<b>单项资源上限</b> = 把自选箱全部按该项资源选择、单独看这一项能到的等级。<b>还缺</b> = 以「单项资源上限」为可用量，离目标等级的<b>累计消耗</b>还差多少，按该资源 <b>1H 箱产量</b>折算 —— 这是<b>乐观口径</b>（假设每个自选箱都只用于这一项）；三项都报「还缺」说明单纯补某一项不够、需要同时补，全为「✅ 足够」则现有箱子足以达成。现状口径<b>不含</b>新主线推图收益；开放日口径含推图收益 + 等待期自然积累 + 新基地收益。", "caption"));
+    var tTitle = el("div", "", "target-title");
+    tTitle.innerHTML = "达成目标方案";
+    var tBtn = document.createElement("button");
+    tBtn.type = "button"; tBtn.className = "info-tip";
+    tBtn.setAttribute("data-tip", "tip-target");
+    tBtn.setAttribute("aria-label", "查看说明");
+    tBtn.setAttribute("aria-expanded", "false");
+    tTitle.appendChild(tBtn);
+    wrap.appendChild(tTitle);
     var targets = [
       { lv: snap.target_sync_level, name: "目标同步器等级" },
       { lv: snap.alternate_target_level, name: "后续追求目标等级" }
@@ -1213,25 +1501,42 @@
     box.appendChild(table(["活动模板", "活动窗口", "实际计入区间", "计入天数", "状态"], rows));
     box.appendChild(el("p", "计入区间 = [max(活动开始日, 数据日期+1), 活动结束日]：你填写的箱量与资源是「截至数据日期的当前持仓」，<b>已包含数据日期当天及以前领到的活动奖励</b>，故活动收益一律从<b>数据日期次日起算</b>，避免重复计入；已结束的活动贡献恒为 0。", "caption"));
 
-    // 2. 累计产出（本表单 / 活动 / 合计）
+    // 2. 累计产出（本表单 / 活动 / 合计）—— 资源名与箱名统一带图标（R26 ②）
     var t = es.totals;
     var resLabels = C.RESOURCE_LABELS;
     var outRows = C.RESOURCES.map(function (r) {
       var base = snap.bare_resources[r] || 0, add = (t.res && t.res[r]) || 0;
-      return [resLabels[r] + "（现有资源）", fmtNum(base), fmtNum(add), fmtNum(base + add)];
+      return [resIconHtml(r) + esc(resLabels[r]) + "（现有资源）", fmtNum(base), fmtNum(add), fmtNum(base + add)];
     });
     Object.keys(DEFAULT_FIXED).forEach(function (lab) {
       var base = 0;
       Object.keys(snap.fixed_boxes[lab] || {}).forEach(function (h) { base += snap.fixed_boxes[lab][h] || 0; });
       var add = 0;
       Object.keys((t.fixed && t.fixed[lab]) || {}).forEach(function (h) { add += t.fixed[lab][h]; });
-      outRows.push([lab + "（固定箱）", String(base), String(add), String(base + add)]);
+      outRows.push([boxIconHtml(lab) + esc(lab) + "（固定箱）", String(base), String(add), String(base + add)]);
     });
     (snap.selectable_boxes || []).forEach(function (b) {
       var add = (t.selectable && t.selectable[b.name]) || 0;
-      if (b.quantity || add) outRows.push([b.name + "（自选箱）", String(b.quantity), String(add), String(b.quantity + add)]);
+      if (b.quantity || add) outRows.push([esc(b.name) + "（自选箱）", String(b.quantity), String(add), String(b.quantity + add)]);
     });
     box.appendChild(table(["资源 / 箱", "本表单（现有持仓）", "活动计入", "合计"], outRows));
+    // 固定小时箱：活动计入部分按「箱型 × 时长」矩阵单列一张表（与表单内实时预览同表形）
+    var tfix = t.fixed || {};
+    var anyFixed = FIXED_BOX_ORDER.some(function (nm) {
+      var m = tfix[nm] || {};
+      return FIXED_BOX_HOURS.some(function (h) { return (m[String(h)] || 0) > 0; });
+    });
+    if (anyFixed) {
+      var mrows = FIXED_BOX_ORDER.map(function (nm) {
+        var m = tfix[nm] || {};
+        return [boxIconHtml(nm) + esc(nm)].concat(FIXED_BOX_HOURS.map(function (h) {
+          var c = m[String(h)] || 0;
+          return c > 0 ? '<b>' + c + "</b>" : "—";
+        }));
+      });
+      box.appendChild(el("p", "活动计入的固定小时箱（按箱型 × 时长，— 表示该档无到账）：", "caption"));
+      box.appendChild(table(["箱子 \\ 小时"].concat(FIXED_BOX_HOURS.map(function (h) { return h + "h"; })), mrows));
+    }
     box.appendChild(el("p", "活动箱已并入箱子管线：参与开箱顺序（①挑战者成长宝箱全开 → ②固定小时箱按需 → ③方舟/30天自选箱按需）与全箱梭哈上限；但<b>不写回上方表单输入框</b>（活动箱是分日到账的）。挑战者成长宝箱按固定数值（units）计入，不走引擎的箱子折算。", "caption"));
 
     // 3. 折合等级增量 + 与开放日的关系
@@ -1410,7 +1715,7 @@
       return "<tr><td>" + icon + esc(nm) + "</td>" + tds + "</tr>";
     }).join("");
     var t = el("table", "<thead>" + head + "</thead><tbody>" + body + "</tbody>", "fixed-table plan");
-    wrap.appendChild(el("div", "固定小时箱按需开启明细（与上方「固定小时箱数量」同表形）：", "sb-plan"));
+    wrap.appendChild(el("div", "开箱方案 · 固定小时箱", "sb-plan"));
     wrap.appendChild(t);
     wrap.appendChild(el("div", "共需开启固定小时箱 <b>" + total + "</b> 个。", "caption"));
     return wrap;
@@ -1472,9 +1777,9 @@
     var futLv = hasFut ? fut.result.level : null;
     var gs = levelGainSplit(result);
 
-    // Block ① 现状（当前基地 · 直接全箱梭哈）
+    // Block ① 不等新主线（当前基地 · 直接全箱梭哈）
     var b1 = el("div", "", "summary-block");
-    b1.appendChild(el("div", "① 现状（当前基地等级 · 直接全箱梭哈）", "sb-head"));
+    b1.appendChild(el("div", "① 不等新主线 · 直接全箱梭哈", "sb-head"));
     var big1 = "全箱梭哈最高可到 <b>同步器 " + nowLv + "</b>";
     if (nowLv >= target) big1 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
     else big1 += "（目标 " + target + " 还差 " + Math.max(0, target - nowLv) + " 级）";
@@ -1494,20 +1799,21 @@
     }
     wrap.appendChild(b1);
 
-    // Block ② 考虑新主线（开放后按新基地收益全箱梭哈）
+    // Block ② 新主线开放后升级（开放后按新基地收益全箱梭哈）
     var b2 = el("div", "", "summary-block");
-    b2.appendChild(el("div", "② 考虑新主线（开放后按新基地收益开箱）", "sb-head"));
+    b2.appendChild(el("div", "② 新主线开放后升级", "sb-head"));
     if (hasFut) {
       var date = fut.open_at ? localDateStr(fut.open_at) : "";
       var diff = futLv - nowLv;
-      var big2 = "开放日（" + date + "）全箱梭哈最高可到 <b>同步器 " + futLv + "</b>";
+      var big2 = "新主线开放日（" + date + "），全箱梭哈可到 <b>同步器 " + futLv + "</b>";
       if (diff > 0) {
         // 分层拆解：「等待期到账资源」（不开箱也有）与「开箱贡献」分开列，
         // 避免旧的「另有等待期自然积累 N 级」被误读成「这 N 级都不用开箱」
+        // R35/§9.7：等级用 N、增量用 +Δ，避免两个 N 混指
         var boxGain = fut.box_gain_vs_now || 0;
         var wv = (gs.waitLv !== null) ? gs.waitLv : Math.max(0, diff - boxGain);
         var ov = Math.max(0, diff - wv - boxGain);
-        big2 += "（较现状多 <b>" + diff + "</b> 级 = 等待期到账资源 <b>+" + wv + "</b> 级 + 开箱 <b>+" + ov + "</b> 级；箱子按新收益折算另 +" + boxGain + " 级）";
+        big2 += "（共计 <b>+" + diff + "</b> 级 = 等待期到账资源 <b>+" + wv + "</b> 级、开箱 <b>+" + ov + "</b> 级；屯箱子多升 " + boxGain + " 级）";
       }
       if (futLv >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
       b2.appendChild(el("div", big2, "sb-big"));
@@ -1870,6 +2176,41 @@
     });
     // 数据日期变化 → 活动计入区间随之变化
     $("f_recorded").addEventListener("change", updateActivityTotals);
+    // 「更新为今天」：先把日期写成今天，再同时跑两条链
+    //   ① updateActivityTotals()：数据日期是活动状态的基准日（F5）
+    //   ② onFormChange()：collectForm / saveForm / updateProgress / resetCalcButton
+    // 注意：不能只调其中一个 —— f_recorded 的 change 只绑了 updateActivityTotals，
+    //       而 form 的 change 委托链不覆盖它，故此处显式两条都跑。
+    if ($("btnToday")) {
+      $("btnToday").addEventListener("click", function (e) {
+        e.preventDefault();
+        setVal("f_recorded", todayLocal());
+        updateActivityTotals();
+        onFormChange();
+      });
+    }
+
+    // R15/§9.5：「今天已完成歼灭次数」默认跟随「每日一举歼灭次数」，用户单独改过即不再跟随；
+    //          边界 = completed ≤ wipeouts（越界截断 + 轻提示）
+    function syncCompletedFromWipeouts() {
+      var w = parseInt(val("f_wipeouts"), 10);
+      if (isNaN(w) || w < 0) { w = 0; setVal("f_wipeouts", "0"); return; }
+      if (!state.completedAuto) return;
+      setVal("f_completed", String(w));
+    }
+    $("f_wipeouts").addEventListener("input", syncCompletedFromWipeouts);
+    $("f_wipeouts").addEventListener("change", syncCompletedFromWipeouts);
+    $("f_completed").addEventListener("change", function () {
+      var w = parseInt(val("f_wipeouts"), 10); if (isNaN(w) || w < 0) w = 0;
+      var c = parseInt(val("f_completed"), 10); if (isNaN(c) || c < 0) c = 0;
+      if (c > w) {
+        c = w; setVal("f_completed", String(c));
+        tip("「今天已完成歼灭次数」不能超过「每日一举歼灭次数」，已截断为 " + w + "。");
+      }
+      // 与 wipeouts 相等 → 视为仍跟随；不等 → 用户已自定义（不再被 wipeouts 覆盖）
+      state.completedAuto = (String(c) === String(w));
+      onFormChange();
+    });
     // 同一页面内改 #data= hash（如直接粘贴/扫码改链接）也即时恢复
     window.addEventListener("hashchange", restoreFromShareHash);
     // 普通章节 -> 困难跟随 + 未来+2
@@ -2043,6 +2384,8 @@
         renderForm();
         bindEvents();
         setupMobileForm();
+        // 表单区静态信息图标（基地/关卡/推图收益/活动/其他）在此绑定；结果区动态图标由 renderResult 内自行再调一次
+        initInfoTips(document);
         syncCostFromLevel();
         updateProgress();
         tip("就绪");

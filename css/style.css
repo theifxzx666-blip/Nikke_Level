@@ -21,13 +21,18 @@
   --hero-bg: url("../assets/bg/hero.webp");
 }
 * { box-sizing: border-box; }
-/* 自定义字体：Kingnammm Maiyuan 2（子集化版，仅保留站内实际用到的 1549 个字符）
-   7.86MB 全量 ttf → 277KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
-   新增/改动文案若用到新汉字，需重跑子集化脚本（见 临时文件/font_charset.js + font_subset.py）。 */
+/* 自定义字体：Kingnammm Maiyuan 2（子集化版，仅保留站内实际用到的 1512 个字符）
+   7.86MB 全量 ttf → 278KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
+   新增/改动文案若用到新汉字，需重跑子集化脚本（见 临时文件/scripts/font_charset.js + font_subset.py，
+   字符集文件 临时文件/out/_subset_chars.txt）。
+   ?v=20261016a：2026-10-16 补字（衡赚亏释，1508→1512）后加版本参数强制客户端换新字体，
+   同时修掉老用户缓存旧字体导致「衡」字型与全站不一致的问题。
+   注意：index.html / mobile.html 的 <link rel="preload"> 必须与本处保持完全相同的 URL（含 ?v=），
+   否则浏览器会把字体下载两次。 */
 @font-face {
   font-family: "MaiYuan";
-  src: url("../assets/fonts/maiyuan-subset.woff2") format("woff2"),
-       url("../assets/fonts/maiyuan-subset.ttf") format("truetype");
+  src: url("../assets/fonts/maiyuan-subset.woff2?v=20261016a") format("woff2"),
+       url("../assets/fonts/maiyuan-subset.ttf?v=20261016a") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -633,3 +638,97 @@ body.avatar-full #avatarFrame { flex: 1 1 auto; min-height: 0; height: 100%; }
 .qr-area { min-height: 168px; }
 .qr-area img { width: 168px; height: 168px; image-rendering: pixelated; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
 .qr-fallback { font-size: 12px; color: var(--muted); margin: 8px 0; }
+
+/* ============================================================
+   2026-10-16 界面优化批：隐藏字段 / 资源图标 / 信息窗 / 活动行
+   ============================================================ */
+
+/* ---------- 视觉隐藏（DOM + state + 导出 JSON/XLSX 全部保留，仅收进视觉） ---------- */
+.field-hidden { display: none !important; }
+
+/* ---------- 行内「输入框 + 图标按钮」（如数据日期的「更新为今天」） ---------- */
+.input-row { display: flex; gap: 6px; align-items: center; }
+.input-row > input { flex: 1 1 auto; min-width: 0; }
+.icon-btn {
+  flex: 0 0 auto; width: 34px; height: 34px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: #fff; color: var(--muted); cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.icon-btn:hover { color: var(--primary-dark); border-color: var(--primary); background: #f0faf6; }
+.icon-btn:active { background: #e6f6f0; }
+.icon-btn svg { width: 16px; height: 16px; display: block; }
+
+/* ---------- 分组配色：其他（中性灰蓝，放杂项开关） ---------- */
+.grp-e legend { color: #56687a; background: #eef2f6; }
+.grp-e { border-color: #cfd9e2; }
+
+/* ---------- 标题里的「标题文字 + 信息图标」容器 ----------
+   legend 在移动端是 flex + space-between；把两者包成【单个】flex item 后，
+   图标紧跟标题、不会被 space-between 推到行尾，折叠箭头（::after）仍在最后。
+   position:relative 是信息面板（absolute）的定位锚点，缺了它面板会跑到视口左上角。 */
+.lg-main { display: inline-flex; align-items: center; flex-wrap: wrap; position: relative; }
+/* 结果区「达成目标方案」标题同样是信息面板的锚点 */
+.target-title { position: relative; }
+
+/* ---------- 资源图标（信用点 / 战斗数据辑 / 红球）：比 .box-icon 小一号，避免双倍间距 ---------- */
+.res-icon { width: 18px; height: 18px; vertical-align: -3px; margin-right: 5px; object-fit: contain; }
+label > .res-icon, .box-name .res-icon { pointer-events: none; }
+
+/* ---------- 信息窗（InfoTip）：标题/卡片旁可点击的 ⓘ，点击浮出说明面板 ----------
+   面板绝对定位锚在容器左上；width 固定才不会被窄容器压成竖条。
+   放在 legend 内 ⇒ 必须 stopPropagation，否则点图标会连带折叠整段（见 app.js InfoTip）。 */
+.info-tip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; padding: 0; margin-left: 6px;
+  border: 1px solid var(--border); border-radius: 50%;
+  background: #fff; color: var(--muted); cursor: pointer;
+  flex: 0 0 auto; vertical-align: -3px;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.info-tip:hover, .info-tip:focus-visible { color: var(--primary-dark); border-color: var(--primary); background: #f0faf6; outline: none; }
+.info-tip[aria-expanded="true"] { color: #fff; border-color: var(--primary); background: var(--primary); }
+.info-tip svg { width: 12px; height: 12px; display: block; }
+.info-panel {
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 3000;
+  width: min(380px, calc(100vw - 32px));
+  background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--primary);
+  border-radius: 10px; padding: 10px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .16);
+  font-size: 12.5px; line-height: 1.7; color: #334; text-align: left;
+  white-space: normal; font-weight: 400;
+}
+.info-panel .ip-title { font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; font-size: 13px; padding-right: 18px; }
+.info-panel .ip-body b { color: var(--primary-dark); }
+.info-panel .ip-close {
+  position: absolute; top: 5px; right: 6px; border: none; background: none;
+  cursor: pointer; color: var(--muted); font-size: 13px; line-height: 1; padding: 2px 5px; border-radius: 5px;
+}
+.info-panel .ip-close:hover { background: rgba(0, 0, 0, .06); color: #333; }
+/* 卡片内使用（结果区四卡）：图标浮在卡片右上角，不参与卡片排版 */
+.card .info-tip { position: absolute; top: 6px; right: 6px; margin-left: 0; }
+.card.info-host { position: relative; }
+
+/* ---------- 活动行（表单内）：模板 + 开始日期 + 状态 + 圆形移除按钮 ---------- */
+.event-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
+.event-row .ev-template { flex: 1 1 150px; min-width: 0; }
+.event-row .ev-start { flex: 1 1 130px; min-width: 0; }
+.ev-status { flex: 0 0 auto; font-size: 11.5px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; background: #f0f2f1; color: #778; }
+.ev-status.on { background: #e1f5ee; color: #0f6e56; }
+.ev-status.done { background: #f6eeee; color: #a35; }
+.ev-del {
+  flex: 0 0 auto; width: 28px; height: 28px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 50%;
+  background: #fff; color: var(--muted); cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.ev-del:hover { color: #d9534f; border-color: #f0b9b7; background: #fdf3f3; }
+.ev-del svg { width: 13px; height: 13px; display: block; }
+
+/* ---------- 活动奖励实时预览：改为与「固定小时箱数量」同表形 ---------- */
+.event-preview { margin: 6px 0 2px; }
+.event-preview .ep-head { font-size: 12px; color: var(--muted); margin: 6px 0 2px; }
+.event-preview .fixed-table { margin: 2px 0 6px; }
+.event-preview .ep-sum { font-size: 12px; color: var(--muted); margin: 4px 0; }
