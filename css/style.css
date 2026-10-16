@@ -488,6 +488,31 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .target-card .summary-block { border-top-color: #d9e6f2; }
 .target-card .sb-head { color: #185fa5; }
 
+/* ---------- R40：目标方案分段（现状 / 开放日）----------
+   用户反馈「现状不可达（全箱梭哈只到 557 级）与开放日可达两套开箱方案之间划分很模糊」，
+   故把每套方案包成独立分段：左侧色条（现状=灰、开放日=蓝）+ 分段标题 + 状态药丸。 */
+.sb-seg {
+  margin: 9px 0 3px; padding: 8px 10px 9px;
+  border: 1px solid #e1e8ee; border-radius: 9px; background: #fbfcfe;
+}
+.sb-seg + .sb-seg { margin-top: 12px; }
+.sb-seg-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+.sb-seg-title { font-size: 12.5px; font-weight: 700; color: #3a4750; }
+.sb-seg-status { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.sb-seg-status.bad { background: #fdecee; color: #b3283a; }
+.sb-seg-status.ok { background: #e1f5ee; color: #0f6e56; }
+.sb-seg-now { border-left: 3px solid #a6b2bb; }
+.sb-seg-now .sb-seg-title { color: #58666f; }
+.sb-seg-fut { border-left: 3px solid #2f7dd1; background: #f7fbff; }
+.sb-seg-fut .sb-seg-title { color: #185fa5; }
+.sb-seg > *:last-child { margin-bottom: 0; }
+
+/* ---------- R40：不可达缺口压缩成一行（只列仍缺的资源） ---------- */
+.sb-text.shortage-line { margin-top: 4px; color: #5d4b26; }
+.sb-text.shortage-line .shortage-bottle { margin-left: 4px; color: #b3283a; }
+/* ⚠ .sb-text b 的规则优先级更高，会把「瓶颈：X」里的加粗资源名染成主色 → 这里强制继承红色 */
+.sb-text.shortage-line .shortage-bottle b { color: inherit; }
+
 @media (max-width: 600px) {
   .summary-card { margin-bottom: 12px; }
   .sb-big { font-size: 14px; }
@@ -499,6 +524,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .result-panel.export-mode .sb-big { font-size: 17px !important; }
 .result-panel.export-mode .sb-big b { font-size: 20px !important; }
 .result-panel.export-mode .sb-plan, .result-panel.export-mode .sb-text { font-size: 15px !important; color: #2a3a3a !important; }
+.result-panel.export-mode .sb-seg-title { font-size: 14px !important; }
+.result-panel.export-mode .sb-seg-status { font-size: 12px !important; }
+.result-panel.export-mode .sb-seg { border-color: #cfd8e2 !important; background: #fbfcfe !important; }
 .result-panel.export-mode .summary-warn { font-size: 13px !important; }
 .result-panel.export-mode .summary-note { font-size: 13px !important; color: #2b2b2b !important; }
 

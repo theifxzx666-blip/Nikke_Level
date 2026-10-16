@@ -457,6 +457,12 @@ body.m-body .info-panel { width: min(340px, calc(100vw - 34px)); padding: 10px 1
 body.m-body .info-panel .ip-title { font-size: 13px; }
 /* 活动行：移除按钮触控目标放大（34px 是密集列表下的折中，不取 44px） */
 body.m-body .ev-del { width: 34px; height: 34px; }
+/* R40：目标方案分段（现状 / 开放日）在竖屏下收紧内边距，状态药丸允许换行 */
+body.m-body .sb-seg { padding: 8px 9px 9px; margin-left: 0; margin-right: 0; }
+body.m-body .sb-seg-head { gap: 6px; }
+body.m-body .sb-seg-status { font-size: 10px; padding: 1px 7px; }
+body.m-body .sb-text.shortage-line { font-size: 12.5px; line-height: 1.7; }
+body.m-body .sb-text.shortage-line .shortage-bottle { display: inline-block; margin-left: 0; margin-top: 2px; }
 body.m-body .ev-del svg { width: 15px; height: 15px; }
 body.m-body .ev-status { font-size: 12px; padding: 3px 10px; }
 /* 活动行的日期/模板在窄屏各占半行，避免三件挤成一行 */
