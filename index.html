@@ -6,8 +6,8 @@
 <title>NIKKE 资源规划计算器</title>
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
-<link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016a" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261016a">
+<link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/style.css?v=20261016b">
 <!-- html2canvas（导出结果图用，gzip ≈46KB）与 xlsx（导入/导出 Excel 用，gzip ≈316KB）改为「用到才加载」，
      由 js/app.js 的 ensureVendor() 在点击导出/导入时注入，首屏不再跨境外拉 CDN，也不拖慢首屏 -->
 </head>
@@ -44,7 +44,7 @@
         <label>数据日期
           <span class="input-row">
             <input type="date" id="f_recorded">
-            <button type="button" id="btnToday" class="icon-btn" aria-label="更新为今天" title="更新为今天"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13.2 6.5A5.6 5.6 0 1 0 13.5 9.7" stroke-linecap="round"/><path d="M13.7 3.3v3.3h-3.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button type="button" id="btnToday" class="suffix-btn" aria-label="更新为今天" title="更新为今天"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13.2 6.5A5.6 5.6 0 1 0 13.5 9.7" stroke-linecap="round"/><path d="M13.7 3.3v3.3h-3.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>今天</span></button>
           </span>
         </label>
         <label class="field-hidden">最近保存日期<input type="date" id="f_saved_at" readonly title="最后一次点击「保存当前表单」的日期，用于判断快照对应哪一天"></label>
@@ -114,7 +114,7 @@
     </fieldset>
 
     <fieldset class="grp-c">
-      <legend>预计新主线进度</legend>
+      <legend><span id="futureTitleText">预计新主线进度</span></legend>
       <div class="grid g2">
         <label>预计新主线开放日期<input type="date" id="f_future_open"></label>
         <div><p class="hint">选择下方「预计普通/困难主线关卡」章节后，自动推算预计新基地等级与收益。</p></div>
@@ -252,11 +252,11 @@
 <script src="js/core.js?v=20260917c"></script>
 <script src="js/events.js?v=20261012a"></script>
 <script src="js/outpost.js?v=20260917c"></script>
-<script src="js/boxes.js?v=20261016a"></script>
+<script src="js/boxes.js?v=20261016b"></script>
 <script src="js/scenarios.js?v=20261014c"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261016a"></script>
+<script src="js/app.js?v=20261016b"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/sync.js?v=20261013b"></script>
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->

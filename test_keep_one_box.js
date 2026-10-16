@@ -20,6 +20,7 @@ require("./js/events.js");
 require("./js/boxes.js");
 require("./js/scenarios.js");
 const C = global.NikkeCore, O = global.NikkeOutpost, S = global.NikkeScenarios, EV = global.NikkeEvents;
+const B = global.NikkeBoxes;
 
 let fail = 0;
 function chk(name, actual, expect) {
@@ -194,9 +195,33 @@ Promise.all([
     JSON.stringify(p8.remaining_shortage));
   const miss8 = Math.ceil(p8.remaining_shortage.battle_data / asym.income_per_hour.battle_data - 1e-9);
   truthy("折算出的 1H 战斗数据辑盒为正整数", Number.isInteger(miss8) && miss8 > 0, "miss=" + miss8);
-  truthy("该资源单项上限 < 目标等级（解释「只到多少级」）",
-    ra.per_resource.selectable.battle_data < far,
-    "cap=" + ra.per_resource.selectable.battle_data + " far=" + far);
+  /* R38（2026-10-16）：渲染层不再用「单项资源上限」，改用 bestEffortPlan 的
+     target_shortage（距原目标的真实缺口，由求解器按方案自己的分配算好）。 */
+  const be8 = B.bestEffortPlan(asym, asym.bare_resources, far - asym.current_sync_level, asym.income_per_hour);
+  truthy("bestEffortPlan 命中（目标不可达）", be8.found === true, "found=" + be8.found);
+  truthy("方案的 remaining_shortage 全为 0（故不能当作「仍缺」渲染）",
+    C.RESOURCES.every((k) => (be8.plan.remaining_shortage[k] || 0) <= 1e-6),
+    JSON.stringify(be8.plan.remaining_shortage));
+  truthy("存在 target_shortage（距目标缺口）", !!be8.plan.target_shortage,
+    be8.plan.target_shortage ? JSON.stringify(be8.plan.target_shortage) : "null");
+  const need8 = C.costForLevels(asym, asym.current_sync_level, far - asym.current_sync_level);
+  const got8 = B.planResources(asym, be8.plan, asym.income_per_hour);
+  truthy("target_shortage == max(0, 目标需求 − 底盘 − 方案开出资源)（逐资源）",
+    C.RESOURCES.every((k) =>
+      Math.abs(be8.plan.target_shortage[k] - Math.max(0, need8[k] - asym.bare_resources[k] - got8[k])) < 1e-6),
+    JSON.stringify(C.RESOURCES.map((k) => [k, be8.plan.target_shortage[k]])));
+  const missB = C.RESOURCES.map((k) => {
+    const need = be8.plan.target_shortage[k] || 0, rate = asym.income_per_hour[k] || 0;
+    return (need > 1e-6 && rate > 0) ? Math.ceil(need / rate - 1e-9) : 0;
+  });
+  const maxB = Math.max.apply(null, missB);
+  truthy("折算 1H 箱为非负整数且瓶颈项存在", missB.every((v) => Number.isInteger(v) && v >= 0) && maxB > 0,
+    JSON.stringify(missB));
+  truthy("瓶颈项（折算最多）唯一可定", missB.filter((v) => v === maxB).length >= 1,
+    JSON.stringify({ miss: missB, max: maxB }));
+  truthy("旧「单项资源上限」与均衡缺口不同（说明必须换口径）",
+    C.RESOURCES.some((k) => Math.abs((p8.remaining_shortage[k] || 0) - be8.plan.target_shortage[k]) > 1e-6),
+    JSON.stringify({ greedy: p8.remaining_shortage, balanced: be8.plan.target_shortage }));
 
   console.log("\n" + (fail === 0 ? "ALL KEEP-ONE-BOX TESTS PASSED" : (fail + " TEST(S) FAILED")));
   process.exit(fail === 0 ? 0 : 1);

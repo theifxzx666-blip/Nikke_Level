@@ -182,6 +182,49 @@ function main() {
     Object.keys(chBe["方舟官方补给物资Ⅰ"] || {}).every((k) => chBe["方舟官方补给物资Ⅰ"][k] < 211),
     JSON.stringify(chBe["方舟官方补给物资Ⅰ"]));
 
+  console.log("\n--- 5) R38：不可达诊断缺口的唯一来源 = bestEffortPlan.target_shortage ---");
+  const tgtFar = 541;
+  const stepsFar = tgtFar - withStage.current_sync_level;
+  const beDiag = B.bestEffortPlan(withStage, withStage.bare_resources, stepsFar, withStage.income_per_hour);
+  truthy("bestEffort 命中且方案自身可行（它在缩小步数上可行）",
+    beDiag.found === true && beDiag.plan.feasible === true, "found=" + beDiag.found);
+  truthy("存在 target_shortage（距原目标的缺口）", !!beDiag.plan.target_shortage,
+    beDiag.plan.target_shortage ? JSON.stringify(beDiag.plan.target_shortage) : "null");
+  chk("target_shortage 三资源齐全",
+    C.RESOURCES.filter((k) => typeof beDiag.plan.target_shortage[k] === "number").length, 3);
+  // 关键不变量 ①：方案可行 ⇒ 其 remaining_shortage 全 0（证明不能用它当缺口）
+  truthy("方案 remaining_shortage 全为 0（故不可作为「仍缺」数据源）",
+    C.RESOURCES.every((k) => (beDiag.plan.remaining_shortage[k] || 0) <= 1e-6),
+    JSON.stringify(beDiag.plan.remaining_shortage));
+  // 关键不变量 ②：target_shortage 至少一项 > 0（目标确实不可达）
+  truthy("target_shortage 至少一项 > 0（目标确实不可达）",
+    C.RESOURCES.some((k) => beDiag.plan.target_shortage[k] > 1e-6),
+    JSON.stringify(beDiag.plan.target_shortage));
+  // 关键不变量 ③：与「目标需求 − 底盘 − 方案开出的资源」逐项一致（引擎侧自洽）
+  const needT = C.costForLevels(withStage, withStage.current_sync_level, stepsFar);
+  const gotT = B.planResources(withStage, beDiag.plan, withStage.income_per_hour);
+  truthy("target_shortage == max(0, 目标需求 − 底盘 − 方案开出资源)（逐资源）",
+    C.RESOURCES.every((k) =>
+      Math.abs(beDiag.plan.target_shortage[k] - Math.max(0, needT[k] - withStage.bare_resources[k] - gotT[k])) < 1e-6),
+    JSON.stringify(C.RESOURCES.map((k) => [k, beDiag.plan.target_shortage[k], needT[k], gotT[k]])));
+  // 关键不变量 ④：折算 1H 箱（与 app.js balanceDiagTable 同一算式）→ 能定出唯一瓶颈
+  const incW = withStage.income_per_hour;
+  const missW = C.RESOURCES.map((k) => {
+    const need = beDiag.plan.target_shortage[k] || 0, rate = incW[k] || 0;
+    return (need > 1e-6 && rate > 0) ? Math.ceil(need / rate - 1e-9) : 0;
+  });
+  const maxW = Math.max.apply(null, missW);
+  truthy("折算 1H 箱为非负整数且瓶颈项存在", missW.every((v) => Number.isInteger(v) && v >= 0) && maxW > 0,
+    JSON.stringify(missW));
+  truthy("瓶颈项（折算最多）唯一可定", missW.filter((v) => v === maxW).length >= 1,
+    JSON.stringify({ miss: missW, max: maxW }));
+  // 与旧口径对照：不可达时 planForTarget 的贪心缺口 ≠ 均衡缺口（证明渲染必须换成同源值）
+  const greedyFar = S.planForTarget(withStage, tgtFar, "now");
+  truthy("贪心退化方案的 remaining_shortage 与 target_shortage 不同（旧口径不可复用）",
+    greedyFar.feasible === false &&
+    C.RESOURCES.some((k) => Math.abs((greedyFar.remaining_shortage[k] || 0) - beDiag.plan.target_shortage[k]) > 1e-6),
+    JSON.stringify({ greedy: greedyFar.remaining_shortage, balanced: beDiag.plan.target_shortage }));
+
   console.log("\n" + (fail ? "FAILED: " + fail + " 项" : "ALL STAGE-CLEAR TESTS PASSED"));
   process.exit(fail ? 1 : 0);
 }

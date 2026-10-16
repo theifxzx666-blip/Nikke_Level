@@ -250,6 +250,22 @@ body.m-body select {
   border-radius: 9px;
 }
 body.m-body .btn { min-height: 44px; }
+/* ---------- 「数据日期 + 今天」一体化后缀控件（style.css 的 .input-row）----------
+   本文件上面的 body.m-body input 是 id 级选择器（#formSection input，见文件末尾），
+   优先级高于 style.css 的 .input-row > input → 手机上输入框仍是四角 9px，
+   与按钮拼接处会露出圆角缺口（2026-10-16 实测 CDP：inp=9px/9px 应为 9px/0px）。
+   这里用同等强度（body.m-body .input-row > input）显式覆盖，圆角取移动端基准 9px。 */
+body.m-body .input-row { display: flex; align-items: stretch; gap: 0; }
+body.m-body .input-row > input {
+  flex: 1 1 auto; min-width: 0;
+  border-top-right-radius: 0; border-bottom-right-radius: 0;
+  border-top-left-radius: 9px; border-bottom-left-radius: 9px;
+}
+body.m-body .input-row > .suffix-btn {
+  flex: 0 0 auto; margin-left: -1px;
+  border-radius: 0 9px 9px 0;
+  min-height: 44px;   /* 与 m-body 的 input 等高 */
+}
 body.m-body .btn-big { padding: 14px; font-size: 16px; }
 body.m-body .tab { padding: 11px 10px; font-size: 13.5px; }
 body.m-body .app-nav-btn { min-height: 50px; }

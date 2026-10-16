@@ -10,10 +10,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/webp" href="assets/m/favicon.webp">
-<link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016a" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
-<link rel="stylesheet" href="css/style.css?v=20261016a">
-<link rel="stylesheet" href="css/mobile.css?v=20261016a">
+<link rel="stylesheet" href="css/style.css?v=20261016b">
+<link rel="stylesheet" href="css/mobile.css?v=20261016b">
 </head>
 <body class="m-body">
 
@@ -68,7 +68,7 @@
         <label>数据日期
           <span class="input-row">
             <input type="date" id="f_recorded">
-            <button type="button" id="btnToday" class="icon-btn" aria-label="更新为今天" title="更新为今天"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13.2 6.5A5.6 5.6 0 1 0 13.5 9.7" stroke-linecap="round"/><path d="M13.7 3.3v3.3h-3.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button type="button" id="btnToday" class="suffix-btn" aria-label="更新为今天" title="更新为今天"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13.2 6.5A5.6 5.6 0 1 0 13.5 9.7" stroke-linecap="round"/><path d="M13.7 3.3v3.3h-3.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>今天</span></button>
           </span>
         </label>
         <label class="field-hidden">最近保存日期<input type="date" id="f_saved_at" readonly title="最后一次点击「保存当前表单」的日期，用于判断快照对应哪一天"></label>
@@ -138,7 +138,7 @@
     </fieldset>
 
     <fieldset class="grp-c">
-      <legend>预计新主线进度</legend>
+      <legend><span id="futureTitleText">预计新主线进度</span></legend>
       <div class="grid g2">
         <label>预计新主线开放日期<input type="date" id="f_future_open"></label>
         <div><p class="hint">选择下方「预计普通/困难主线关卡」章节后，自动推算预计新基地等级与收益。</p></div>
@@ -268,11 +268,11 @@
 <script src="js/core.js?v=20260917c"></script>
 <script src="js/events.js?v=20261012a"></script>
 <script src="js/outpost.js?v=20260917c"></script>
-<script src="js/boxes.js?v=20261016a"></script>
+<script src="js/boxes.js?v=20261016b"></script>
 <script src="js/scenarios.js?v=20261014c"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261016a"></script>
+<script src="js/app.js?v=20261016b"></script>
 <!-- 顶层功能切换沿用桌面版外壳脚本（tools.json 驱动）；移动版只把导航用 CSS 固定到屏幕底部 -->
 <script src="js/shell.js?v=20261009b"></script>
 <script>

@@ -72,6 +72,51 @@
     return { used: used, remaining_shortage: remaining };
   }
 
+  /* 方案实际开出的三资源量（固定小时箱按 used 逐格折算 + 自选箱按 choices 命中的选项奖励）
+     R38（2026-10-16）：不可达时「距目标仍缺」必须基于**最优均衡方案自己的分配**来算，
+     而该方案的 remaining_shortage 恒为 0（它在缩小的步数上可行），不能当缺口用。
+     口径与本文件其它折算保持一致：红球 TRUNC、非 units 选项 × 该资源每小时收益。 */
+  function planResources(snapshot, plan, incomePerHour) {
+    var res = C.zeroRes();
+    if (!plan) return res;
+    var inc = incomePerHour || {};
+    function boxValue(resource, hours) {
+      var rate = inc[resource] || 0.0;
+      return resource === "core_dust" ? Math.floor(rate * hours) : rate * hours;
+    }
+    var names = { "芯尘盒": "core_dust", "信用点盒": "credit", "战斗数据辑盒": "battle_data" };
+    var used = plan.fixed_used || {};
+    Object.keys(used).forEach(function (name) {
+      var hm = used[name] || {};
+      if (name === "成长套组") {
+        Object.keys(hm).forEach(function (h) {
+          RESOURCES.forEach(function (r) { res[r] += boxValue(r, parseInt(h, 10)) * hm[h]; });
+        });
+        return;
+      }
+      var r0 = names[name];
+      if (!r0) return;
+      Object.keys(hm).forEach(function (h) { res[r0] += boxValue(r0, parseInt(h, 10)) * hm[h]; });
+    });
+    (plan.selectable || []).forEach(function (p) {
+      var box = null;
+      (snapshot.selectable_boxes || []).forEach(function (b) { if (!box && b.name === p.name) box = b; });
+      if (!box) return;
+      Object.keys(p.choices || {}).forEach(function (label) {
+        var cnt = p.choices[label] || 0;
+        if (cnt <= 0) return;
+        var opt = null;
+        (box.options || []).forEach(function (o) { if (!opt && o.label === label) opt = o; });
+        if (!opt) return;
+        RESOURCES.forEach(function (r) {
+          var v = (opt.rewards && opt.rewards[r]) || 0;
+          res[r] += (opt.mode === "units" ? v : v * (inc[r] || 0)) * cnt;
+        });
+      });
+    });
+    return res;
+  }
+
   /* 固定小时箱按需计算：从最大时长箱开始，开够「达到 target」所需的最少固定箱数量。
      baseResources 必须是**完整底盘**（裸资源 + 可选等待期自然积累 + 可选推图收益），
      本函数不再自行叠加推图收益 —— 否则会与调用方叠加成 ×2（2026-10-14 修）。
@@ -88,15 +133,63 @@
     return fixedFillGaps(snapshot, gaps, incomePerHour);
   }
 
-  /* 挑战者成长宝箱（units 固定数值二选一）全开的资源贡献：开箱顺序①，始终全消耗选第一项 */
-  function challengerUnitsResources(snapshot) {
+  /* ---------- 挑战者成长宝箱（二选一 units 固定数值）的选项解析 ----------
+     R31（2026-10-16）：原先两处写死 options[0]（战斗数据辑），现改为
+     「用户偏好（snapshot.challenger_pref）+ 自动择优」共同决定。
+     偏好取值：auto（默认）/ battle（战斗数据辑优先）/ dust（芯尘优先）。
+     注意：选项按 rewards 的键定位（battle_data / core_dust），不依赖数组顺序。 */
+  var CHALLENGER_REWARD_KEY = { battle: "battle_data", dust: "core_dust" };
+
+  /* 返回「第一个 二选一 units 箱」的 options 数组；找不到则 null */
+  function challengerOptionsOf(snapshot) {
+    var list = (snapshot && snapshot.selectable_boxes) || [];
+    for (var i = 0; i < list.length; i++) {
+      var b = list[i];
+      if (b.quantity > 0 && b.options && b.options.length === 2 &&
+          b.options.every(function (o) { return o.mode === "units"; })) return b.options;
+    }
+    return null;
+  }
+
+  /* 由偏好解析出「第几个选项」的索引；解析不出（无箱 / 非 units / auto）时返回 fallbackIdx */
+  function challengerIndexForPref(snapshot, pref, fallbackIdx) {
+    var opts = challengerOptionsOf(snapshot);
+    if (!opts) return (fallbackIdx === undefined ? 0 : fallbackIdx);
+    var key = CHALLENGER_REWARD_KEY[pref];
+    if (!key) return (fallbackIdx === undefined ? 0 : fallbackIdx);
+    for (var i = 0; i < opts.length; i++) {
+      if (opts[i].rewards && opts[i].rewards[key] > 0) return i;
+    }
+    return (fallbackIdx === undefined ? 0 : fallbackIdx);
+  }
+
+  /* 1H 箱折算总缺口：Σ_r remaining_shortage[r] ÷ income_per_hour[r]（R31 次判据）
+     ⚠ 必须折算：红球的「个」与战斗数据的「个」量纲不可比，用原始量会得出相反结论。
+     拿不到 income 的资源计 +∞（不可比时保守对待）。 */
+  function gapHours(plan, incomePerHour) {
+    if (!plan || !plan.remaining_shortage) return 0;
+    var inc = incomePerHour || {}, total = 0;
+    RESOURCES.forEach(function (r) {
+      var g = plan.remaining_shortage[r] || 0;
+      if (g <= 1e-6) return;
+      var rate = inc[r] || 0;
+      total += rate > 0 ? (g / rate) : Infinity;
+    });
+    return total;
+  }
+
+  /* 挑战者成长宝箱全开的资源贡献（开箱顺序①，始终全消耗）
+     idx：第几个选项；缺省（undefined）= 按 snapshot.challenger_pref 解析；
+          传入数字则强制该项（battle/dust 单跑用） */
+  function challengerUnitsResources(snapshot, idx) {
     var res = C.zeroRes();
+    var useIdx = (typeof idx === "number") ? idx : challengerIndexForPref(snapshot, (snapshot && snapshot.challenger_pref) || "auto", 0);
     (snapshot.selectable_boxes || []).forEach(function (b) {
       if (b.quantity <= 0 || !b.options || b.options.length !== 2) return;
       var allUnits = b.options.every(function (o) { return o.mode === "units"; });
       if (!allUnits) return;
-      var o0 = b.options[0];
-      if (o0.rewards) RESOURCES.forEach(function (r) { res[r] += (o0.rewards[r] || 0) * b.quantity; });
+      var o = b.options[useIdx] || b.options[b.options.length - 1];
+      if (o && o.rewards) RESOURCES.forEach(function (r) { res[r] += (o.rewards[r] || 0) * b.quantity; });
     });
     return res;
   }
@@ -119,8 +212,12 @@
        现状（now）  = 裸资源（**不含**推图收益，见项目铁律 5）
        开放日（future）= 裸资源 + 等待期自然积累 + 推图收益 ×1
      本函数不再自行叠加 stage_clear_resources —— 否则会与调用方叠加成 ×2，
-     凭空多出一份推图收益（2026-10-14 修：曾导致「达成目标方案」漏开信用点盒）。 */
-  function optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour) {
+     凭空多出一份推图收益（2026-10-14 修：曾导致「达成目标方案」漏开信用点盒）。
+
+     R31（2026-10-16）：本函数只负责「以第 idx 个挑战者箱选项硬跑一遍」，不再解析偏好。
+     对外请用 optimizeSelectableForTarget（它按 snapshot.challenger_pref 决定单跑或双跑择优）。 */
+  function solveWithChallenger(snapshot, baseResources, targetSteps, incomePerHour, idx) {
+    var chalIdx = (typeof idx === "number" && idx >= 0) ? idx : 0;
     var needed = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
     var base = baseResources;
     var shortage = {};
@@ -129,7 +226,7 @@
     if (RESOURCES.every(function (r) { return shortage[r] <= 1e-6; })) {
       var emptyPlan = (snapshot.selectable_boxes || []).filter(function (b) { return b.quantity > 0; })
         .map(function (b) { return { name: b.name, used: 0, keep: b.quantity, choices: {} }; });
-      return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: {}, selectable: emptyPlan, boxes_used: 0, remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 }, feasible: true };
+      return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: {}, selectable: emptyPlan, boxes_used: 0, remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 }, feasible: true, challenger_index: chalIdx };
     }
 
     var boxes = [];
@@ -139,16 +236,16 @@
       }
     });
 
-    // 开箱顺序①：挑战者成长宝箱（units 固定数值二选一）优先全消耗（选第一项，无分配损耗）
+    // 开箱顺序①：挑战者成长宝箱（units 固定数值二选一）优先全消耗（按选中项，无分配损耗）
     var challengerRes = C.zeroRes();
     boxes.forEach(function (item) {
       var opts = item.box.options || [];
       if (item.left > 0 && opts.length === 2 && opts.every(function (o) { return o.mode === "units"; })) {
-        var o0 = opts[0];
+        var o = opts[chalIdx] || opts[opts.length - 1];
         item.left = 0;
-        item.choices[o0.label] = item.box.quantity;
-        if (o0.rewards) {
-          RESOURCES.forEach(function (r) { challengerRes[r] += (o0.rewards[r] || 0) * item.box.quantity; });
+        item.choices[o.label] = item.box.quantity;
+        if (o.rewards) {
+          RESOURCES.forEach(function (r) { challengerRes[r] += (o.rewards[r] || 0) * item.box.quantity; });
         }
       }
     });
@@ -164,6 +261,7 @@
     if (fast) {
       fast.fixed = fixedBoxResources(snapshot, incomePerHour);
       fast.fixed_used = fixedFill.used;
+      fast.challenger_index = chalIdx;
       return fast;
     }
 
@@ -171,7 +269,7 @@
       return item.box.options.some(function (opt) { return !single(opt); });
     });
     if (hasMulti) {
-      return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: fixedFill.used, selectable: [], boxes_used: 0, remaining_shortage: shortage, feasible: false, error: "存在多资源同时奖励箱子，需扩展枚举规则" };
+      return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: fixedFill.used, selectable: [], boxes_used: 0, remaining_shortage: shortage, feasible: false, challenger_index: chalIdx, error: "存在多资源同时奖励箱子，需扩展枚举规则" };
     }
 
     // 挑战者已在顺序①全消耗；此处只剩单资源三选一箱的贪心
@@ -206,7 +304,37 @@
       return (a.name.indexOf("挑战") >= 0 ? 0 : 1) - (b.name.indexOf("挑战") >= 0 ? 0 : 1);
     });
     var feasible = !RESOURCES.some(function (r) { return remaining[r] > 1e-6; });
-    return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: fixedFill.used, selectable: plans, boxes_used: totalUsed, remaining_shortage: remaining, feasible: feasible };
+    return { target_steps: targetSteps, needed: needed, fixed: fixedBoxResources(snapshot, incomePerHour), fixed_used: fixedFill.used, selectable: plans, boxes_used: totalUsed, remaining_shortage: remaining, feasible: feasible, challenger_index: chalIdx };
+  }
+
+  /* ============ R31 对外入口：按 snapshot.challenger_pref 单跑或双跑择优 ============
+     优先序（已定稿）：① 可达步数高者胜 → ② 1H 箱折算总缺口小者胜 → ③ 芯尘优先。
+     实现在两处：
+       · 本函数 —— 目标步数固定时，先比「该步数是否可达」；都可达(或都不可达)时比折算缺口，相等则芯尘；
+         「可达步数」的全局比较由调用方（immediateLevels 的外层二分）自然完成：
+         每个 mid 都优先返回可行的那一项 ⇒ 二分收敛到「两项中能到的最大步数」。
+       · bestEffortPlan —— 目标不可达时显式二分两次，先比步数、再比折算缺口。
+     —— 返回被选中那一份的完整方案对象，并挂 challenger_index 便于 UI 显示实际选项。 */
+  function optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour) {
+    var pref = (snapshot && snapshot.challenger_pref) || "auto";
+    var opts = challengerOptionsOf(snapshot);
+    // 没有「二选一 units 箱」→ 偏好无意义，单跑 idx=0（与旧行为一致）
+    if (!opts) return solveWithChallenger(snapshot, baseResources, targetSteps, incomePerHour, 0);
+    // 用户强制指定 → 跳过择优
+    if (pref === "battle" || pref === "dust") {
+      var forced = challengerIndexForPref(snapshot, pref, 0);
+      return solveWithChallenger(snapshot, baseResources, targetSteps, incomePerHour, forced);
+    }
+    // auto：双跑（实测单跑 0.1ms，双跑 0.2ms，无需预筛）
+    var run0 = solveWithChallenger(snapshot, baseResources, targetSteps, incomePerHour, 0);
+    var run1 = solveWithChallenger(snapshot, baseResources, targetSteps, incomePerHour, 1);
+    if (run0.feasible !== run1.feasible) return run0.feasible ? run0 : run1;
+    if (run0.feasible && run1.feasible) {
+      // 都可达 → 步数相同、折算缺口都为 0 → 依 ③「芯尘优先」，固定取 idx=1
+      return run1;
+    }
+    // 都不可达 → 比 1H 箱折算总缺口（小者胜），相等 ⇒ 芯尘优先
+    return gapHours(run0, incomePerHour) < gapHours(run1, incomePerHour) ? run0 : run1;
   }
 
   /* 快速有界求解器：方舟(三选一) + 挑战者(二选一 units) + 30天(三选一) 形态
@@ -305,25 +433,57 @@
     return best;
   }
 
-  /* 目标不可达时的「最优均衡」回退方案
-     直接按目标等级调用 optimizeSelectableForTarget 时，若不可达会退化成「把全部自选箱
-     堆给最难补的那一项」（贪心按 remaining/value 比值的自然结果），该分配既不能最大化
-     可达等级、剩余缺口也偏悲观。
-     本函数二分「联合优化器能达成的最大步数」，返回该步数下的方案：
-       { found, steps, plan } —— found=false 表示连 1 级都开不出来。
-     仅在目标不可达时调用（调用方已知 feasible=false），避免与 immediateLevels 的
-     外层二分叠加造成 O(log²) 重复枚举。 */
-  function bestEffortPlan(snapshot, baseResources, targetSteps, incomePerHour) {
+  /* 以「固定第 idx 个挑战者选项」二分最大可达步数（内部用；不含偏好解析） */
+  function bestEffortSolve(snapshot, baseResources, targetSteps, incomePerHour, idx) {
     var hi = Math.max(0, targetSteps - 1);
     if (hi <= 0) return { found: false, steps: 0, plan: null };
     var lo = 1, best = null;
     while (lo <= hi) {
       var mid = Math.floor((lo + hi) / 2);
-      var p = optimizeSelectableForTarget(snapshot, baseResources, mid, incomePerHour);
+      var p = solveWithChallenger(snapshot, baseResources, mid, incomePerHour, idx);
       if (p && p.feasible) { best = p; best.target_steps = mid; lo = mid + 1; }
       else hi = mid - 1;
     }
-    return best ? { found: true, steps: best.target_steps, plan: best } : { found: false, steps: 0, plan: null };
+    if (!best) return { found: false, steps: 0, plan: null };
+    /* R38（2026-10-16）：附带「距原目标仍缺」。
+       ⚠ 不能直接用 plan.remaining_shortage —— 该方案在缩小的步数上是**可行**的，
+         所以它的 remaining_shortage 恒为 0，拿来当缺口会渲染成「三项✅足够」。
+       真实缺口 = 目标步数所需 − 底盘 − 方案实际开出的全部箱子；
+       全部在本函数内算好（渲染层只展示，禁重算）。 */
+    var needT = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
+    var got = planResources(snapshot, best, incomePerHour);
+    var ts = {};
+    RESOURCES.forEach(function (r) {
+      ts[r] = Math.max(0.0, (needT[r] || 0.0) - (baseResources[r] || 0.0) - (got[r] || 0.0));
+    });
+    best.target_shortage = ts;
+    return { found: true, steps: best.target_steps, plan: best, target_shortage: ts };
+  }
+
+  /* 目标不可达时的「最优均衡」回退方案
+     直接按目标等级调用求解器时，若不可达会退化成「把全部自选箱堆给最难补的那一项」
+     （贪心按 remaining/value 比值的自然结果），该分配既不能最大化可达等级、剩余缺口也偏悲观。
+     本函数二分「联合优化器能达成的最大步数」，返回该步数下的方案：
+       { found, steps, plan } —— found=false 表示连 1 级都开不出来。
+     仅在目标不可达时调用（调用方已知 feasible=false），避免与 immediateLevels 的
+     外层二分叠加造成 O(log²) 重复枚举。
+
+     R31：偏好随 snapshot.challenger_pref 传递（auto 时双跑，按
+     「① 步数高者胜 → ② 1H 折算总缺口小者胜 → ③ 芯尘优先」择优）。 */
+  function bestEffortPlan(snapshot, baseResources, targetSteps, incomePerHour) {
+    var pref = (snapshot && snapshot.challenger_pref) || "auto";
+    var opts = challengerOptionsOf(snapshot);
+    if (!opts) return bestEffortSolve(snapshot, baseResources, targetSteps, incomePerHour, 0);
+    if (pref === "battle" || pref === "dust") {
+      return bestEffortSolve(snapshot, baseResources, targetSteps, incomePerHour, challengerIndexForPref(snapshot, pref, 0));
+    }
+    var r0 = bestEffortSolve(snapshot, baseResources, targetSteps, incomePerHour, 0);
+    var r1 = bestEffortSolve(snapshot, baseResources, targetSteps, incomePerHour, 1);
+    if (r0.found !== r1.found) return r0.found ? r0 : r1;
+    if (!r0.found) return r0;                                  // 两项都开不出 1 级
+    if (r0.steps !== r1.steps) return r0.steps > r1.steps ? r0 : r1;
+    // 步数相同 → 比 1H 折算总缺口（小者胜；相等 ⇒ 芯尘优先 = r1）
+    return gapHours(r0.plan, incomePerHour) < gapHours(r1.plan, incomePerHour) ? r0 : r1;
   }
 
   global.NikkeBoxes = {
@@ -331,9 +491,15 @@
     fixedBoxesNeeded: fixedBoxesNeeded,
     fixedFillGaps: fixedFillGaps,
     challengerUnitsResources: challengerUnitsResources,
+    challengerOptionsOf: challengerOptionsOf,
+    challengerIndexForPref: challengerIndexForPref,
+    gapHours: gapHours,
+    planResources: planResources,
     optionValue: optionValue,
     single: single,
+    solveWithChallenger: solveWithChallenger,
     optimizeSelectableForTarget: optimizeSelectableForTarget,
+    bestEffortSolve: bestEffortSolve,
     bestEffortPlan: bestEffortPlan,
     fastThreeTwoFlexiblePlan: fastThreeTwoFlexiblePlan,
   };

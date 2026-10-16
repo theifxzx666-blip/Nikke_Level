@@ -21,18 +21,21 @@
   --hero-bg: url("../assets/bg/hero.webp");
 }
 * { box-sizing: border-box; }
-/* 自定义字体：Kingnammm Maiyuan 2（子集化版，仅保留站内实际用到的 1512 个字符）
-   7.86MB 全量 ttf → 278KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
+/* 自定义字体：Kingnammm Maiyuan 2（子集化版，仅保留站内实际用到的 1552 个字符）
+   7.86MB 全量 ttf → 286KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
    新增/改动文案若用到新汉字，需重跑子集化脚本（见 临时文件/scripts/font_charset.js + font_subset.py，
    字符集文件 临时文件/out/_subset_chars.txt）。
    ?v=20261016a：2026-10-16 补字（衡赚亏释，1508→1512）后加版本参数强制客户端换新字体，
    同时修掉老用户缓存旧字体导致「衡」字型与全站不一致的问题。
+   ?v=20261016b：2026-10-16 再补 40 字（1512→1552）—— 覆盖 49 个章节名（乡兽匙印叛坠拜救沟烙牢
+   献盾矛笼蚀象逢钥…）、静态正文（哨币店既殊稀）与 JS 渲染文案（抬拆汇舍贡费述铸）/活动模板（券募招拾混狗笔）。
+   此前这些字回落系统字体，在「N章·章名」标题里字型明显不统一。
    注意：index.html / mobile.html 的 <link rel="preload"> 必须与本处保持完全相同的 URL（含 ?v=），
    否则浏览器会把字体下载两次。 */
 @font-face {
   font-family: "MaiYuan";
-  src: url("../assets/fonts/maiyuan-subset.woff2?v=20261016a") format("woff2"),
-       url("../assets/fonts/maiyuan-subset.ttf?v=20261016a") format("truetype");
+  src: url("../assets/fonts/maiyuan-subset.woff2?v=20261016b") format("woff2"),
+       url("../assets/fonts/maiyuan-subset.ttf?v=20261016b") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -646,9 +649,29 @@ body.avatar-full #avatarFrame { flex: 1 1 auto; min-height: 0; height: 100%; }
 /* ---------- 视觉隐藏（DOM + state + 导出 JSON/XLSX 全部保留，仅收进视觉） ---------- */
 .field-hidden { display: none !important; }
 
-/* ---------- 行内「输入框 + 图标按钮」（如数据日期的「更新为今天」） ---------- */
-.input-row { display: flex; gap: 6px; align-items: center; }
-.input-row > input { flex: 1 1 auto; min-width: 0; }
+/* ---------- 行内「输入框 + 后缀按钮」一体化控件（数据日期的「今天」） ----------
+   用户反馈：按钮单独一个圆角小方块贴在日期框旁边，「有点割裂」。
+   改法 = 共享外框：输入框只留左侧圆角、按钮 margin-left:-1px 压掉双线、
+   只在按钮右端收圆角，背景用极浅的绿灰而不是纯白 → 视觉上是一个整体输入控件。 */
+.input-row { display: flex; align-items: stretch; gap: 0; }
+.input-row > input {
+  flex: 1 1 auto; min-width: 0;
+  border-top-right-radius: 0; border-bottom-right-radius: 0;
+}
+.input-row > .suffix-btn {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  margin-left: -1px; padding: 0 10px; min-height: 34px;
+  border: 1px solid var(--border); border-radius: 0 8px 8px 0;
+  background: #f6faf8; color: var(--primary-dark);
+  font-size: 12px; line-height: 1; white-space: nowrap; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.input-row > .suffix-btn:hover { background: #e8f5f0; }
+.input-row > .suffix-btn:active { background: #ddeee7; }
+.input-row > .suffix-btn:focus-visible { outline: 2px solid #9fe1cb; outline-offset: 1px; }
+.input-row > .suffix-btn svg { width: 13px; height: 13px; display: block; }
+
+/* 通用图标按钮（未内嵌在输入框旁时使用） */
 .icon-btn {
   flex: 0 0 auto; width: 34px; height: 34px; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
@@ -659,6 +682,9 @@ body.avatar-full #avatarFrame { flex: 1 1 auto; min-height: 0; height: 100%; }
 .icon-btn:hover { color: var(--primary-dark); border-color: var(--primary); background: #f0faf6; }
 .icon-btn:active { background: #e6f6f0; }
 .icon-btn svg { width: 16px; height: 16px; display: block; }
+
+/* 结果区区块标题也可挂信息图标 → 需要 position:relative 作为面板锚点 */
+.sb-head { position: relative; }
 
 /* ---------- 分组配色：其他（中性灰蓝，放杂项开关） ---------- */
 .grp-e legend { color: #56687a; background: #eef2f6; }
