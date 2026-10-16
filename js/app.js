@@ -758,24 +758,75 @@
   /* 推图收益字段是否仍为「自动带出」状态：记录上次自动填的值，用户手改后即不再覆盖 */
   var stageAutoFilled = {};
 
-  function syncStageClearFromFuture() {
+  /* ---------- 推图收益口径（R41，2026-10-16 用户口径） ----------
+     ① 新开放范围：一次主线更新通常**同时开放 2 章**（例：当前开到键 40 → 新开键 41、键 42）。
+        最高新章 = 「预计普通主线关卡」所选章节；范围 = [最高新章 − 1, 最高新章]（取不到则自动收缩）。
+        推图收益 = 范围内**每一章**的关卡奖励（credit/battle/dust）+ 主线任务奖励 的合计。
+     ② 困难收益 = 双条件 ——「计入范围」须选「普通+困难」，**且**「预计困难主线关卡」必须已到达
+        范围内每一章。困难难度通常较高，新主线开放时困难进度一般跟不上；未到达则**不计入**，
+        并在 note 里红字注明（用户 2026-10-16 明确）。
+     ③ 困难进度**不跟随普通 +2**（用户 2026-10-16 明确：困难难度高，进度一般不需要同步 +2）。 */
+  var NEW_CHAPTERS_PER_UPDATE = 2;
+
+  function newChapterKeys(hiKey, entries) {
+    var hi = parseInt(hiKey, 10);
+    var out = [];
+    if (!isFinite(hi)) return out;
+    for (var k = hi; k > hi - NEW_CHAPTERS_PER_UPDATE && k >= 0; k--) {
+      if (entries[String(k)]) out.unshift(String(k));
+    }
+    return out;
+  }
+
+  function sumChapterField(entries, keys, field) {
+    var t = 0;
+    keys.forEach(function (k) {
+      var v = entries[k] ? entries[k][field] : undefined;
+      if (typeof v === "number" && isFinite(v)) t += v;
+    });
+    return t;
+  }
+
+  /* 一次性算准「新开放范围 + 困难是否计入」——表单自动带出与 buildSnapshot 共用同一份判定，
+     避免出现「界面说未计入、计算却算了」的口径不一致。 */
+  function stageClearModel() {
     var chSel = val("f_future_normal_chapter");
-    if (!chSel) { updateStageClearNote(null, null, null); return; }
+    if (!chSel) return { ok: false, n: null };
     var n = chapterNum(chSel);
     var entries = state.stageClearEntries || {};
     var keys = Object.keys(entries);
-    if (!keys.length) { updateStageClearNote(null, null, n); return; }
+    if (!keys.length) return { ok: false, n: n };
     var maxKey = keys.reduce(function (a, b) { return parseInt(a, 10) >= parseInt(b, 10) ? a : b; });
     var fallbackKey = entries[String(state.stageClearFallback)] ? String(state.stageClearFallback) : maxKey;
     var usedKey = entries[String(n)] ? String(n) : fallbackKey;
-    var entry = entries[usedKey] || {};
+    var rangeKeys = newChapterKeys(usedKey, entries);
+    if (!rangeKeys.length) rangeKeys = [usedKey];
+    var mode = val("f_stage_mode") || "只计普通";
+    var hardProgress = chapterNum(val("f_future_hard_chapter"));
+    var hardKeys = rangeKeys.filter(function (k) { return hardProgress >= parseInt(k, 10); });
+    return {
+      ok: true, n: n, usedKey: usedKey, entry: entries[usedKey] || {}, rangeKeys: rangeKeys,
+      mode: mode, hardProgress: hardProgress, hardKeys: hardKeys,
+      hardOn: mode === "普通+困难" && hardKeys.length === rangeKeys.length,
+    };
+  }
+
+  function syncStageClearFromFuture() {
+    var m = stageClearModel();
+    if (!m.ok) { updateStageClearNote(m); return; }
+    var entries = state.stageClearEntries || {}, rk = m.rangeKeys;
     var map = {
-      f_stage_credit: entry.credit, f_stage_battle: entry.battle, f_stage_dust: entry.dust,
-      f_stage_credit2: entry.credit_hard, f_stage_battle2: entry.battle_hard, f_stage_dust2: entry.dust_hard,
-      f_stage_task_credit: entry.task_credit, f_stage_task_battle: entry.task_battle, f_stage_task_dust: entry.task_dust,
+      f_stage_credit: sumChapterField(entries, rk, "credit"),
+      f_stage_battle: sumChapterField(entries, rk, "battle"),
+      f_stage_dust: sumChapterField(entries, rk, "dust"),
+      f_stage_credit2: m.hardOn ? sumChapterField(entries, rk, "credit_hard") : 0,
+      f_stage_battle2: m.hardOn ? sumChapterField(entries, rk, "battle_hard") : 0,
+      f_stage_dust2: m.hardOn ? sumChapterField(entries, rk, "dust_hard") : 0,
+      f_stage_task_credit: sumChapterField(entries, rk, "task_credit"),
+      f_stage_task_battle: sumChapterField(entries, rk, "task_battle"),
+      f_stage_task_dust: sumChapterField(entries, rk, "task_dust"),
     };
     Object.keys(map).forEach(function (id) {
-      if (map[id] === undefined || map[id] === null) return;
       var key = id.replace("f_stage_", "stage_clear_");
       var cur = val(id);
       var next = String(map[id]);
@@ -785,7 +836,9 @@
       setVal(id, next);
       stageAutoFilled[id] = next;
     });
-    updateStageClearNote(usedKey, entry, n);
+    updateStageClearNote(m);
+    // note 与「困难行灰显」共用同一份判定 —— 章节/进度变更后必须一起刷新
+    updateStageClearUI();
   }
 
   /* 图例与数据来源说明（随所选章节联动）
@@ -796,52 +849,51 @@
 
      R40（2026-10-16 用户反馈，「标题章节信息」收口）：
        · 「预计新主线进度」标题**不再附带任何章节信息**（用户明确：这里不需要添加）；
-       · 「预计新主线推图收益」标题改为把**计入范围内的章节全部列出**，格式
-         「预计新主线推图收益「41章·诞生」、「42章·独一」」——
-         困难章节在前还是普通在前由章号升序决定（困难进度永远 ≤ 普通，天然排在前）。
-         计入范围 = 只计普通 → 只列普通章；普通+困难 → 普通 + 困难两章；不计算 → 不列章节。 */
-  function stageChapterTags(usedKey, entry) {
-    var mode = val("f_stage_mode") || "只计普通";
-    if (mode === "不计算") return "";
-    // 普通部分用「实际取数的章」——含「该章无拆包数据 → 回退到已收录最高章」的情形
-    var labels = [usedKey + "章·" + entry.name];
-    if (mode === "普通+困难") {
-      var hn = chapterNum(val("f_future_hard_chapter"));
-      if (hn) {
-        var he = (state.stageClearEntries || {})[String(hn)];
-        labels.push(hn + "章" + (he ? "·" + he.name : ""));
-      }
-    }
-    var seen = {};
-    labels = labels.filter(function (s) {
-      var k = parseInt(s, 10);
-      if (isNaN(k) || seen[k]) return false;
-      seen[k] = 1; return true;
-    }).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
+       · 「预计新主线推图收益」标题改为把**计入范围内的章节全部列出**。
+
+     R41（2026-10-16 用户反馈，「章节号错位」修正）：
+       · 旧实现把「预计困难主线关卡」（用户当前困难进度，自动跟随）当成第二个新章，
+         于是标题会混进**已经开放过的旧章**（例：当前开到键 40 → 标题成了「40章·选择」、「42章·独一」）；
+       · 现改为按**新开放范围**列出：以「预计普通主线关卡」为最高新章、向前取
+         NEW_CHAPTERS_PER_UPDATE 章（键 41、键 42），与推图收益实际取数的范围严格一致。 */
+  function stageChapterTags(m) {
+    if (!m || !m.ok || m.mode === "不计算") return "";
+    var entries = state.stageClearEntries || {};
+    var labels = m.rangeKeys.map(function (k) {
+      var e = entries[k] || {};
+      return k + "章" + (e.name ? "·" + e.name : "");
+    });
     return labels.map(function (s) { return "「" + s + "」"; }).join("、");
   }
 
-  function updateStageClearNote(usedKey, entry, n) {
+  function updateStageClearNote(m) {
     var title = $("stageClearTitleText") || $("stageClearTitle"), note = $("stageClearNote");
     var pTitle = $("futureTitleText");
     // 「预计新主线进度」：R40 起固定为无章节后缀
     if (pTitle) pTitle.textContent = "预计新主线进度";
-    if (!entry) {
+    if (!m || !m.ok) {
       if (title) title.textContent = "预计新主线推图收益";
-      if (note) note.textContent = (n === null || n === undefined) ? "" : "第 " + n + " 章暂无官方拆包数据，请手动填写。";
+      if (note) note.innerHTML = (m && m.n !== null && m.n !== undefined)
+        ? esc("第 " + m.n + " 章暂无官方拆包数据，请手动填写。") : "";
       return;
     }
-    var same = String(usedKey) === String(n);
+    var entry = m.entry, usedKey = m.usedKey;
+    var same = String(usedKey) === String(m.n);
     var off = entry.official_chapter;
     if (off === undefined || off === null) off = (parseInt(usedKey, 10) || 0) + 1;
     // 标题：短写法「41章·诞生」（41 = 数据键号 = 游戏内关卡前缀，玩家在关卡里看到的就是它）
-    if (title) {
-      title.textContent = "预计新主线推图收益" + stageChapterTags(usedKey, entry);
-    }
+    if (title) title.textContent = "预计新主线推图收益" + stageChapterTags(m);
     if (note) {
-      note.textContent =
-        (same ? "" : "键 " + n + " 暂无官方拆包数据（已收录至键 " + maxOf(state.stageClearEntries) + "），暂按键 " + usedKey + "「" + entry.name + "」带出。") +
-        "本章 = 官方第 " + off + " 章，普通 " + entry.n_normal + " 关 / 困难 " + entry.n_hard + " 关；该章主线任务 " + entry.task_count + " 条。";
+      var body = (same ? "" : "键 " + m.n + " 暂无官方拆包数据（已收录至键 " + maxOf(state.stageClearEntries) + "），暂按键 " + usedKey + "「" + entry.name + "」带出。") +
+        "本次新开放 " + m.rangeKeys.length + " 章（键 " + m.rangeKeys.join("、") + "）：推图收益 = 各章关卡奖励 + 主线任务奖励 合计。" +
+        "其中最高新章（键 " + usedKey + "「" + entry.name + "」）= 官方第 " + off + " 章：普通 " + entry.n_normal + " 关 / 困难 " + entry.n_hard + " 关，该章主线任务 " + entry.task_count + " 条。";
+      var html = esc(body);
+      // R41：选了「普通+困难」但困难进度没跟上的红字警示
+      if (m.mode === "普通+困难" && !m.hardOn) {
+        html += '<span class="stage-warn">⚠ 计入范围虽然选了「普通+困难」，但预计困难通关（键 ' + esc(m.hardProgress) +
+          '）尚未到达新开放章节（键 ' + esc(m.rangeKeys.join("、")) + '），<b>困难收益未计入计算结果</b>。</span>';
+      }
+      note.innerHTML = html;
     }
   }
 
@@ -853,6 +905,12 @@
   function updateStageClearUI() {
     var mode = val("f_stage_mode");
     $("stageHardRow").style.display = mode === "普通+困难" ? "" : "none";
+    // R41：困难收益未计入（进度没跟上）时把该行灰显，配合 note 里的红字说明
+    var hardRow = $("stageHardRow");
+    if (hardRow) {
+      var m = stageClearModel();
+      hardRow.classList.toggle("stage-row-off", mode === "普通+困难" && m.ok === true && m.hardOn === false);
+    }
     var tr = $("stageTaskRow");
     if (tr) tr.style.display = mode === "不计算" ? "none" : "";
   }
@@ -970,9 +1028,14 @@
       stage.battle_data = C.num(f.stage_clear_battle, 0) * K;
       stage.core_dust = C.num(f.stage_clear_dust, 0);
       if (f.stage_clear_mode === "普通+困难") {
-        stage.credit += C.num(f.stage_clear_credit2, 0) * K;
-        stage.battle_data += C.num(f.stage_clear_battle2, 0) * K;
-        stage.core_dust += C.num(f.stage_clear_dust2, 0);
+        // R41：困难收益还要求「预计困难通关已到达全部新开放章节」——
+        // 判定与表单自动带出同源（stageClearModel），界面红字说未计入，计算就真的不计入。
+        var mSC = stageClearModel();
+        if (!mSC.ok || mSC.hardOn === true) {
+          stage.credit += C.num(f.stage_clear_credit2, 0) * K;
+          stage.battle_data += C.num(f.stage_clear_battle2, 0) * K;
+          stage.core_dust += C.num(f.stage_clear_dust2, 0);
+        }
       }
       // 该章主线任务奖励（与普通/困难无关：只要「计入范围」不是「不计算」就并入）
       stage.credit += C.num(f.stage_clear_task_credit, 0) * K;

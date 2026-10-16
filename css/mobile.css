@@ -463,6 +463,8 @@ body.m-body .sb-seg-head { gap: 6px; }
 body.m-body .sb-seg-status { font-size: 10px; padding: 1px 7px; }
 body.m-body .sb-text.shortage-line { font-size: 12.5px; line-height: 1.7; }
 body.m-body .sb-text.shortage-line .shortage-bottle { display: inline-block; margin-left: 0; margin-top: 2px; }
+/* R41：困难收益未计入的红字警示在竖屏下收紧字号 */
+body.m-body .stage-warn { font-size: 12px; line-height: 1.65; }
 body.m-body .ev-del svg { width: 15px; height: 15px; }
 body.m-body .ev-status { font-size: 12px; padding: 3px 10px; }
 /* 活动行的日期/模板在窄屏各占半行，避免三件挤成一行 */

@@ -512,6 +512,10 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .sb-text.shortage-line .shortage-bottle { margin-left: 4px; color: #b3283a; }
 /* ⚠ .sb-text b 的规则优先级更高，会把「瓶颈：X」里的加粗资源名染成主色 → 这里强制继承红色 */
 .sb-text.shortage-line .shortage-bottle b { color: inherit; }
+/* ---------- R41：困难推图收益「未到达 → 未计入」的警示 ---------- */
+.stage-warn { display: block; margin-top: 5px; color: #b3283a; font-weight: 600; }
+.stage-warn b { color: inherit; }
+.stage-row-off { opacity: .5; }
 
 @media (max-width: 600px) {
   .summary-card { margin-bottom: 12px; }
