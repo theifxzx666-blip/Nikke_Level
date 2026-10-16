@@ -337,12 +337,149 @@
     return gapHours(run0, incomePerHour) < gapHours(run1, incomePerHour) ? run0 : run1;
   }
 
+  /* ---- 有界 DP：三选一箱 × 弹性箱的箱数配比（原三重全枚举的等价加速）----
+     数学模型：minimize  Σ c_k + Σ f_r
+               s.t.      c_k·V_k + f_r·F_r ≥ S_k（每个资源一条约束）
+                         Σ c_k ≤ q3、Σ f_r ≤ qF、c_k / f_r 为非负整数
+     关键性质：给定 c 之后，f_r = ceil(max(0, S_k − c_k·V_k) / F_k) 已是**最小可行值**
+               ⇒ 只需在 c 空间上寻优（原三重全枚举枚举的正是这个空间）。
+     实现：dp(资源 1..2, 恰好 j 个三选一箱) = 该子问题的最小弹性箱数；收尾再遍历 (c_0, j)。
+           全程纯标量运算、无循环内对象分配（原型实测：带对象分配的写法慢 18×）。
+     复杂度 O(3·Jmax²)，Jmax ≤ min(q3, Σceil(S_k/V_k), 「全用弹性箱」的总箱数)。
+     ⚠ tie-break 必须与旧实现逐字一致（否则总箱数相同但箱量明细会变）：
+       旧实现 `if (!best || total < best.boxes_used)` 是**严格小于**，且枚举顺序为
+       c_0 外层 → c_2 内层 ⇒ 同总箱数时保留 **(c_0, c_1, c_2) 字典序最小**者。
+     入参：S/V 按 threeOptions 下标（= RES 顺序），F 为对应资源的弹性箱单箱值（0 = 该资源无弹性箱可补）。
+     返回 { c: [c0,c1,c2], flexByRes: {资源名: 数量}, flexUsed, total }（total 不含挑战者箱）。 */
+  function dpFlexiblePlan(S, V, RES, flexValues, q3, qF) {
+    var INF = Infinity;
+    var F = [0, 0, 0];
+    for (var kf = 0; kf < RES.length; kf++) {
+      F[kf] = flexValues[RES[kf]] ? flexValues[RES[kf]].value : 0;
+    }
+    function needOf(k, c) {
+      var rest = S[k] - c * V[k];
+      if (rest <= 1e-6) return 0;
+      if (!F[k]) return INF;
+      return Math.ceil(rest / F[k]);
+    }
+    /* Jmax 裁剪（不损失最优解）：
+       · 单个资源用超过 ceil(S_k / V_k) 个三选一箱纯属浪费 ⇒ Σc 不会超过该和；
+       · 若「全部用弹性箱」可行，则它给出总箱数上界 UB，而任何解的 Σc ≤ 其总箱数 ⇒ Σc ≤ UB。 */
+    var sumCeil = 0, allFlex = 0, allFlexOk = true;
+    for (var k0 = 0; k0 < 3; k0++) {
+      if (S[k0] > 1e-6 && V[k0] > 0) sumCeil += Math.ceil(S[k0] / V[k0]);
+      if (S[k0] > 1e-6) {
+        if (!F[k0]) allFlexOk = false;
+        else allFlex += Math.ceil(S[k0] / F[k0]);
+      }
+    }
+    var ub = Math.min(q3, sumCeil);
+    if (allFlexOk && allFlex <= qF && allFlex < ub) ub = allFlex;
+    var J = Math.max(0, ub);
+
+    /* 后两条资源合并成一层：need12[j] = 用恰好 j 个三选一箱覆盖资源 1、2 的最小弹性箱数；
+       c1best[j] = 同值下字典序最小的 c_1（供 tie-break 用） */
+    var need12 = [], c1best = [];
+    var j, c1;
+    for (j = 0; j <= J; j++) {
+      var bn = INF, bc = -1;
+      for (c1 = 0; c1 <= j; c1++) {
+        var n1 = needOf(1, c1);
+        if (n1 === INF) continue;
+        var n2 = needOf(2, j - c1);
+        if (n2 === INF) continue;
+        var vv = n1 + n2;
+        if (vv < bn || (vv === bn && (bc < 0 || c1 < bc))) { bn = vv; bc = c1; }
+      }
+      need12[j] = bn; c1best[j] = bc;
+    }
+    /* 收尾：先比总箱数；同总箱数时按 (c_0, c_1, c_2) 字典序最小（复现旧枚举的取舍规则） */
+    var T = INF, bC0 = -1, bJ = -1, c0, j2;
+    for (c0 = 0; c0 <= J; c0++) {
+      var n0 = needOf(0, c0);
+      if (n0 === INF) continue;
+      for (j2 = 0; j2 <= J - c0; j2++) {
+        var n12 = need12[j2];
+        if (n12 === INF) continue;
+        var fu = n0 + n12;
+        if (fu > qF) continue;
+        var total = c0 + j2 + fu;
+        if (total > T) continue;
+        if (total < T) { T = total; bC0 = c0; bJ = j2; continue; }
+        if (bC0 < 0) { bC0 = c0; bJ = j2; continue; }
+        if (c0 < bC0) { bC0 = c0; bJ = j2; continue; }
+        if (c0 === bC0 && c1best[j2] >= 0 && c1best[bJ] >= 0) {
+          if (c1best[j2] < c1best[bJ] || (c1best[j2] === c1best[bJ] && j2 < bJ)) bJ = j2;
+        }
+      }
+    }
+    if (T === INF || bC0 < 0 || bJ < 0) return null;
+    var c = [bC0, c1best[bJ], bJ - c1best[bJ]];
+    var flexByRes = {};
+    var flexUsed = 0;
+    for (var k1 = 0; k1 < 3; k1++) {
+      var n = needOf(k1, c[k1]);
+      if (n === INF || flexUsed + n > qF) return null;
+      flexUsed += n;
+      if (n > 0) flexByRes[RES[k1]] = n;
+    }
+    return { c: c, flexByRes: flexByRes, flexUsed: flexUsed, total: T };
+  }
+
+  /* ---- 全枚举兜底（精确但 O(q³)）----
+     仅当三选一箱的三个选项**不是**一一对应三条资源时才会用到（DP 按选项逐层、要求各补一条不同资源）。
+     实际数据恒为一一对应（方舟箱 / 30天箱都是 信用点·战斗数据·芯尘 三选一），此路径不会走到；
+     保留它是为了在任何「选项→资源」映射下都给出精确最优解，而不是退回启发式贪心。
+     返回结构与 dpFlexiblePlan 一致。 */
+  function enumerateFlexiblePlan(threeOptions, flexValues, shortage, q3, qF, twoAddRes, twoAddVal) {
+    var best = null;
+    for (var count0 = 0; count0 <= q3; count0++) {
+      for (var count1 = 0; count1 <= q3 - count0; count1++) {
+        for (var count2 = 0; count2 <= q3 - count0 - count1; count2++) {
+          var combos = [count0, count1, count2];
+          var contrib = C.zeroRes();
+          for (var i = 0; i < threeOptions.length; i++) {
+            contrib[threeOptions[i].resource] += combos[i] * threeOptions[i].value;
+          }
+          if (twoAddRes) contrib[twoAddRes] += twoAddVal;
+          var flexByRes = {};
+          var flexUsed = 0;
+          var possible = true;
+          RESOURCES.forEach(function (r) {
+            var rem = Math.max(0.0, shortage[r] - contrib[r]);
+            if (rem <= 1e-6) return;
+            if (!flexValues[r]) { possible = false; return; }
+            var fv = flexValues[r].value;
+            var cntF = fv ? Math.ceil(rem / fv) : 1e9;
+            flexByRes[r] = cntF;
+            flexUsed += cntF;
+          });
+          if (!possible || flexUsed > qF) continue;
+          var total = count0 + count1 + count2 + flexUsed;
+          if (!best || total < best.total) {
+            best = { c: combos, flexByRes: flexByRes, flexUsed: flexUsed, total: total };
+          }
+        }
+      }
+    }
+    return best;
+  }
+
   /* 快速有界求解器：方舟(三选一) + 挑战者(二选一 units) + 30天(三选一) 形态
-     shortage = 开箱顺序①挑战者全开、②固定箱按需之后的剩余缺口；固定箱明细由 fixedUsed 传入 */
+     shortage = 开箱顺序①挑战者全开、②固定箱按需之后的剩余缺口；固定箱明细由 fixedUsed 传入
+
+     R44（2026-10-16）两处改动：
+       ① 箱数配比的求解由「三重全枚举 O(q³)」改为「有界 DP O(3·Jmax²)」，数学模型严格同构
+          （最优值 / 可行性 / 同分方案归属三类对拍 0 差异，见 临时文件/out/proto_dp.txt）；
+       ② 去掉原 `three.quantity <= 100` 阈值 —— 该阈值唯一作用是防枚举爆炸（见 git 历史注释）；
+          DP 无此顾虑，故去掉后**任意箱量都取精确最优解**。旧行为在 `q3 > 100` 时 pick 落空
+          → 整个函数返回 null → 调用方退回启发式贪心（可能比最优解多开箱），
+          并且「箱量跨过 100」会让同一份数据换算法、耗时出现 215× 悬崖（实测 100→2,470ms、101→11.5ms）。 */
   function fastThreeTwoFlexiblePlan(boxes, shortage, needed, fixedUsed, incomePerHour, targetSteps) {
     if (boxes.length !== 3) return null;
     function pick(cond) { for (var i = 0; i < boxes.length; i++) if (cond(boxes[i])) return boxes[i]; return null; }
-    var three = pick(function (b) { return b.box.options.length === 3 && b.box.quantity <= 100; });
+    var three = pick(function (b) { return b.box.options.length === 3; });
     var two = pick(function (b) { return b.box.options.length === 2; });
     var flex = pick(function (b) { return b !== three && b !== two; });
     if (!three || !two || !flex) return null;
@@ -368,69 +505,63 @@
       flexValues[s[0]] = { value: optionValue(opt, s[0], incomePerHour), label: opt.label };
     }
 
-    var best = null;
     var q3 = three.box.quantity;
-    for (var count0 = 0; count0 <= q3; count0++) {
-      for (var count1 = 0; count1 <= q3 - count0; count1++) {
-        for (var count2 = 0; count2 <= q3 - count0 - count1; count2++) {
-        var contrib = C.zeroRes();
-        var labels3 = {};
-        var combos = [count0, count1, count2];
-        for (var i = 0; i < 3; i++) {
-          var o = threeOptions[i];
-          contrib[o.resource] += combos[i] * o.value;
-          labels3[o.label] = combos[i];
-        }
-        // 挑战者（two）已在开箱顺序①全消耗（units 固定数值、无分配损耗），
-        // 其贡献已从 shortage 中扣除，这里只汇总方案条目；
-        // 非 units 二选一箱（罕见，顺序①不消耗）维持旧口径：全消耗选第一项
-        var contrib2 = { credit: contrib.credit, battle_data: contrib.battle_data, core_dust: contrib.core_dust };
-        var labels2 = {};
-        var usedTwo = two.box.quantity - two.left;
-        if (two.left > 0) {
-          usedTwo = two.box.quantity;
-          two.left = 0;
-          labels2[twoOptions[0].label] = two.box.quantity;
-          two.choices[twoOptions[0].label] = two.box.quantity;
-          contrib2[twoOptions[0].resource] += two.box.quantity * twoOptions[0].value;
-        } else {
-          Object.keys(two.choices).forEach(function (k) { labels2[k] = two.choices[k]; });
-        }
-        var remaining = {};
-        RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, shortage[r] - contrib2[r]); });
-          var flexCounts = {};
-          var flexUsed = 0;
-          var possible = true;
-          RESOURCES.forEach(function (r) {
-            if (remaining[r] <= 1e-6) return;
-            if (!flexValues[r]) { possible = false; return; }
-            var fv = flexValues[r].value;
-            var cntF = fv ? Math.ceil(remaining[r] / fv) : 1e9;
-            flexCounts[r] = cntF;
-            flexUsed += cntF;
-          });
-          if (!possible || flexUsed > flex.box.quantity) continue;
-          var total = count0 + count1 + count2 + usedTwo + flexUsed;
-          if (!best || total < best.boxes_used) {
-            var labelsFlex = {};
-            Object.keys(flexValues).forEach(function (r) { labelsFlex[flexValues[r].label] = flexCounts[r] || 0; });
-            best = {
-              target_steps: targetSteps, needed: needed,
-              fixed_used: fixedUsed,
-              selectable: [
-                { name: two.box.name, used: usedTwo, keep: two.box.quantity - usedTwo, choices: labels2 },
-                { name: three.box.name, used: count0 + count1 + count2, keep: three.box.quantity - count0 - count1 - count2, choices: labels3 },
-                { name: flex.box.name, used: flexUsed, keep: flex.box.quantity - flexUsed, choices: labelsFlex },
-              ],
-              boxes_used: total,
-              remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 },
-              feasible: true,
-            };
-          }
-        }
-      }
-      }
-    return best;
+    var qF = flex.box.quantity;
+
+    // 挑战者（two）已在开箱顺序①全消耗（units 固定数值、无分配损耗），其贡献已从 shortage 中扣除，
+    // 这里只汇总方案条目；非 units 二选一箱（罕见，顺序①不消耗）维持旧口径：全消耗选第一项。
+    // —— 该副作用原本写在最内层循环里（幂等，仅首轮真正生效），现提前到求解之前做一次。
+    var usedTwo = two.box.quantity - two.left;
+    var labels2 = {};
+    var twoAdd = null;
+    if (two.left > 0) {
+      usedTwo = two.box.quantity;
+      two.left = 0;
+      labels2[twoOptions[0].label] = two.box.quantity;
+      two.choices[twoOptions[0].label] = two.box.quantity;
+      twoAdd = twoOptions[0];
+    } else {
+      Object.keys(two.choices).forEach(function (k) { labels2[k] = two.choices[k]; });
+    }
+    var twoBonus = twoAdd ? two.box.quantity * twoAdd.value : 0;
+
+    // 三个选项分别补哪条资源（供 DP 分层用）；要求两两不同，否则回落全枚举兜底
+    var S = [], V = [], RES = [], bijective = true, seenRes = {};
+    for (var kt = 0; kt < threeOptions.length; kt++) {
+      var opt3 = threeOptions[kt];
+      if (seenRes[opt3.resource] || RESOURCES.indexOf(opt3.resource) < 0) { bijective = false; break; }
+      seenRes[opt3.resource] = true;
+      var baseRes = shortage[opt3.resource] - (twoAdd && twoAdd.resource === opt3.resource ? twoBonus : 0);
+      S.push(Math.max(0.0, baseRes));
+      V.push(opt3.value);
+      RES.push(opt3.resource);
+    }
+
+    var solved = bijective
+      ? dpFlexiblePlan(S, V, RES, flexValues, q3, qF)
+      : enumerateFlexiblePlan(threeOptions, flexValues, shortage, q3, qF, twoAdd ? twoAdd.resource : null, twoBonus);
+    if (!solved) return null;
+
+    var combos = solved.c;
+    var used3 = combos[0] + combos[1] + combos[2];
+    var labels3 = {};
+    for (var i3 = 0; i3 < threeOptions.length; i3++) labels3[threeOptions[i3].label] = combos[i3];
+    // 与旧行为一致：弹性箱的 choices 写出**全部**候选标签（未用到的记 0），不是只写用到的
+    var labelsFlex = {};
+    Object.keys(flexValues).forEach(function (r) { labelsFlex[flexValues[r].label] = solved.flexByRes[r] || 0; });
+
+    return {
+      target_steps: targetSteps, needed: needed,
+      fixed_used: fixedUsed,
+      selectable: [
+        { name: two.box.name, used: usedTwo, keep: two.box.quantity - usedTwo, choices: labels2 },
+        { name: three.box.name, used: used3, keep: three.box.quantity - used3, choices: labels3 },
+        { name: flex.box.name, used: solved.flexUsed, keep: flex.box.quantity - solved.flexUsed, choices: labelsFlex },
+      ],
+      boxes_used: solved.total + usedTwo,
+      remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 },
+      feasible: true,
+    };
   }
 
   /* 以「固定第 idx 个挑战者选项」二分最大可达步数（内部用；不含偏好解析） */
