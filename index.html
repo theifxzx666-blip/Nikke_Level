@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261016d">
+<link rel="stylesheet" href="css/style.css?v=20261017a">
 <!-- html2canvas（导出结果图用，gzip ≈46KB）与 xlsx（导入/导出 Excel 用，gzip ≈316KB）改为「用到才加载」，
      由 js/app.js 的 ensureVendor() 在点击导出/导入时注入，首屏不再跨境外拉 CDN，也不拖慢首屏 -->
 </head>
@@ -233,18 +233,6 @@
   </section>
 </div>
 
-<div id="progressFab" class="progress-fab" title="表单填写进度">
-  <svg viewBox="0 0 60 60" width="60" height="60">
-    <circle cx="30" cy="30" r="26" fill="none" stroke="#ddd" stroke-width="6"/>
-    <circle id="progressRing" cx="30" cy="30" r="26" fill="none" stroke="#1d9e75" stroke-width="6"
-      stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="0" transform="rotate(-90 30 30)"/>
-    <text id="progressText" x="30" y="31" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="600" fill="#333">0%</text>
-  </svg>
-</div>
-<div id="progressPanel" class="progress-panel" style="display:none">
-  <div class="pp-head">表单填写进度 <span id="ppCount"></span><button id="ppClose" class="pp-close">✕</button></div>
-  <ul id="ppList"></ul>
-</div>
 </section>
 
 <!-- 其余工具的视图容器由 js/shell.js 从 tools.json 动态创建 -->
@@ -256,7 +244,7 @@
 <script src="js/scenarios.js?v=20261014c"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261016e"></script>
+<script src="js/app.js?v=20261017a"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/sync.js?v=20261013b"></script>
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->

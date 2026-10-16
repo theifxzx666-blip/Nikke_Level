@@ -12,8 +12,8 @@
 <link rel="icon" type="image/webp" href="assets/m/favicon.webp">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
-<link rel="stylesheet" href="css/style.css?v=20261016d">
-<link rel="stylesheet" href="css/mobile.css?v=20261016d">
+<link rel="stylesheet" href="css/style.css?v=20261017a">
+<link rel="stylesheet" href="css/mobile.css?v=20261017a">
 </head>
 <body class="m-body">
 
@@ -28,15 +28,6 @@
   <div class="m-top-act">
     <button id="btnSave" class="m-top-btn m-top-btn-primary">保存</button>
     <button id="btnShare" class="m-top-btn">同步</button>
-    <!-- 表单填写进度球：由右下角浮层移到顶栏 —— 浮层固定在视口右下会压住输入框（安卓竖屏尤明显） -->
-    <button id="progressFab" class="progress-fab" title="表单填写进度" aria-label="表单填写进度">
-      <svg viewBox="0 0 60 60" width="38" height="38">
-        <circle cx="30" cy="30" r="26" fill="none" stroke="#ddd" stroke-width="6"/>
-        <circle id="progressRing" cx="30" cy="30" r="26" fill="none" stroke="#1d9e75" stroke-width="6"
-          stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="0" transform="rotate(-90 30 30)"/>
-        <text id="progressText" x="30" y="31" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="600" fill="#333">0%</text>
-      </svg>
-    </button>
   </div>
 </header>
 
@@ -257,10 +248,6 @@
   </section>
 </div>
 
-<div id="progressPanel" class="progress-panel" style="display:none">
-  <div class="pp-head">表单填写进度 <span id="ppCount"></span><button id="ppClose" class="pp-close">✕</button></div>
-  <ul id="ppList"></ul>
-</div>
 </section>
 
 <!-- 其余工具的视图容器由 js/shell.js 从 tools.json 动态创建 -->
@@ -272,7 +259,7 @@
 <script src="js/scenarios.js?v=20261014c"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261016e"></script>
+<script src="js/app.js?v=20261017a"></script>
 <!-- 顶层功能切换沿用桌面版外壳脚本（tools.json 驱动）；移动版只把导航用 CSS 固定到屏幕底部 -->
 <script src="js/shell.js?v=20261009b"></script>
 <script>

@@ -279,7 +279,6 @@
     }
     renderForm();
     try { syncCostFromLevel(); } catch (e) {}
-    updateProgress();
     saveForm();
     return true;
   }
@@ -918,7 +917,6 @@
   function onFormChange() {
     collectForm();
     saveForm();
-    updateProgress();
     // 表单发生变化 -> 计算结果已过时，按钮还原为"开始计算"初始状态
     resetCalcButton();
   }
@@ -2169,7 +2167,30 @@
   }
 
   /* ---------- 计算入口 ---------- */
+  /* 对外入口：先亮 loading，再让出主线程两帧（确保 loading 已被真正绘制），最后跑同步计算。
+     ⚠ 不要在这里直接写业务逻辑：真正的计算在 runCalc() 里。
+     ⚠ 计算期间按钮 disabled：避免用户连点导致多次渲染。 */
   function calculate() {
+    showCalcLoading();
+    var fired = false;
+    function go() {
+      if (fired) return;      // 正常走 rAF，兜底定时器到点后直接返回
+      fired = true;
+      try {
+        runCalc();
+      } finally {
+        hideCalcLoading();
+      }
+    }
+    // 双 rAF：第一帧把 loading 写进渲染树，第二帧确保已经绘制出来，之后才跑同步计算
+    // （后台标签页 / 无头环境下 rAF 可能被节流甚至不触发 → 用 setTimeout 兜底，绝不让计算卡住）
+    requestAnimationFrame(function () {
+      requestAnimationFrame(go);
+    });
+    setTimeout(go, 260);
+  }
+
+  function runCalc() {
     try {
       var snap = buildSnapshot();
       // 「每种箱保留 1 个」：计算用保留后的快照（表单与页面显示仍为原始库存）
@@ -2278,7 +2299,7 @@
           st.textContent = "html,body{background-image:none !important;}body::before,body::after{content:none !important;display:none !important;background-image:none !important;}";
           clonedDoc.head.appendChild(st);
           // 隐藏页面固定悬浮元素（仅保留结果内容）
-          clonedDoc.querySelectorAll(".progress-fab,.progress-panel,.btn-calc-fab,.save-tip,#exportLoading")
+          clonedDoc.querySelectorAll(".btn-calc-fab,.save-tip,#exportLoading")
             .forEach(function (n) { n.style.display = "none"; });
           var panel = clonedDoc.getElementById("resultSection");
           if (panel) {
@@ -2404,26 +2425,57 @@
     reader.readAsArrayBuffer(file);
   }
 
-  /* ---------- 悬浮进度球 ---------- */
-  function updateProgress() {
-    var f = collectForm();
-    var items = [
-      ["当前同步器等级", !!f.current], ["目标同步器等级", !!f.target], ["基地防御等级", !!f.base],
-      ["关卡进度", !!(f.normal_stage || f.hard_stage)],
-      ["信用点收益", !!f.credit_rate], ["战斗数据收益", !!f.battle_rate], ["红球收益", !!f.dust_rate],
-      ["每日歼灭次数", f.wipeouts !== ""], ["现有信用点", !!f.bare_credit], ["现有战斗数据", !!f.bare_battle],
-      ["现有红球", !!f.bare_dust], ["升级消耗", !!(f.cost_credit || f.cost_battle || f.cost_dust || COST_TIERS.length)],
-    ];
-    var filled = items.filter(function (i) { return i[1]; }).length;
-    var pct = Math.round(filled / items.length * 100);
-    var ring = $("progressRing"), txt = $("progressText"), count = $("ppCount"), list = $("ppList");
-    ring.setAttribute("stroke-dashoffset", String(163.4 * (1 - filled / items.length)));
-    ring.setAttribute("stroke", pct === 100 ? "#0f6e56" : pct >= 60 ? "#1d9e75" : "#e0a63c");
-    txt.textContent = pct + "%";
-    count.textContent = filled + "/" + items.length;
-    list.innerHTML = items.map(function (i) {
-      return "<li class='" + (i[1] ? "ok-item" : "no-item") + "'>" + (i[1] ? "✅" : "⬜") + " " + esc(i[0]) + "</li>";
-    }).join("");
+  /* ---------- 计算中的加载反馈（顶部进度条 + 按钮 spinner） ----------
+     计算是**同步阻塞**的：若「点击 → 立刻算」，浏览器根本没机会把 loading 画出来，
+     用户只会感觉「卡了一下、然后结果突然出现」。故先亮起 loading，等浏览器真正
+     绘制出两帧之后再跑计算。
+
+     ⚠ 进度条必须用 transform 动画（合成线程）：主线程被 JS 占满时它照样能滑；
+       若用 left / width 动画会跟着主线程一起冻住，等于没有反馈。 */
+  var CALC_MIN_MS = 240;      // loading 最短可见时长，避免"闪一下"完全看不出发生了什么
+  var calcLoadingT0 = 0;      // 本轮 loading 的起始时间戳
+  var calcHideTimer = null;   // 延迟隐藏的定时器
+
+  function calcBar() {
+    var bar = $("calcBar");
+    if (!bar) {
+      bar = el("div", "", "calc-bar");
+      bar.id = "calcBar";
+      bar.setAttribute("role", "progressbar");
+      bar.setAttribute("aria-label", "正在计算");
+      document.body.appendChild(bar);
+    }
+    return bar;
+  }
+
+  function showCalcLoading() {
+    if (calcHideTimer) { clearTimeout(calcHideTimer); calcHideTimer = null; }
+    calcLoadingT0 = Date.now();
+    calcBar().classList.add("is-on");
+    [$("btnCalc"), $("btnCalcFab")].forEach(function (b) {
+      if (!b) return;
+      b.classList.add("is-loading");
+      b.setAttribute("aria-busy", "true");
+      b.disabled = true;
+    });
+  }
+
+  function hideCalcLoading() {
+    // 不足最短时长则补足，避免"一瞬间全白"看不出发生了计算
+    var wait = Math.max(0, CALC_MIN_MS - (Date.now() - calcLoadingT0));
+    if (calcHideTimer) clearTimeout(calcHideTimer);
+    calcHideTimer = setTimeout(function () {
+      calcHideTimer = null;
+      var bar = $("calcBar");
+      if (bar) bar.classList.remove("is-on");
+      [$("btnCalc"), $("btnCalcFab")].forEach(function (b) {
+        if (!b) return;
+        // 文字由 markCalculated()/resetCalcButton() 管理，这里只撤 loading 态
+        b.classList.remove("is-loading");
+        b.removeAttribute("aria-busy");
+        b.disabled = false;
+      });
+    }, wait);
   }
 
   /* ---------- 事件绑定 ---------- */
@@ -2459,7 +2511,7 @@
     $("f_recorded").addEventListener("change", updateActivityTotals);
     // 「更新为今天」：先把日期写成今天，再同时跑两条链
     //   ① updateActivityTotals()：数据日期是活动状态的基准日（F5）
-    //   ② onFormChange()：collectForm / saveForm / updateProgress / resetCalcButton
+    //   ② onFormChange()：collectForm / saveForm / resetCalcButton
     // 注意：不能只调其中一个 —— f_recorded 的 change 只绑了 updateActivityTotals，
     //       而 form 的 change 委托链不覆盖它，故此处显式两条都跑。
     if ($("btnToday")) {
@@ -2590,13 +2642,7 @@
       });
     });
 
-    // 悬浮进度球
-    $("progressFab").addEventListener("click", function () {
-      var p = $("progressPanel");
-      p.style.display = p.style.display === "none" ? "block" : "none";
-      updateProgress();
-    });
-    $("ppClose").addEventListener("click", function () { $("progressPanel").style.display = "none"; });
+    // 悬浮进度球已移除（用户 2026-10-17：基本没啥用）
   }
 
   /* ---------- 移动端表单增强：可折叠分组 + 悬浮「开始计算」 ---------- */
@@ -2673,7 +2719,6 @@
         // 表单区静态信息图标（基地/关卡/推图收益/活动/其他）在此绑定；结果区动态图标由 renderResult 内自行再调一次
         initInfoTips(document);
         syncCostFromLevel();
-        updateProgress();
         tip("就绪");
         // 携带 #data= 分享链接进入：自动恢复表单并出结果
         restoreFromShareHash();

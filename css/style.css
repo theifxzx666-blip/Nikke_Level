@@ -213,23 +213,40 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 .raw-toolbar { display: flex; justify-content: flex-end; }
 .raw-toolbar .btn-export { margin-left: 0; }
 
-/* 悬浮进度球 */
-.progress-fab {
-  position: fixed; right: 20px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%;
-  background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.18); cursor: pointer; z-index: 9999;
-  display: flex; align-items: center; justify-content: center; border: none;
+/* （悬浮进度球已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
+
+/* ===== 计算中的加载反馈 =====
+   顶部进度条（不确定进度 indeterminate）：横向滑动用 transform 实现，
+   跑在合成线程上 —— 计算期间主线程被 JS 占满时仍能持续滑动，用户才真的"看得到在算"。 */
+.calc-bar {
+  position: fixed; left: 0; right: 0; top: 0; height: 3px; z-index: 10000;
+  overflow: hidden; pointer-events: none;
+  opacity: 0; transition: opacity .18s ease;
+  background: rgba(29, 158, 117, .12);
 }
-.progress-panel {
-  position: fixed; right: 20px; bottom: 90px; width: 300px; max-width: 90vw;
-  background: #fff; border: 1px solid var(--border); border-radius: 12px; z-index: 9999;
-  box-shadow: 0 6px 24px rgba(0,0,0,.16); padding: 10px 12px;
+.calc-bar.is-on { opacity: 1; }
+.calc-bar::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 34%;
+  background: linear-gradient(90deg, rgba(29,158,117,0) 0%, #1d9e75 45%, #0f6e56 60%, rgba(15,110,86,0) 100%);
+  will-change: transform;
+  animation: calcBarSlide 1.05s cubic-bezier(.45,.05,.55,.95) infinite;
 }
-.pp-head { font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-.pp-close { border: none; background: none; cursor: pointer; font-size: 14px; color: var(--muted); }
-#ppList { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-#ppList li { padding: 2px 0; }
-.ok-item { color: #0f6e56; }
-.no-item { color: #a0a6a3; }
+@keyframes calcBarSlide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(295%); }   /* 100% / 34% ≈ 294% → 完全移出右侧 */
+}
+/* 按钮 loading：转圈用伪元素，避免改动按钮文字（文字由 markCalculated/resetCalcButton 管理） */
+.btn.is-loading { pointer-events: none; }
+.btn.is-loading::before {
+  content: ""; display: inline-block; width: 13px; height: 13px; margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, .4); border-top-color: #fff; border-radius: 50%;
+  vertical-align: -2px;
+  animation: exportSpin .7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .calc-bar::after { animation-duration: 2.4s; }
+  .btn.is-loading::before { animation-duration: 1.6s; }
+}
 
 /* ===== 一图流导出模式（html2canvas 截图时 onclone 触发） ===== */
 /* 隐藏 tabs 栏（不进入导出图） */
@@ -372,11 +389,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .card .num { font-size: 22px; }
   .card .lbl { font-size: 12px; }
   h3.sec { font-size: 15px; }
-
-  /* 悬浮进度球缩小、贴边 */
-  .progress-fab { width: 48px; height: 48px; right: 12px; bottom: 12px; }
-  .progress-fab svg { width: 40px; height: 40px; }
-  .progress-panel { right: 12px; bottom: 68px; width: 280px; }
 
   /* 防止任何元素把页面撑出横向滚动（clip 不会破坏 fixed/sticky） */
   body { overflow-x: clip; }
