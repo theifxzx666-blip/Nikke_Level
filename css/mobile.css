@@ -184,9 +184,11 @@ body.m-body.avatar-full .btn-calc-fab { display: none; }
 /* （表单填写进度球 + 明细面板已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
 
 /* 快捷同步开关（R47 改成小圆形图标）：移动端没有真实 hover，靠 :focus-within 让浮出文案在点按后出现一下；
-   另外点按本身还会走 app.js 的 toast 提示，所以这里只把尺寸放大到手指友好。 */
+   另外点按本身还会走 app.js 的 toast 提示，所以这里只把尺寸放大到手指友好。
+   ⚠ 底部 margin 40px 不能省：`.layout` 只有 132px 下留白，而吸底 FAB 占 123~175px，
+      图标当最后一个元素时会被 FAB 压住 15px（已实测），补 40px 后净空 25px。 */
 body.m-body .as-tog {
-  width: 42px; height: 42px; margin: 2px auto 16px;
+  width: 42px; height: 42px; margin: 2px auto 40px;
   background: #f2f8f6; border-color: var(--border);
 }
 body.m-body .as-tog[data-on="1"] { background: #e3f4ec; }
