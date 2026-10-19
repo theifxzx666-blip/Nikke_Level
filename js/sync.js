@@ -273,6 +273,8 @@
       ".nk-netout.bad{background:#fdf3ec;border:1px solid #f2d3b8;color:#96531f}" +
       ".nk-nettip{margin-top:4px;font-size:11px;opacity:.72;word-break:break-all}" +
       ".nk-pwrow{position:relative}" +
+      /* 按钮挪进 .nk-pwrow 后才是相对输入框定位；右侧留白防止密码被「显示」压住 */
+      ".nk-pwrow .nk-in{padding-right:52px}" +
       ".nk-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:#1d9e75;background:none;border:none;cursor:pointer;padding:2px 4px}";
     document.head.appendChild(s);
   }
@@ -352,7 +354,7 @@
     var m = authMode;
     var isReg = m === "register";
     var confirm = isReg ?
-      '<div class="nk-field"><label>确认密码</label><div class="nk-pwrow"><input class="nk-in" id="nkPass2" type="password" placeholder="再输一次" autocomplete="new-password"></div><button type="button" class="nk-eye" data-eyes data-for="nkPass2">显示</button></div>' :
+      '<div class="nk-field"><label>确认密码</label><div class="nk-pwrow"><input class="nk-in" id="nkPass2" type="password" placeholder="再输一次" autocomplete="new-password"><button type="button" class="nk-eye" data-eyes data-for="nkPass2">显示</button></div></div>' :
       "";
     var msg = flashMsg; flashMsg = "";
     $inner.innerHTML =
@@ -361,7 +363,7 @@
         '<button class="' + (isReg ? "on" : "") + '" data-mode="register">注册</button>' +
       "</div>" +
       '<div class="nk-field"><label>邮箱</label><input class="nk-in" id="nkEmail" type="email" inputmode="email" placeholder="you@example.com" autocomplete="username" value="' + esc(draftEmail) + '"></div>' +
-      '<div class="nk-field"><label>密码</label><div class="nk-pwrow"><input class="nk-in" id="nkPass" type="password" placeholder="至少 6 位" autocomplete="' + (isReg ? "new-password" : "current-password") + '"></div><button type="button" class="nk-eye" data-eyes data-for="nkPass">显示</button></div>' +
+      '<div class="nk-field"><label>密码</label><div class="nk-pwrow"><input class="nk-in" id="nkPass" type="password" placeholder="至少 6 位" autocomplete="' + (isReg ? "new-password" : "current-password") + '"><button type="button" class="nk-eye" data-eyes data-for="nkPass">显示</button></div></div>' +
       confirm +
       '<div id="nkAuthErr">' + (msg ? errBar(msg) : "") + "</div>" +
       '<div class="nk-row"><button class="nk-btn" id="nkAuthGo">' + (isReg ? "注册" : "登录") + "</button></div>" +
