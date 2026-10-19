@@ -2,6 +2,14 @@
  * 依赖：index.html 已用 CDN 引入 @supabase/supabase-js@2（全局 window.supabase）
  * 职责：邮箱+密码登录、每个功能独立「上传本地/下载云端」，登录后云端无数据时绝不覆盖本地。
  * 说明：只管 localStorage 数据，不侵入 app.js（IIFE）；下载后整页重载使界面生效。
+ *
+ * ---------- R53（2026-10-19）：注册/找回链路加固 ----------
+ * 起因：玩家反馈「注册不了」，且忘记密码时站点没有任何补救入口。
+ * ① signUp 补 emailRedirectTo（取当前页面所在目录，GH Pages 是子路径，不能用 origin）；
+ * ② 注册返回 session（站点关闭邮箱确认时的正常返回）→ 直接登录，不再让玩家去邮箱；
+ * ③ 注册只返回 user 不给 session（邮箱确认仍开着）→ 进「待确认」视图，可重发确认信；
+ * ④ 登录撞上 email_not_confirmed / invalid_credentials → 中文解释 + 一键重发确认信；
+ * ⑤ 所有 Supabase 英文报错统一走 explainAuthError()，玩家看到的是「原因 + 该怎么办」。
  */
 (function () {
   "use strict";
@@ -52,6 +60,63 @@
     return isNaN(d) ? "—" : d.toLocaleString("zh-CN", { hour12: false });
   }
 
+  /* ---------- 认证辅助（R53） ---------- */
+  /* 邮件里的回跳地址：取「当前页面所在目录」而不是 origin。
+     GH Pages 是 /Nikke_Level/index.html 这种子路径，只给 origin 会掉到根目录 404；
+     WorkBuddy 与 localhost 同为一级路径时两者等价。结果必须在 Supabase 的 Redirect URLs 白名单里。 */
+  function mailRedirect() {
+    try { return location.origin + location.pathname.replace(/[^/]*$/, ""); }
+    catch (e) { return undefined; }
+  }
+  function isEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || "")); }
+
+  /* Supabase 的报错是英文原文，直接甩给玩家等于没说。
+     这里翻成「什么原因 + 该怎么办」。优先看 code（新版 auth-js 的规范化错误码），
+     message 关键字兜底老版本 / 网关层错误。返回 resend=true 的表示「重发确认信」能救。 */
+  function explainAuthError(e) {
+    var code = (e && e.code) || "";
+    var msg = (e && e.message) || "未知错误";
+    var low = String(msg).toLowerCase();
+    function hit() {
+      for (var i = 0; i < arguments.length; i++) if (low.indexOf(arguments[i]) >= 0) return true;
+      return false;
+    }
+    if (code === "invalid_credentials" || hit("invalid login credentials", "invalid credentials")) {
+      return { text: "邮箱或密码不对。如果确认邮箱没敲错，也可能是这个邮箱当初注册到一半、没有完成确认 —— 点下面的按钮重发确认信试试。", resend: true };
+    }
+    if (code === "email_not_confirmed" || hit("email not confirmed", "not confirmed")) {
+      return { text: "这个邮箱还没完成确认，所以暂时不能登录。点下面的按钮重发一封确认信，点开邮件里的链接后再回来登录。", resend: true };
+    }
+    if (code === "user_already_exists" || code === "email_exists" ||
+        hit("already registered", "already been registered", "user already exists")) {
+      return { text: "这个邮箱已经注册过了，直接用同一个密码登录即可（切到左边的「登录」）。", resend: false };
+    }
+    if (code === "weak_password" || hit("should be at least", "password is too short", "password should")) {
+      return { text: "密码太短了，至少要 6 位。建议 8 位以上，字母和数字混着来。", resend: false };
+    }
+    if (code === "validation_failed" || code === "email_address_invalid" ||
+        hit("invalid format", "unable to validate email", "invalid email")) {
+      return { text: "邮箱格式不对。检查一下有没有多打空格，或者漏掉 @ 后面那一段。", resend: false };
+    }
+    if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit" ||
+        hit("rate limit", "too many requests", "only request this after")) {
+      return { text: "操作太频繁，被服务器限流了。等 1 小时再试。如果每次注册都这样，多半是站点的发信服务配额用完了，请把这条提示发给作者。", resend: false };
+    }
+    if (code === "signup_disabled" || hit("signups not allowed", "signup is disabled")) {
+      return { text: "站点当前关闭了新用户注册，请联系作者。", resend: false };
+    }
+    if (hit("error sending", "sending confirmation", "sending recovery", "smtp")) {
+      return { text: "邮件发不出去 —— 这是站点发信服务没配好，不是你操作的问题。请把这条提示发给作者，让作者手动帮你确认账号。", resend: false };
+    }
+    if (hit("failed to fetch", "networkerror", "network request failed", "load failed")) {
+      return { text: "没能连上云端。换个网络（或先关掉代理）再试一次。", resend: false };
+    }
+    if (hit("database error")) {
+      return { text: "云端数据库报错，通常过一会儿重试就好；如果一直出现请联系作者。", resend: false };
+    }
+    return { text: "操作失败：" + msg, resend: false };
+  }
+
   /* ---------- 样式（内联注入，浅色主题对齐） ---------- */
   var CSP = "synccss";
   function injectStyle() {
@@ -88,6 +153,10 @@
       ".nk-tab button{flex:1;padding:8px 0;border:1px solid #dde3e0;background:#fbfdfc;border-radius:8px;cursor:pointer;font:600 13px 'MaiYuan','Microsoft YaHei',sans-serif;color:#556}" +
       ".nk-tab button.on{background:#1d9e75;border-color:#1d9e75;color:#fff}" +
       ".nk-errbar{background:#fdeaea;border:1px solid #f2c1c1;color:#b3312d;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:8px}" +
+      ".nk-okbar{background:#e9f7f1;border:1px solid #b6e2d1;color:#177a59;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:8px;line-height:1.6}" +
+      ".nk-okbar b{word-break:break-all}" +
+      ".nk-link{background:none;border:none;padding:0;color:#178a64;font:12px inherit;cursor:pointer;text-decoration:underline}" +
+      ".nk-sub{margin:10px 0 0;font-size:11.5px;color:#8a938e;line-height:1.7}" +
       ".nk-pwrow{position:relative}" +
       ".nk-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:#1d9e75;background:none;border:none;cursor:pointer;padding:2px 4px}";
     document.head.appendChild(s);
@@ -155,23 +224,35 @@
     renderAccount();
   }
 
-  var authMode = "login";
+  var authMode = "login";      // login | register | pending
+  var pendingEmail = "";       // 已提交注册、等确认邮件的邮箱（重发确认信用）
+  var draftEmail = "";         // 切换 登录/注册 时保留已输入的邮箱，别让玩家重敲
+  var flashMsg = "";           // 重新渲染后仍要显示的一句话（渲染时消费后清空）
+
+  function errBar(s) { return '<div class="nk-errbar">' + esc(s) + "</div>"; }
+  function okBar(s) { return '<div class="nk-okbar">' + s + "</div>"; }
+
   function renderAuth() {
+    if (authMode === "pending") { renderPending(); return; }
     var m = authMode;
-    var confirm = m === "register" ?
+    var isReg = m === "register";
+    var confirm = isReg ?
       '<div class="nk-field"><label>确认密码</label><div class="nk-pwrow"><input class="nk-in" id="nkPass2" type="password" placeholder="再输一次" autocomplete="new-password"></div><button type="button" class="nk-eye" data-eyes data-for="nkPass2">显示</button></div>' :
       "";
+    var msg = flashMsg; flashMsg = "";
     $inner.innerHTML =
       '<div class="nk-tab">' +
         '<button class="' + (m === "login" ? "on" : "") + '" data-mode="login">登录</button>' +
-        '<button class="' + (m === "register" ? "on" : "") + '" data-mode="register">注册</button>' +
+        '<button class="' + (isReg ? "on" : "") + '" data-mode="register">注册</button>' +
       "</div>" +
-      '<div class="nk-field"><label>邮箱</label><input class="nk-in" id="nkEmail" type="email" placeholder="you@example.com" autocomplete="username"></div>' +
-      '<div class="nk-field"><label>密码</label><div class="nk-pwrow"><input class="nk-in" id="nkPass" type="password" placeholder="至少 6 位" autocomplete="current-password"></div><button type="button" class="nk-eye" data-eyes data-for="nkPass">显示</button></div>' +
+      '<div class="nk-field"><label>邮箱</label><input class="nk-in" id="nkEmail" type="email" inputmode="email" placeholder="you@example.com" autocomplete="username" value="' + esc(draftEmail) + '"></div>' +
+      '<div class="nk-field"><label>密码</label><div class="nk-pwrow"><input class="nk-in" id="nkPass" type="password" placeholder="至少 6 位" autocomplete="' + (isReg ? "new-password" : "current-password") + '"></div><button type="button" class="nk-eye" data-eyes data-for="nkPass">显示</button></div>' +
       confirm +
-      '<div id="nkAuthErr"></div>' +
-      '<div class="nk-row"><button class="nk-btn" id="nkAuthGo">' + (m === "login" ? "登录" : "注册") + "</button></div>" +
-      '<p class="nk-hint" style="margin-top:10px">注册后需到邮箱点确认邮件再登录。</p>';
+      '<div id="nkAuthErr">' + (msg ? errBar(msg) : "") + "</div>" +
+      '<div class="nk-row"><button class="nk-btn" id="nkAuthGo">' + (isReg ? "注册" : "登录") + "</button></div>" +
+      '<p class="nk-sub">' + (isReg
+        ? "填邮箱 + 设个密码就行，注册完直接可用云端同步。"
+        : "用注册时的邮箱和密码登录；换设备也能把云端数据拉回来。") + "</p>";
     $inner.querySelectorAll("[data-eyes]").forEach(function (b) {
       b.addEventListener("click", function () {
         var inp = $inner.querySelector("#" + b.getAttribute("data-for"));
@@ -185,6 +266,8 @@
       t.addEventListener("click", function () {
         var nm = t.getAttribute("data-mode");
         if (nm === m) return;
+        var cur = $inner.querySelector("#nkEmail");
+        draftEmail = cur ? cur.value.trim() : "";
         authMode = nm === "register" ? "register" : "login";
         renderAuth();
       });
@@ -194,6 +277,48 @@
     });
   }
 
+  /* 「待确认」视图（R53）：邮箱确认还开着的站点上，注册只返回 user 不给 session。
+     这一步必须能自助重发，否则玩家就卡在「注册不了」的黑洞里。 */
+  function renderPending() {
+    var msg = flashMsg; flashMsg = "";
+    $inner.innerHTML =
+      okBar("邮箱 <b>" + esc(pendingEmail) + "</b> 已登记，最后一步是去邮箱点确认链接。") +
+      '<p class="nk-hint" style="margin:0 0 12px">没收到先翻一下垃圾邮件 / 广告邮件，有时会延迟 1–2 分钟。点开邮件里的链接后再回来登录。</p>' +
+      '<div id="nkAuthErr">' + (msg ? errBar(msg) : "") + "</div>" +
+      '<div class="nk-row"><button class="nk-btn" id="nkResend">重发确认邮件</button></div>' +
+      '<div class="nk-row">' +
+        '<button class="nk-btn ghost" id="nkGoLogin">去登录</button>' +
+        '<button class="nk-btn ghost2" id="nkGoReg">换邮箱重注册</button>' +
+      "</div>" +
+      '<p class="nk-sub">反复收不到？多半是站点发信服务没配好 —— 把注册用的邮箱发给作者，让作者在后台手动确认。</p>';
+    $inner.querySelector("#nkResend").addEventListener("click", doResend);
+    $inner.querySelector("#nkGoLogin").addEventListener("click", function () {
+      draftEmail = pendingEmail; authMode = "login"; renderAuth();
+    });
+    $inner.querySelector("#nkGoReg").addEventListener("click", function () {
+      draftEmail = ""; pendingEmail = ""; authMode = "register"; renderAuth();
+    });
+  }
+
+  async function doResend() {
+    var btn = $inner.querySelector("#nkResend");
+    var box = $inner.querySelector("#nkAuthErr");
+    if (!pendingEmail) { authMode = "register"; renderAuth(); return; }
+    if (btn) { btn.disabled = true; btn.textContent = "正在发送…"; }
+    try {
+      var r = await supabase.auth.resend({
+        type: "signup", email: pendingEmail,
+        options: { emailRedirectTo: mailRedirect() }
+      });
+      if (r.error) throw r.error;
+      if (box) box.innerHTML = okBar("已重新发送，请等 1–2 分钟再查收（含垃圾邮件箱）。");
+    } catch (e) {
+      if (box) box.innerHTML = errBar(explainAuthError(e).text);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "重发确认邮件"; }
+    }
+  }
+
   function renderAccount() {
     var u = curUser;
     $inner.innerHTML =
@@ -201,7 +326,12 @@
       '<p class="nk-user">已登录：' + esc(u.email || u.id) + "</p>" +
       '<div id="nkFeaList"><div class="nk-empty">正在检查云端数据…</div></div>';
     $inner.querySelector("#nkLogout").addEventListener("click", function () {
-      supabase.auth.signOut().finally(function () { curUser = null; render(); });
+      supabase.auth.signOut().finally(function () {
+        curUser = null;
+        authMode = "login";      // 登出后回登录页，别停在「待确认」
+        pendingEmail = "";
+        render();
+      });
     });
     refreshFeatures();
   }
@@ -365,9 +495,11 @@
     var email = $inner.querySelector("#nkEmail").value.trim();
     var pass = $inner.querySelector("#nkPass").value;
     var errEl = $inner.querySelector("#nkAuthErr");
-    function setErr(s) { if (errEl) errEl.innerHTML = s ? '<div class="nk-errbar">' + esc(s) + "</div>" : ""; }
+    draftEmail = email;
+    function setErr(s) { if (errEl) errEl.innerHTML = s ? errBar(s) : ""; }
     setErr("");
     if (!email) { setErr("请输入邮箱"); return; }
+    if (!isEmail(email)) { setErr("邮箱格式不太对，检查一下有没有多打空格、或漏掉 @ 后面那一段。"); return; }
     if (!pass) { setErr("请输入密码"); return; }
     if (pass.length < 6) { setErr("密码至少 6 位"); return; }
     if (mode === "register") {
@@ -376,37 +508,85 @@
       if (pass !== pass2) { setErr("两次输入的密码不一致，请重新输入"); return; }
     }
     var go = $inner.querySelector("#nkAuthGo");
-    if (go) go.disabled = true;
+    if (go) { go.disabled = true; go.textContent = mode === "login" ? "登录中…" : "注册中…"; }
     try {
       if (mode === "login") {
         var r = await supabase.auth.signInWithPassword({ email: email, password: pass });
         if (r.error) throw r.error;
+        draftEmail = "";
         tip("登录成功");
         render();
       } else {
-        var s = await supabase.auth.signUp({ email: email, password: pass });
+        /* emailRedirectTo 必须给：否则确认信里的回跳地址会落到 Supabase 的默认 Site URL */
+        var s = await supabase.auth.signUp({
+          email: email, password: pass,
+          options: { emailRedirectTo: mailRedirect() }
+        });
         if (s.error) throw s.error;
-        tip(s.data.session ? "注册成功，已登录" : "注册成功，请到邮箱确认后登录");
-        if (s.data.session) { curUser = s.data.session.user; render(); }
+        if (s.data && s.data.session) {
+          /* 站点关闭邮箱确认时的正常返回：注册即登录，不用去邮箱 */
+          curUser = s.data.session.user;
+          draftEmail = "";
+          tip("注册成功，已登录");
+          render();
+        } else {
+          /* 没有 session：邮箱确认还开着。Supabase 出于防枚举，邮箱已存在时也返回 user 但 identities 为空 */
+          var dup = !!(s.data && s.data.user && Array.isArray(s.data.user.identities) && s.data.user.identities.length === 0);
+          if (dup) {
+            authMode = "login";
+            flashMsg = "这个邮箱已经注册过了，输入原密码直接登录即可；忘记密码的话请把邮箱发给作者帮你重置。";
+            renderAuth();
+          } else {
+            pendingEmail = email;
+            authMode = "pending";
+            flashMsg = "";
+            renderAuth();
+            tip("注册信息已提交，请到邮箱点确认链接");
+          }
+        }
       }
     } catch (e) {
-      setErr("操作失败：" + e.message);
+      var ex = explainAuthError(e);
+      setErr(ex.text);
+      // 能靠「重发确认信」救的情况，直接在错误条下面给入口，别让玩家自己找
+      if (ex.resend && errEl) {
+        var b = document.createElement("button");
+        b.className = "nk-link";
+        b.style.display = "block";
+        b.style.marginTop = "6px";
+        b.textContent = "收不到 / 没确认过？点这里重发确认邮件 →";
+        b.addEventListener("click", function () {
+          pendingEmail = email;
+          authMode = "pending";
+          renderAuth();
+        });
+        errEl.appendChild(b);
+      }
     } finally {
-      if (go) go.disabled = false;
+      if (go) {
+        go.disabled = false;
+        go.textContent = mode === "login" ? "登录" : "注册";
+      }
     }
   }
 
   /* ============ 按钮注入 ============ */
+  /* 桌面挂在 hero 工具栏；移动版没有 .hero-toolbar（顶栏是 .m-top-act），
+     原来这一处只认桌面选择器 → 手机端连登录入口都没有。R53 补上兜底。 */
   function addTrigger() {
-    var toolbar = document.querySelector(".hero-toolbar");
-    if (!toolbar || document.querySelector("#nkSyncOpen")) return;
+    if (document.querySelector("#nkSyncOpen")) return;
+    var desk = document.querySelector(".hero-toolbar");
+    var mob = desk ? null : document.querySelector(".m-top-act");
+    var host = desk || mob;
+    if (!host) return;
     var b = document.createElement("button");
     b.id = "nkSyncOpen";
-    b.textContent = "👤 账号同步";
+    b.type = "button";
+    b.textContent = mob ? "账号" : "👤 账号同步";
     b.title = "登录后云端同步你的数据";
-    b.classList.add("nk-acc-btn");
+    b.classList.add(mob ? "m-top-btn" : "nk-acc-btn");
     b.addEventListener("click", function () { open(); });
-    toolbar.appendChild(b);
+    host.appendChild(b);
   }
 
   /* 与「保存当前表单」联动：已登录时保存即自动上传计算器数据到云端 */
