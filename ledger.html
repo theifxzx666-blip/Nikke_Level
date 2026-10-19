@@ -40,12 +40,8 @@ button{font:inherit;cursor:pointer}
 .lg-range .filt{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:99px;font-size:11.5px;
   background:rgba(29,158,117,.12);border:1px solid rgba(29,158,117,.35);color:var(--primary-dark);font-weight:650}
 
-/* ---------- 筛选条（折算目标 + 周几） ---------- */
+/* ---------- 筛选条（按周几） ---------- */
 .lg-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.pick{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);flex:0 0 auto}
-.pick select{height:30px;border-radius:9px;border:1px solid var(--border);background:var(--card);
-  color:var(--text);font:inherit;font-size:12.5px;padding:0 8px;cursor:pointer}
-.pick select:hover{border-color:var(--primary)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
 .chip{height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--border);background:var(--card);
   color:var(--text2);font-size:12.5px;display:inline-flex;align-items:center;gap:5px;transition:.16s;white-space:nowrap}
@@ -56,15 +52,16 @@ button{font:inherit;cursor:pointer}
 .chip[disabled]{opacity:.42;cursor:default;border-color:var(--border);color:var(--muted)}
 .chip[disabled]:hover{border-color:var(--border);color:var(--muted)}
 
-/* ---------- 汇总卡 ---------- */
-.lg-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+/* ---------- 汇总卡（3 资源 + 箱子） ---------- */
+.lg-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .lg-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow);min-width:0}
 .lg-card:hover{border-color:var(--primary)}
+.lg-card.boxc{border-color:rgba(29,158,117,.35);background:linear-gradient(180deg,#f7fcf9,#fff)}
 .lc-top{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden}
 .lc-top img{width:18px;height:18px;object-fit:contain;flex:0 0 auto}
 .lc-big{font-size:24px;font-weight:700;color:var(--primary-dark);line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
+.lc-big .unit{font-size:12px;font-weight:600;color:var(--muted);margin-left:3px}
 .lc-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
-.lc-sub i{font-style:normal;color:#9a6d1a}
 
 /* ---------- 明细表 ---------- */
 .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;max-height:none}
@@ -81,22 +78,24 @@ tbody tr.is-open:hover td{background:rgba(47,125,209,.1)}
 tbody tr.total td{background:#f4f8f6;font-weight:700;color:var(--text);border-top:1px solid var(--border)}
 .d{font-weight:650;color:var(--text)}
 .wd{color:var(--muted);font-size:11px;margin-left:4px}
-/* 单元格里的「其中箱子」小字：只有真的有箱子才渲染 */
-.s{display:block;font-size:10.5px;line-height:1.5;color:#9a6d1a;font-weight:400;margin-top:1px}
-.bx{font-weight:650;color:#8a6d1a;font-variant-numeric:tabular-nums}
+.bx{font-weight:650;color:var(--primary-dark);font-variant-numeric:tabular-nums}
 .bx.zero{color:var(--muted);font-weight:400}
 .tag{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10.5px;line-height:1.7;border:1px solid transparent}
 .tag.base{background:var(--bg3);color:var(--text2);border-color:var(--border)}
 .tag.act{background:rgba(184,134,11,.1);color:#9a6d1a;border-color:rgba(184,134,11,.3);margin-left:4px}
-.tag.box{background:rgba(29,158,117,.1);color:var(--primary-dark);border-color:rgba(29,158,117,.3);margin-left:4px}
 .tag.open{background:rgba(47,125,209,.1);color:#2f7dd1;border-color:rgba(47,125,209,.3)}
 
 /* ---------- 按周几对比 ---------- */
 .wd-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-top:14px;overflow:auto}
 .wd-cap{padding:12px 14px 2px;font-size:12.5px;font-weight:650;color:var(--text2)}
 .wd-cap span{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:6px}
-table.wdt{min-width:520px;font-size:12px}
-table.wdt thead th{background:transparent;border-bottom:1px solid var(--border)}
+/* 桌面把这张小表收窄居中：列宽按内容摊开太散，880px 一眼能扫完 */
+table.wdt{min-width:520px;max-width:880px;margin:0 auto;font-size:12px}
+table.wdt thead th{background:transparent;border-bottom:1px solid var(--border);text-align:center}
+/* 6 列在宽屏上会摊得很开，数值右对齐会离标签很远 → 全部居中，只有星期那列靠左 */
+table.wdt tbody td{text-align:center}
+table.wdt thead th:first-child,
+table.wdt tbody td:first-child{text-align:left}
 table.wdt tbody tr{cursor:pointer}
 table.wdt tbody tr:hover td{background:rgba(29,158,117,.06)}
 table.wdt tbody tr.on td{background:rgba(29,158,117,.11);color:var(--primary-dark);font-weight:650}
@@ -116,22 +115,21 @@ table.wdt tbody tr:last-child td{border-bottom:none}
 
 @media (max-width:720px){
   body{padding:12px}
-  .lg-cards{grid-template-columns:1fr;gap:9px}
-  .lc-big{font-size:20px}
+  /* 手机 2×2：三资源一列、箱子独占一列会和长数字打架，2 列刚好 */
+  .lg-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .lc-big{font-size:19px}
+  .lc-top{font-size:11.5px}
   .lg-title{font-size:17px}
   .lg-acts{width:100%}
   .lg-acts .btn{flex:1}
-  /* 六列在 390px 上要全部露出（藏掉「信用点」或「箱」都会让账单失真）→ 只压缩内边距与字号，
+  /* 五列在 390px 上要全部露出（藏掉「信用点」或「箱」都会让账单失真）→ 只压缩内边距与字号，
      并把「星期」从日期右侧改成日期下方一行（省下最宽的那截），390px 下横向溢出 = 0 */
   table{min-width:0;font-size:11.5px}
   thead th{padding:8px 4px;font-size:10px;letter-spacing:0}
   tbody td{padding:7px 4px}
   .wd{display:block;margin:1px 0 0;font-size:9.5px}
-  .s{font-size:9.5px}
   .tag{padding:0 4px;font-size:9px;margin-left:2px}
   .lg-bar{gap:8px}
-  .pick{width:100%}
-  .pick select{flex:1}
   /* 8 个 chip 在 390px 上换成两行显示（横向滚动会让「周五/周六/周日」藏起来，用户以为没有） */
   .chips{width:100%;flex-wrap:wrap;gap:6px}
   .chip{height:28px;padding:0 10px;font-size:12px}
@@ -158,13 +156,6 @@ table.wdt tbody tr:last-child td{border-bottom:none}
   <div class="lg-range" id="range"></div>
 
   <div class="lg-bar" id="bar" style="display:none">
-    <label class="pick">自选箱折算
-      <select id="selBoxPick">
-        <option value="core_dust">芯尘（红球）</option>
-        <option value="battle_data">战斗数据辑</option>
-        <option value="credit">信用点</option>
-      </select>
-    </label>
     <div class="chips" id="chips"></div>
   </div>
 
@@ -172,7 +163,7 @@ table.wdt tbody tr:last-child td{border-bottom:none}
 
   <div class="table-wrap" id="tableWrap" style="display:none">
     <table>
-      <thead><tr><th>日期</th><th>信用点</th><th>战斗数据辑</th><th>红球</th><th>箱</th><th>来源</th></tr></thead>
+      <thead><tr><th>日期</th><th>信用点</th><th>战斗数据辑</th><th>红球</th><th>箱数</th><th>来源</th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -180,7 +171,7 @@ table.wdt tbody tr:last-child td{border-bottom:none}
   <div class="wd-wrap" id="wdWrap" style="display:none">
     <div class="wd-cap">按周几对比<span>点一行即筛选；日均 = 该周几的合计 ÷ 天数</span></div>
     <table class="wdt">
-      <thead><tr><th>星期</th><th>天数</th><th>信用点日均</th><th>战斗数据辑日均</th><th>红球日均</th><th>箱数</th></tr></thead>
+      <thead><tr><th>星期</th><th>天数</th><th>信用点日均</th><th>战斗数据辑日均</th><th>红球日均</th><th>箱数/天</th></tr></thead>
       <tbody id="wdBody"></tbody>
     </table>
   </div>
@@ -192,25 +183,25 @@ table.wdt tbody tr:last-child td{border-bottom:none}
   </div>
 
   <p class="lg-note" id="note" style="display:none">
-    账单只统计每天<b>新到账</b>的资源：基地每小时产出 × 24 + 当日活动直接产出 + <b>当日活动箱子折合</b> + 开放日一次性推图收益。
-    箱子按<b>开箱当天的费率</b>折算（开主线前用当前收益、开主线后用新基地收益）：固定小时箱按「箱名对应资源 × 小时数」，
-    其中<b>芯尘盒取整（TRUNC）</b>；自选箱按上方下拉选的资源折算（挑战者成长宝箱跟随表单里的「挑战者箱资源选择」，自动 ⇒ 芯尘）。
-    升级消耗、开箱本身的「存量消耗」都不扣减（账单是「进项」，不是余额表）；月卡箱已在计算器的开放日箱量里，不在这里重复计。
+    账单只统计两件事：
+    ① 每天新到账的<b>基础自然收益</b>（信用点 / 战斗数据辑 / 红球）= 基地每小时产出 × 24 + 当日活动<b>直接给</b>的资源 + 开放日一次性推图收益；
+    ② 每天<b>收到的箱子个数</b>（固定小时箱 + 自选箱），<b>只数个数、不折算资源</b>。
+    箱子里面的资源要自己开箱才会到账、开哪个还看你的选择，所以账单不替它估算；箱子明细可以把鼠标停在数字上看。
+    升级消耗、开箱本身的存量消耗都不扣减（账单是「进项」，不是余额表）。
   </p>
 </div>
 
 <script src="js/core.js?v=20260917c"></script>
 <script src="js/events.js?v=20261012a"></script>
-<script src="js/ledger.js?v=20261019d"></script>
+<script src="js/ledger.js?v=20261019e"></script>
 <script>
 (function () {
   "use strict";
   var C = window.NikkeCore, L = window.NikkeLedger, EV = window.NikkeEvents;
   var FORM_KEY = "nikke_planner_form_v1";
-  var PICK_KEY = "nikke_ledger_boxpick";     // 折算目标：跨次记住；周几筛选不记住（重开默认看全部）
   var ICON = { credit: "assets/res_credit.webp", battle_data: "assets/res_battle.webp", core_dust: "assets/res_dust.webp" };
   var led = null, slice = null;
-  var state = { wd: -1, pick: "core_dust" };
+  var state = { wd: -1 };          // 周几筛选不记住（重开默认看全部）
 
   function $(id) { return document.getElementById(id); }
   function fmtNum(v) {
@@ -229,14 +220,6 @@ table.wdt tbody tr:last-child td{border-bottom:none}
   function readJSON(key) {
     try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; }
   }
-  function readPick() {
-    try {
-      var v = localStorage.getItem(PICK_KEY);
-      if (v && L.SEL_PICKS.indexOf(v) >= 0) return v;
-    } catch (e) { /* 隐私模式：用默认 */ }
-    return "core_dust";
-  }
-  function savePick(v) { try { localStorage.setItem(PICK_KEY, v); } catch (e) { /* 静默 */ } }
   function stamp(ms) {
     var d = new Date(ms || Date.now());
     if (isNaN(d.getTime())) return "";
@@ -280,21 +263,6 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     return led.rows.filter(function (r) { return r.wd === state.wd; });
   }
 
-  /* 一行里「其中箱子」的小字：box > 0 才出 */
-  function boxSub(row, r) {
-    var v = (row.box && row.box[r]) || 0;
-    if (v <= 0) return "";
-    return '<span class="s">箱 +' + fmtNum(v) + "</span>";
-  }
-
-  /* 箱子明细（悬浮提示）：8h芯尘盒×3 · 方舟官方补给物资Ⅰ×12 */
-  function boxTitle(row) {
-    if (!row.boxItems || !row.boxItems.length) return "";
-    return row.boxItems.map(function (it) {
-      return (it.kind === "fixed" ? (it.hours + "h") : "") + it.name + " ×" + it.count;
-    }).join(" · ");
-  }
-
   function renderChips(org) {
     var all = '<button class="chip' + (state.wd < 0 ? " on" : "") + '" data-wd="-1">全部 <b>' + led.days + "</b></button>";
     org.forEach(function (g) {
@@ -311,8 +279,6 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     led = null;
     $("empty").classList.remove("show");
     showWarn("");
-    state.pick = readPick();
-    $("selBoxPick").value = state.pick;
 
     if (!slice) {
       $("srcChip").textContent = "尚未生成";
@@ -322,8 +288,8 @@ table.wdt tbody tr:last-child td{border-bottom:none}
       return;
     }
 
-    led = L.build(slice, { boxPick: state.pick });
-    // 折算目标上次选的那个周几可能已经不在区间里 → 回落「全部」
+    led = L.build(slice);
+    // 上次选的那个周几可能已经不在区间里 → 回落「全部」
     if (state.wd >= 0 && !led.rows.some(function (r) { return r.wd === state.wd; })) state.wd = -1;
 
     $("srcChip").textContent = "数据来源：上次计算 " + (slice.computed_at ? stamp(slice.computed_at) : "（时间未知）");
@@ -335,10 +301,6 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     if (led.ok && led.assumed) {
       warns.push("未填写「新主线开放日」，暂按未来 <b>" + L.ASSUME_DAYS + "</b> 天预览；"
         + "填上开放日后账单会自动延到开放日。");
-    }
-    if (led.ok && led.boxUndef > 0) {
-      warns.push("有 <b>" + led.boxUndef + "</b> 个自选箱缺少箱子定义（旧版快照没有这一项），只记了个数、没有折算金额；"
-        + "回计算器重算一次即可补上。");
     }
     showWarn(warns.join("<br>"));
 
@@ -364,42 +326,45 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     renderChips(org);
     $("bar").style.display = "";
 
-    /* ---- 汇总卡（日均按当前筛选重算） ---- */
+    /* ---- 汇总卡（日均按当前筛选重算）：3 张基础自然收益 + 1 张箱子 ---- */
     var cards = "";
     C.RESOURCES.forEach(function (r) {
       var ico = ICON[r] ? '<img alt="" src="' + ICON[r] + '">' : "";
       cards += '<div class="lg-card">'
         + '<div class="lc-top">' + ico + "<span>" + esc(C.RESOURCE_LABELS[r] || r)
         + " · " + (state.wd < 0 ? "日均" : filtName + "日均") + "</span></div>"
-        + '<div class="lc-big">' + fmtNum(a.avgAll[r]) + "</div>"
-        + '<div class="lc-sub">' + (state.wd < 0 ? "区间合计 " : "该周几合计 ") + fmtNum(a.allTotals[r])
-        + " · <i>箱 " + fmtNum(a.boxTotals[r]) + "</i></div>"
+        + '<div class="lc-big">' + fmtNum(a.avg[r]) + "</div>"
+        + '<div class="lc-sub">' + (state.wd < 0 ? "区间合计 " : "该周几合计 ") + fmtNum(a.totals[r]) + "</div>"
         + "</div>";
     });
+    cards += '<div class="lg-card boxc">'
+      + '<div class="lc-top"><span>箱子 · ' + (state.wd < 0 ? "日均" : filtName + "日均") + "</span></div>"
+      + '<div class="lc-big">' + fmtNum(a.boxAvg) + '<span class="unit">个</span></div>'
+      + '<div class="lc-sub">合计 ' + a.boxTotal + " 个 · " + a.days + " 天里 " + a.boxDays + " 天有箱</div>"
+      + "</div>";
     $("cards").innerHTML = cards;
 
-    /* ---- 明细 ---- */
+    /* ---- 明细（三资源 = 基础自然收益；箱数单独一列，不折算） ---- */
     var html = "";
     rows.forEach(function (row) {
       var tag = row.isOpen ? '<span class="tag open">开放日</span>' : "";
       if (row.hasAct) tag += '<span class="tag act">活动</span>';
-      if (row.hasBox) tag += '<span class="tag box">箱</span>';
       if (!tag) tag = '<span class="tag base">基地</span>';
-      var bt = boxTitle(row);
+      var bt = L.boxText(row.boxItems);
       html += "<tr" + (row.isOpen ? ' class="is-open"' : "") + ">"
         + '<td><span class="d">' + row.date.slice(5) + '</span><span class="wd">' + row.wdn + "</span></td>"
-        + "<td>" + fmtNum(row.all.credit) + boxSub(row, "credit") + "</td>"
-        + "<td>" + fmtNum(row.all.battle_data) + boxSub(row, "battle_data") + "</td>"
-        + "<td>" + fmtNum(row.all.core_dust) + boxSub(row, "core_dust") + "</td>"
+        + "<td>" + fmtNum(row.res.credit) + "</td>"
+        + "<td>" + fmtNum(row.res.battle_data) + "</td>"
+        + "<td>" + fmtNum(row.res.core_dust) + "</td>"
         + '<td><span class="bx' + (row.boxCount ? "" : " zero") + '"' + (bt ? ' title="' + esc(bt) + '"' : "")
         + ">" + (row.boxCount || 0) + "</span></td>"
         + "<td>" + tag + "</td></tr>";
     });
     html += '<tr class="total"><td>合计</td>'
-      + "<td>" + fmtNum(a.allTotals.credit) + (a.boxTotals.credit > 0 ? '<span class="s">箱 +' + fmtNum(a.boxTotals.credit) + "</span>" : "") + "</td>"
-      + "<td>" + fmtNum(a.allTotals.battle_data) + (a.boxTotals.battle_data > 0 ? '<span class="s">箱 +' + fmtNum(a.boxTotals.battle_data) + "</span>" : "") + "</td>"
-      + "<td>" + fmtNum(a.allTotals.core_dust) + (a.boxTotals.core_dust > 0 ? '<span class="s">箱 +' + fmtNum(a.boxTotals.core_dust) + "</span>" : "") + "</td>"
-      + "<td>" + a.boxCount + "</td>"
+      + "<td>" + fmtNum(a.totals.credit) + "</td>"
+      + "<td>" + fmtNum(a.totals.battle_data) + "</td>"
+      + "<td>" + fmtNum(a.totals.core_dust) + "</td>"
+      + "<td>" + a.boxTotal + "</td>"
       + '<td><span class="wd">' + a.days + " 天</span></td></tr>";
     $("tbody").innerHTML = html;
     $("tableWrap").style.display = "";
@@ -411,10 +376,10 @@ table.wdt tbody tr:last-child td{border-bottom:none}
       h2 += "<tr" + (cls ? ' class="' + cls + '"' : "") + ' data-wd="' + g.wd + '">'
         + "<td>" + g.name + (g.days === 0 ? '<span class="nt">无</span>' : "") + "</td>"
         + "<td>" + g.days + "</td>"
-        + "<td>" + fmtNum(g.avgAll.credit) + "</td>"
-        + "<td>" + fmtNum(g.avgAll.battle_data) + "</td>"
-        + "<td>" + fmtNum(g.avgAll.core_dust) + "</td>"
-        + "<td>" + g.boxCount + "</td></tr>";
+        + "<td>" + fmtNum(g.avg.credit) + "</td>"
+        + "<td>" + fmtNum(g.avg.battle_data) + "</td>"
+        + "<td>" + fmtNum(g.avg.core_dust) + "</td>"
+        + "<td>" + (g.days ? fmtNum(g.boxAvg) : "0") + "</td></tr>";
     });
     $("wdBody").innerHTML = h2;
     $("wdWrap").style.display = "";
@@ -443,13 +408,6 @@ table.wdt tbody tr:last-child td{border-bottom:none}
   $("btnGo").addEventListener("click", goPlanner);
   $("btnGo2").addEventListener("click", goPlanner);
   $("btnReload").addEventListener("click", render);
-  $("selBoxPick").addEventListener("change", function () {
-    var v = this.value;
-    if (L.SEL_PICKS.indexOf(v) < 0) return;
-    state.pick = v;
-    savePick(v);
-    render();
-  });
   $("chips").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest(".chip") : null;
     if (!b || b.disabled) return;
