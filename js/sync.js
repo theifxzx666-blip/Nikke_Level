@@ -132,43 +132,66 @@
       for (var i = 0; i < arguments.length; i++) if (low.indexOf(arguments[i]) >= 0) return true;
       return false;
     }
+    /* 每条都带一个固定编号：错误条上显示，玩家报编号即可定位；
+       同时作为上报的分类键（字典见 js/errlog.js 的 CODES）。
+       raw 保留 Supabase 英文原文，只进上报、不给玩家看。 */
+    function R(ec, text, o) {
+      var r = o || {};
+      r.text = text; r.code = ec; r.raw = msg;
+      return r;
+    }
     if (code === "invalid_credentials" || hit("invalid login credentials", "invalid credentials")) {
-      return { text: "邮箱或密码不对。如果确认邮箱没敲错，也可能是这个邮箱当初注册到一半、没有完成确认 —— 点下面的按钮重发确认信试试。", resend: true };
+      return R("E2001", "邮箱或密码不对。如果确认邮箱没敲错，也可能是这个邮箱当初注册到一半、没有完成确认 —— 点下面的按钮重发确认信试试。", { resend: true });
     }
     if (code === "email_not_confirmed" || hit("email not confirmed", "not confirmed")) {
-      return { text: "这个邮箱还没完成确认，所以暂时不能登录。点下面的按钮重发一封确认信，点开邮件里的链接后再回来登录。", resend: true };
+      return R("E2002", "这个邮箱还没完成确认，所以暂时不能登录。点下面的按钮重发一封确认信，点开邮件里的链接后再回来登录。", { resend: true });
     }
     if (code === "user_already_exists" || code === "email_exists" ||
         hit("already registered", "already been registered", "user already exists")) {
-      return { text: "这个邮箱已经注册过了，直接用同一个密码登录即可（切到左边的「登录」）。", resend: false };
+      return R("E2003", "这个邮箱已经注册过了，直接用同一个密码登录即可（切到左边的「登录」）。");
     }
     if (code === "weak_password" || hit("should be at least", "password is too short", "password should")) {
-      return { text: "密码太短了，至少要 6 位。建议 8 位以上，字母和数字混着来。", resend: false };
+      return R("E2004", "密码太短了，至少要 6 位。建议 8 位以上，字母和数字混着来。");
     }
     if (code === "validation_failed" || code === "email_address_invalid" ||
         hit("invalid format", "unable to validate email", "invalid email")) {
-      return { text: "邮箱格式不对。检查一下有没有多打空格，或者漏掉 @ 后面那一段。", resend: false };
+      return R("E2005", "邮箱格式不对。检查一下有没有多打空格，或者漏掉 @ 后面那一段。");
     }
     if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit" ||
         hit("rate limit", "too many requests", "only request this after")) {
-      return { text: "操作太频繁，被服务器限流了。等 1 小时再试。如果每次注册都这样，多半是站点的发信服务配额用完了，请把这条提示发给作者。", resend: false };
+      return R("E2006", "操作太频繁，被服务器限流了。等 1 小时再试。如果每次注册都这样，多半是站点的发信服务配额用完了，请把这条提示发给作者。");
     }
     if (code === "signup_disabled" || hit("signups not allowed", "signup is disabled")) {
-      return { text: "站点当前关闭了新用户注册，请联系作者。", resend: false };
+      return R("E2007", "站点当前关闭了新用户注册，请联系作者。");
     }
     if (hit("error sending", "sending confirmation", "sending recovery", "smtp")) {
-      return { text: "邮件发不出去 —— 这是站点发信服务没配好，不是你操作的问题。请把这条提示发给作者，让作者手动帮你确认账号。", resend: false };
+      return R("E2008", "邮件发不出去 —— 这是站点发信服务没配好，不是你操作的问题。请把这条提示发给作者，让作者手动帮你确认账号。");
     }
     if (code === "timeout" || hit("timeout", "timed out")) {
-      return { text: "等了 15 秒云端都没回应：你的网络到不了这台境外服务器，不是你操作错了。可以试 ① 手机流量和 WiFi 互切一下；② 挂上代理 / VPN 再登录；③ 点下面的「连接自检」看断在哪一步。本地数据不会丢，连不上只影响云端同步。", resend: false, net: true };
+      return R("E1001", "等了 15 秒云端都没回应：你的网络到不了这台境外服务器，不是你操作错了。可以试 ① 手机流量和 WiFi 互切一下；② 挂上代理 / VPN 再登录；③ 点下面的「连接自检」看断在哪一步。本地数据不会丢，连不上只影响云端同步。", { net: true });
     }
     if (code === "unreachable" || hit("failed to fetch", "networkerror", "network request failed", "load failed", "fetch failed", "connection closed")) {
-      return { text: "浏览器没能连上云端服务器。注意这和「网页能打开」并不矛盾：网页和数据库走的是两条不同的境外线路，国内部分网络只掐后一条。请挂代理 / VPN 后重试，或换个网络（流量 ↔ WiFi）。点下面的「连接自检」可以看具体断在哪。本地数据不会丢。", resend: false, net: true };
+      return R("E1002", "浏览器没能连上云端服务器。注意这和「网页能打开」并不矛盾：网页和数据库走的是两条不同的境外线路，国内部分网络只掐后一条。请挂代理 / VPN 后重试，或换个网络（流量 ↔ WiFi）。点下面的「连接自检」可以看具体断在哪。本地数据不会丢。", { net: true });
     }
     if (hit("database error")) {
-      return { text: "云端数据库报错，通常过一会儿重试就好；如果一直出现请联系作者。", resend: false };
+      return R("E2009", "云端数据库报错，通常过一会儿重试就好；如果一直出现请联系作者。");
     }
-    return { text: "操作失败：" + msg, resend: false };
+    return R("E9000", "操作失败：" + msg);
+  }
+
+  /* ---------- 上报（R55） ----------
+     一步到位地把「编号 + 原始报错 + 场景 + 网络状态」交给 js/errlog.js。
+     errlog.js 没加载（老缓存、资源被拦）时这里静默跳过，绝不影响登录流程。 */
+  function report(kind, code, context, message, detail) {
+    try {
+      if (window.NikkeErrLog && window.NikkeErrLog.track) {
+        window.NikkeErrLog.track(kind, code, {
+          context: context,
+          message: message,
+          detail: detail || null
+        });
+      }
+    } catch (e) {}
   }
 
   /* ---------- 连接自检（R54） ----------
@@ -217,6 +240,12 @@
     if (box) box.innerHTML = "";
     var r = await netSelfTest();
     var v = netVerdict(r);
+    /* 自检失败是最有价值的一条数据：说明这台设备此刻真的到不了云端。
+       成功了不用报（那是正常状态，报了只会淹没真正的问题）。 */
+    if (!r.reached) {
+      report("selftest", r.stage === "timeout" ? "E1001" : "E1002", "selftest",
+        "self-test failed: " + (r.msg || r.stage), { ms: r.ms, online: r.online });
+    }
     if (box) {
       box.innerHTML = '<div class="nk-netout ' + v.cls + '">' + esc(v.text)
         + '<div class="nk-nettip">检测目标 ' + esc(r.url) + " · 耗时 " + r.ms + " 毫秒"
@@ -260,7 +289,8 @@
       ".nk-tab{display:flex;gap:6px;margin-bottom:12px}" +
       ".nk-tab button{flex:1;padding:8px 0;border:1px solid #dde3e0;background:#fbfdfc;border-radius:8px;cursor:pointer;font:600 13px 'MaiYuan','Microsoft YaHei',sans-serif;color:#556}" +
       ".nk-tab button.on{background:#1d9e75;border-color:#1d9e75;color:#fff}" +
-      ".nk-errbar{background:#fdeaea;border:1px solid #f2c1c1;color:#b3312d;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:8px}" +
+      ".nk-errbar{background:#fdeaea;border:1px solid #f2c1c1;color:#b3312d;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:8px;position:relative;padding-right:52px}" +
+      ".nk-ec{position:absolute;right:9px;top:8px;font-style:normal;font-size:10.5px;font-weight:600;color:#b3312d;opacity:.55;letter-spacing:.3px;cursor:help}" +
       ".nk-okbar{background:#e9f7f1;border:1px solid #b6e2d1;color:#177a59;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:8px;line-height:1.6}" +
       ".nk-okbar b{word-break:break-all}" +
       ".nk-link{background:none;border:none;padding:0;color:#178a64;font:12px inherit;cursor:pointer;text-decoration:underline}" +
@@ -346,7 +376,11 @@
   var draftEmail = "";         // 切换 登录/注册 时保留已输入的邮箱，别让玩家重敲
   var flashMsg = "";           // 重新渲染后仍要显示的一句话（渲染时消费后清空）
 
-  function errBar(s) { return '<div class="nk-errbar">' + esc(s) + "</div>"; }
+  function errBar(s, code) {
+    return '<div class="nk-errbar">' + esc(s)
+      + (code ? '<i class="nk-ec" title="错误编号，报给作者可快速定位">' + esc(code) + "</i>" : "")
+      + "</div>";
+  }
   function okBar(s) { return '<div class="nk-okbar">' + s + "</div>"; }
 
   function renderAuth() {
@@ -434,7 +468,9 @@
       if (r.error) throw r.error;
       if (box) box.innerHTML = okBar("已重新发送，请等 1–2 分钟再查收（含垃圾邮件箱）。");
     } catch (e) {
-      if (box) box.innerHTML = errBar(explainAuthError(e).text);
+      var ex = explainAuthError(e);
+      if (box) box.innerHTML = errBar(ex.text, ex.code);
+      report("auth", ex.code, "resend", ex.raw, { net: !!ex.net });
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = "重发确认邮件"; }
     }
@@ -617,7 +653,7 @@
     var pass = $inner.querySelector("#nkPass").value;
     var errEl = $inner.querySelector("#nkAuthErr");
     draftEmail = email;
-    function setErr(s) { if (errEl) errEl.innerHTML = s ? errBar(s) : ""; }
+    function setErr(s, code) { if (errEl) errEl.innerHTML = s ? errBar(s, code) : ""; }
     setErr("");
     if (!email) { setErr("请输入邮箱"); return; }
     if (!isEmail(email)) { setErr("邮箱格式不太对，检查一下有没有多打空格、或漏掉 @ 后面那一段。"); return; }
@@ -630,7 +666,8 @@
     }
     var go = $inner.querySelector("#nkAuthGo");
     if (!ensureClient()) {
-      setErr("云端组件没加载出来（页面资源被拦截、或浏览器版本太旧）。先刷新页面重试；还是不行就换最新版 Chrome / Edge，或关掉广告拦截插件再试。");
+      setErr("云端组件没加载出来（页面资源被拦截、或浏览器版本太旧）。先刷新页面重试；还是不行就换最新版 Chrome / Edge，或关掉广告拦截插件再试。", "E1004");
+      report("net", "E1004", mode, "ensureClient failed: sdk=" + !!sdk + " configured=" + configured());
       return;
     }
     if (go) { go.disabled = true; go.textContent = mode === "login" ? "登录中…" : "注册中…"; }
@@ -672,7 +709,10 @@
       }
     } catch (e) {
       var ex = explainAuthError(e);
-      setErr(ex.text);
+      setErr(ex.text, ex.code);
+      /* 上报云端：带上编号、原始报错、操作场景与网络状态。
+         连不上时上报也发不出去 —— errlog 会把它留在本地队列，等恢复后补发。 */
+      report("auth", ex.code, mode, ex.raw, { net: !!ex.net });
       // 能靠「重发确认信」救的情况，直接在错误条下面给入口，别让玩家自己找
       if (ex.resend && errEl) {
         var b = document.createElement("button");
