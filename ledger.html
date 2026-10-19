@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIKKE · 收益账单</title>
+<style>
+@font-face{font-family:'MaiYuan';src:url('assets/fonts/maiyuan-subset.woff2?v=20261016b') format('woff2'),url('assets/fonts/maiyuan-subset.ttf?v=20261016b') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#1d9e75;--primary-dark:#0f6e56;--bg:#eef3f1;--card:#fff;--bg3:#eef2f0;
+  --border:#dde3e0;--text:#222;--text2:#667;--muted:#8a9791;--gold:#b8860b;--red:#b3283a;
+  --radius:14px;--shadow:0 6px 16px rgba(0,0,0,.07);
+  --font:'MaiYuan','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);padding:16px;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer}
+.app{width:min(1480px,100%);margin:0 auto}
+
+/* ---------- 头部 ---------- */
+.lg-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.lg-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:19px;font-weight:700;letter-spacing:.3px}
+.lg-sub{font-size:12px;font-weight:400;color:var(--muted)}
+.lg-acts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;transition:.18s}
+.btn:hover{border-color:var(--primary);color:var(--primary-dark);background:#f4faf7}
+.btn.primary{border:1px solid var(--primary);background:linear-gradient(180deg,var(--primary),var(--primary-dark));color:#fff;font-weight:650;box-shadow:0 6px 16px rgba(29,158,117,.22)}
+.btn.primary:hover{filter:brightness(1.06);color:#fff}
+
+/* ---------- 提示条 ---------- */
+.warn{display:none;margin-bottom:10px;padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.6;
+  background:rgba(184,134,11,.09);border:1px solid rgba(184,134,11,.3);color:#7d5c10}
+.warn.show{display:block}
+.warn b{color:#6b4e0c}
+
+/* ---------- 区间 ---------- */
+.lg-range{font-size:13.5px;color:var(--text);margin-bottom:12px}
+.lg-range b{color:var(--primary-dark)}
+.lg-range .dim{color:var(--muted);font-weight:400}
+
+/* ---------- 汇总卡 ---------- */
+.lg-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.lg-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow);min-width:0}
+.lg-card:hover{border-color:var(--primary)}
+.lc-top{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.lc-top img{width:18px;height:18px;object-fit:contain;flex:0 0 auto}
+.lc-big{font-size:24px;font-weight:700;color:var(--primary-dark);line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
+.lc-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+/* ---------- 明细表 ---------- */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;max-height:none}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:560px}
+thead th{position:sticky;top:0;z-index:2;background:#e9efec;color:var(--text2);text-align:right;font-size:10.5px;letter-spacing:.4px;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+thead th:first-child{text-align:left}
+thead th:last-child{text-align:center}
+tbody td{padding:9px 12px;border-bottom:1px solid rgba(221,227,224,.7);color:#3a4440;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody td:first-child{text-align:left}
+tbody td:last-child{text-align:center}
+tbody tr:hover td{background:rgba(29,158,117,.045)}
+tbody tr.is-open td{background:rgba(47,125,209,.06)}
+tbody tr.is-open:hover td{background:rgba(47,125,209,.1)}
+tbody tr.total td{background:#f4f8f6;font-weight:700;color:var(--text);border-top:1px solid var(--border)}
+.d{font-weight:650;color:var(--text)}
+.wd{color:var(--muted);font-size:11px;margin-left:4px}
+.tag{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10.5px;line-height:1.7;border:1px solid transparent}
+.tag.base{background:var(--bg3);color:var(--text2);border-color:var(--border)}
+.tag.act{background:rgba(184,134,11,.1);color:#9a6d1a;border-color:rgba(184,134,11,.3);margin-left:4px}
+.tag.open{background:rgba(47,125,209,.1);color:#2f7dd1;border-color:rgba(47,125,209,.3)}
+
+/* ---------- 空状态 / 说明 ---------- */
+.lg-empty{display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center}
+.lg-empty.show{display:block}
+.lg-empty .ico{font-size:34px;display:block;margin-bottom:10px;opacity:.75}
+.lg-empty p{color:var(--text2);font-size:13px;line-height:1.9}
+.lg-empty .btn{margin-top:16px}
+.lg-note{margin-top:12px;font-size:11.5px;line-height:1.85;color:var(--muted)}
+.lg-note b{color:var(--text2)}
+
+@media (max-width:720px){
+  body{padding:12px}
+  .lg-cards{grid-template-columns:1fr;gap:9px}
+  .lc-big{font-size:20px}
+  .lg-title{font-size:17px}
+  .lg-acts{width:100%}
+  .lg-acts .btn{flex:1}
+  /* 五列在 390px 上要全部露出（隐藏「信用点」会让账单失真）→ 只压缩内边距与字号；
+     万一更窄，table-wrap 本身可横向滚动兜底 */
+  table{min-width:0;font-size:12px}
+  thead th{padding:9px 8px}
+  tbody td{padding:8px}
+  .tag{padding:1px 6px;font-size:10px}
+  .wd{margin-left:3px;font-size:10.5px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="lg-head">
+    <div class="lg-title">收益账单<span class="lg-sub" id="srcChip">读取中…</span></div>
+    <div class="lg-acts">
+      <button id="btnGo" class="btn">去计算器</button>
+      <button id="btnReload" class="btn">刷新</button>
+      <button id="btnCsv" class="btn primary">导出 CSV</button>
+    </div>
+  </div>
+
+  <div class="warn" id="warn"></div>
+  <div class="lg-range" id="range"></div>
+  <div class="lg-cards" id="cards"></div>
+
+  <div class="table-wrap" id="tableWrap" style="display:none">
+    <table>
+      <thead><tr><th>日期</th><th>信用点</th><th>战斗数据辑</th><th>红球</th><th>来源</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="lg-empty" id="empty">
+    <span class="ico">🧾</span>
+    <p id="emptyText">还没有可统计的账单数据。</p>
+    <button id="btnGo2" class="btn primary">去计算器算一次</button>
+  </div>
+
+  <p class="lg-note" id="note" style="display:none">
+    账单只统计每天<b>新到账</b>的资源：基地每小时产出 × 24 + 当日活动产出 + 开放日一次性推图收益。
+    开箱收益不在此列（箱子是存量转化，不是新增产出）；升级消耗也不扣减（账单是「进项」，不是余额表）。
+  </p>
+</div>
+
+<script src="js/core.js?v=20260917c"></script>
+<script src="js/events.js?v=20261012a"></script>
+<script src="js/ledger.js?v=20261019b"></script>
+<script>
+(function () {
+  "use strict";
+  var C = window.NikkeCore, L = window.NikkeLedger, EV = window.NikkeEvents;
+  var FORM_KEY = "nikke_planner_form_v1";
+  var ICON = { credit: "assets/res_credit.webp", battle_data: "assets/res_battle.webp", core_dust: "assets/res_dust.webp" };
+  var led = null, slice = null;
+
+  function $(id) { return document.getElementById(id); }
+  function fmtNum(v) {
+    if (v === null || v === undefined || isNaN(v)) return "-";
+    var a = Math.abs(v);
+    if (a >= 1e9) return (v / 1e9).toFixed(2) + "B";
+    if (a >= 1e6) return (v / 1e6).toFixed(1) + "M";
+    if (a >= 1e4) return (v / 1e3).toFixed(0) + "K";
+    return v.toFixed(v % 1 ? 1 : 0);
+  }
+  function esc(s) {
+    return String(s === null || s === undefined ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function readJSON(key) {
+    try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; }
+  }
+  function stamp(ms) {
+    var d = new Date(ms || Date.now());
+    if (isNaN(d.getTime())) return "";
+    var p = function (n) { return n < 10 ? "0" + n : "" + n; };
+    return (d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function goPlanner() {
+    try {
+      if (window.parent && window.parent !== window && window.parent.__nikkeShell) {
+        window.parent.__nikkeShell.switchTo("planner");
+        return;
+      }
+    } catch (e) { /* 跨域/独立打开：退回跳转 */ }
+    location.href = "index.html#planner";
+  }
+
+  function showWarn(html) {
+    var w = $("warn");
+    if (!html) { w.className = "warn"; w.innerHTML = ""; return; }
+    w.className = "warn show";
+    w.innerHTML = html;
+  }
+
+  function empty(text) {
+    $("range").innerHTML = "";
+    $("cards").innerHTML = "";
+    $("tbody").innerHTML = "";
+    $("tableWrap").style.display = "none";
+    $("note").style.display = "none";
+    $("emptyText").textContent = text;
+    $("empty").classList.add("show");
+  }
+
+  function render() {
+    var form = readJSON(FORM_KEY);
+    slice = readJSON(L.SNAP_KEY);
+    $("empty").classList.remove("show");
+    showWarn("");
+
+    if (!slice) {
+      $("srcChip").textContent = "尚未生成";
+      empty(form
+        ? "已经读到本机保存的表单，但还没有计算记录 —— 回计算器点一次「开始计算」，这里就会生成账单。"
+        : "还没找到计算器的表单数据 —— 先去资源规划计算器填一次表，点「开始计算」即可。");
+      return;
+    }
+
+    led = L.build(slice);
+    $("srcChip").textContent = "数据来源：上次计算 " + (slice.computed_at ? stamp(slice.computed_at) : "（时间未知）");
+
+    // 表单在上次计算之后又改过 → 只提示，不擅自改口径
+    if (L.formChanged(slice, form)) {
+      showWarn("表单在上次计算之后又改过，账单仍按<b>上次计算</b>的数据生成；回计算器重算一次即可更新。");
+    }
+
+    if (!led.ok) {
+      empty(led.reason || "暂无可统计的账单数据。");
+      return;
+    }
+    if (led.assumed) {
+      showWarn("未填写「新主线开放日」，暂按未来 <b>" + L.ASSUME_DAYS + "</b> 天预览；"
+        + "填上开放日后账单会自动延到开放日。");
+    }
+
+    // 区间
+    $("range").innerHTML = "统计区间 <b>" + led.start + "</b> → <b>" + led.end + "</b>"
+      + " <span class=\"dim\">· 共 " + led.days + " 天 · 每日基地产出按 "
+      + (led.hasFutureRate ? "开放日起改用「新基地收益」" : "当前基地收益") + "折算</span>";
+
+    // 汇总卡
+    var cards = "";
+    C.RESOURCES.forEach(function (r) {
+      var ico = ICON[r] ? '<img alt="" src="' + ICON[r] + '">' : "";
+      cards += '<div class="lg-card">'
+        + '<div class="lc-top">' + ico + '<span>' + esc(C.RESOURCE_LABELS[r] || r) + ' · 日均</span></div>'
+        + '<div class="lc-big">' + fmtNum(led.avg[r]) + '</div>'
+        + '<div class="lc-sub">区间合计 ' + fmtNum(led.totals[r]) + '</div>'
+        + '</div>';
+    });
+    $("cards").innerHTML = cards;
+
+    // 明细
+    var html = "";
+    led.rows.forEach(function (row) {
+      var tag = row.isOpen ? '<span class="tag open">开放日</span>' : "";
+      if (row.hasAct) tag += '<span class="tag act">活动</span>';
+      if (!tag) tag = '<span class="tag base">基地</span>';
+      html += "<tr" + (row.isOpen ? ' class="is-open"' : "") + ">"
+        + '<td><span class="d">' + row.date.slice(5) + '</span><span class="wd">' + L.weekdayCN(row.date) + "</span></td>"
+        + "<td>" + fmtNum(row.res.credit) + "</td>"
+        + "<td>" + fmtNum(row.res.battle_data) + "</td>"
+        + "<td>" + fmtNum(row.res.core_dust) + "</td>"
+        + "<td>" + tag + "</td></tr>";
+    });
+    html += '<tr class="total"><td>合计</td>'
+      + "<td>" + fmtNum(led.totals.credit) + "</td>"
+      + "<td>" + fmtNum(led.totals.battle_data) + "</td>"
+      + "<td>" + fmtNum(led.totals.core_dust) + "</td>"
+      + '<td><span class="wd">' + led.days + " 天</span></td></tr>";
+    $("tbody").innerHTML = html;
+    $("tableWrap").style.display = "";
+    $("note").style.display = "";
+  }
+
+  function download(name, content) {
+    var blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+  }
+
+  $("btnGo").addEventListener("click", goPlanner);
+  $("btnGo2").addEventListener("click", goPlanner);
+  $("btnReload").addEventListener("click", render);
+  $("btnCsv").addEventListener("click", function () {
+    if (!led || !led.ok) return;
+    download("收益账单_" + led.start + "_" + led.end + ".csv", L.csv(led));
+  });
+
+  // 活动模板：与计算器同源（data/event_templates.json），拿不到就按「无活动」渲染，不阻塞页面
+  fetch("data/event_templates.json?v=20261012a", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { EV.setTemplates(d); })
+    .catch(function () { EV.setTemplates(null); })
+    .then(render);
+})();
+</script>
+</body>
+</html>

@@ -21,6 +21,22 @@
       }
     },
     {
+      "id": "ledger",
+      "name": "收益账单",
+      "icon": "assets/nav_ledger.svg",
+      "type": "web",
+      "entry": "ledger.html?v=20261019b",
+      "viewId": "appLedger",
+      "frameId": "ledgerFrame",
+      "version": "1.0.0",
+      "order": 15,
+      "enabled": true,
+      "sync": {
+        "enabled": false,
+        "storage": "none"
+      }
+    },
+    {
       "id": "mod_stats",
       "name": "定制模组统计",
       "icon": "assets/nav_modstats.webp",

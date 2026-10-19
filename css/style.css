@@ -213,51 +213,48 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 .raw-toolbar { display: flex; justify-content: flex-end; }
 .raw-toolbar .btn-export { margin-left: 0; }
 
-/* ===== 收益账单（结果页 tabLedger） ===== */
-.ledger-head { margin: 0 0 10px; }
-.ledger-range { font-size: 14px; color: var(--text); }
-.ledger-warn {
-  margin-top: 6px; font-size: 12px; line-height: 1.5;
-  color: #8a5a00; background: #fff8e6; border: 1px solid #f0e0b8;
-  border-radius: 8px; padding: 6px 10px;
-}
-.ledger-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 12px; }
-.ledger-card { background: #f7faf9; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; min-width: 0; }
-.lc-top { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; }
-.lc-big { font-size: 22px; font-weight: 700; color: var(--primary-dark); line-height: 1.25; margin-top: 2px; }
-.lc-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.ledger-table td:first-child { white-space: nowrap; }
-.ledger-wd { color: var(--muted); font-size: 11px; }
-.ledger-tag {
-  display: inline-block; font-size: 11px; line-height: 1.6; padding: 0 6px;
-  border-radius: 999px; margin-right: 4px; white-space: nowrap;
-}
-.tag-base { background: #eef1f0; color: #556; }
-.tag-act { background: #fff4e0; color: #8a5a00; }
-.tag-open { background: #e1f5ee; color: var(--primary-dark); }
-.ledger-bar { margin-top: 10px; }
-@media (max-width: 600px) {
-  .ledger-sum { gap: 6px; }
-  .lc-big { font-size: 17px; }
-  .lc-sub { font-size: 10px; }
-  .lc-top { font-size: 11px; }
-}
+/* （收益账单的样式已随功能迁到独立页 ledger.html，见该文件内联 <style>：R47） */
 
 /* （悬浮进度球已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
 
-/* ===== 「开始计算」上方的快捷同步勾选（默认勾选） =====
-   本地保存本来就每次计算都会做（runCalc → saveForm），这个开关只管「顺手推到云端账号」。 */
-.calc-autosync {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  margin: 0 0 12px; font-size: 13px; line-height: 1.35;
-  color: var(--muted); cursor: pointer; user-select: none;
-  -webkit-tap-highlight-color: transparent;
+/* ===== 「开始计算」上方的快捷同步开关（R47：小圆形图标 + 悬停浮出文案） =====
+   本地保存本来就每次计算都会做（runCalc → saveForm），这个开关只管「顺手推到云端账号」。
+   文案不放常驻位置（用户反馈太长、抢视线）→ 只在 hover / 键盘聚焦时浮出。
+   状态由 app.js 的 paintAutoSync() 写到 [data-on] 上，样式只看这个属性。 */
+.as-tog {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; margin: 0 auto 12px;
+  border: 1px solid var(--border); border-radius: 50%;
+  background: #fff; color: var(--muted);
+  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+  transition: color .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
 }
-.calc-autosync input {
-  width: 15px; height: 15px; margin: 0; flex: 0 0 auto;
-  accent-color: var(--primary); cursor: pointer;
+.as-tog:hover { color: var(--primary-dark); border-color: rgba(29, 158, 117, .5); background: #f4faf7; }
+.as-tog[data-on="1"] { color: var(--primary); border-color: rgba(29, 158, 117, .45); background: #eaf6f1; }
+.as-tog[data-on="1"]:hover { box-shadow: 0 0 0 3px rgba(29, 158, 117, .12); }
+.as-tog input {                       /* 原生 checkbox 保留（值与 change 事件都用它），视觉隐藏 */
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  margin: 0; opacity: 0; cursor: pointer;
 }
-.calc-autosync:hover { color: var(--primary-dark); }
+.as-ico { width: 20px; height: 20px; display: block; }
+.as-tog[data-on="0"] .as-ico { opacity: .62; }
+/* 浮出文案（气泡） */
+.as-tip {
+  position: absolute; left: 50%; bottom: calc(100% + 9px);
+  transform: translate(-50%, 4px);
+  padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+  background: #22322c; color: #fff; font-size: 12px; line-height: 1.35;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .2);
+  opacity: 0; pointer-events: none; transition: opacity .16s ease, transform .16s ease;
+  z-index: 6;
+}
+.as-tip::after {
+  content: ""; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: #22322c;
+}
+.as-tog:hover .as-tip,
+.as-tog:focus-within .as-tip { opacity: 1; transform: translate(-50%, 0); }
 
 /* ===== 计算中的加载反馈 =====
    顶部进度条（不确定进度 indeterminate）：横向滑动用 transform 实现，
@@ -662,15 +659,15 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .app-view { display: none; }
 .app-view.active { display: block; }
 
-#appModStats, #appRerollStats, #appCombatPowerBeta, #appAvatarFrame { padding: 8px 20px 60px; margin: 0 auto; max-width: 1480px; }
-#modStatsFrame, #rerollStatsFrame, #combatPowerBetaFrame, #avatarFrame {
+#appModStats, #appRerollStats, #appCombatPowerBeta, #appAvatarFrame, #appLedger { padding: 8px 20px 60px; margin: 0 auto; max-width: 1480px; }
+#modStatsFrame, #rerollStatsFrame, #combatPowerBetaFrame, #avatarFrame, #ledgerFrame {
   width: 100%; height: 480px; min-height: 300px; display: block;
   border: 0; border-radius: 12px; background: #eef3f1; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 @media (max-width: 820px) {
   .app-nav { max-width: 100%; }
   .app-nav-btn { flex: 1 1 auto; }
-  #appModStats, #appRerollStats, #appCombatPowerBeta, #appAvatarFrame { padding: 0 12px 60px; }
+  #appModStats, #appRerollStats, #appCombatPowerBeta, #appAvatarFrame, #appLedger { padding: 0 12px 60px; }
   /* 无 JS 时的兜底：头像预览锁视口高。用 svh（最小视口高）而非 dvh——
      dvh 会随地址栏收放变化，iframe 高度反复跳变正是「容器一直在动」的成因之一 */
   #appAvatarFrame { padding: 0 8px 10px; }

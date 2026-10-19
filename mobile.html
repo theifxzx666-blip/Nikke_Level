@@ -12,8 +12,8 @@
 <link rel="icon" type="image/webp" href="assets/m/favicon.webp">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
-<link rel="stylesheet" href="css/style.css?v=20261019a">
-<link rel="stylesheet" href="css/mobile.css?v=20261019a">
+<link rel="stylesheet" href="css/style.css?v=20261019b">
+<link rel="stylesheet" href="css/mobile.css?v=20261019b">
 </head>
 <body class="m-body">
 
@@ -228,9 +228,10 @@
       </div>
     </fieldset>
 
-    <label class="calc-autosync" title="勾选后每次点「开始计算」都会把当前表单保存到本机并同步到云端账号（未登录时仅保存到本机）">
-      <input type="checkbox" id="chkAutosync" checked>
-      <span>计算后自动保存并同步</span>
+    <label class="as-tog" id="asTog" data-on="1">
+      <input type="checkbox" id="chkAutosync" checked aria-label="计算后自动保存并同步到云端">
+      <svg class="as-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/><path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>
+      <span class="as-tip">已开启：计算后自动保存并同步到云端</span>
     </label>
 
     <button id="btnCalc" class="btn btn-primary btn-big">开始计算</button>
@@ -244,13 +245,11 @@
     <nav class="tabs">
       <button class="tab active" data-tab="tabResult">计算结果</button>
       <button class="tab" data-tab="tabExtra">补充信息</button>
-      <button class="tab" data-tab="tabLedger">收益账单</button>
       <button class="tab" data-tab="tabRaw">原始 JSON</button>
       <button id="btnExportImg" class="btn btn-export">📷 导出图片</button>
     </nav>
     <div id="tabResult" class="tab-panel active"></div>
     <div id="tabExtra" class="tab-panel"></div>
-    <div id="tabLedger" class="tab-panel"></div>
     <div id="tabRaw" class="tab-panel"></div>
   </section>
 </div>
@@ -264,9 +263,10 @@
 <script src="js/outpost.js?v=20260917c"></script>
 <script src="js/boxes.js?v=20261016f"></script>
 <script src="js/scenarios.js?v=20261014c"></script>
+<script src="js/ledger.js?v=20261019b"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261019a"></script>
+<script src="js/app.js?v=20261019b"></script>
 <!-- 顶层功能切换沿用桌面版外壳脚本（tools.json 驱动）；移动版只把导航用 CSS 固定到屏幕底部 -->
 <script src="js/shell.js?v=20261009b"></script>
 <script>

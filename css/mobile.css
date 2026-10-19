@@ -183,14 +183,15 @@ body.m-body.avatar-full .btn-calc-fab { display: none; }
 
 /* （表单填写进度球 + 明细面板已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
 
-/* 「计算后自动保存并同步」勾选：移动端 #btnCalc 隐藏，该行留在表单末尾，做成浅底卡片便于发现 */
-body.m-body .calc-autosync {
-  margin: 2px 0 16px; padding: 10px 12px; border-radius: 10px;
-  background: #f2f8f6; border: 1px solid var(--border); font-size: 13px;
+/* 快捷同步开关（R47 改成小圆形图标）：移动端没有真实 hover，靠 :focus-within 让浮出文案在点按后出现一下；
+   另外点按本身还会走 app.js 的 toast 提示，所以这里只把尺寸放大到手指友好。 */
+body.m-body .as-tog {
+  width: 42px; height: 42px; margin: 2px auto 16px;
+  background: #f2f8f6; border-color: var(--border);
 }
-/* 账单页末尾（表格 + 导出按钮）给吸底「开始计算」让位，避免按钮压住合计行
-   FAB 占 123~174px（见上），故末尾留 190px 让最后一行能滚到按钮之上 */
-body.m-body #tabLedger { padding-bottom: 190px; }
+body.m-body .as-tog[data-on="1"] { background: #e3f4ec; }
+body.m-body .as-ico { width: 22px; height: 22px; }
+body.m-body .as-tip { font-size: 12px; padding: 7px 11px; }
 
 /* 计算中的顶部进度条：移动端顶栏是 sticky top:0，进度条压在它上缘即可（z-index 更高）。 */
 body.m-body .calc-bar { height: 3px; }
@@ -203,19 +204,25 @@ body.m-body.avatar-full .m-top { display: none; }
 /* ---------- 子工具视图（iframe）底部留白 + 顶部安全区 ---------- */
 body.m-body #appModStats,
 body.m-body #appRerollStats,
-body.m-body #appAvatarFrame {
+body.m-body #appAvatarFrame,
+body.m-body #appLedger {
   padding: 8px 10px calc(72px + env(safe-area-inset-bottom, 0px));
   max-width: 720px;
 }
+/* 收益账单子页收尾是「合计行 + 一整段说明」，底部 Tab 是 4 列网格两行（实测 ~115px），
+   72px 会让最后一行压在 Tab 下面 → 该页单独留足空间 */
+body.m-body #appLedger { padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
 /* 子工具模式顶栏被隐藏，容器自己补顶部安全区（刘海 / 状态栏） */
 body.m-body.tool-mode #appModStats,
 body.m-body.tool-mode #appRerollStats,
-body.m-body.avatar-full #appAvatarFrame {
+body.m-body.avatar-full #appAvatarFrame,
+body.m-body.tool-mode #appLedger {
   padding-top: calc(8px + env(safe-area-inset-top, 0px));
 }
 body.m-body #modStatsFrame,
 body.m-body #rerollStatsFrame,
-body.m-body #avatarFrame {
+body.m-body #avatarFrame,
+body.m-body #ledgerFrame {
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
 }

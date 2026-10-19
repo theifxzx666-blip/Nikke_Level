@@ -3,6 +3,7 @@
   "use strict";
   var C = window.NikkeCore, O = window.NikkeOutpost, S = window.NikkeScenarios, B = window.NikkeBoxes;
   var EV = window.NikkeEvents;   // 活动收益（events.js）
+  var LEDGER = window.NikkeLedger;   // 收益账单口径（ledger.js，独立页 ledger.html 共用）
   var LS_KEY = "nikke_planner_form_v1";
   var DEFAULT_FIXED = {
     "芯尘盒": { 24: 30, 12: 26, 8: 7, 4: 1, 2: 315, 1: 1432 },
@@ -207,29 +208,43 @@
     try { localStorage.setItem(LS_KEY, JSON.stringify(state.form)); } catch (e) {}
   }
 
-  /* ---------- 计算后自动保存并同步（「开始计算」上方的快捷同步开关，默认勾选） ----------
+  /* ---------- 计算后自动保存并同步（「开始计算」上方的快捷同步开关，默认开启） ----------
+     R47：由「勾选框 + 常驻长文案」改成一个小圆形图标开关，文案只在悬停/聚焦时浮出。
      「快捷同步」= 每次算完自动把当前表单推到云端账号。
      ⚠ 本地保存不受此开关控制：runCalc() 里一直会 saveForm()，开关只管云端上传这一步。
      ⚠ 未登录时静默跳过（不主动弹同步面板），避免每次算完都被打断。 */
   var AUTOSYNC_KEY = "nikke_calc_autosync";
-  var autoSyncOn = true;                          // 默认勾选
+  var autoSyncOn = true;                          // 默认开启
+  var AS_TIP_ON  = "已开启：计算后自动保存并同步到云端";
+  var AS_TIP_OFF = "已关闭：点一下开启自动保存并同步";
+
+  /* 把状态同步到三个地方：隐藏的原生 checkbox（值）、外层 data-on（样式）、浮出文案（文字） */
+  function paintAutoSync() {
+    var cb = $("chkAutosync");
+    if (cb) cb.checked = autoSyncOn;
+    var tog = $("asTog");
+    if (!tog) return;
+    tog.setAttribute("data-on", autoSyncOn ? "1" : "0");
+    var txt = tog.querySelector(".as-tip");
+    if (txt) txt.textContent = autoSyncOn ? AS_TIP_ON : AS_TIP_OFF;
+  }
 
   function loadAutoSyncPref() {
     try {
       var v = localStorage.getItem(AUTOSYNC_KEY);
-      autoSyncOn = v === null ? true : v === "1"; // 从未选过 → 默认勾选
+      autoSyncOn = v === null ? true : v === "1"; // 从未选过 → 默认开启
     } catch (e) { autoSyncOn = true; }
-    var cb = $("chkAutosync");
-    if (cb) cb.checked = autoSyncOn;
+    paintAutoSync();
   }
 
   function bindAutoSync() {
     var cb = $("chkAutosync");
     if (!cb) return;
-    cb.checked = autoSyncOn;
+    paintAutoSync();
     cb.addEventListener("change", function () {
       autoSyncOn = !!cb.checked;
       try { localStorage.setItem(AUTOSYNC_KEY, autoSyncOn ? "1" : "0"); } catch (e) {}
+      paintAutoSync();
       tip(autoSyncOn ? "已开启：计算后自动同步" : "已关闭：计算后不再同步");
     });
   }
@@ -2203,173 +2218,15 @@
     $("tabRaw").appendChild(pre);
   }
 
-  /* ---------- 收益账单（结果页「收益账单」tab） ----------
-     逐日列出「数据日期次日 → 新主线开放日」每天能拿到多少资源：
-       基地产出（income_per_hour × 24）+ 当日活动产出 + 开放日一次性推图收益
-     ⚠ 纯展示，不参与任何既有计算口径（等待期到账 / 开箱方案 / 配比求解一律不变）。
-     ⚠ 活动逐日产出直接读 EV.schedule(snap).byDate（与引擎同源），禁止另写一套聚合。
-     ⚠ 开箱收益不计入账单：箱子是存量转化，不是新增产出（账单只记「今天新到账多少」）。 */
-  var LEDGER_MAX_DAYS = 400;      // 防御：开放日填成十年后时不生成几万行
-  var LEDGER_ASSUME_DAYS = 14;    // 未填新主线开放日时，默认预览未来 14 天
-
-  function isoLocal(d) {
-    if (!(d instanceof Date) || isNaN(d.getTime())) return "";
-    var m = d.getMonth() + 1, day = d.getDate();
-    return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day);
-  }
-  /* 按本地日期加减天数（禁止用 toISOString，GMT+8 下会偏移一天） */
-  function addDaysISO(iso, n) {
-    var p = String(iso || "").split("-");
-    if (p.length !== 3) return iso;
-    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-    if (isNaN(d.getTime())) return iso;
-    d.setDate(d.getDate() + n);
-    return isoLocal(d);
-  }
-  function weekdayCN(iso) {
-    var p = String(iso || "").split("-");
-    if (p.length !== 3) return "";
-    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-    return isNaN(d.getTime()) ? "" : "周" + "日一二三四五六".charAt(d.getDay());
-  }
-  function zeroRes() { return { credit: 0, battle_data: 0, core_dust: 0 }; }
-
-  function buildLedger(snap) {
-    var recISO = snap.recorded_at ? isoLocal(new Date(snap.recorded_at)) : todayLocal();
-    var openISO = snap.main_story_open_at ? isoLocal(new Date(snap.main_story_open_at)) : null;
-    var assumed = !openISO;
-    var endISO = openISO || addDaysISO(recISO, LEDGER_ASSUME_DAYS);
-    var startISO = addDaysISO(recISO, 1);
-    var out = { ok: false, reason: "", start: startISO, end: endISO, open: openISO,
-                assumed: assumed, rows: [], totals: zeroRes(), avg: zeroRes(), days: 0 };
-    if (!recISO) { out.reason = "缺少「数据日期」，无法生成账单。"; return out; }
-    if (!openISO && LEDGER_ASSUME_DAYS < 1) { out.reason = "账单区间为空。"; return out; }
-    // 开放日不晚于数据日期 → 没有等待期，账单无意义
-    if (openISO && openISO < startISO) {
-      out.reason = "「新主线开放日」不晚于数据日期，没有可统计的等待期。";
-      return out;
-    }
-    var curRate = snap.income_per_hour || {};
-    var futRate = snap.future_income_per_hour || {};
-    var useFuture = C.RESOURCES.some(function (r) { return (futRate[r] || 0) > 0; });
-    var sched = (EV && EV.schedule) ? EV.schedule(snap) : null;
-    var stage = snap.stage_clear_resources || {};
-    var tot = zeroRes();
-    var d = startISO, guard = 0;
-    while (guard++ < LEDGER_MAX_DAYS) {
-      var rate = (openISO && d >= openISO && useFuture) ? futRate : curRate;
-      var dayAct = (sched && sched.byDate && sched.byDate[d]) ? (sched.byDate[d].res || null) : null;
-      var isOpen = !!(openISO && d === openISO);
-      var res = zeroRes();
-      C.RESOURCES.forEach(function (r) {
-        res[r] = (rate[r] || 0) * 24
-               + (dayAct ? (dayAct[r] || 0) : 0)
-               + (isOpen ? (stage[r] || 0) : 0);
-        tot[r] += res[r];
-      });
-      out.rows.push({ date: d, res: res, hasAct: !!dayAct, isOpen: isOpen });
-      if (d === endISO) break;
-      d = addDaysISO(d, 1);
-    }
-    out.days = out.rows.length;
-    out.totals = tot;
-    if (out.days > 0) {
-      C.RESOURCES.forEach(function (r) { out.avg[r] = tot[r] / out.days; });
-    }
-    out.ok = out.days > 0;
-    if (!out.ok) out.reason = "账单区间内没有可统计的日期。";
-    return out;
-  }
-
-  function ledgerCsv(led) {
-    var head = ["日期", "星期"].concat(C.RESOURCES.map(function (r) { return C.RESOURCE_LABELS[r] || r; })).concat(["来源"]);
-    var lines = [head.join(",")];
-    led.rows.forEach(function (row) {
-      var src = row.isOpen ? (row.hasAct ? "开放日+活动" : "开放日") : (row.hasAct ? "基地+活动" : "基地");
-      var cells = [row.date, weekdayCN(row.date)]
-        .concat(C.RESOURCES.map(function (r) { return Math.round(row.res[r]); }))
-        .concat([src]);
-      lines.push(cells.join(","));
-    });
-    lines.push(["合计", ""].concat(C.RESOURCES.map(function (r) { return Math.round(led.totals[r]); })).concat([""]).join(","));
-    return "\ufeff" + lines.join("\r\n");
-  }
-
-  function renderLedger(result, snap) {
-    var host = $("tabLedger");
-    if (!host) return;
-    host.innerHTML = "";
-    var led = buildLedger(snap);
-    var dir = resIconDir();
-
-    if (!led.ok) {
-      host.appendChild(el("div", esc(led.reason || "暂无可统计的账单。"), "hint"));
-      return;
-    }
-
-    // 头部：统计区间 + 未填开放日的假设说明
-    var head = el("div", "", "ledger-head");
-    head.appendChild(el("div",
-      "统计区间 <b>" + led.start + "</b> → <b>" + led.end + "</b> · 共 <b>" + led.days + "</b> 天",
-      "ledger-range"));
-    if (led.assumed) {
-      head.appendChild(el("div",
-        "未填写「新主线开放日」，暂按未来 " + LEDGER_ASSUME_DAYS + " 天预览；填上开放日后账单会自动延到开放日。",
-        "ledger-warn"));
-    }
-    host.appendChild(head);
-
-    // 汇总卡：日均（大字）+ 区间合计
-    var sum = el("div", "", "ledger-sum");
-    C.RESOURCES.forEach(function (r) {
-      var card = el("div", "", "ledger-card");
-      var f = RES_ICON_FILE[r];
-      var icon = (dir && f) ? '<img class="res-icon" alt="" src="' + dir + f + '">' : "";
-      card.appendChild(el("div", icon + '<span>' + esc(C.RESOURCE_LABELS[r] || r) + "</span>", "lc-top"));
-      card.appendChild(el("div", fmtNum(led.avg[r]), "lc-big"));
-      card.appendChild(el("div", "日均 · 合计 " + fmtNum(led.totals[r]), "lc-sub"));
-      sum.appendChild(card);
-    });
-    host.appendChild(sum);
-
-    // 逐日明细表
-    var rows = led.rows.map(function (row) {
-      var src = row.isOpen
-        ? '<span class="ledger-tag tag-open">开放日</span>'
-        : "";
-      if (row.hasAct) src += '<span class="ledger-tag tag-act">活动</span>';
-      if (!src) src = '<span class="ledger-tag tag-base">基地</span>';
-      return [
-        "<b>" + row.date.slice(5) + "</b> <span class=\"ledger-wd\">" + weekdayCN(row.date) + "</span>",
-        fmtNum(row.res.credit),
-        fmtNum(row.res.battle_data),
-        fmtNum(row.res.core_dust),
-        src
-      ];
-    });
-    rows.push([
-      "<b>合计</b>",
-      "<b>" + fmtNum(led.totals.credit) + "</b>",
-      "<b>" + fmtNum(led.totals.battle_data) + "</b>",
-      "<b>" + fmtNum(led.totals.core_dust) + "</b>",
-      "<span class=\"ledger-wd\">" + led.days + " 天</span>"
-    ]);
-    var tbl = simpleTable(["日期", "信用点", "战斗数据", "红球", "来源"], rows, "fixed-table plan ledger-table");
-    host.appendChild(tbl);
-
-    // 操作条：导出 CSV
-    var bar = el("div", "", "raw-toolbar ledger-bar");
-    var csvBtn = el("button", "⬇ 导出 CSV 账单", "btn btn-export");
-    csvBtn.addEventListener("click", function () {
-      download("收益账单_" + led.start + "_" + led.end + ".csv", ledgerCsv(led), "text/csv;charset=utf-8");
-    });
-    bar.appendChild(csvBtn);
-    host.appendChild(bar);
-
-    host.appendChild(el("p",
-      "账单只统计每天<b>新到账</b>的资源：基地每小时产出 × 24 + 当日活动产出 + 开放日一次性推图收益。"
-      + "开箱收益不在此列（箱子是存量转化，不是新增产出）；升级消耗也不扣减（账单是「进项」，不是余额表）。",
-      "hint"));
+  /* ---------- 收益账单：独立工具页（ledger.html）的数据来源 ----------
+     R47：账单从「结果区第 3 个 tab」拆到左侧导航的独立工具页，口径与渲染全部在 js/ledger.js（唯一来源）。
+     这里只做一件事：每次计算完把「账单需要的指标切片」落进 localStorage，供 ledger.html 读取。
+     ⚠ 只存费率 / 推图收益 / 活动 / 开放日这几个字段，不存整份表单，也不参与任何计算口径。 */
+  function saveLedgerSnapshot(snap) {
+    if (!LEDGER || typeof LEDGER.snapSlice !== "function") return;
+    try {
+      localStorage.setItem(LEDGER.SNAP_KEY, JSON.stringify(LEDGER.snapSlice(snap, state.form)));
+    } catch (e) { /* 隐私模式 / 配额满：静默降级，账单页会提示「还没有数据」 */ }
   }
 
   /* ---------- 计算入口 ---------- */
@@ -2407,8 +2264,10 @@
       renderResult(state.lastResult, snapCalc);
       renderExtra(state.lastResult, snapCalc);
       renderRaw(state.lastResult);
-      renderLedger(state.lastResult, snapCalc);
       saveForm();
+      // 收益账单快照（独立工具页 ledger.html 的数据来源）：必须在 saveForm() 之后，
+      // 才能把本次的 saved_at / capture_time 一起记进切片，供账单页判断「表单是否又改过」
+      saveLedgerSnapshot(snapCalc);
       // 标记可横向滑动的结果表（内容溢出时显示右缘渐隐提示）
       markScrollableTables();
       // 计算结果出现后切到双列布局（结果在右侧）+ hero 与左表单等宽对齐
