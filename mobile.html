@@ -12,8 +12,8 @@
 <link rel="icon" type="image/webp" href="assets/m/favicon.webp">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
-<link rel="stylesheet" href="css/style.css?v=20261019b">
-<link rel="stylesheet" href="css/mobile.css?v=20261019b">
+<link rel="stylesheet" href="css/style.css?v=20261019c">
+<link rel="stylesheet" href="css/mobile.css?v=20261019c">
 </head>
 <body class="m-body">
 
@@ -228,17 +228,17 @@
       </div>
     </fieldset>
 
-    <label class="as-tog" id="asTog" data-on="1">
-      <input type="checkbox" id="chkAutosync" checked aria-label="计算后自动保存并同步到云端">
-      <svg class="as-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/><path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>
-      <span class="as-tip">已开启：计算后自动保存并同步到云端</span>
-    </label>
-
-    <button id="btnCalc" class="btn btn-primary btn-big">开始计算</button>
+    <!-- R48：「开始计算」与快捷同步图标合并到同一行；移动端整行是吸底 dock（.calc-row 转 fixed） -->
+    <div class="calc-row">
+      <button id="btnCalc" class="btn btn-primary btn-big">开始计算</button>
+      <button id="btnCalcFab" class="btn btn-primary btn-calc-fab">开始计算</button>
+      <label class="as-tog" id="asTog" data-on="1">
+        <input type="checkbox" id="chkAutosync" checked aria-label="计算后自动保存并同步到云端">
+        <svg class="as-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/><path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>
+        <span class="as-tip">已开启：计算后自动保存并同步到云端</span>
+      </label>
+    </div>
   </section>
-
-  <!-- 移动端吸底「开始计算」（始终显示；桌面才隐藏） -->
-  <button id="btnCalcFab" class="btn btn-primary btn-calc-fab">开始计算</button>
 
   <!-- ============ 结果区 ============ -->
   <section id="resultSection" class="result-panel" style="display:none">

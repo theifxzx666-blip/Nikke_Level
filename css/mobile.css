@@ -26,9 +26,11 @@ body.m-body {
   --hero-bg: url("../assets/m/hero.webp");
 }
 
-/* 内容区：单列居中 + 底部留白（吸底按钮 58px + 底部 Tab 56px + 安全区），保证最后一项不被遮挡 */
+/* 内容区：单列居中 + 底部留白（吸底 dock 51px + 底部 Tab 56px + 安全区），保证最后一项不被遮挡。
+   R48 补到 148px：吸底 dock 顶边距视口底 174px，原来 132px 正好让最后一行提示贴住 dock 上沿
+   （实测 clearance=0），留 16px 余量防真机字体差异。 */
 body.m-body .layout {
-  padding: 8px 12px calc(132px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 12px calc(148px + env(safe-area-inset-bottom, 0px));
   max-width: 720px;
 }
 /* 桌面在「有结果」时切右侧双列；移动版一律单列，结果排在表单下方 */
@@ -163,37 +165,47 @@ body.m-body .app-nav-icon {
    实测底部 Tab 栏高 115px（含 6px 上下内边距 + env(safe-area)），原来 bottom:70px
    会被 Tab 栏压住 45px。改为「Tab 栏高 + 8px 间隙」，安全区随 Tab 栏一起增长。 */
 body.m-body #btnCalc { display: none; }
-body.m-body .btn-calc-fab {
-  display: block;
+/* 吸底 dock = 「开始计算」+ 快捷同步图标同一行（R48）：fixed 从按钮挪到 .calc-row，
+   按钮回归普通 flex 子项，图标才能真正和它并排（此前按钮自己 fixed，图标只能另起一行被压住）。 */
+body.m-body .calc-row {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
   bottom: calc(123px + env(safe-area-inset-bottom, 0px));
   z-index: 9000;
   width: min(92vw, 440px);
+  gap: 8px;
+  margin-top: 0;
+}
+body.m-body .btn-calc-fab {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
   padding: 14px;
   font-size: 16px;
   border-radius: 999px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
 }
 body.m-body .btn-calc-fab:active { background: var(--primary-dark); }
-/* 切到子工具视图时收起（子工具页无此按钮，避免叠在 Tab 上） */
-body.m-body.tool-mode .btn-calc-fab,
-body.m-body.avatar-full .btn-calc-fab { display: none; }
+/* 切到子工具视图时整行 dock 收起（子工具页无此按钮，避免叠在 Tab 上） */
+body.m-body.tool-mode .calc-row,
+body.m-body.avatar-full .calc-row { display: none; }
 
 /* （表单填写进度球 + 明细面板已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
 
-/* 快捷同步开关（R47 改成小圆形图标）：移动端没有真实 hover，靠 :focus-within 让浮出文案在点按后出现一下；
-   另外点按本身还会走 app.js 的 toast 提示，所以这里只把尺寸放大到手指友好。
-   ⚠ 底部 margin 40px 不能省：`.layout` 只有 132px 下留白，而吸底 FAB 占 123~175px，
-      图标当最后一个元素时会被 FAB 压住 15px（已实测），补 40px 后净空 25px。 */
+/* 快捷同步图标（R47 图标化 → R48 挪进吸底 dock 与「开始计算」同行）：移动端没有真实 hover，
+   靠 :focus-within 让浮出文案在点按后出现一下；点按本身还会走 app.js 的 toast 提示。
+   ⚠ R48 起不再需要给图标单独留底部净空 —— 它已在 dock 内，被按钮压住的问题从结构上消失了。 */
 body.m-body .as-tog {
-  width: 42px; height: 42px; margin: 2px auto 40px;
+  width: 46px; height: 46px; margin: 0;
   background: #f2f8f6; border-color: var(--border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
 }
 body.m-body .as-tog[data-on="1"] { background: #e3f4ec; }
-body.m-body .as-ico { width: 22px; height: 22px; }
+body.m-body .as-ico { width: 24px; height: 24px; }
 body.m-body .as-tip { font-size: 12px; padding: 7px 11px; }
+body.m-body .as-tip::after { right: 18px; }
 
 /* 计算中的顶部进度条：移动端顶栏是 sticky top:0，进度条压在它上缘即可（z-index 更高）。 */
 body.m-body .calc-bar { height: 3px; }

@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261019b">
+<link rel="stylesheet" href="css/style.css?v=20261019c">
 <!-- html2canvas（导出结果图用，gzip ≈46KB）与 xlsx（导入/导出 Excel 用，gzip ≈316KB）改为「用到才加载」，
      由 js/app.js 的 ensureVendor() 在点击导出/导入时注入，首屏不再跨境外拉 CDN，也不拖慢首屏 -->
 </head>
@@ -213,17 +213,18 @@
       </div>
     </fieldset>
 
-    <label class="as-tog" id="asTog" data-on="1">
-      <input type="checkbox" id="chkAutosync" checked aria-label="计算后自动保存并同步到云端">
-      <svg class="as-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/><path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>
-      <span class="as-tip">已开启：计算后自动保存并同步到云端</span>
-    </label>
-
-    <button id="btnCalc" class="btn btn-primary btn-big">开始计算</button>
+    <!-- R48：「开始计算」与快捷同步图标合并到同一行（桌面：按钮占满左侧、图标贴右；
+         移动端：整行变吸底 dock，.calc-row 转 fixed，图标跟着按钮走，不再单独占一行）。 -->
+    <div class="calc-row">
+      <button id="btnCalc" class="btn btn-primary btn-big">开始计算</button>
+      <button id="btnCalcFab" class="btn btn-primary btn-calc-fab">开始计算</button>
+      <label class="as-tog" id="asTog" data-on="1">
+        <input type="checkbox" id="chkAutosync" checked aria-label="计算后自动保存并同步到云端">
+        <svg class="as-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/><path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>
+        <span class="as-tip">已开启：计算后自动保存并同步到云端</span>
+      </label>
+    </div>
   </section>
-
-  <!-- 移动端底部悬浮「开始计算」（桌面隐藏） -->
-  <button id="btnCalcFab" class="btn btn-primary btn-calc-fab">开始计算</button>
 
   <!-- ============ 结果区 ============ -->
   <section id="resultSection" class="result-panel" style="display:none">

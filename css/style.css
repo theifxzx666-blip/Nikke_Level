@@ -103,6 +103,10 @@ body::after {
 .btn-accent { background: #534ab7; color: #fff; border-color: #534ab7; }
 .btn-accent:hover { background: #3d3682; border-color: #3d3682; }
 .btn-big { width: 100%; padding: 14px; font-size: 16px; margin-top: 6px; }
+/* 「开始计算」+ 快捷同步图标同一行（R48）：间距由 .calc-row 统一给，按钮吃掉剩余宽度。
+   ⚠ .btn-big 的 margin-top 必须在这里归零 —— 否则 flex 交叉轴居中会被它自己顶偏 3px。 */
+.calc-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.calc-row .btn-big { flex: 1 1 auto; width: auto; min-width: 0; margin-top: 0; }
 /* 移动端悬浮「开始计算」按钮：桌面默认隐藏（避免成为 grid 子项挤乱双列布局），移动端媒体查询内再显示 */
 .btn-calc-fab { display: none; }
 /* 结果区导出图片按钮（tabs 右侧） */
@@ -217,14 +221,15 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 
 /* （悬浮进度球已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
 
-/* ===== 「开始计算」上方的快捷同步开关（R47：小圆形图标 + 悬停浮出文案） =====
+/* ===== 「开始计算」同一行的快捷同步开关（R47 图标化 → R48 挪到按钮右侧） =====
    本地保存本来就每次计算都会做（runCalc → saveForm），这个开关只管「顺手推到云端账号」。
    文案不放常驻位置（用户反馈太长、抢视线）→ 只在 hover / 键盘聚焦时浮出。
    状态由 app.js 的 paintAutoSync() 写到 [data-on] 上，样式只看这个属性。 */
 .as-tog {
   position: relative;
   display: flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; margin: 0 auto 12px;
+  flex: 0 0 auto;                       /* 在 .calc-row 里不参与拉伸，宽度恒定 */
+  width: 42px; height: 42px; margin: 0;
   border: 1px solid var(--border); border-radius: 50%;
   background: #fff; color: var(--muted);
   cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
@@ -237,24 +242,24 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
   position: absolute; inset: 0; width: 100%; height: 100%;
   margin: 0; opacity: 0; cursor: pointer;
 }
-.as-ico { width: 20px; height: 20px; display: block; }
+.as-ico { width: 22px; height: 22px; display: block; }
 .as-tog[data-on="0"] .as-ico { opacity: .62; }
-/* 浮出文案（气泡） */
+/* 浮出文案（气泡）：图标已靠右 → 气泡必须右对齐向左展开，否则 240px 宽的文案会冲出屏幕右缘 */
 .as-tip {
-  position: absolute; left: 50%; bottom: calc(100% + 9px);
-  transform: translate(-50%, 4px);
+  position: absolute; right: 0; bottom: calc(100% + 9px);
+  transform: translate(0, 4px);
   padding: 6px 10px; border-radius: 8px; white-space: nowrap;
   background: #22322c; color: #fff; font-size: 12px; line-height: 1.35;
   box-shadow: 0 6px 16px rgba(0, 0, 0, .2);
   opacity: 0; pointer-events: none; transition: opacity .16s ease, transform .16s ease;
   z-index: 6;
 }
-.as-tip::after {
-  content: ""; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
+.as-tip::after {                      /* 箭头对准圆形图标中心：42px 宽 → 21 - 5 = 16px */
+  content: ""; position: absolute; right: 16px; top: 100%;
   border: 5px solid transparent; border-top-color: #22322c;
 }
 .as-tog:hover .as-tip,
-.as-tog:focus-within .as-tip { opacity: 1; transform: translate(-50%, 0); }
+.as-tog:focus-within .as-tip { opacity: 1; transform: translate(0, 0); }
 
 /* ===== 计算中的加载反馈 =====
    顶部进度条（不确定进度 indeterminate）：横向滑动用 transform 实现，
@@ -466,17 +471,22 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .form-panel.collapsible fieldset.collapsed > *:not(legend) { display: none; }
   .form-panel.collapsible fieldset.collapsed { margin-bottom: 8px; }
 
-  /* 移动端底部悬浮「开始计算」 */
+  /* 移动端：整行 .calc-row 变吸底 dock，「开始计算」与快捷同步图标一行并排（R48）
+     —— 图标挪进按钮右侧后不再单独占一行，也就不会再被吸底按钮压住。 */
+  .calc-row {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: 14px; z-index: 9000;
+    width: min(92vw, 440px); margin-top: 0; gap: 8px;
+  }
   .btn-calc-fab {
-    display: block; position: fixed; left: 50%; transform: translateX(-50%);
-    bottom: 14px; z-index: 9000; width: min(92vw, 440px);
+    display: block; flex: 1 1 auto; min-width: 0; width: auto;
     padding: 14px; font-size: 16px; border-radius: 999px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, .22);
   }
-  /* 移动端只保留底部悬浮按钮，隐藏表单底部原「开始计算」，避免出现两个计算按钮 */
+  /* 移动端只保留底部 dock 里的按钮，隐藏表单内原「开始计算」，避免出现两个计算按钮 */
   #btnCalc { display: none; }
-  /* 结果出来后，悬浮按钮文案提示可重算，且不要挡住结果底部操作 */
-  body.has-result .btn-calc-fab { bottom: 14px; }
+  /* 结果出来后 dock 下移贴底，且不要挡住结果底部操作 */
+  body.has-result .calc-row { bottom: 14px; }
 }
 
 /* 超小屏（≤420px）：字段全部单列，避免 2 列挤压 */
