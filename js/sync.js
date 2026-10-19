@@ -33,6 +33,57 @@
   var supabase = null;
   var curUser = null;
 
+  /* ---------- 网络可靠性（R54） ----------
+     现场反馈：网页能打开、一点账号就提示「没能连上云端」，玩家也没开代理。
+     原因不是站点故障 —— GitHub Pages（页面）和 Supabase（数据库）走的是两套完全
+     不同的境外线路，国内部分运营商只掐掉后一套，于是「站能开、云连不上」。
+     而 supabase-js 默认**不给请求设超时**：弱网下会一直转圈，最后只抛一句
+     Failed to fetch，既分不清是超时还是被阻断，玩家也无从下手。
+
+     这里统一做法：给 SDK 注入带 15 秒超时的 fetch，并给错误打 __netStage 标记
+     （timeout / unreachable），供报错翻译和「连接自检」区分断在哪一段。 */
+  var NET_TIMEOUT = 15000;
+  function netErr(stage, detail) {
+    var e = new Error(detail || stage);
+    e.name = stage === "timeout" ? "TimeoutError" : "NetworkError";
+    e.__netStage = stage;
+    return e;
+  }
+  function timeoutFetch(input, init) {
+    var opts = init || {};
+    var ctrl = null;
+    /* SDK 自带 signal 时不接管（覆盖会破坏它自己的取消能力，此时它自己会中止） */
+    if (!opts.signal) {
+      try {
+        if (typeof AbortController !== "undefined") {
+          ctrl = new AbortController();
+          opts.signal = ctrl.signal;
+        }
+      } catch (e) { ctrl = null; }
+    }
+    var timer = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, NET_TIMEOUT) : 0;
+    return fetch(input, opts).then(function (r) {
+      clearTimeout(timer);
+      return r;
+    }, function (e) {
+      clearTimeout(timer);
+      var msg = (e && e.message) || "";
+      if (e && (e.name === "AbortError" || /abort/i.test(msg))) {
+        /* message 里保留 timeout 字样：SDK 会用它包一层新错误，靠这个才能识别出超时 */
+        throw netErr("timeout", "请求超时（timeout）：超过 " + (NET_TIMEOUT / 1000) + " 秒没有响应");
+      }
+      throw netErr("unreachable", msg || "无法建立 HTTPS 连接");
+    });
+  }
+  function newClient() {
+    if (!sdk) return null;
+    try {
+      return sdk.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { fetch: timeoutFetch }
+      });
+    } catch (e) { return null; }
+  }
+
   /* ---------- 基础工具 ---------- */
   function configured() {
     return !!SUPABASE_URL && !!SUPABASE_ANON_KEY && !!sdk;
@@ -74,7 +125,7 @@
      这里翻成「什么原因 + 该怎么办」。优先看 code（新版 auth-js 的规范化错误码），
      message 关键字兜底老版本 / 网关层错误。返回 resend=true 的表示「重发确认信」能救。 */
   function explainAuthError(e) {
-    var code = (e && e.code) || "";
+    var code = (e && (e.code || e.__netStage)) || "";
     var msg = (e && e.message) || "未知错误";
     var low = String(msg).toLowerCase();
     function hit() {
@@ -108,13 +159,70 @@
     if (hit("error sending", "sending confirmation", "sending recovery", "smtp")) {
       return { text: "邮件发不出去 —— 这是站点发信服务没配好，不是你操作的问题。请把这条提示发给作者，让作者手动帮你确认账号。", resend: false };
     }
-    if (hit("failed to fetch", "networkerror", "network request failed", "load failed")) {
-      return { text: "没能连上云端。换个网络（或先关掉代理）再试一次。", resend: false };
+    if (code === "timeout" || hit("timeout", "timed out")) {
+      return { text: "等了 15 秒云端都没回应：你的网络到不了这台境外服务器，不是你操作错了。可以试 ① 手机流量和 WiFi 互切一下；② 挂上代理 / VPN 再登录；③ 点下面的「连接自检」看断在哪一步。本地数据不会丢，连不上只影响云端同步。", resend: false, net: true };
+    }
+    if (code === "unreachable" || hit("failed to fetch", "networkerror", "network request failed", "load failed", "fetch failed", "connection closed")) {
+      return { text: "浏览器没能连上云端服务器。注意这和「网页能打开」并不矛盾：网页和数据库走的是两条不同的境外线路，国内部分网络只掐后一条。请挂代理 / VPN 后重试，或换个网络（流量 ↔ WiFi）。点下面的「连接自检」可以看具体断在哪。本地数据不会丢。", resend: false, net: true };
     }
     if (hit("database error")) {
       return { text: "云端数据库报错，通常过一会儿重试就好；如果一直出现请联系作者。", resend: false };
     }
     return { text: "操作失败：" + msg, resend: false };
+  }
+
+  /* ---------- 连接自检（R54） ----------
+     打的是 Supabase 的 /auth/v1/health。不带 apikey 会返回 401，但**只要拿到任意
+     HTTP 响应就说明 DNS / TCP / TLS 三段全通**，问题不在网络。所以判定标准是
+     「有没有响应」而不是「状态码是不是 200」。 */
+  async function netSelfTest() {
+    var url = SUPABASE_URL + "/auth/v1/health";
+    var t0 = Date.now();
+    var out = {
+      url: url, ms: 0, reached: false, status: 0, stage: "", msg: "",
+      online: (typeof navigator === "undefined" || navigator.onLine !== false)
+    };
+    try {
+      var r = await timeoutFetch(url, { method: "GET", cache: "no-store" });
+      out.ms = Date.now() - t0;
+      out.reached = true;
+      out.status = r.status;
+      out.stage = "http";
+    } catch (e) {
+      out.ms = Date.now() - t0;
+      out.stage = (e && e.__netStage) || "unreachable";
+      out.msg = (e && e.message) || "";
+    }
+    return out;
+  }
+  function netVerdict(r) {
+    if (!r.online) {
+      return { cls: "bad", text: "浏览器当前报告「离线」—— 先确认设备真的连上了网络（有些游戏加速器 / VPN 会把状态标记成离线）。" };
+    }
+    if (r.reached) {
+      var note = (r.status >= 200 && r.status < 300)
+        ? ""
+        : "（返回 " + r.status + " 是正常的：没带钥匙的探测本来就会被拒）";
+      return { cls: "ok", text: "云端可以访问，耗时 " + r.ms + " 毫秒" + note + "。网络这一段没问题，那问题出在别的地方 —— 请把上面那条报错原文发给作者。" };
+    }
+    if (r.stage === "timeout") {
+      return { cls: "bad", text: "等了 15 秒没有任何回应：你的网络到不了这台境外服务器。网页能打开是因为网页和数据走两条不同线路。办法：① 手机流量 ↔ WiFi 互切；② 挂代理 / VPN 后重试。本地数据不会丢。" };
+    }
+    return { cls: "bad", text: "连接被当场中断：典型的运营商阻断或丢包（不是你的操作问题，也不是站点挂了）。办法同上 —— 换网络，或挂代理 / VPN。本地数据不会丢。" };
+  }
+  async function runSelfTest() {
+    var link = $inner.querySelector("#nkNetTest");
+    var box = $inner.querySelector("#nkNetOut");
+    if (link) link.textContent = "正在检测…";
+    if (box) box.innerHTML = "";
+    var r = await netSelfTest();
+    var v = netVerdict(r);
+    if (box) {
+      box.innerHTML = '<div class="nk-netout ' + v.cls + '">' + esc(v.text)
+        + '<div class="nk-nettip">检测目标 ' + esc(r.url) + " · 耗时 " + r.ms + " 毫秒"
+        + (r.status ? " · HTTP " + r.status : "") + "</div></div>";
+    }
+    if (link) link.textContent = "再检测一次";
   }
 
   /* ---------- 样式（内联注入，浅色主题对齐） ---------- */
@@ -157,6 +265,13 @@
       ".nk-okbar b{word-break:break-all}" +
       ".nk-link{background:none;border:none;padding:0;color:#178a64;font:12px inherit;cursor:pointer;text-decoration:underline}" +
       ".nk-sub{margin:10px 0 0;font-size:11.5px;color:#8a938e;line-height:1.7}" +
+      ".nk-net{margin:8px 0 0;font-size:12px}" +
+      ".nk-net a{color:#1d9e75;text-decoration:none;border-bottom:1px dashed #9fd4c2;cursor:pointer}" +
+      ".nk-net a:hover{color:#178a64}" +
+      ".nk-netout{margin-top:8px;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.65}" +
+      ".nk-netout.ok{background:#eefaf4;border:1px solid #bfe6d5;color:#1a6b50}" +
+      ".nk-netout.bad{background:#fdf3ec;border:1px solid #f2d3b8;color:#96531f}" +
+      ".nk-nettip{margin-top:4px;font-size:11px;opacity:.72;word-break:break-all}" +
       ".nk-pwrow{position:relative}" +
       ".nk-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:#1d9e75;background:none;border:none;cursor:pointer;padding:2px 4px}";
     document.head.appendChild(s);
@@ -252,7 +367,9 @@
       '<div class="nk-row"><button class="nk-btn" id="nkAuthGo">' + (isReg ? "注册" : "登录") + "</button></div>" +
       '<p class="nk-sub">' + (isReg
         ? "填邮箱 + 设个密码就行，注册完直接可用云端同步。"
-        : "用注册时的邮箱和密码登录；换设备也能把云端数据拉回来。") + "</p>";
+        : "用注册时的邮箱和密码登录；换设备也能把云端数据拉回来。") + "</p>" +
+      '<p class="nk-net"><a id="nkNetTest">连不上云端？点这里自检</a></p>' +
+      '<div id="nkNetOut"></div>';
     $inner.querySelectorAll("[data-eyes]").forEach(function (b) {
       b.addEventListener("click", function () {
         var inp = $inner.querySelector("#" + b.getAttribute("data-for"));
@@ -262,6 +379,8 @@
       });
     });
     $inner.querySelector("#nkAuthGo").addEventListener("click", function () { doAuth(m); });
+    var nt = $inner.querySelector("#nkNetTest");
+    if (nt) nt.addEventListener("click", function () { runSelfTest(); });
     $inner.querySelectorAll("[data-mode]").forEach(function (t) {
       t.addEventListener("click", function () {
         var nm = t.getAttribute("data-mode");
@@ -456,7 +575,7 @@
   function ensureClient() {
     if (supabase) return true;
     if (!configured()) return false;
-    try { supabase = sdk.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { supabase = null; }
+    supabase = newClient();
     return !!supabase;
   }
   async function currentUser() {
@@ -508,6 +627,10 @@
       if (pass !== pass2) { setErr("两次输入的密码不一致，请重新输入"); return; }
     }
     var go = $inner.querySelector("#nkAuthGo");
+    if (!ensureClient()) {
+      setErr("云端组件没加载出来（页面资源被拦截、或浏览器版本太旧）。先刷新页面重试；还是不行就换最新版 Chrome / Edge，或关掉广告拦截插件再试。");
+      return;
+    }
     if (go) { go.disabled = true; go.textContent = mode === "login" ? "登录中…" : "注册中…"; }
     try {
       if (mode === "login") {
@@ -620,7 +743,7 @@
     if (btn && configured()) btn.classList.add("nk-on");
     if (configured()) {
       try {
-        supabase = sdk.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabase = newClient();
         supabase.auth.getSession().then(function (r) { if (r && r.data) curUser = r.data.session ? r.data.session.user : null; });
         supabase.auth.onAuthStateChange(function (e, s) {
           curUser = s ? s.user : null;
