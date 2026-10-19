@@ -25,7 +25,7 @@
       "name": "收益账单",
       "icon": "assets/nav_ledger.svg",
       "type": "web",
-      "entry": "ledger.html?v=20261019b",
+      "entry": "ledger.html?v=20261019d",
       "viewId": "appLedger",
       "frameId": "ledgerFrame",
       "version": "1.0.0",
