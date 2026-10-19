@@ -1,4 +1,4 @@
-/* ledger.js — 收益账单（R47 从结果区 tab 拆成独立工具页 ledger.html；R49 加箱子；R50 起箱子只数个数、不折算）
+/* ledger.js — 收益账单（R47 从结果区 tab 拆成独立工具页 ledger.html；R49 加箱子；R50 起箱子只数个数、不折算；R52 周期 = 统计窗口 + 箱子比重）
    职责：把「一份快照」汇总成逐日到账账单（build）、按周几聚合（agg / groupByWeekday）、
         导出 CSV（csv）、以及在每次计算后由 app.js 落的可序列化快照切片（snapSlice）。
    口径唯一来源就在本文件：页面（ledger.html）与 app.js 都只调这里，禁止另写一套聚合。
@@ -20,9 +20,16 @@
       费率仍按「进入开放日之后改用新基地收益」逐日切换，推图收益只在开放日当天计一次
       —— 所以周期口径与开放日口径的差异只有「天数」，不是另算一套。
    B) spanStats(snap) 把 30/60/90/180/365 天各自的合计一次算出来（共用一份 schedule）：
-      用户要看的是「一个周期内能攒多少」，合计比日均直观。
+      用户要看的是「这个区间一共收了多少」，合计比日均直观。
    C) boxSummary(rows) 把箱子按「箱名 + 小时档」聚合（个数 / 占比 / 首末日期）：
-      只数个数之后，光有总数看不出是哪些箱子构成的。 */
+      只数个数之后，光有总数看不出是哪些箱子构成的。
+
+   ---------- R52：周期是「统计窗口」，不是预估 ----------
+   用户口径：选 30/60/90/180/365 天 = 把这段时间里逐日到账的收益加起来，
+   回答「这个区间一共收了多少」；页面文案一律不出现「估算 / 预估 / 能攒多少」。
+   （与 R51 一样仍不另算一套：费率按开放日切换、推图只计一次，差异只有天数。）
+   boxMix(rows) 给出「收到的箱子大致是哪类占大头」：按箱名合并（同名不同小时档算一类），
+   只数个数 → 供页面画堆叠条 + 图标个数。⚠ 仍然不折算资源，只是个数之比。 */
 (function (global) {
   "use strict";
 
@@ -269,6 +276,38 @@
     });
   }
 
+  /* ---------------- 箱子比重（R52）----------------
+     「收到的箱子大概哪类占大头」：按箱名合并（同名不同小时档算一类，8h 芯尘盒 + 2h 芯尘盒 = 芯尘盒）。
+     只数个数 → 页面画堆叠条 + 图标个数；⚠ 不折算资源，pct 是个数占比，不是资源占比。
+     只统计传进来的 rows（= 当前筛选后的行），页面不做二次计算。 */
+  function boxMix(rows) {
+    var map = {}, total = 0;
+    (rows || []).forEach(function (row) {
+      (row.boxItems || []).forEach(function (it) {
+        var name = String((it && it.name) || "");
+        if (!name) return;
+        var n = Number(it.count) || 0;
+        if (n <= 0) return;
+        var e = map[name];
+        if (!e) e = map[name] = { name: name, kind: it.kind, count: 0 };
+        e.count += n;
+        total += n;
+      });
+    });
+    var list = Object.keys(map).map(function (k) {
+      var e = map[k];
+      e.pct = total > 0 ? (e.count / total * 100) : 0;
+      return e;
+    });
+    // 个数降序；同个数时固定箱在前，再按名字，避免顺序随浏览器抖动
+    list.sort(function (a, b) {
+      if (b.count !== a.count) return b.count - a.count;
+      if (a.kind !== b.kind) return a.kind === "fixed" ? -1 : 1;
+      return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+    });
+    return list;
+  }
+
   /* ---------------- 箱子明细汇总（R51）----------------
      只数个数之后光看总数分不清构成 → 按「箱名 + 小时档」聚合（固定箱同名不同档分开算）。
      只统计传进来的 rows（= 当前筛选后的行），页面不做二次计算。 */
@@ -370,6 +409,7 @@
     zeroRes: zeroRes,
     dayBox: dayBox,
     boxText: boxText,
+    boxMix: boxMix,
     boxSummary: boxSummary,
     build: build,
     spanStats: spanStats,

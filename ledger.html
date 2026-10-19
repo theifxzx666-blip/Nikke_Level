@@ -53,6 +53,8 @@ button{font:inherit;cursor:pointer}
 .chip.on b{background:rgba(255,255,255,.24);color:#fff}
 .chip[disabled]{opacity:.42;cursor:default;border-color:var(--border);color:var(--muted)}
 .chip[disabled]:hover{border-color:var(--border);color:var(--muted)}
+/* 区间条的语义说明（R52）：周期 = 统计窗口，不是预估 */
+.bar-hint{font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap}
 
 /* ---------- 汇总卡（3 资源 + 箱子） ---------- */
 .lg-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
@@ -64,6 +66,14 @@ button{font:inherit;cursor:pointer}
 .lc-big{font-size:24px;font-weight:700;color:var(--primary-dark);line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
 .lc-big .unit{font-size:12px;font-weight:600;color:var(--muted);margin-left:3px}
 .lc-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+/* 箱子比重（R52）：一条堆叠条 + 一行「图标 + 个数」，只看构成、只数个数 */
+.mxbar{display:flex;gap:1px;height:6px;border-radius:99px;overflow:hidden;margin-top:9px;background:var(--bg3)}
+.mxbar i{display:block;height:100%;min-width:3px}
+.mxleg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px}
+.mx{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text2);
+  font-variant-numeric:tabular-nums;cursor:default}
+.mx img{width:15px;height:15px;object-fit:contain;flex:0 0 auto;border-radius:3px}
+.mx b{font-weight:650;color:var(--text)}
 
 /* ---------- 表头说明条 ---------- */
 .tbl-cap{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 2px 8px}
@@ -149,6 +159,11 @@ table.bxt tbody tr:hover td{background:transparent}
   .lg-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
   .lc-big{font-size:19px}
   .lc-top{font-size:11.5px}
+  /* 卡片窄：比重条压薄、图例图标缩到 14px，别把「箱子 · 日均」挤出两行 */
+  .mxbar{height:5px;margin-top:7px}
+  .mxleg{gap:5px 7px;margin-top:5px}
+  .mx{font-size:10.5px;gap:2px}
+  .mx img{width:14px;height:14px}
   .lg-title{font-size:17px}
   .lg-acts{width:100%}
   .lg-acts .btn{flex:1}
@@ -163,10 +178,13 @@ table.bxt tbody tr:hover td{background:transparent}
   tr.bxrow td{padding:6px 8px 7px 10px}
   .bxi{margin:2px 4px 2px 0;padding:1px 6px;font-size:10.5px}
   .lg-bar{gap:6px 10px}
-  .bar-lab{width:100%;font-size:11.5px}
+  /* 标签与语义说明同一行（说明靠右截断），chips 用 order 排到下一行，省一行高度 */
+  .bar-lab{width:auto;font-size:11.5px}
+  .bar-hint{order:2;flex:1 1 auto;width:auto;margin-left:8px;font-size:10px;text-align:right;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* 8 个 chip 在 390px 上换成两行显示（横向滚动会让「周五/周六/周日」藏起来，用户以为没有） */
-  .chips{width:100%;flex-wrap:wrap;gap:5px}
-  .chip{height:28px;padding:0 9px;font-size:11.5px}
+  .chips{order:3;width:100%;flex-wrap:wrap;gap:4px}
+  .chip{height:28px;padding:0 7px;font-size:11px}
   .chip b{font-size:10px;padding:0 4px}
   .tbl-cap{margin-bottom:7px}
   /* 小表也要在 390px 内放下（去掉 min-width，靠压内边距与字号） */
@@ -193,8 +211,9 @@ table.bxt tbody tr:hover td{background:transparent}
   <div class="lg-range" id="range"></div>
 
   <div class="lg-bar" id="spanBar" style="display:none">
-    <span class="bar-lab">统计周期</span>
+    <span class="bar-lab">统计区间</span>
     <div class="chips" id="spanChips"></div>
+    <span class="bar-hint">选一个区间 = 这段时间里一共收到多少</span>
   </div>
 
   <div class="lg-bar" id="bar" style="display:none">
@@ -233,9 +252,9 @@ table.bxt tbody tr:hover td{background:transparent}
   </div>
 
   <div class="wd-wrap" id="spWrap" style="display:none">
-    <div class="wd-cap">各周期对比<span>一个周期内能攒多少（合计口径）；点一行即切换统计周期</span></div>
+    <div class="wd-cap">各统计区间累计<span>每行 = 这段时间里一共收到多少；点一行即切换统计区间</span></div>
     <table class="wdt">
-      <thead><tr><th>周期</th><th>天数</th><th>信用点合计</th><th>战斗数据辑合计</th><th>红球合计</th><th>箱数</th></tr></thead>
+      <thead><tr><th>区间</th><th>天数</th><th>信用点累计</th><th>战斗数据辑累计</th><th>红球累计</th><th>箱数</th></tr></thead>
       <tbody id="spBody"></tbody>
     </table>
   </div>
@@ -250,14 +269,15 @@ table.bxt tbody tr:hover td{background:transparent}
     账单只统计两件事：
     ① 每天新到账的<b>基础自然收益</b>（信用点 / 战斗数据辑 / 红球）= 基地每小时产出 × 24 + 当日活动<b>直接给</b>的资源 + 开放日一次性推图收益；
     ② 每天<b>收到的箱子个数</b>（固定小时箱 + 自选箱），<b>只数个数、不折算资源</b>。
-    箱子里面的资源要自己开箱才会到账、开哪个还看你的选择，所以账单不替它估算；<b>每天收了哪些箱子</b>在明细表里直接展开可见，底部还有一张按箱名聚合的汇总。
+    箱子里面的资源要自己开箱才会到账、开哪个还看你的选择，所以账单不替它折算；<b>每天收了哪些箱子</b>在明细表里直接展开可见，底部还有按箱名聚合的汇总与比重。
+    <b>统计区间</b>（30/60/90/180/365 天）是「算账窗口」：选中 N 天，就是把 N 天里逐日到账的收益加起来，回答这段时间<b>一共收了多少</b>。
     升级消耗、开箱本身的存量消耗都不扣减（账单是「进项」，不是余额表）。
   </p>
 </div>
 
 <script src="js/core.js?v=20260917c"></script>
 <script src="js/events.js?v=20261012a"></script>
-<script src="js/ledger.js?v=20261019f"></script>
+<script src="js/ledger.js?v=20261019g"></script>
 <script>
 (function () {
   "use strict";
@@ -266,6 +286,19 @@ table.bxt tbody tr:hover td{background:transparent}
   var SPAN_KEY = "nikke_ledger_span_v1";     // 周期口径（R51）：选的 N 天会记住
   var BX_KEY = "nikke_ledger_bxopen_v1";     // 每日箱子明细是否展开（默认展开）
   var ICON = { credit: "assets/res_credit.webp", battle_data: "assets/res_battle.webp", core_dust: "assets/res_dust.webp" };
+  /* 箱子图标（R52「箱子比重」用）：与计算器输入区同一套素材（app.js 的 FIXED_BOX_ICON / SELECTABLE_BOX_ICON） */
+  var BOX_ICON = {
+    "芯尘盒": "assets/box_core_dust.webp", "战斗数据辑盒": "assets/box_battle.webp",
+    "信用点盒": "assets/box_credit.webp", "成长套组": "assets/box_growth.webp",
+    "挑战者成长宝箱": "assets/mbox_challenger.webp", "方舟官方补给物资Ⅰ": "assets/mbox_ark.webp",
+    "30天成长补给箱": "assets/mbox_30d.jpg"
+  };
+  /* 比重条配色：按「这箱给什么资源」给色（信用点金 / 战斗蓝 / 芯尘红 / 成长绿 / 自选紫·青） */
+  var MIX_COLOR = {
+    "信用点盒": "#d4a017", "战斗数据辑盒": "#4a7fd4", "芯尘盒": "#c2564a", "成长套组": "#2f9e75",
+    "挑战者成长宝箱": "#8a6fbf", "方舟官方补给物资Ⅰ": "#6f9bb5", "30天成长补给箱": "#c08a5a"
+  };
+  var MIX_FALLBACK = ["#9aa8a3", "#7f8f89", "#b0bab5"];
   var led = null, slice = null, spRows = [];
   // 周几筛选不记住（重开默认看全部）；周期与箱子展开状态记住
   var state = { wd: -1, span: 0, bxOpen: true };
@@ -326,6 +359,25 @@ table.bxt tbody tr:hover td{background:transparent}
     $("empty").classList.add("show");
   }
 
+  /* 箱子比重（R52）：一条堆叠条 + 一行「图标 + 个数」。
+     数字 = 当前视图的累计个数，悬浮给箱名与占比；⚠ 条宽是个数占比，不是资源占比（不折算） */
+  function mixHtml(mix) {
+    if (!mix || !mix.length) return "";
+    var total = mix.reduce(function (s, m) { return s + m.count; }, 0);
+    var bar = "", leg = "", tip = [];
+    mix.forEach(function (m, i) {
+      var col = MIX_COLOR[m.name] || MIX_FALLBACK[i % MIX_FALLBACK.length];
+      var pct = total > 0 ? (m.count / total * 100) : 0;
+      bar += '<i style="width:' + pct.toFixed(2) + "%;background:" + col + '"></i>';
+      tip.push(m.name + " " + m.count);
+      var ico = BOX_ICON[m.name] ? '<img alt="" src="' + BOX_ICON[m.name] + '">' : "";
+      var one = m.name + " ×" + m.count + "（" + (pct >= 10 ? Math.round(pct) : pct.toFixed(1)) + "%）";
+      leg += '<span class="mx" title="' + esc(one) + '">' + ico + "<b>" + m.count + "</b></span>";
+    });
+    return '<div class="mxbar" title="' + esc(tip.join(" : ")) + '">' + bar + "</div>"
+      + '<div class="mxleg">' + leg + "</div>";
+  }
+
   /* 当前筛选下的行（-1 = 全部） */
   function curRows() {
     if (!led || !led.ok) return [];
@@ -383,7 +435,7 @@ table.bxt tbody tr:hover td{background:transparent}
     }
     // 「未填开放日」只在「到开放日」口径下才需要提示；周期口径不依赖开放日
     if (state.span === 0 && led.ok && led.assumed) {
-      warns.push("未填写「新主线开放日」，暂按未来 <b>" + L.ASSUME_DAYS + "</b> 天预览；"
+      warns.push("未填写「新主线开放日」，暂按未来 <b>" + L.ASSUME_DAYS + "</b> 天统计；"
         + "填上开放日后账单会自动延到开放日。");
     }
     showWarn(warns.join("<br>"));
@@ -398,9 +450,9 @@ table.bxt tbody tr:hover td{background:transparent}
     /* ---- 区间 + 筛选状态 ---- */
     var rng = "统计区间 <b>" + led.start + "</b> → <b>" + led.end + "</b>"
       + ' <span class="dim">· 共 ' + led.days + " 天 · "
-      + (state.span > 0 ? "周期口径（" + spanName(state.span) + "）" : "到新主线开放日")
-      + " · 每日基地产出按 "
-      + (led.hasFutureRate ? "开放日起改用「新基地收益」" : "当前基地收益") + "折算</span>";
+      + (state.span > 0 ? "统计窗口 " + spanName(state.span) : "到新主线开放日")
+      + " · 每天按「"
+      + (led.hasFutureRate ? "开放日起改用新基地收益" : "当前基地收益") + "」入账</span>";
     if (state.wd >= 0) {
       var openIn = led.rows.some(function (r) { return r.isOpen && r.wd === state.wd; });
       rng += '<span class="filt">已筛选 ' + filtName + " · " + a.days + " 天"
@@ -414,7 +466,7 @@ table.bxt tbody tr:hover td{background:transparent}
     renderChips(org);
     $("bar").style.display = "";
 
-    /* ---- 汇总卡（日均按当前筛选重算）：3 张基础自然收益 + 1 张箱子 ---- */
+    /* ---- 汇总卡（日均按当前筛选重算）：3 张基础自然收益 + 1 张箱子（带构成比重） ---- */
     var cards = "";
     C.RESOURCES.forEach(function (r) {
       var ico = ICON[r] ? '<img alt="" src="' + ICON[r] + '">' : "";
@@ -422,13 +474,14 @@ table.bxt tbody tr:hover td{background:transparent}
         + '<div class="lc-top">' + ico + "<span>" + esc(C.RESOURCE_LABELS[r] || r)
         + " · " + (state.wd < 0 ? "日均" : filtName + "日均") + "</span></div>"
         + '<div class="lc-big">' + fmtNum(a.avg[r]) + "</div>"
-        + '<div class="lc-sub">' + (state.wd < 0 ? "区间合计 " : "该周几合计 ") + fmtNum(a.totals[r]) + "</div>"
+        + '<div class="lc-sub">' + (state.wd < 0 ? "区间累计 " : "该周几累计 ") + fmtNum(a.totals[r]) + "</div>"
         + "</div>";
     });
     cards += '<div class="lg-card boxc">'
       + '<div class="lc-top"><span>箱子 · ' + (state.wd < 0 ? "日均" : filtName + "日均") + "</span></div>"
       + '<div class="lc-big">' + fmtNum(a.boxAvg) + '<span class="unit">个</span></div>'
-      + '<div class="lc-sub">合计 ' + a.boxTotal + " 个 · " + a.days + " 天里 " + a.boxDays + " 天有箱</div>"
+      + '<div class="lc-sub">累计 ' + a.boxTotal + " 个 · " + a.days + " 天里 " + a.boxDays + " 天有箱</div>"
+      + mixHtml(L.boxMix(rows))
       + "</div>";
     $("cards").innerHTML = cards;
 
@@ -509,7 +562,7 @@ table.bxt tbody tr:hover td{background:transparent}
     $("wdBody").innerHTML = h2;
     $("wdWrap").style.display = "";
 
-    /* ---- 各周期对比（R51）：一个周期内能攒多少；点一行即切换统计周期 ---- */
+    /* ---- 各统计区间累计（R51；R52 明确是"一共收了多少"）：点一行即切换统计区间 ---- */
     spRows = L.spanStats(slice, [0].concat(L.SPANS));
     var h4 = "";
     spRows.forEach(function (g) {

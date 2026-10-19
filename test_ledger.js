@@ -495,5 +495,58 @@ t("boxSummary：首末日期与出现天数按实际有箱的日子算", functio
   assert.deepStrictEqual(L.boxSummary([]), []);
 });
 
+/* ================= R52：箱子比重（只数个数，按箱名合并） ================= */
+
+t("boxMix：按箱名合并（同名不同小时档算一类），个数之和 = 总箱数", function () {
+  var led = L.build(actSnap());
+  var mix = L.boxMix(led.rows);
+  assert.ok(mix.length > 0, "活动期应有箱子构成");
+  assert.strictEqual(mix.reduce(function (s, m) { return s + m.count; }, 0), led.boxTotal,
+    "比重个数之和 ≠ 总箱数");
+  // 8h 芯尘盒 + 2h 芯尘盒 必须合成一类
+  var rows = [{ date: "2026-10-20", boxItems: L.dayBox({ "芯尘盒": { "8": 2, "2": 3 }, "信用点盒": { "1": 1 } }, {}).items }];
+  var mix2 = L.boxMix(rows);
+  assert.strictEqual(mix2.length, 2, "应只有「芯尘盒 / 信用点盒」两类，实际 "
+    + mix2.map(function (m) { return m.name; }).join(","));
+  var dust = mix2.filter(function (m) { return m.name === "芯尘盒"; })[0];
+  assert.strictEqual(dust.count, 5, "芯尘盒 = 2 + 3，实际 " + dust.count);
+  assert.ok(near(dust.pct, 5 / 6 * 100, 1e-9), "芯尘盒占比 = " + dust.pct);
+});
+
+t("boxMix：按个数降序；自选箱单独成类（不与固定箱混）", function () {
+  var rows = [{ date: "2026-10-20",
+    boxItems: L.dayBox({ "信用点盒": { "1": 1 } }, { "挑战者成长宝箱": 9, "方舟官方补给物资Ⅰ": 3 }).items }];
+  var mix = L.boxMix(rows);
+  assert.deepStrictEqual(mix.map(function (m) { return m.name; }),
+    ["挑战者成长宝箱", "方舟官方补给物资Ⅰ", "信用点盒"]);
+  for (var i = 1; i < mix.length; i++) {
+    assert.ok(mix[i - 1].count >= mix[i].count, "未按个数降序");
+  }
+  assert.strictEqual(mix[0].kind, "sel");
+});
+
+t("boxMix：pct 是个数占比（Σ = 100），不折算资源、不改写传入的行", function () {
+  var led = L.build(actSnap());
+  var mix = L.boxMix(led.rows);
+  var pctSum = mix.reduce(function (s, m) { return s + m.pct; }, 0);
+  assert.ok(near(pctSum, 100, 1e-9), "占比之和 = " + pctSum);
+  mix.forEach(function (m) {
+    assert.strictEqual(m.credit, undefined, "不应带资源字段");
+    assert.ok(m.count > 0);
+    assert.ok(m.pct > 0 && m.pct <= 100);
+  });
+  // 同一份 rows 还要渲染明细表 → 不能被改写
+  assert.ok(led.rows[0].res && led.rows[0].boxCount !== undefined);
+});
+
+t("boxMix：空输入 / 无箱 → 空数组；与 boxSummary 的总个数一致", function () {
+  assert.deepStrictEqual(L.boxMix([]), []);
+  assert.deepStrictEqual(L.boxMix([{ date: "2026-10-20", boxItems: [] }]), []);
+  var led = L.build(actSnap());
+  var a = L.boxMix(led.rows).reduce(function (s, m) { return s + m.count; }, 0);
+  var b = L.boxSummary(led.rows).reduce(function (s, m) { return s + m.count; }, 0);
+  assert.strictEqual(a, b, "比重与汇总的总个数不一致");
+});
+
 console.log("\n结果：PASS " + pass + " / FAIL " + fail);
 process.exit(fail ? 1 : 0);
