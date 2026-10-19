@@ -159,14 +159,16 @@ body.m-body .app-nav-icon {
   object-fit: cover;
 }
 
-/* ---------- 吸底「开始计算」抬到 Tab 之上 ---------- */
+/* ---------- 吸底「开始计算」抬到 Tab 之上 ----------
+   实测底部 Tab 栏高 115px（含 6px 上下内边距 + env(safe-area)），原来 bottom:70px
+   会被 Tab 栏压住 45px。改为「Tab 栏高 + 8px 间隙」，安全区随 Tab 栏一起增长。 */
 body.m-body #btnCalc { display: none; }
 body.m-body .btn-calc-fab {
   display: block;
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(123px + env(safe-area-inset-bottom, 0px));
   z-index: 9000;
   width: min(92vw, 440px);
   padding: 14px;
@@ -180,6 +182,15 @@ body.m-body.tool-mode .btn-calc-fab,
 body.m-body.avatar-full .btn-calc-fab { display: none; }
 
 /* （表单填写进度球 + 明细面板已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
+
+/* 「计算后自动保存并同步」勾选：移动端 #btnCalc 隐藏，该行留在表单末尾，做成浅底卡片便于发现 */
+body.m-body .calc-autosync {
+  margin: 2px 0 16px; padding: 10px 12px; border-radius: 10px;
+  background: #f2f8f6; border: 1px solid var(--border); font-size: 13px;
+}
+/* 账单页末尾（表格 + 导出按钮）给吸底「开始计算」让位，避免按钮压住合计行
+   FAB 占 123~174px（见上），故末尾留 190px 让最后一行能滚到按钮之上 */
+body.m-body #tabLedger { padding-bottom: 190px; }
 
 /* 计算中的顶部进度条：移动端顶栏是 sticky top:0，进度条压在它上缘即可（z-index 更高）。 */
 body.m-body .calc-bar { height: 3px; }
