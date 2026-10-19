@@ -40,8 +40,10 @@ button{font:inherit;cursor:pointer}
 .lg-range .filt{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:99px;font-size:11.5px;
   background:rgba(29,158,117,.12);border:1px solid rgba(29,158,117,.35);color:var(--primary-dark);font-weight:650}
 
-/* ---------- 筛选条（按周几） ---------- */
-.lg-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+/* ---------- 筛选条（周期 / 周几） ---------- */
+.lg-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.lg-bar:last-of-type{margin-bottom:12px}
+.bar-lab{flex:0 0 auto;font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.3px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
 .chip{height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--border);background:var(--card);
   color:var(--text2);font-size:12.5px;display:inline-flex;align-items:center;gap:5px;transition:.16s;white-space:nowrap}
@@ -62,6 +64,16 @@ button{font:inherit;cursor:pointer}
 .lc-big{font-size:24px;font-weight:700;color:var(--primary-dark);line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
 .lc-big .unit{font-size:12px;font-weight:600;color:var(--muted);margin-left:3px}
 .lc-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+/* ---------- 表头说明条 ---------- */
+.tbl-cap{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 2px 8px}
+.tbl-cap .t{font-size:12.5px;font-weight:650;color:var(--text2)}
+.tbl-cap .t span{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:6px}
+.mini{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);
+  color:var(--text2);font-size:11.5px;transition:.16s}
+.mini:hover{border-color:var(--primary);color:var(--primary-dark);background:#f4faf7}
+.mini[data-on="0"]{color:var(--muted)}
+.mini[data-on="0"]:hover{color:var(--primary-dark)}
 
 /* ---------- 明细表 ---------- */
 .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;max-height:none}
@@ -85,14 +97,26 @@ tbody tr.total td{background:#f4f8f6;font-weight:700;color:var(--text);border-to
 .tag.act{background:rgba(184,134,11,.1);color:#9a6d1a;border-color:rgba(184,134,11,.3);margin-left:4px}
 .tag.open{background:rgba(47,125,209,.1);color:#2f7dd1;border-color:rgba(47,125,209,.3)}
 
-/* ---------- 按周几对比 ---------- */
+/* ---------- 每日箱子明细（R51：默认展开，跟在当天那行下面） ---------- */
+tr.bxrow td{background:rgba(29,158,117,.035);border-bottom:1px solid rgba(221,227,224,.7);
+  text-align:left;white-space:normal;padding:7px 10px 8px 26px}
+tbody tr.bxrow:hover td{background:rgba(29,158,117,.055)}
+.bxi{display:inline-flex;align-items:baseline;gap:3px;margin:2px 6px 2px 0;padding:1px 8px;
+  border-radius:99px;background:#f2f8f5;border:1px solid rgba(29,158,117,.22);
+  color:var(--text2);font-size:11px;line-height:1.75}
+.bxi b{color:var(--primary-dark);font-variant-numeric:tabular-nums}
+.bxi.fx{border-color:rgba(29,158,117,.3)}
+.bxi.sl{border-color:rgba(184,134,11,.32);background:rgba(184,134,11,.06)}
+.bxi.sl b{color:#8a6410}
+
+/* ---------- 小表（箱子汇总 / 周几对比 / 周期对比） ---------- */
 .wd-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-top:14px;overflow:auto}
 .wd-cap{padding:12px 14px 2px;font-size:12.5px;font-weight:650;color:var(--text2)}
 .wd-cap span{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:6px}
 /* 桌面把这张小表收窄居中：列宽按内容摊开太散，880px 一眼能扫完 */
 table.wdt{min-width:520px;max-width:880px;margin:0 auto;font-size:12px}
 table.wdt thead th{background:transparent;border-bottom:1px solid var(--border);text-align:center}
-/* 6 列在宽屏上会摊得很开，数值右对齐会离标签很远 → 全部居中，只有星期那列靠左 */
+/* 6 列在宽屏上会摊得很开，数值右对齐会离标签很远 → 全部居中，只有第一列靠左 */
 table.wdt tbody td{text-align:center}
 table.wdt thead th:first-child,
 table.wdt tbody td:first-child{text-align:left}
@@ -103,6 +127,12 @@ table.wdt tbody tr.dim td{color:var(--muted);cursor:default}
 table.wdt tbody tr.dim:hover td{background:transparent}
 table.wdt tbody tr:last-child td{border-bottom:none}
 .wdt .nt{color:var(--muted);font-size:10.5px;margin-left:4px}
+.wdt .sub{display:block;color:var(--muted);font-size:10px;font-weight:400;margin-top:1px}
+/* 箱子汇总表：不参与筛选，行不可点 */
+table.bxt tbody tr{cursor:default}
+table.bxt tbody tr:hover td{background:transparent}
+.bxname{font-weight:650;color:var(--text)}
+.bxpct{font-variant-numeric:tabular-nums;color:var(--text2)}
 
 /* ---------- 空状态 / 说明 ---------- */
 .lg-empty{display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center}
@@ -122,22 +152,29 @@ table.wdt tbody tr:last-child td{border-bottom:none}
   .lg-title{font-size:17px}
   .lg-acts{width:100%}
   .lg-acts .btn{flex:1}
-  /* 五列在 390px 上要全部露出（藏掉「信用点」或「箱」都会让账单失真）→ 只压缩内边距与字号，
+  /* 六列在 390px 上要全部露出（藏掉「信用点」或「箱」都会让账单失真）→ 只压缩内边距与字号，
      并把「星期」从日期右侧改成日期下方一行（省下最宽的那截），390px 下横向溢出 = 0 */
   table{min-width:0;font-size:11.5px}
   thead th{padding:8px 4px;font-size:10px;letter-spacing:0}
   tbody td{padding:7px 4px}
   .wd{display:block;margin:1px 0 0;font-size:9.5px}
   .tag{padding:0 4px;font-size:9px;margin-left:2px}
-  .lg-bar{gap:8px}
+  /* 每日箱子明细在手机上要允许换行，否则 chip 一多就横向溢出 */
+  tr.bxrow td{padding:6px 8px 7px 10px}
+  .bxi{margin:2px 4px 2px 0;padding:1px 6px;font-size:10.5px}
+  .lg-bar{gap:6px 10px}
+  .bar-lab{width:100%;font-size:11.5px}
   /* 8 个 chip 在 390px 上换成两行显示（横向滚动会让「周五/周六/周日」藏起来，用户以为没有） */
-  .chips{width:100%;flex-wrap:wrap;gap:6px}
-  .chip{height:28px;padding:0 10px;font-size:12px}
-  /* 按周几对比表也要在 390px 内放下（去掉 min-width，靠压内边距与字号） */
+  .chips{width:100%;flex-wrap:wrap;gap:5px}
+  .chip{height:28px;padding:0 9px;font-size:11.5px}
+  .chip b{font-size:10px;padding:0 4px}
+  .tbl-cap{margin-bottom:7px}
+  /* 小表也要在 390px 内放下（去掉 min-width，靠压内边距与字号） */
   table.wdt{min-width:0;font-size:11px}
   table.wdt thead th{padding:8px 4px;font-size:9.5px}
   table.wdt tbody td{padding:7px 4px}
   .wd-cap{padding:11px 12px 0}
+  .wd-cap span{display:block;margin:2px 0 0}
 }
 </style>
 </head>
@@ -155,11 +192,22 @@ table.wdt tbody tr:last-child td{border-bottom:none}
   <div class="warn" id="warn"></div>
   <div class="lg-range" id="range"></div>
 
+  <div class="lg-bar" id="spanBar" style="display:none">
+    <span class="bar-lab">统计周期</span>
+    <div class="chips" id="spanChips"></div>
+  </div>
+
   <div class="lg-bar" id="bar" style="display:none">
+    <span class="bar-lab">按周几</span>
     <div class="chips" id="chips"></div>
   </div>
 
   <div class="lg-cards" id="cards"></div>
+
+  <div class="tbl-cap" id="tblCap" style="display:none">
+    <div class="t">每日明细<span id="tblSub">每天的收益与箱子个数</span></div>
+    <button class="mini" id="btnBx" data-on="1">箱子明细：展开</button>
+  </div>
 
   <div class="table-wrap" id="tableWrap" style="display:none">
     <table>
@@ -168,11 +216,27 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     </table>
   </div>
 
+  <div class="wd-wrap" id="bxWrap" style="display:none">
+    <div class="wd-cap">箱子明细汇总<span>按「箱名 + 小时档」聚合；只数个数，不折算资源</span></div>
+    <table class="wdt bxt">
+      <thead><tr><th>箱子</th><th>个数</th><th>占比</th><th>出现天数</th><th>首次 → 末次</th></tr></thead>
+      <tbody id="bxBody"></tbody>
+    </table>
+  </div>
+
   <div class="wd-wrap" id="wdWrap" style="display:none">
     <div class="wd-cap">按周几对比<span>点一行即筛选；日均 = 该周几的合计 ÷ 天数</span></div>
     <table class="wdt">
       <thead><tr><th>星期</th><th>天数</th><th>信用点日均</th><th>战斗数据辑日均</th><th>红球日均</th><th>箱数/天</th></tr></thead>
       <tbody id="wdBody"></tbody>
+    </table>
+  </div>
+
+  <div class="wd-wrap" id="spWrap" style="display:none">
+    <div class="wd-cap">各周期对比<span>一个周期内能攒多少（合计口径）；点一行即切换统计周期</span></div>
+    <table class="wdt">
+      <thead><tr><th>周期</th><th>天数</th><th>信用点合计</th><th>战斗数据辑合计</th><th>红球合计</th><th>箱数</th></tr></thead>
+      <tbody id="spBody"></tbody>
     </table>
   </div>
 
@@ -186,24 +250,29 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     账单只统计两件事：
     ① 每天新到账的<b>基础自然收益</b>（信用点 / 战斗数据辑 / 红球）= 基地每小时产出 × 24 + 当日活动<b>直接给</b>的资源 + 开放日一次性推图收益；
     ② 每天<b>收到的箱子个数</b>（固定小时箱 + 自选箱），<b>只数个数、不折算资源</b>。
-    箱子里面的资源要自己开箱才会到账、开哪个还看你的选择，所以账单不替它估算；箱子明细可以把鼠标停在数字上看。
+    箱子里面的资源要自己开箱才会到账、开哪个还看你的选择，所以账单不替它估算；<b>每天收了哪些箱子</b>在明细表里直接展开可见，底部还有一张按箱名聚合的汇总。
     升级消耗、开箱本身的存量消耗都不扣减（账单是「进项」，不是余额表）。
   </p>
 </div>
 
 <script src="js/core.js?v=20260917c"></script>
 <script src="js/events.js?v=20261012a"></script>
-<script src="js/ledger.js?v=20261019e"></script>
+<script src="js/ledger.js?v=20261019f"></script>
 <script>
 (function () {
   "use strict";
   var C = window.NikkeCore, L = window.NikkeLedger, EV = window.NikkeEvents;
   var FORM_KEY = "nikke_planner_form_v1";
+  var SPAN_KEY = "nikke_ledger_span_v1";     // 周期口径（R51）：选的 N 天会记住
+  var BX_KEY = "nikke_ledger_bxopen_v1";     // 每日箱子明细是否展开（默认展开）
   var ICON = { credit: "assets/res_credit.webp", battle_data: "assets/res_battle.webp", core_dust: "assets/res_dust.webp" };
-  var led = null, slice = null;
-  var state = { wd: -1 };          // 周几筛选不记住（重开默认看全部）
+  var led = null, slice = null, spRows = [];
+  // 周几筛选不记住（重开默认看全部）；周期与箱子展开状态记住
+  var state = { wd: -1, span: 0, bxOpen: true };
 
   function $(id) { return document.getElementById(id); }
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 隐私模式：只是不记住 */ } }
   function fmtNum(v) {
     if (v === null || v === undefined || isNaN(v)) return "-";
     var a = Math.abs(v);
@@ -226,6 +295,8 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     var p = function (n) { return n < 10 ? "0" + n : "" + n; };
     return (d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
   }
+  /* 周期口径的中文名：0 = 到开放日（原口径） */
+  function spanName(n) { return n === 0 ? "到开放日" : (n === 365 ? "1 年" : n + " 天"); }
   function goPlanner() {
     try {
       if (window.parent && window.parent !== window && window.parent.__nikkeShell) {
@@ -243,15 +314,14 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     w.innerHTML = html;
   }
   function empty(text) {
-    $("range").innerHTML = "";
-    $("cards").innerHTML = "";
-    $("tbody").innerHTML = "";
-    $("wdBody").innerHTML = "";
-    $("chips").innerHTML = "";
-    $("bar").style.display = "none";
-    $("tableWrap").style.display = "none";
-    $("wdWrap").style.display = "none";
-    $("note").style.display = "none";
+    ["range", "cards", "tbody", "wdBody", "bxBody", "spBody", "chips", "spanChips"].forEach(function (id) {
+      var e = $(id);
+      if (e) e.innerHTML = "";
+    });
+    ["bar", "spanBar", "tableWrap", "wdWrap", "bxWrap", "spWrap", "tblCap", "note"].forEach(function (id) {
+      var e = $(id);
+      if (e) e.style.display = "none";
+    });
     $("emptyText").textContent = text;
     $("empty").classList.add("show");
   }
@@ -261,6 +331,16 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     if (!led || !led.ok) return [];
     if (state.wd < 0) return led.rows;
     return led.rows.filter(function (r) { return r.wd === state.wd; });
+  }
+
+  function renderSpanChips() {
+    var html = '<button class="chip' + (state.span === 0 ? " on" : "") + '" data-span="0">'
+      + "到开放日" + (led.openDays ? " <b>" + led.openDays + "</b>" : "") + "</button>";
+    L.SPANS.forEach(function (n) {
+      html += '<button class="chip' + (state.span === n ? " on" : "") + '" data-span="' + n + '">'
+        + spanName(n) + "</button>";
+    });
+    $("spanChips").innerHTML = html;
   }
 
   function renderChips(org) {
@@ -288,8 +368,11 @@ table.wdt tbody tr:last-child td{border-bottom:none}
       return;
     }
 
-    led = L.build(slice);
-    // 上次选的那个周几可能已经不在区间里 → 回落「全部」
+    led = L.build(slice, { span: state.span });
+    // 开放日口径下的天数（周期 chips 上给「到开放日」做徽章，也用来判断能不能切回去）
+    var openLed = state.span === 0 ? led : L.build(slice, { span: 0 });
+    led.openDays = openLed.ok ? openLed.days : 0;
+    // 上次选的那个周几 / 周期可能已经不在区间里 → 回落
     if (state.wd >= 0 && !led.rows.some(function (r) { return r.wd === state.wd; })) state.wd = -1;
 
     $("srcChip").textContent = "数据来源：上次计算 " + (slice.computed_at ? stamp(slice.computed_at) : "（时间未知）");
@@ -298,7 +381,8 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     if (L.formChanged(slice, form)) {
       warns.push("表单在上次计算之后又改过，账单仍按<b>上次计算</b>的数据生成；回计算器重算一次即可更新。");
     }
-    if (led.ok && led.assumed) {
+    // 「未填开放日」只在「到开放日」口径下才需要提示；周期口径不依赖开放日
+    if (state.span === 0 && led.ok && led.assumed) {
       warns.push("未填写「新主线开放日」，暂按未来 <b>" + L.ASSUME_DAYS + "</b> 天预览；"
         + "填上开放日后账单会自动延到开放日。");
     }
@@ -313,7 +397,9 @@ table.wdt tbody tr:last-child td{border-bottom:none}
 
     /* ---- 区间 + 筛选状态 ---- */
     var rng = "统计区间 <b>" + led.start + "</b> → <b>" + led.end + "</b>"
-      + ' <span class="dim">· 共 ' + led.days + " 天 · 每日基地产出按 "
+      + ' <span class="dim">· 共 ' + led.days + " 天 · "
+      + (state.span > 0 ? "周期口径（" + spanName(state.span) + "）" : "到新主线开放日")
+      + " · 每日基地产出按 "
       + (led.hasFutureRate ? "开放日起改用「新基地收益」" : "当前基地收益") + "折算</span>";
     if (state.wd >= 0) {
       var openIn = led.rows.some(function (r) { return r.isOpen && r.wd === state.wd; });
@@ -322,7 +408,9 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     }
     $("range").innerHTML = rng;
 
-    /* ---- 筛选条 ---- */
+    /* ---- 周期 / 周几筛选条 ---- */
+    renderSpanChips();
+    $("spanBar").style.display = "";
     renderChips(org);
     $("bar").style.display = "";
 
@@ -344,7 +432,11 @@ table.wdt tbody tr:last-child td{border-bottom:none}
       + "</div>";
     $("cards").innerHTML = cards;
 
-    /* ---- 明细（三资源 = 基础自然收益；箱数单独一列，不折算） ---- */
+    /* ---- 每日明细（三资源 = 基础自然收益；箱数单独一列，不折算）
+           R51：有箱的日子默认在下面跟一行箱子明细，能直接看出「今天收了哪些箱子」 ---- */
+    $("tblSub").textContent = state.bxOpen ? "每天的收益与箱子明细" : "每天的收益与箱子个数";
+    $("btnBx").setAttribute("data-on", state.bxOpen ? "1" : "0");
+    $("btnBx").textContent = state.bxOpen ? "箱子明细：展开" : "箱子明细：收起";
     var html = "";
     rows.forEach(function (row) {
       var tag = row.isOpen ? '<span class="tag open">开放日</span>' : "";
@@ -359,6 +451,15 @@ table.wdt tbody tr:last-child td{border-bottom:none}
         + '<td><span class="bx' + (row.boxCount ? "" : " zero") + '"' + (bt ? ' title="' + esc(bt) + '"' : "")
         + ">" + (row.boxCount || 0) + "</span></td>"
         + "<td>" + tag + "</td></tr>";
+      if (state.bxOpen && row.boxCount > 0) {
+        html += '<tr class="bxrow"><td colspan="6">'
+          + row.boxItems.map(function (it) {
+            return '<span class="bxi ' + (it.kind === "fixed" ? "fx" : "sl") + '">'
+              + (it.kind === "fixed" ? esc(it.hours) + "h " : "") + esc(it.name)
+              + " <b>×" + it.count + "</b></span>";
+          }).join("")
+          + "</td></tr>";
+      }
     });
     html += '<tr class="total"><td>合计</td>'
       + "<td>" + fmtNum(a.totals.credit) + "</td>"
@@ -368,6 +469,30 @@ table.wdt tbody tr:last-child td{border-bottom:none}
       + '<td><span class="wd">' + a.days + " 天</span></td></tr>";
     $("tbody").innerHTML = html;
     $("tableWrap").style.display = "";
+    $("tblCap").style.display = "";
+
+    /* ---- 箱子明细汇总：从「只知道总个数」到「知道是哪些箱子」 ---- */
+    var bs = L.boxSummary(rows);
+    if (bs.length) {
+      var h3 = "";
+      bs.forEach(function (b) {
+        var pct = a.boxTotal > 0 ? (b.count / a.boxTotal * 100) : 0;
+        h3 += "<tr>"
+          + '<td><span class="bxname">' + (b.kind === "fixed" ? esc(b.hours) + "h " : "") + esc(b.name) + "</span>"
+          + '<span class="sub">' + (b.kind === "fixed" ? "固定小时箱" : "自选箱") + "</span></td>"
+          + "<td><b>" + b.count + "</b></td>"
+          + '<td><span class="bxpct">' + pct.toFixed(pct >= 10 ? 0 : 1) + "%</span></td>"
+          + "<td>" + b.days + " 天</td>"
+          + '<td class="rn">' + b.first.slice(5) + " → " + b.last.slice(5) + "</td>"
+          + "</tr>";
+      });
+      h3 += '<tr class="dim"><td>合计</td><td><b>' + a.boxTotal + '</b></td><td class="bxpct">100%</td>'
+        + "<td>" + a.boxDays + " 天</td><td>—</td></tr>";
+      $("bxBody").innerHTML = h3;
+      $("bxWrap").style.display = "";
+    } else {
+      $("bxWrap").style.display = "none";
+    }
 
     /* ---- 按周几对比（点一行即筛选） ---- */
     var h2 = "";
@@ -383,6 +508,25 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     });
     $("wdBody").innerHTML = h2;
     $("wdWrap").style.display = "";
+
+    /* ---- 各周期对比（R51）：一个周期内能攒多少；点一行即切换统计周期 ---- */
+    spRows = L.spanStats(slice, [0].concat(L.SPANS));
+    var h4 = "";
+    spRows.forEach(function (g) {
+      if (!g.ok) return;
+      var isCur = (state.span === g.span);
+      var label = g.span === 0 ? "到开放日" : spanName(g.span);
+      h4 += "<tr" + (isCur ? ' class="on"' : "") + ' data-span="' + g.span + '">'
+        + "<td>" + label + (g.span === 0 ? '<span class="nt">基准</span>' : "") + "</td>"
+        + "<td>" + g.days + "</td>"
+        + "<td>" + fmtNum(g.totals.credit) + "</td>"
+        + "<td>" + fmtNum(g.totals.battle_data) + "</td>"
+        + "<td>" + fmtNum(g.totals.core_dust) + "</td>"
+        + "<td>" + g.boxTotal + "</td></tr>";
+    });
+    if (h4) { $("spBody").innerHTML = h4; $("spWrap").style.display = ""; }
+    else { $("spWrap").style.display = "none"; }
+
     $("note").style.display = "";
   }
 
@@ -392,6 +536,14 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     try { render(); } catch (e) { /* 保持页面可用 */ }
     // 切换筛选后把明细表滚进视野（手机上次要看的位置在下面）
     try { $("tableWrap").scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) { /* 老浏览器 */ }
+  }
+
+  function setSpan(n) {
+    if (state.span === n) return;
+    state.span = n;
+    lsSet(SPAN_KEY, String(n));
+    try { render(); } catch (e) { /* 保持页面可用 */ }
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { window.scrollTo(0, 0); }
   }
 
   function download(name, content) {
@@ -405,9 +557,29 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
   }
 
+  /* 记录的周期 / 明细展开状态 */
+  (function restorePrefs() {
+    var sp = parseInt(lsGet(SPAN_KEY), 10);
+    if (!isNaN(sp) && (sp === 0 || L.SPANS.indexOf(sp) >= 0)) state.span = sp;
+    var bx = lsGet(BX_KEY);
+    if (bx === "0") state.bxOpen = false;
+  })();
+
   $("btnGo").addEventListener("click", goPlanner);
   $("btnGo2").addEventListener("click", goPlanner);
   $("btnReload").addEventListener("click", render);
+  $("btnBx").addEventListener("click", function () {
+    state.bxOpen = !state.bxOpen;
+    lsSet(BX_KEY, state.bxOpen ? "1" : "0");
+    try { render(); } catch (e) { /* 保持页面可用 */ }
+  });
+  $("spanChips").addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest(".chip") : null;
+    if (!b || b.disabled) return;
+    var n = parseInt(b.getAttribute("data-span"), 10);
+    if (isNaN(n)) return;
+    setSpan(n);
+  });
   $("chips").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest(".chip") : null;
     if (!b || b.disabled) return;
@@ -422,11 +594,19 @@ table.wdt tbody tr:last-child td{border-bottom:none}
     if (isNaN(wd)) return;
     setWd(state.wd === wd ? -1 : wd);   // 再点一次同一个周几 = 取消筛选
   });
+  $("spBody").addEventListener("click", function (e) {
+    var tr = e.target.closest ? e.target.closest("tr") : null;
+    if (!tr) return;
+    var n = parseInt(tr.getAttribute("data-span"), 10);
+    if (isNaN(n)) return;
+    setSpan(n);
+  });
   $("btnCsv").addEventListener("click", function () {
     if (!led || !led.ok) return;
     var rows = curRows();
     var tag = state.wd < 0 ? "" : "_" + L.WD_NAMES[state.wd];
-    download("收益账单_" + led.start + "_" + led.end + tag + ".csv", L.csv(led, { rows: rows }));
+    var sp = state.span === 0 ? "" : "_" + state.span + "天";
+    download("收益账单_" + led.start + "_" + led.end + sp + tag + ".csv", L.csv(led, { rows: rows }));
   });
 
   // 活动模板：与计算器同源（data/event_templates.json），拿不到就按「无活动」渲染，不阻塞页面

@@ -369,5 +369,131 @@ t("boxText：固定箱带小时数、自选箱只带名字", function () {
   assert.strictEqual(L.boxText([]), "");
 });
 
+/* ================= R51：周期口径 + 每天箱子明细 ================= */
+
+t("周期口径：span=30 → 固定 30 天，与开放日无关", function () {
+  var s = Object.assign({}, BASE, { main_story_open_at: "2026-12-31" });
+  var led = L.build(s, { span: 30 });
+  assert.strictEqual(led.span, 30);
+  assert.strictEqual(led.start, "2026-10-20");
+  assert.strictEqual(led.end, "2026-11-18");
+  assert.strictEqual(led.days, 30);
+  assert.strictEqual(led.rows.length, 30);
+  // 开放日远在区间之外 → 不该出现开放日行，也不该用 future 费率
+  assert.strictEqual(led.rows.filter(function (r) { return r.isOpen; }).length, 0);
+  assert.ok(near(led.rows[0].res.credit, 1000 * 24), "开放日外的日期应用现状费率");
+});
+
+t("周期口径：开放日落在区间内 → 推图收益只计一次、之后改用新基地收益", function () {
+  var s = Object.assign({}, BASE, { main_story_open_at: "2026-11-02" });
+  var led = L.build(s, { span: 60 });
+  assert.strictEqual(led.days, 60, "60 天周期不能被开放日截断");
+  var opens = led.rows.filter(function (r) { return r.isOpen; });
+  assert.strictEqual(opens.length, 1, "推图收益只能出现在开放日那一天");
+  assert.ok(near(opens[0].res.credit, 2000 * 24 + 5000000), "开放日 = 新收益×24 + 推图一次性");
+  // 开放日之后的日子：只有新收益，不再重复叠推图
+  var after = led.rows.filter(function (r) { return r.date > "2026-11-02"; });
+  assert.ok(after.length > 0);
+  after.forEach(function (r) { assert.ok(near(r.res.credit, 2000 * 24), r.date + " 重复计了推图收益"); });
+});
+
+t("周期口径与「到开放日」口径逐日一致（只是天数不同，不是另算一套）", function () {
+  var s = Object.assign({}, BASE, { main_story_open_at: "2026-12-31", activities: [{ template: "small14", start_date: "2026-10-22" }] });
+  var a = L.build(s);                       // 到开放日，天数远超 30
+  var b = L.build(s, { span: 30 });
+  var n = Math.min(a.days, b.days);
+  assert.ok(n > 0);
+  for (var i = 0; i < n; i++) {
+    assert.strictEqual(a.rows[i].date, b.rows[i].date, "第 " + i + " 行日期不一致");
+    RES.forEach(function (k) {
+      assert.ok(near(a.rows[i].res[k], b.rows[i].res[k], 1e-6), "第 " + i + " 行 " + k + " 不一致");
+    });
+    assert.strictEqual(a.rows[i].boxCount, b.rows[i].boxCount, "第 " + i + " 行箱数不一致");
+  }
+});
+
+t("周期口径：spans 上界受 MAX_DAYS 保护（传 1000 天不爆表）", function () {
+  var led = L.build(BASE, { span: 1000 });
+  assert.strictEqual(led.span, L.MAX_DAYS);
+  assert.strictEqual(led.days, L.MAX_DAYS);
+});
+
+t("spanStats：每个周期天数 = 周期本身，合计与单独 build 逐值一致", function () {
+  var s = actSnap({ main_story_open_at: "2026-11-20" });
+  var list = L.spanStats(s);
+  assert.strictEqual(list.length, L.SPANS.length);
+  assert.deepStrictEqual(list.map(function (g) { return g.span; }), [30, 60, 90, 180, 365]);
+  list.forEach(function (g) {
+    assert.strictEqual(g.ok, true, g.span + " 天不可用");
+    assert.strictEqual(g.days, g.span, g.span + " 天周期实际 " + g.days + " 天");
+    var led = L.build(s, { span: g.span });
+    RES.forEach(function (k) {
+      assert.ok(near(g.totals[k], led.totals[k], 1e-6), g.span + " 天 " + k + " 合计不一致");
+      assert.ok(near(g.avg[k], led.avg[k], 1e-6), g.span + " 天 " + k + " 日均不一致");
+    });
+    assert.strictEqual(g.boxTotal, led.boxTotal, g.span + " 天箱数不一致");
+  });
+  // 周期越长，合计只会更大（单调不减），箱数同理
+  for (var i = 1; i < list.length; i++) {
+    RES.forEach(function (k) {
+      assert.ok(list[i].totals[k] >= list[i - 1].totals[k] - 1e-6, k + " 在 " + list[i].span + " 天反而变小");
+    });
+    assert.ok(list[i].boxTotal >= list[i - 1].boxTotal, list[i].span + " 天箱数反而变少");
+  }
+});
+
+t("spanStats：span=0 可混在列表里（页面「到开放日」基准行）", function () {
+  var s = actSnap({ main_story_open_at: "2026-11-20" });
+  var list = L.spanStats(s, [0, 30]);
+  assert.strictEqual(list[0].span, 0);
+  assert.strictEqual(list[0].days, L.build(s).days, "span=0 应等于「到开放日」口径");
+  assert.strictEqual(list[1].days, 30);
+});
+
+t("spanStats：缺数据日期 → 空数组（页面照常渲染空状态）", function () {
+  assert.deepStrictEqual(L.spanStats({ income_per_hour: {} }), []);
+  assert.deepStrictEqual(L.spanStats(null), []);
+});
+
+t("boxSummary：个数之和 = 总箱数，按个数降序，同名不同档分开", function () {
+  var led = L.build(actSnap());
+  var bs = L.boxSummary(led.rows);
+  assert.ok(bs.length > 0, "活动期应有箱子构成");
+  assert.strictEqual(bs.reduce(function (s, b) { return s + b.count; }, 0), led.boxTotal, "汇总个数之和 ≠ 总箱数");
+  for (var i = 1; i < bs.length; i++) {
+    assert.ok(bs[i - 1].count >= bs[i].count, "未按个数降序：" + bs[i - 1].count + " → " + bs[i].count);
+  }
+  // 逐日明细逐条求和 = 汇总（不能有漏计或多计）
+  var fromRows = 0;
+  led.rows.forEach(function (r) { (r.boxItems || []).forEach(function (it) { fromRows += it.count; }); });
+  assert.strictEqual(fromRows, led.boxTotal, "逐日明细之和 ≠ 总箱数");
+  // 同名不同小时档必须是两行
+  var d = L.dayBox({ "芯尘盒": { "8": 2, "2": 3 } }, {});
+  var two = L.boxSummary([{ date: "2026-10-20", boxItems: d.items }]);
+  assert.strictEqual(two.length, 2, "8h 与 2h 应分成两行");
+  assert.deepStrictEqual(two.map(function (x) { return x.hours; }).sort(), [2, 8]);
+});
+
+t("boxSummary：首末日期与出现天数按实际有箱的日子算", function () {
+  var items = L.dayBox({ "芯尘盒": { "8": 1 } }, { "挑战者成长宝箱": 5 }).items;
+  var rows = [
+    { date: "2026-10-22", boxItems: items.filter(function (x) { return x.kind === "sel"; }) },
+    { date: "2026-10-25", boxItems: items },
+    { date: "2026-11-01", boxItems: items.filter(function (x) { return x.kind === "sel"; }) }
+  ];
+  var bs = L.boxSummary(rows);
+  var sel = bs.filter(function (b) { return b.name === "挑战者成长宝箱"; })[0];
+  assert.strictEqual(sel.count, 15, "3 天 × 5 = 15，实际 " + sel.count);
+  assert.strictEqual(sel.days, 3);
+  assert.strictEqual(sel.first, "2026-10-22");
+  assert.strictEqual(sel.last, "2026-11-01");
+  var fx = bs.filter(function (b) { return b.name === "芯尘盒"; })[0];
+  assert.strictEqual(fx.count, 1);
+  assert.strictEqual(fx.days, 1);
+  assert.strictEqual(fx.first, "2026-10-25");
+  // 空输入 → 空数组（页面隐藏汇总表）
+  assert.deepStrictEqual(L.boxSummary([]), []);
+});
+
 console.log("\n结果：PASS " + pass + " / FAIL " + fail);
 process.exit(fail ? 1 : 0);

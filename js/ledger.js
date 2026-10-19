@@ -12,13 +12,24 @@
       （活动箱子不在这里面 —— 箱子的资源要开箱才到账，而且开哪个还看玩家选择）
    2) 每天收入的箱子数量（只数个数，不折算成资源）
       = byDate[d].fixed 的各小时档个数 + byDate[d].selectable 的各箱个数
-   箱子明细（箱名 × 个数）只用于悬浮提示与 CSV 备注，不参与任何金额。 */
+   箱子明细（箱名 × 个数）只用于悬浮提示与 CSV 备注，不参与任何金额。
+
+   ---------- R51：周期口径 + 每天箱子明细 ----------
+   A) 区间不再只有「到开放日」一种：build(snap, {span:N}) 可把区间固定成 N 天
+      （数据日期+1 起共 N 天），span=0 才是原来的「到开放日」。
+      费率仍按「进入开放日之后改用新基地收益」逐日切换，推图收益只在开放日当天计一次
+      —— 所以周期口径与开放日口径的差异只有「天数」，不是另算一套。
+   B) spanStats(snap) 把 30/60/90/180/365 天各自的合计一次算出来（共用一份 schedule）：
+      用户要看的是「一个周期内能攒多少」，合计比日均直观。
+   C) boxSummary(rows) 把箱子按「箱名 + 小时档」聚合（个数 / 占比 / 首末日期）：
+      只数个数之后，光有总数看不出是哪些箱子构成的。 */
 (function (global) {
   "use strict";
 
   var C = global.NikkeCore;
   var ASSUME_DAYS = 14;    // 未填「新主线开放日」时，默认预览未来 14 天
   var MAX_DAYS = 400;      // 防御：开放日填成十年后时不生成几万行
+  var SPANS = [30, 60, 90, 180, 365];   // 周期口径（R51）：一年按 365 天，不做闰年特判
   var SNAP_KEY = "nikke_ledger_snap_v1";
   /* getDay() 的索引 → 中文。筛选与分组都按「周一…周日」排（不做 locale 判断） */
   var WD_NAMES = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -102,30 +113,39 @@
      snap 需要的字段（其余一律不读）：
        recorded_at / main_story_open_at / income_per_hour / future_income_per_hour /
        stage_clear_resources / activities
-     recorded_at 与 main_story_open_at 允许 Date、ISO 字符串或时间戳。 */
-  function build(snap) {
+     recorded_at 与 main_story_open_at 允许 Date、ISO 字符串或时间戳。
+     opts.span  > 0 → 固定 N 天周期（数据日期+1 起）；= 0 / 不传 → 到开放日（原口径）
+     opts.sched → 已算好的 events.schedule()，spanStats 批量算周期时复用它，避免重复求解 */
+  function build(snap, opts) {
     var s = snap || {};
+    var o = opts || {};
+    var span = Math.floor(Number(o.span) || 0);
+    if (!(span > 0)) span = 0;
+    if (span > MAX_DAYS) span = MAX_DAYS;
 
     var recISO = toISO(s.recorded_at);
     var openISO = s.main_story_open_at ? toISO(s.main_story_open_at) : null;
     var assumed = !openISO;
     var out = {
       ok: false, reason: "", start: "", end: "", open: openISO || null,
-      assumed: assumed, rows: [], days: 0,
+      assumed: assumed, span: span, rows: [], days: 0,
       totals: zeroRes(), avg: zeroRes(),
       hasFutureRate: false, boxDays: 0, boxTotal: 0, boxAvg: 0
     };
     if (!recISO) { out.reason = "缺少「数据日期」，无法生成账单。"; return out; }
 
     var startISO = addDaysISO(recISO, 1);
-    var endISO = openISO || addDaysISO(recISO, ASSUME_DAYS);
+    // 周期口径：区间长度由用户选的 N 决定，与开放日无关（开放日只影响费率切换与推图那天）
+    var endISO = span > 0 ? addDaysISO(recISO, span) : (openISO || addDaysISO(recISO, ASSUME_DAYS));
     out.start = startISO;
     out.end = endISO;
-    if (!openISO && ASSUME_DAYS < 1) { out.reason = "账单区间为空。"; return out; }
-    // 开放日不晚于数据日期 → 没有等待期，账单无意义
-    if (openISO && openISO < startISO) {
-      out.reason = "「新主线开放日」不晚于数据日期，没有可统计的等待期。";
-      return out;
+    // 这两条只在「到开放日」口径下才成立；周期口径下开放日可以落在区间外（甚至已经很早）
+    if (span === 0) {
+      if (!openISO && ASSUME_DAYS < 1) { out.reason = "账单区间为空。"; return out; }
+      if (openISO && openISO < startISO) {
+        out.reason = "「新主线开放日」不晚于数据日期，没有可统计的等待期。";
+        return out;
+      }
     }
 
     var curRate = pickRes(s.income_per_hour);
@@ -135,9 +155,10 @@
     var stage = pickRes(s.stage_clear_resources);
 
     // 活动逐日产出：与引擎同源（禁止另写聚合）；recorded_at 传本地零点，避免时区偏一天
-    var sched = (global.NikkeEvents && global.NikkeEvents.schedule)
-      ? global.NikkeEvents.schedule({ recorded_at: recISO + "T00:00:00", activities: s.activities || [] })
-      : null;
+    var sched = (o.sched !== undefined && o.sched !== null) ? o.sched
+      : ((global.NikkeEvents && global.NikkeEvents.schedule)
+        ? global.NikkeEvents.schedule({ recorded_at: recISO + "T00:00:00", activities: s.activities || [] })
+        : null);
 
     var tot = zeroRes();
     var d = startISO, guard = 0;
@@ -226,6 +247,59 @@
     }).join(" · ");
   }
 
+  /* ---------------- 各周期对比（R51）----------------
+     一次算完 30/60/90/180/365 天各自的「整体情况」：合计比日均更能说明"一个周期能攒多少"。
+     schedule 只求解一次（箱数/活动逐日产出与区间长度无关，可共用）。
+     返回值与组数无关地稳定：spans 里给的每个值都有一行，不可用（缺数据日期）时 ok=false。 */
+  function spanStats(snap, spans) {
+    var s = snap || {};
+    var list = (spans && spans.length) ? spans : SPANS;
+    var recISO = toISO(s.recorded_at);
+    if (!recISO) return [];
+    var sched = (global.NikkeEvents && global.NikkeEvents.schedule)
+      ? global.NikkeEvents.schedule({ recorded_at: recISO + "T00:00:00", activities: s.activities || [] })
+      : null;
+    return list.map(function (sp) {
+      var led = build(s, { span: sp, sched: sched });
+      return {
+        span: sp, ok: !!led.ok, days: led.days, start: led.start, end: led.end,
+        totals: led.totals, avg: led.avg,
+        boxTotal: led.boxTotal, boxAvg: led.boxAvg, boxDays: led.boxDays
+      };
+    });
+  }
+
+  /* ---------------- 箱子明细汇总（R51）----------------
+     只数个数之后光看总数分不清构成 → 按「箱名 + 小时档」聚合（固定箱同名不同档分开算）。
+     只统计传进来的 rows（= 当前筛选后的行），页面不做二次计算。 */
+  function boxSummary(rows) {
+    var map = {};
+    (rows || []).forEach(function (row) {
+      (row.boxItems || []).forEach(function (it) {
+        var H = it.hours || 0;
+        var key = it.kind + "|" + it.name + "|" + H;
+        var e = map[key];
+        if (!e) {
+          e = map[key] = { name: it.name, hours: H, kind: it.kind,
+                           count: 0, first: row.date, last: row.date, days: 0 };
+        }
+        e.count += it.count;
+        e.days += 1;
+        if (row.date < e.first) e.first = row.date;
+        if (row.date > e.last) e.last = row.date;
+      });
+    });
+    var list = Object.keys(map).map(function (k) { return map[k]; });
+    // 个数降序；同个数时固定箱在前（同一时间档从长到短），再按名字，避免顺序随浏览器抖动
+    list.sort(function (a, b) {
+      if (b.count !== a.count) return b.count - a.count;
+      if (a.kind !== b.kind) return a.kind === "fixed" ? -1 : 1;
+      if (b.hours !== a.hours) return b.hours - a.hours;
+      return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+    });
+    return list;
+  }
+
   /* ---------------- CSV（UTF-8 BOM，Excel 直接打开不乱码）
      opts.rows 传筛选后的行 → 导出「当前视图」；不传 = 全部。
      列：日期 / 星期 / 三资源（基础自然收益）/ 箱数 / 箱子明细 / 来源 */
@@ -284,6 +358,7 @@
   global.NikkeLedger = {
     ASSUME_DAYS: ASSUME_DAYS,
     MAX_DAYS: MAX_DAYS,
+    SPANS: SPANS,
     SNAP_KEY: SNAP_KEY,
     WD_NAMES: WD_NAMES,
     WD_ORDER: WD_ORDER,
@@ -295,7 +370,9 @@
     zeroRes: zeroRes,
     dayBox: dayBox,
     boxText: boxText,
+    boxSummary: boxSummary,
     build: build,
+    spanStats: spanStats,
     agg: agg,
     groupByWeekday: groupByWeekday,
     csv: csv,
