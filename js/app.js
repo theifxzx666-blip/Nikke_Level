@@ -534,12 +534,16 @@
     return row;
   }
 
-  /* 逐行刷新活动状态（按 schedule 的 meta.index 对齐，避免模板缺失时行序错位） */
+  /* 逐行刷新活动状态（按 schedule 的 meta.index 对齐，避免模板缺失时行序错位）
+     R56：基准日由「数据日期」改为「今天」—— 玩家要看的是活动在现实中还剩几天。
+     旧口径（R25）用数据日期，导致 9/30~10/20 的活动在数据日期 10/16 时显示「剩余 4 天」，
+     而当天其实是最后一天，极易误读。计入天数与数据日期挂钩，另有出口：
+     预览区「已计入 N 天」+ 本标签的 title（写明活动区间 / 本次计入区间）。 */
   function refreshActivityStatus(sched) {
     var wrap = $("eventRows");
     if (!wrap) return;
     var rows = wrap.querySelectorAll(".event-row");
-    var t0 = val("f_recorded") || todayLocal();
+    var today = todayLocal();
     var byIdx = {};
     ((sched && sched.meta) || []).forEach(function (m) {
       if (m && m.index !== undefined) byIdx[m.index] = m;
@@ -551,15 +555,19 @@
       var cls = "", txt = "—";
       if (!m) { txt = "—"; }
       else if (m.error) { cls = "done"; txt = "⚠ 数据异常"; }
-      else if (t0 < m.start) { txt = "未开始"; }
-      else if (t0 > m.end) { cls = "done"; txt = "已结束"; }
+      else if (today < m.start) { txt = "未开始"; }
+      else if (today > m.end) { cls = "done"; txt = "已结束"; }
       else {
-        var n = daysBetweenISO(m.end, t0);
+        var n = daysBetweenISO(m.end, today);
         cls = "on";
         txt = (n === null) ? "进行中" : (n > 0 ? ("剩余 " + n + " 天") : "今天最后一天");
       }
       st.className = "ev-status" + (cls ? " " + cls : "");
       st.textContent = txt;
+      st.title = (!m || m.error) ? "" :
+        ("活动 " + m.start + " ~ " + m.end + "（按今天 " + today + " 算剩余）；"
+          + "本次计入 " + (m.inject_days || 0) + " 天"
+          + (m.active ? "（" + m.inject_start + " ~ " + m.inject_end + "）" : ""));
     }
   }
 
