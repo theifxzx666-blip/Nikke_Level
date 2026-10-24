@@ -44,12 +44,17 @@ const BASE = {
              c1: 35, c12: 0, b1: 14, b12: 0, d1: 493, d12: 0, b2: 15, d2: 15, g1: 21, g8: 1, g12: 1, ark: 46 },
   large28: { days: 28, credit: 5447420, battle: 13149806, dust: 240, challenger: 625,
              c1: 14, c12: 0, b1: 14, b12: 0, d1: 612, d12: 0, b2: 15, d2: 15, g1: 28, g8: 1, g12: 1, ark: 15 },
+  /* 28 天 Map 版（LIE CAUSE RECOIL，官方拆包 2026-10-24 录入）：无每日任务箱类奖励、
+     任务一次性箱 芯尘盒1h/成长套组1h/方舟Ⅰ×20、商店买不完（代币 15890 < 固定项 30920） */
+  large28map: { days: 28, credit: 4073420, battle: 13149806, dust: 240, challenger: 625,
+                c1: 14, c12: 0, b1: 14, b12: 0, d1: 613, d12: 0, b2: 15, d2: 9, g1: 1, g8: 1, g12: 1, ark: 35 },
 };
 
 /* 起始日无关性：三个不同起始日总量必须逐项一致 */
 const STARTS = { small14: ["2026-08-19", "2026-09-10", "2026-12-25"],
                  large21: ["2026-09-30", "2026-05-01"],
-                 large28: ["2026-09-02", "2026-11-05"] };
+                 large28: ["2026-09-02", "2026-11-05"],
+                 large28map: ["2026-09-02", "2026-11-05"] };
 
 Object.keys(BASE).forEach(function (id) {
   const exp = BASE[id];
@@ -133,6 +138,14 @@ Object.keys(BASE).forEach(function (id) {
 check("small14 tasks.tokens = 8300", TPL.templates.small14.tasks.tokens, 8300, 0);
 check("large28 tasks.tokens = 5600（旧 6050 为笔误）", TPL.templates.large28.tasks.tokens, 5600, 0);
 check("large21 tasks.tokens = 5300 + 地图 1200", TPL.templates.large21.tasks.tokens, 6500, 0);
+check("large28map tasks.tokens = 6970（10203 6850 + 10201 120）", TPL.templates.large28map.tasks.tokens, 6970, 0);
+check("large28map 一次性任务箱 3 类（芯尘盒1h/成长套组1h/方舟Ⅰ）", Object.keys(TPL.templates.large28map.tasks.boxes || {}).length, 3, 0);
+check("large28map 无每日任务（本期每日只给活动点数）", TPL.templates.large28map.daily_task ? 1 : 0, 0, 0);
+check("large28map 签到 4 项可入账档", (TPL.templates.large28map.checkin || []).length, 4, 0);
+check("large28map 商店 19 项（4 件珠宝兑票不入店）", TPL.templates.large28map.shop.items.length, 19, 0);
+check("large28map 主线 36 关 / 挑战 7 关", (TPL.templates.large28map.stages || []).length * 1000 + (TPL.templates.large28map.challenges || []).length, 36007, 0);
+check("large28map 关卡组开放日 0/7/14", TPL.templates.large28map.stage_blocks.map(function (b) { return b.open_day; }).join("/") === "0/7/14" ? 1 : 0, 1, 0);
+check("large28map 扫荡目标 S2H1-11", TPL.templates.large28map.stage_target === "S2H1-11" ? 1 : 0, 1, 0);
 
 /* ---------- 9.4 起算点 / 已结束 断言 ---------- */
 const T0 = "2026-10-09";
@@ -152,7 +165,7 @@ Object.keys(BASE).forEach(function (id) {
   check(id + " 起算点差额 credit == 第0天产出", full.totals.res.credit - atT0.totals.res.credit, day0.credit || 0, 1e-6);
   check(id + " 起算点差额 battle == 第0天产出", full.totals.res.battle_data - atT0.totals.res.battle_data, day0.battle || 0, 1e-6);
   check(id + " 起算点差额 挑战者箱 == 第0天产出", selOf(full.totals, "挑战者成长宝箱") - selOf(atT0.totals, "挑战者成长宝箱"), day0.challenger_box || 0, 1e-6);
-  check(id + " 起算点差额 成长套组1h == 1（第0天每日任务）", fixedOf(full.totals, "成长套组", 1) - fixedOf(atT0.totals, "成长套组", 1), 1, 1e-6);
+  check(id + " 起算点差额 成长套组1h == 1（第0天：每日任务或一次性任务箱）", fixedOf(full.totals, "成长套组", 1) - fixedOf(atT0.totals, "成长套组", 1), 1, 1e-6);
   // 多活动累加：① 窗口重叠 → 按日并集；② 窗口不重叠 → 天数与资源相加
   const sum = EV.schedule({ recorded_at: new Date(T0 + "T00:00:00"), activities: [
     { template: id, start_date: T0 }, { template: id, start_date: EV.addDays(T0, 1) }] });
@@ -172,10 +185,30 @@ const snapNoAct = { recorded_at: new Date("2026-10-09T00:00:00"), bare_resources
 check("inject 空 schedule 原样返回", EV.inject(snapNoAct, EV.EMPTY_SCHEDULE, null) === snapNoAct ? 1 : 0, 1, 0);
 
 /* ---------- 模板清单 ---------- */
-check("模板清单 3 档", EV.templateList().length, 3, 0);
+check("模板清单 4 档", EV.templateList().length, 4, 0);
 check("small14 duration=14", TPL.templates.small14.duration, 14, 0);
 check("large21 duration=21", TPL.templates.large21.duration, 21, 0);
 check("large28 duration=28", TPL.templates.large28.duration, 28, 0);
+check("large28map duration=28", TPL.templates.large28map.duration, 28, 0);
+
+/* ---------- tasks.boxes：一次性任务箱类奖励归首日（缺省即无，老模板不受影响） ---------- */
+(function () {
+  const t0 = "2026-09-10";
+  const mk = (boxes) => ({
+    event: "mini-taskbox", type: "large28", duration: 3, rush_buy: {}, stage_target: "",
+    challenges: [], stages: [], stage_blocks: [],
+    tasks: Object.assign({ tokens: 100, one_time: true }, boxes ? { boxes: boxes } : {}),
+    base_income: { credit: 1, battle: 1, dust: 1 },
+  });
+  const a = EV.aggregate(EV.instantiate(mk(null), t0), t0, EV.addDays(t0, 2), 1, 5, "dust");
+  check("tasks 无 boxes → 不产生箱", (a[t0].dust_box_1h || 0) + (a[t0].growth_box_1h || 0), 0, 0);
+  check("tasks 无 boxes → 代币仍入首日", a[t0].token, 100, 0);
+  const b = EV.aggregate(EV.instantiate(mk({ dust_box_1h: 2, growth_box_1h: 1, ark_box: 3 }), t0), t0, EV.addDays(t0, 2), 1, 5, "dust");
+  check("tasks.boxes 芯尘盒1h 入首日", b[t0].dust_box_1h, 2, 0);
+  check("tasks.boxes 成长套组1h 入首日", b[t0].growth_box_1h, 1, 0);
+  check("tasks.boxes 方舟Ⅰ 入首日", b[t0].ark_box, 3, 0);
+  check("tasks.boxes 只落首日（次日为 0）", b[EV.addDays(t0, 1)].dust_box_1h || 0, 0, 0);
+})();
 
 /* ---------- 场景层集成：现状四档不受活动影响；等待期/future 口径计入活动 ---------- */
 function makeSnapshot(acts) {

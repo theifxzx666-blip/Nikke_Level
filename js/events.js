@@ -248,8 +248,9 @@
       day._swept = n;
     });
 
+    /* 一次性任务：代币与箱类奖励都归到开始首日（boxes 为可选字段，缺省即无 → 老模板行为不变） */
     var tsk = ev.tasks || {};
-    if (tsk.one_time && days[d0]) days[d0].token += tsk.tokens || 0;
+    if (tsk.one_time && days[d0]) { days[d0].token += tsk.tokens || 0; addInto(days[d0], tsk.boxes); }
 
     if (ev.shop) shopRedeemDaily(ev.shop, ev, days, dayMax);
     return days;

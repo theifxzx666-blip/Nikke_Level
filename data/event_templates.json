@@ -3,7 +3,7 @@
   "_source": "F:/Codex/Nikke/Nikke_Skills/等级计算/活动收益引擎/data/",
   "_challenge_note": "挑战关卡开放日 = 首通奖励(first) + 通关奖励(sweep)，其后每日 = 通关奖励；由引擎 aggregate 实现。challenges 的 first/sweep 均为官方拆包精确值（EventDungeonStageTable 首通奖励 / 重复通关奖励），未取整。",
   "_box_note": "引擎箱键含 1h/2h/12h 三资源盒与挑战者箱、成长套组 1h/8h/12h、方舟箱；12h 三资源盒来自 14 天活动签到（第5天）。",
-  "_map_note": "21 天变体的 tasks.tokens 含活动地图隐藏道具 1200（30 件、无前置，可全拿）；28 天蓝本 ABSOLUTE 无地图。",
+  "_map_note": "21 天变体的 tasks.tokens 含活动地图隐藏道具 1200（30 件、无前置，可全拿）；28 天蓝本 ABSOLUTE 无地图（large28）；28 天带地图版 large28map（LIE CAUSE RECOIL）地图 13 件 = BGM 9 + 隐藏道具 4（免费珠宝×400），不涉三资源与箱量。",
   "_verified": "2026-10-12 对照 5 份官方拆包表逐项复核（docs/活动模板-官方拆包数据核对报告.md）",
   "schemaVersion": 2,
   "templates": {
@@ -1585,6 +1585,616 @@
         }
       },
       "_checkin_note": "官方 LoginEventTable EventId 10061（ABSOLUTE）：第3天 方舟 I×5、第6天 成长套组8h、第9天 方舟 I×10、第12天 成长套组12h。"
+    },
+    "large28map": {
+      "event": "LIE CAUSE RECOIL（28 天大活动 · Map 带地图版，莉可丽丝联动 CE008）",
+      "type": "large28map",
+      "duration": 28,
+      "rush_buy": {
+        "S2H": 70
+      },
+      "stage_target": "S2H1-11",
+      "challenges": [
+        {
+          "id": "1-1",
+          "open_day": 0,
+          "first": {
+            "credit": 19320,
+            "battle": 456292,
+            "dust": 16,
+            "recruit_ticket": 1
+          },
+          "sweep": {
+            "credit": 9660,
+            "battle": 228146,
+            "dust": 8
+          }
+        },
+        {
+          "id": "1-2",
+          "open_day": 3,
+          "first": {
+            "quality_invite": 5,
+            "credit": 58680,
+            "battle": 1634395,
+            "dust": 32
+          },
+          "sweep": {
+            "credit": 29340,
+            "battle": 817197,
+            "dust": 16
+          }
+        },
+        {
+          "id": "1-3",
+          "open_day": 6,
+          "first": {
+            "quality_invite": 5,
+            "credit": 97320,
+            "battle": 3169236,
+            "dust": 48
+          },
+          "sweep": {
+            "credit": 48660,
+            "battle": 1584618,
+            "dust": 24
+          }
+        },
+        {
+          "id": "1-4",
+          "open_day": 9,
+          "first": {
+            "quality_invite": 5,
+            "credit": 180240,
+            "challenger_box": 40
+          },
+          "sweep": {
+            "credit": 90120,
+            "challenger_box": 20
+          }
+        },
+        {
+          "id": "1-5",
+          "open_day": 12,
+          "first": {
+            "quality_invite": 5,
+            "credit": 207960,
+            "challenger_box": 44
+          },
+          "sweep": {
+            "credit": 103980,
+            "challenger_box": 22
+          }
+        },
+        {
+          "id": "1-6",
+          "open_day": 15,
+          "first": {
+            "quality_invite": 5,
+            "credit": 222360,
+            "challenger_box": 46
+          },
+          "sweep": {
+            "credit": 111180,
+            "challenger_box": 23
+          }
+        },
+        {
+          "id": "1-7",
+          "open_day": 18,
+          "first": {
+            "quality_invite": 5,
+            "credit": 243120,
+            "challenger_box": 50
+          },
+          "sweep": {
+            "credit": 121560,
+            "challenger_box": 25
+          }
+        }
+      ],
+      "stages": [
+        {
+          "id": "S1N1-1",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "反常机x10"
+        },
+        {
+          "id": "S1N1-2",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "credit_box_1h": 1
+          }
+        },
+        {
+          "id": "S1N1-3",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "辅助机x10"
+        },
+        {
+          "id": "S1N1-4",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "battle_box_1h": 1
+          }
+        },
+        {
+          "id": "S1N1-5",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "反常机x10"
+        },
+        {
+          "id": "S1N1-6",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "极乐净土机x10"
+        },
+        {
+          "id": "S1N1-7",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "credit_box_1h": 2
+          }
+        },
+        {
+          "id": "S1N1-8",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "反常机x10"
+        },
+        {
+          "id": "S1N1-9",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "battle_box_1h": 2
+          }
+        },
+        {
+          "id": "S1N1-10",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "火力机x10"
+        },
+        {
+          "id": "S1N1-11",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "dust_box_1h": 2
+          }
+        },
+        {
+          "id": "S1N1-12",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "反常机x10"
+        },
+        {
+          "id": "S2N1-1",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "米西利斯机x10"
+        },
+        {
+          "id": "S2N1-2",
+          "open_day": 7,
+          "tokens": 40,
+          "reward": {
+            "credit_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-3",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "反常机x10"
+        },
+        {
+          "id": "S2N1-4",
+          "open_day": 7,
+          "tokens": 40,
+          "reward": {
+            "battle_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-5",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "防御机x10"
+        },
+        {
+          "id": "S2N1-6",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "反常机x10"
+        },
+        {
+          "id": "S2N1-7",
+          "open_day": 7,
+          "tokens": 50,
+          "reward": {
+            "credit_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-8",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "泰特拉机x10"
+        },
+        {
+          "id": "S2N1-9",
+          "open_day": 7,
+          "tokens": 50,
+          "reward": {
+            "battle_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-10",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "反常机x10"
+        },
+        {
+          "id": "S2N1-11",
+          "open_day": 7,
+          "tokens": 50,
+          "reward": {
+            "dust_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-12",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "朝圣机x10"
+        },
+        {
+          "id": "S2H1-1",
+          "open_day": 14,
+          "tokens": 0,
+          "misc": "辅助机x20"
+        },
+        {
+          "id": "S2H1-2",
+          "open_day": 14,
+          "tokens": 50,
+          "reward": {
+            "credit_box_1h": 3
+          }
+        },
+        {
+          "id": "S2H1-3",
+          "open_day": 14,
+          "tokens": 0,
+          "misc": "极乐净土机x20"
+        },
+        {
+          "id": "S2H1-4",
+          "open_day": 14,
+          "tokens": 50,
+          "reward": {
+            "battle_box_1h": 3
+          }
+        },
+        {
+          "id": "S2H1-5",
+          "open_day": 14,
+          "tokens": 0,
+          "misc": "米西利斯机x20"
+        },
+        {
+          "id": "S2H1-6",
+          "open_day": 14,
+          "tokens": 0,
+          "misc": "火力机x20"
+        },
+        {
+          "id": "S2H1-7",
+          "open_day": 14,
+          "tokens": 50,
+          "reward": {
+            "credit_box_1h": 4
+          }
+        },
+        {
+          "id": "S2H1-8",
+          "open_day": 14,
+          "tokens": 0,
+          "misc": "泰特拉机x20"
+        },
+        {
+          "id": "S2H1-9",
+          "open_day": 14,
+          "tokens": 50,
+          "reward": {
+            "battle_box_1h": 4
+          }
+        },
+        {
+          "id": "S2H1-10",
+          "open_day": 14,
+          "tokens": 0,
+          "misc": "防御机x20"
+        },
+        {
+          "id": "S2H1-11",
+          "open_day": 14,
+          "tokens": 50,
+          "reward": {
+            "dust_box_1h": 4
+          }
+        },
+        {
+          "id": "S2H1-12",
+          "open_day": 14,
+          "tokens": 0,
+          "misc": "朝圣机x20"
+        }
+      ],
+      "tasks": {
+        "tokens": 6970,
+        "one_time": true,
+        "boxes": {
+          "dust_box_1h": 1,
+          "growth_box_1h": 1,
+          "ark_box": 20
+        },
+        "note": "一次性任务代币 6970 = 官方 Group 10203 6850（12/36 关里程碑各 咖啡×900 = 1800；36 关逐关 100×12(S1N) + 150×11(S2N，末关改发胡桃) + 200×11(S2H，末关改发胡桃) = 5050）+ Group 10201 里程碑 咖啡×120。boxes = 10201 里程碑的 芯尘盒1h×1、成长套组1h×1（40/100 点）+ 小游戏成就「TALENT 等级总和 9」的 中央政府补给物资 I×20。box 类为一次性、随首日入账（引擎 tasks.boxes 字段）。"
+      },
+      "shop": {
+        "items": [
+          {
+            "name": "高级招募券(定制)x1",
+            "fixed": true,
+            "cost": 400,
+            "count": 10,
+            "reward": {}
+          },
+          {
+            "name": "高级招募券x1",
+            "fixed": true,
+            "cost": 400,
+            "count": 10,
+            "reward": {}
+          },
+          {
+            "name": "技能手册Ix32",
+            "fixed": true,
+            "cost": 80,
+            "count": 7,
+            "reward": {}
+          },
+          {
+            "name": "爆裂手册Ix16",
+            "fixed": true,
+            "cost": 80,
+            "count": 7,
+            "reward": {}
+          },
+          {
+            "name": "技能手册IIx24",
+            "fixed": true,
+            "cost": 100,
+            "count": 7,
+            "reward": {}
+          },
+          {
+            "name": "爆裂手册IIx12",
+            "fixed": true,
+            "cost": 100,
+            "count": 7,
+            "reward": {}
+          },
+          {
+            "name": "战斗数据辑盒(2h)x3",
+            "fixed": true,
+            "cost": 250,
+            "count": 5,
+            "reward": {
+              "battle_box_2h": 3
+            }
+          },
+          {
+            "name": "芯尘盒(2h)x3",
+            "fixed": true,
+            "cost": 250,
+            "count": 5,
+            "reward": {
+              "dust_box_2h": 3
+            }
+          },
+          {
+            "name": "火力型主机x30",
+            "fixed": true,
+            "cost": 60,
+            "count": 5,
+            "reward": {}
+          },
+          {
+            "name": "防御型主机x30",
+            "fixed": true,
+            "cost": 60,
+            "count": 5,
+            "reward": {}
+          },
+          {
+            "name": "辅助型主机x30",
+            "fixed": true,
+            "cost": 60,
+            "count": 5,
+            "reward": {}
+          },
+          {
+            "name": "极乐净土主机x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "米西利斯主机x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "泰特拉主机x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "朝圣者主机x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "反常主机x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "循环能量x10",
+            "fixed": true,
+            "cost": 50,
+            "count": 10,
+            "reward": {}
+          },
+          {
+            "name": "芯尘x30",
+            "fixed": true,
+            "cost": 300,
+            "count": 50,
+            "reward": {
+              "dust": 30
+            }
+          },
+          {
+            "name": "信用点x2000",
+            "fixed": false,
+            "cost": 10,
+            "count": -1,
+            "reward": {
+              "credit": 2000
+            }
+          }
+        ]
+      },
+      "stage_blocks": [
+        {
+          "id": "S1N",
+          "open_day": 0,
+          "rush": false,
+          "chapters": [
+            "S1N1-1",
+            "S1N1-2",
+            "S1N1-3",
+            "S1N1-4",
+            "S1N1-5",
+            "S1N1-6",
+            "S1N1-7",
+            "S1N1-8",
+            "S1N1-9",
+            "S1N1-10",
+            "S1N1-11",
+            "S1N1-12"
+          ]
+        },
+        {
+          "id": "S2N",
+          "open_day": 7,
+          "rush": false,
+          "chapters": [
+            "S2N1-1",
+            "S2N1-2",
+            "S2N1-3",
+            "S2N1-4",
+            "S2N1-5",
+            "S2N1-6",
+            "S2N1-7",
+            "S2N1-8",
+            "S2N1-9",
+            "S2N1-10",
+            "S2N1-11",
+            "S2N1-12"
+          ]
+        },
+        {
+          "id": "S2H",
+          "open_day": 14,
+          "rush": true,
+          "chapters": [
+            "S2H1-1",
+            "S2H1-2",
+            "S2H1-3",
+            "S2H1-4",
+            "S2H1-5",
+            "S2H1-6",
+            "S2H1-7",
+            "S2H1-8",
+            "S2H1-9",
+            "S2H1-10",
+            "S2H1-11",
+            "S2H1-12"
+          ]
+        }
+      ],
+      "base_income": {
+        "credit": 59860,
+        "battle": 600440,
+        "dust": 91.95
+      },
+      "checkin": [
+        {
+          "offset_day": 3,
+          "reward": {
+            "ark_box": 5
+          },
+          "note": "活动第4天 · 中央政府补给物资 I×5"
+        },
+        {
+          "offset_day": 5,
+          "reward": {
+            "growth_box_8h": 1
+          },
+          "note": "活动第6天 · 成长套组：8H（8 小时收益）×1"
+        },
+        {
+          "offset_day": 8,
+          "reward": {
+            "ark_box": 10
+          },
+          "note": "活动第9天 · 中央政府补给物资 I×10"
+        },
+        {
+          "offset_day": 11,
+          "reward": {
+            "growth_box_12h": 1
+          },
+          "note": "活动第12天 · 成长套组：12H（12 小时收益）×1"
+        }
+      ],
+      "label": "28天大活动·地图",
+      "_checkin_note": "官方 LoginEventTable EventId 82903（attendance_event_ce008，14 档）：第4天 补给物资 I×5、第6天 成长套组8H、第9天 补给物资 I×10、第12天 成长套组12H；其余 10 档为招募券/主机/手册/胡桃，不涉三资源与箱量。签到逐期不同，此处只取可入账的 4 档。注：本期原文为「中央政府补给物资 I」，计算器自选箱只有「方舟官方补给物资Ⅰ」一档（1h 五选一），故并入 ark_box。",
+      "_daily_note": "本活动每日任务 8 条（副本/装备/获得道具/小游戏/好友/好感度/前哨基地）只给活动点数、无箱类奖励（官方 Group 10201 逐行：奖励栏均为「仅活动点数」），故 daily_task 缺省；点数只用于 20/40/60/80/100 里程碑，已按一次性计入 tasks.tokens/boxes。",
+      "_shop_note": "官方 ContentsShop 9010201（23 项）。前 4 项为「免费珠宝 → 彼岸花」（5×2 + 5×2 + 10×3 + 20×1 = 70 张），不走活动代币，故不入店；这 70 张正是 rush_buy.S2H = 70 的来源。其余 19 项按商城展示顺序结算。窗口内代币总产出 15,890、Hard 开放日累计 12,640，而固定项全买需 30,920 → 买不完：引擎在 Hard 开放日一次性结算固定物资，余额在活动结束前兑信用点（店铺 10 币 = 2000 信用点）。",
+      "_src_note": "数据源：LIE CAUSE RECOIL_活动收益_zh-CN.xlsx（2026-10-24 用户提供，官方拆包 16 表）。关卡组开放日：S1N 第1天 / S2N 第8天（Part 2 = 活动第 8 天 05:00 开放）/ S2H 第15天（xlsx 未给难度组开放日，沿用 28 天大活动结构 0/7/14，与 ABSOLUTE 一致）。地图 13 件（点唱机 BGM 9 + 隐藏道具 4 = 免费珠宝×400）不涉三资源与箱量，未入表；分卷加成奖励（STORY I/II 各 咖啡×50）依赖编入加成角色，非固定产出，未计入。"
     }
   }
 }

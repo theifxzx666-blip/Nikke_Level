@@ -439,7 +439,7 @@
   /* ---------- 活动收益（可选）：模板由 data/event_templates.json 运行时加载 ---------- */
   function loadEventTemplates() {
     if (!EV) return Promise.resolve();
-    return fetch("data/event_templates.json?v=20261012a")
+    return fetch("data/event_templates.json?v=20261024a")
       .then(function (r) { return r.json(); })
       .then(function (d) { EV.setTemplates(d); })
       .catch(function () { EV.setTemplates(null); });
@@ -514,7 +514,9 @@
     tpls.forEach(function (t) {
       var o = document.createElement("option");
       o.value = t.id;
-      o.textContent = t.label + "（" + t.duration + " 天）";
+      /* 标签自带天数（「14天小活动」）时不再追加「（14 天）」，避免重复计数 */
+      var hasDays = t.label.indexOf(t.duration + "天") >= 0 || t.label.indexOf(t.duration + " 天") >= 0;
+      o.textContent = hasDays ? t.label : (t.label + "（" + t.duration + " 天）");
       if (t.id === a.template) o.selected = true;
       sel.appendChild(o);
     });
