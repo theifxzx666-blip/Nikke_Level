@@ -531,6 +531,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 9px;
   background: #e1f5ee; color: #0f6e56; font-size: 11px; font-weight: 600; vertical-align: 1px;
 }
+/* R59：Block② 拆解里只有「箱子等到开放日再开箱多赚 N 级」这项是真·多赚，其余是总升幅的组成部分 → 单独标红 */
+.sb-big .em-earn { color: #b3283a; }
+.sb-big .em-earn b { color: #b3283a; }
 .sb-plan { font-size: 13px; color: #334; margin-top: 4px; line-height: 1.6; }
 .sb-text { font-size: 13px; color: #334; line-height: 1.75; }
 .sb-text b { color: var(--primary-dark); }

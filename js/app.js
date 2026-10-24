@@ -2070,7 +2070,12 @@
         var wv = (gs.waitLv !== null) ? gs.waitLv : Math.max(0, diff - boxGain);
         var ov = Math.max(0, diff - wv - boxGain);
         // R42：口径翻正 —— 不再说「屯箱子多升」（读者的「少赚/亏」视角），改说「等到开放日再开箱可多赚」
-        big2 += "（比现在多赚 <b>+" + diff + "</b> 级 = 等待期到账资源 <b>+" + wv + "</b> 级、开箱 <b>+" + ov + "</b> 级；同一批箱子等到开放日再开箱可多赚 <b>" + boxGain + "</b> 级）";
+        // R59：「比现在多赚 +N 级」有歧义 —— N 是「现在 → 开放日」的总升幅，不是白赚的量。
+        //      改「一共升 N 级」，三项用加号拆成可验算的加法（wv + ov + boxGain === diff）；
+        //      只有「同一批箱子等到开放日再开箱多赚」这一项才是真·多赚，标红（.em-earn）。
+        var parts = ["等待期到账资源 <b>+" + wv + "</b> 级", "开箱 <b>+" + ov + "</b> 级"];
+        if (boxGain > 0) parts.push('<span class="em-earn">同一批箱子等到开放日再开箱可多赚 <b>+' + boxGain + "</b> 级</span>");
+        big2 += "（一共升 <b>" + diff + "</b> 级 = " + parts.join(" + ") + "）";
       }
       if (futLv >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
       b2.appendChild(el("div", big2, "sb-big"));
