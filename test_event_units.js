@@ -145,6 +145,16 @@ check("large28map 签到 4 项可入账档", (TPL.templates.large28map.checkin |
 check("large28map 商店 19 项（4 件珠宝兑票不入店）", TPL.templates.large28map.shop.items.length, 19, 0);
 check("large28map 主线 36 关 / 挑战 7 关", (TPL.templates.large28map.stages || []).length * 1000 + (TPL.templates.large28map.challenges || []).length, 36007, 0);
 check("large28map 关卡组开放日 0/7/14", TPL.templates.large28map.stage_blocks.map(function (b) { return b.open_day; }).join("/") === "0/7/14" ? 1 : 0, 1, 0);
+
+/* ---------- 下拉标签口径（R58）：带地图的一律「·地图」结尾，无地图不加后缀 ---------- */
+check("标签：large21 = 21天大活动·地图（tokens 含地图隐藏道具 1200）",
+  TPL.templates.large21.label === "21天大活动·地图" ? 1 : 0, 1, 0);
+check("标签：large28map = 28天大活动·地图",
+  TPL.templates.large28map.label === "28天大活动·地图" ? 1 : 0, 1, 0);
+check("标签：large28 无地图故无「·地图」后缀",
+  TPL.templates.large28.label.indexOf("地图") < 0 ? 1 : 0, 1, 0);
+check("标签：small14 无地图故无「·地图」后缀",
+  TPL.templates.small14.label.indexOf("地图") < 0 ? 1 : 0, 1, 0);
 check("large28map 扫荡目标 S2H1-11", TPL.templates.large28map.stage_target === "S2H1-11" ? 1 : 0, 1, 0);
 
 /* ---------- 9.4 起算点 / 已结束 断言 ---------- */

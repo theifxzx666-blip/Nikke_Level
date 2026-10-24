@@ -3,7 +3,7 @@
   "_source": "F:/Codex/Nikke/Nikke_Skills/等级计算/活动收益引擎/data/",
   "_challenge_note": "挑战关卡开放日 = 首通奖励(first) + 通关奖励(sweep)，其后每日 = 通关奖励；由引擎 aggregate 实现。challenges 的 first/sweep 均为官方拆包精确值（EventDungeonStageTable 首通奖励 / 重复通关奖励），未取整。",
   "_box_note": "引擎箱键含 1h/2h/12h 三资源盒与挑战者箱、成长套组 1h/8h/12h、方舟箱；12h 三资源盒来自 14 天活动签到（第5天）。",
-  "_map_note": "21 天变体的 tasks.tokens 含活动地图隐藏道具 1200（30 件、无前置，可全拿）；28 天蓝本 ABSOLUTE 无地图（large28）；28 天带地图版 large28map（LIE CAUSE RECOIL）地图 13 件 = BGM 9 + 隐藏道具 4（免费珠宝×400），不涉三资源与箱量。",
+  "_map_note": "21 天变体 large21 带活动地图（tasks.tokens 含地图隐藏道具 1200 = 30 件、无前置，可全拿）；28 天蓝本 ABSOLUTE 无地图（large28）；28 天带地图版 large28map（LIE CAUSE RECOIL）地图 13 件 = BGM 9 + 隐藏道具 4（免费珠宝×400），不涉三资源与箱量。📌 下拉标签约定：带地图的模板一律以「·地图」结尾（large21 / large28map），无地图的不加后缀（small14 / large28）。",
   "_verified": "2026-10-12 对照 5 份官方拆包表逐项复核（docs/活动模板-官方拆包数据核对报告.md）",
   "schemaVersion": 2,
   "templates": {
@@ -1003,7 +1003,7 @@
           }
         }
       ],
-      "label": "21天大活动",
+      "label": "21天大活动·地图",
       "daily_task": {
         "per_day": {
           "credit_box_1h": 1,
