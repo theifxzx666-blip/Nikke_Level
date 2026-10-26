@@ -55,6 +55,11 @@
     if (a >= 1e4) return (v / 1e3).toFixed(0) + "K";
     return v.toFixed(v % 1 ? 1 : 0);
   }
+  /* 级数文案：整数就写整数，小数保留 1 位（R60：box_gain_vs_now 是连续值，别再被取整成 0/1） */
+  function lvText(v) {
+    v = Math.max(0, Number(v) || 0);
+    return Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(1);
+  }
   function fmtDays(d) { return (typeof d === "number" && isFinite(d)) ? d.toFixed(1) : "-"; }
   /* 「箱个数」用千分位，不用 K/M/B 压缩 —— 计数被压成「25K 个」会看不清量级 */
   function fmtInt(v) {
@@ -1856,11 +1861,12 @@
       });
       box.appendChild(table(["资源", "开主线前折算（当前收益）", "开主线后折算（新收益）", "差值", "差值≈可升等级"], cmpRows));
       var levelDiff = result.future_main_story.result.level - result.selectable.level;
-      var bgExtra = result.future_main_story.box_gain_vs_now || 0;
+      var bgFine = result.future_main_story.box_gain_vs_now || 0;   // R60：连续值（小数级）
+      var bgExtra = Math.round(bgFine);   // 拆解仍用整数，保证 wvE / ovE 相加 === levelDiff
       var gsE = levelGainSplit(result);
       var wvE = (gsE.waitLv !== null) ? Math.min(gsE.waitLv, Math.max(0, levelDiff)) : Math.max(0, levelDiff - bgExtra);
       var ovE = Math.max(0, levelDiff - wvE - bgExtra);
-      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + localDateStr(result.future_main_story.open_at) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级：等待期到账资源 +" + wvE + " 级，开箱 +" + ovE + " 级；箱子按新收益折算另 +" + bgExtra + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
+      box.appendChild(el("p", "立即全箱梭哈可到 <b>同步器 " + result.selectable.level + "</b>；等到开放日（" + localDateStr(result.future_main_story.open_at) + "）再全箱梭哈可到 <b>同步器 " + result.future_main_story.result.level + "</b>（多升 " + levelDiff + " 级：等待期到账资源 +" + wvE + " 级，开箱 +" + ovE + " 级；箱子按新收益折算另 +" + lvText(bgFine) + " 级）。全资源 = 现有 + 推图 + 固定小时箱 + 自选箱全部；前/后列为全资源总量（与固定箱折算同口径：只比资源获取量，不减升级消耗）；差值 = 等新主线再梭哈多获得的资源；差值≈可升等级为单资源视角的粗略换算。", "caption"));
       var hasFutIncome2 = (futIncome2.credit || 0) > 0 || (futIncome2.battle_data || 0) > 0 || (futIncome2.core_dust || 0) > 0;
       if (!hasFutIncome2) {
         box.appendChild(el("p", "⚠ 未填写「预计新收益」，开主线后的折算暂按当前收益估算，结果与开主线前接近属正常；填上预计新基地收益后会更准确。", "caption"));
@@ -2066,15 +2072,17 @@
         // 分层拆解：「等待期到账资源」（不开箱也有）与「开箱贡献」分开列，
         // 避免旧的「另有等待期自然积累 N 级」被误读成「这 N 级都不用开箱」
         // R35/§9.7：等级用 N、增量用 +Δ，避免两个 N 混指
-        var boxGain = fut.box_gain_vs_now || 0;
+        var boxGainFine = fut.box_gain_vs_now || 0;   // R60：连续值（小数级）
+        var boxGain = Math.round(boxGainFine);        // 拆解用整数，保证 wv + ov + boxGain === diff
         var wv = (gs.waitLv !== null) ? gs.waitLv : Math.max(0, diff - boxGain);
         var ov = Math.max(0, diff - wv - boxGain);
         // R42：口径翻正 —— 不再说「屯箱子多升」（读者的「少赚/亏」视角），改说「等到开放日再开箱可多赚」
         // R59：「比现在多赚 +N 级」有歧义 —— N 是「现在 → 开放日」的总升幅，不是白赚的量。
         //      改「一共升 N 级」，三项用加号拆成可验算的加法（wv + ov + boxGain === diff）；
         //      只有「同一批箱子等到开放日再开箱多赚」这一项才是真·多赚，标红（.em-earn）。
+        // R60：这一项本身只有 ≈1 级以内（收益差 1.85%），取整后会「有/无」乱跳 → 显示真值（小数）。
         var parts = ["等待期到账资源 <b>+" + wv + "</b> 级", "开箱 <b>+" + ov + "</b> 级"];
-        if (boxGain > 0) parts.push('<span class="em-earn">同一批箱子等到开放日再开箱可多赚 <b>+' + boxGain + "</b> 级</span>");
+        if (boxGainFine >= 0.05) parts.push('<span class="em-earn">同一批箱子等到开放日再开箱可多赚 <b>+' + lvText(boxGainFine) + "</b> 级</span>");
         big2 += "（一共升 <b>" + diff + "</b> 级 = " + parts.join(" + ") + "）";
       }
       if (futLv >= target) big2 += ' <span class="ok-tag">✅ 已达目标级 ' + target + "</span>";
@@ -2138,17 +2146,18 @@
     var lose = hasFut
       ? (typeof fut.box_gain_vs_now === "number" ? Math.max(0, fut.box_gain_vs_now) : Math.max(0, futLv - nowLv))
       : 0;
+    var loseTxt = lvText(lose);   // R60：连续值 → 整数就写整数，小数保留 1 位
     var line1;
     if (!hasFut) {
       line1 = "① 提前升：未填写「预计新主线进度」→ 无法比较「现在梭哈 vs 等开放日」；当前全箱梭哈可到 <b>同步器 " + nowLv + "</b>。";
     } else if (!hasStage) {
-      line1 = "① 提前升：赚 <b>—</b>（未填推图收益）/ 等到开放日再开箱可多赚 <b>" + lose + "</b> 级 → 没有可提前拿到的推图收益，"
+      line1 = "① 提前升：赚 <b>—</b>（未填推图收益）/ 等到开放日再开箱可多赚 <b>" + loseTxt + "</b> 级 → 没有可提前拿到的推图收益，"
         + (lose > 0 ? "<b>建议等新主线开放后再梭哈</b>。" : "现在梭哈即可。");
     } else {
-      line1 = "① 提前升：赚 <b>" + earn + "</b> 级（提前推图收益）/ 等到开放日再开箱可多赚 <b>" + lose + "</b> 级（同一批箱子按更高基地收益折算）→ "
+      line1 = "① 提前升：赚 <b>" + earn + "</b> 级（提前推图收益）/ 等到开放日再开箱可多赚 <b>" + loseTxt + "</b> 级（同一批箱子按更高基地收益折算）→ "
         + (earn >= lose
-          ? "<b>现在就升更划算</b>（赚 " + earn + " 级 ≥ 多赚 " + lose + " 级）"
-          : "<b>等新主线开放后再升更划算</b>（赚 " + earn + " 级 &lt; 多赚 " + lose + " 级）") + "。";
+          ? "<b>现在就升更划算</b>（赚 " + earn + " 级 ≥ 多赚 " + loseTxt + " 级）"
+          : "<b>等新主线开放后再升更划算</b>（赚 " + earn + " 级 &lt; 多赚 " + loseTxt + " 级）") + "。";
     }
     b3.appendChild(el("div", line1, "sb-text"));
 
