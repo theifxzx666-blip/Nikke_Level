@@ -1,166 +1,114 @@
-# NIKKE 资源规划计算器 · 纯前端版
+# NIKKE 资源规划计算器
 
-[GitHub Pages 公开链接](https://你的用户名.github.io/仓库名/) ｜ 无后端、可离线、localStorage 本地保存
+《胜利女神：NIKKE》前哨基地的升级与收益规划工具。纯静态站点，无后端，所有计算与数据都留在浏览器本地。
 
-与参考站 [nikke-sr-collection-planner](https://shiki1255.github.io/nikke-sr-collection-planner/) 同款的「通过链接直接访问交互」形态。计算引擎（约 840 行）由 Python 版移植为纯 JavaScript，**金标准回归结果与 Python 版完全一致**（现有 474 / 固定箱后 487 / 全箱梭哈 496 / 不开箱到 481 约 29.8557 天 / 新主线后开箱约 503）。
+线上地址：
 
-## 特性
+| 站点 | 地址 |
+|---|---|
+| GitHub Pages（主站） | https://theifxzx666-blip.github.io/Nikke_Level/ |
+| WorkBuddy 镜像 | https://nikke-level-planner.app.workbuddy.host/ |
 
-- 完整表单：账号状态、关卡两级联动、困难跟随普通 + 困难上限约束、当前收益与每日收益、预计新主线（默认 +2 章联动）、现有资源、推图资源（计入范围默认只计普通 + 标题/数值随预计新主线联动）、升级消耗（默认阶梯表，可手动覆盖）、固定小时箱（含成长套组）、自选箱
-- 浮动进度球 + 12 项明细
-- localStorage 自动记忆 + 💾 手动保存按钮，刷新/重启自动回填
-- 完整结果展示：4 大数字卡片、最大等级表（单资源 vs 三资源同时）、开箱达成统计、开主线前后对比、501 三方案
-- 顶部 NIKKE 主题 banner + body 模糊背景图（`assets/bg/hero.webp` 一键换图，**卡片白底不透明不影响阅读**）
-- 移动端全面优化：触控目标 ≥40px、表格横滚容器、超小屏单列、悬浮球贴边、计算后自动定位结果区
-- 导出 JSON 快照、Markdown 报告；下载/导入 XLSX（SheetJS CDN）
-- 无任何后端、无任何外部登录、无数据上传，**所有数据都存在浏览器本地**
+## 功能
+
+入口是 `index.html`，它读取 `tools.json` 渲染导航，子工具以 iframe 懒加载。新增工具只需在 `tools.json` 注册并放好页面，外壳不必改动。
+
+| 工具 | 入口 | 说明 |
+|---|---|---|
+| 资源规划计算器 | `index.html`（内联视图） | 核心工具。录入账号状态与关卡进度，推算升到目标等级要多久、现在开箱还是等开放日 |
+| 收益账单 | `ledger.html` | 把一份快照摊成逐日进项账，按周期汇总箱子数量与资源来源 |
+| 定制模组统计 | `mod_stats.html` | 长期记录每日 Boss 掉落，统计直接模组、理论模组与碎片期望 |
+| 头像预览 | `avatar/index.html` | 头像 / 头像框 / 挂件素材预览 |
+| 洗词条计算器 | `reroll_calculator.html` | 词条洗练概率与消耗，支持导入 Excel |
+| 战力计算 Beta | `combat_power_beta/index.html` | 战力构成核算 |
+
+另有半独立的 `combat_reroll.html`（洗练战力 / Pinkuro 导入），不挂在主站导航里，需要本地启动 `pinkuro_server.py` 作代理才能连第三方接口。
+
+移动端访问会引导到 `mobile.html`，它与桌面版共用 `js/app.js`，只换布局与样式。
 
 ## 目录结构
 
 ```
-nikke-planner-web/
-  index.html          # 单页入口（顺序加载 js/* + CDN xlsx）
-  css/style.css       # 样式（含 4 组配色、移动端适配、背景图层）
-  js/
-    core.js           # 解析、消耗、每日收益（自 calculator/{parsing,level_cost,income} 移植）
-    outpost.js        # 关卡→基地等级换算 + 收益表（官方 OutpostBattleTable 口径，两服共用一套）
-    servers.js        # 服务器档案（国际服/国服：关卡上限、基地上限）+ 存档版本迁移
-    boxes.js          # 固定箱折算 + 自选箱优化（自 boxes 移植）
-    scenarios.js      # 场景 A-F + 总评估（自 scenarios 移植）
-    app.js            # 前端 UI、表单联动、计算入口、结果渲染、存储
-  data/
-    stage_map.json           # 关卡编号表（Chapter 0~48，普通/困难各 1,787 关，两服共用不截断）
-    servers.json             # 两服共用关卡表（49 章 / 各 1,787 关 / 基地上限 712）+ 两服差异登记
-    outpost_income.json      # 800 级基地收益（含战术学院满级）
-    level_cost_table.json    # 每 50 级一档的升级消耗
-    box_definitions.json     # 箱子定义
-    stage_clear_resources.json  # 推图资源（37-38 章实测）
-  assets/
-    bg/hero.webp            # 顶部 banner + body 模糊底图的背景图（355KB，**换图改这一个文件**）
-  test_golden.js            # Node 金标准回归（与 Python 版对比）
-  test_server_split.js      # Node 分服回归（两服关卡规模 / 基地公式 / 截断 / 存档迁移）
-  README.md
+index.html            外壳入口：导航渲染 + iframe 懒加载 + 高度自适应
+mobile.html           移动版外壳
+tools.json            工具注册表（导航与视图容器的唯一来源）
+ledger.html           收益账单页
+mod_stats.html        定制模组统计页
+reroll_calculator.html  洗词条计算器
+combat_reroll.html    洗练战力（独立页，需本地代理）
+
+css/style.css         桌面样式
+css/mobile.css        移动端覆盖
+
+js/shell.js           外壳：导航、iframe 管理、高度自适应
+js/app.js             计算器 UI：表单联动、计算入口、结果渲染、本地存档
+js/core.js            常量、速率解析、升级消耗、每日收益
+js/outpost.js         关卡进度 → 基地等级 + 基地收益表查询
+js/servers.js         服务器档案与存档版本迁移
+js/boxes.js           固定小时箱折算、自选箱优化
+js/scenarios.js       场景评估与目标求解
+js/events.js          活动收益置入与活动模板
+js/ledger.js          收益账单口径（主页与 ledger.html 共用）
+js/sync.js            账号云同步（Supabase）
+js/errlog.js          错误码字典与上报
+js/overload_combat_core.js  洗练战力计算内核
+
+data/                 基础数据：关卡表、基地收益、升级消耗、箱子定义、活动模板
+assets/               图片、字体子集、图标
+avatar/               头像预览子页及其素材
+combat_power_beta/    战力计算 Beta 子页
+calculator-assets/    洗词条计算器用的 ExcelJS
+scripts/              数据构建脚本
+docs/                 架构说明、协作流程与数据口径
+test_*.js             引擎回归测试
 ```
 
-## 更换背景图
+## 本地运行
 
-背景图支持定期更换，只需替换**一个文件**：
-
-```bash
-# 准备一张 1920x1080 左右的高清图（webp/jpg/png 均可，文件 ≤ 5MB）
-# 替换 assets/bg/hero.webp，git commit + push 即可
-cp /path/to/new-hero.webp nikke-planner-web/assets/bg/hero.webp
-git add assets/bg/hero.webp && git commit -m "更换背景图" && git push
-```
-
-**无需改任何代码**——`css/style.css` 通过 CSS 变量 `--hero-bg` 引用唯一文件。
-
-**显示规则**：
-- 顶部 banner 区：图作为清晰 banner（200px 高，居中顶部对齐，白字叠加）
-- body 背景：图模糊 14px 缩放 1.08 倍 + 半透明白色遮罩，作为氛围底色
-- 移动端自动去模糊改用更强遮罩，避免低端机卡顿
-- 卡片保持白色不透明，**不影响阅读**
-
-**推荐规格**：横版 16:9 或 16:10（人像图建议裁剪为横版，否则会上下黑边），人物图最佳（能呼应 NIKKE 主题）。
-
-## 本地开发/验证
-
-任意静态服务器即可（**不要直接 file:// 打开**，否则 fetch 跨源会被浏览器阻止）：
+页面用 `fetch` 读取 `data/*.json`，直接双击 `file://` 打开会被浏览器拦跨源，需要起一个静态服务器：
 
 ```bash
-cd nikke-planner-web
-# 方式一：Python 内置
 python -m http.server 8787
-# 方式二：Node 一行命令
+# 或
 npx serve -l 8787 .
-# 然后访问 http://127.0.0.1:8787/
 ```
 
-引擎金标准验证：
+然后访问 http://127.0.0.1:8787/ 。
+
+## 测试
+
+不依赖测试框架，装有 Node 即可运行：
 
 ```bash
-node test_golden.js
+node test_golden.js        # 引擎金标准回归
+node test_server_split.js  # 分服口径：关卡规模、基地公式、存档迁移
+node test_ledger.js        # 账单聚合
+node test_mod_stats.js     # 模组统计的期望与记录归一化
 ```
 
-应输出 `ALL GOLDEN TESTS PASSED`。
+其余 `test_*.js` 覆盖开箱策略、活动模板、月卡、推图收益、洗练战力等分支，脚本自行输出汇总。
 
-## 部署到 GitHub Pages（与参考站同款链接）
+## 数据与口径
 
-1. 把 `nikke-planner-web/` 目录上传到一个 GitHub 仓库（例如 `nikke-planner`），根目录包含 `index.html`
-2. 在 GitHub 仓库页面 → **Settings → Pages**
-3. Source 选 **Deploy from a branch**，Branch 选 `main`（或 `master`）/ `(root)`
-4. 保存后等 1-2 分钟，GitHub 会分配一个公开链接：
+- 关卡表、基地收益、升级消耗等基础数值都在 `data/`，改数字不需要动代码。
+- 分服差异（每周重置日、装备经验保存比例、收益补正系数）集中在 `data/servers.json`；关卡表两服共用同一套。
+- 计算口径与官方拆包数据的核对过程见 `docs/`。
 
-   ```
-   https://你的GitHub用户名.github.io/仓库名/
-   ```
+## 文档
 
-5. 把这个链接发给其他用户，他们即可通过浏览器直接访问（PC / 手机均可）
+| 文档 | 内容 |
+|---|---|
+| `docs/ARCHITECTURE.md` | 模块职责、数据流、改代码时必须守住的不变量 |
+| `docs/CONTRIBUTING.md` | 提交与发布流程、版本号规则、双端验证要求 |
+| `docs/主线推图收益-官方拆包数据说明.md` | 推图收益的数据来源与折算 |
+| `docs/活动模板-官方拆包数据核对报告.md` | 活动模板四档的参数来源 |
+| `docs/活动扫荡芯尘盒-核对报告.md` | 活动扫荡产出核对 |
+| `docs/开箱收益对比-为什么是0级.md` | 开箱时机的差异分析 |
+| `docs/外部计算器对照与数据源分析.md` | 与同类外部工具的口径对照 |
+| `docs/错误上报-建表.sql` | 错误上报表的建表语句 |
 
-### 替代：直接下载压缩包本地预览
+## 说明
 
-```bash
-# 压缩整个目录（不包含 .git）
-zip -r nikke-planner-web.zip nikke-planner-web/
-# 用户解压后用上面「本地开发」的方式启动
-```
+本项目是非官方的玩家自建工具，不与游戏服务器交互，不读取也不上传游戏账号数据。计算结果基于公开数据与社区实测，随游戏版本变化可能需要更新 `data/` 下的数值。
 
-## 更新数据
-
-- 调整基础数据：修改 `data/*.json`，GitHub commit 后 GitHub Pages 会自动重新部署（约 1 分钟）
-- 调整表单默认值/字段：修改 `index.html` + `js/app.js`
-
-## 引擎一致性保证
-
-`test_golden.js` 用与 Python 版完全相同的金标准输入（2026-08-05 快照），断言输出数值与 Python 引擎一致：
-
-| 场景 | Python 输出 | JS 输出 |
-| --- | --- | --- |
-| bare 等级 | 474 | 474 |
-| fixed 等级 | 487 | 487 |
-| selectable 等级 | 496 | 496 |
-| no_box 天数 | ~29.8557 | 29.8557 |
-| future.result 等级 | 503 | 503 |
-
-未来 Python 引擎更新时，移植到 JS 端用同一组数据对比即可快速校验一致性。
-
-## 分服（国际服 / 国服）与存档版本
-
-**关卡表两服共用同一套**（官方国际服静态表，Chapter 0~48、普通/困难各 1,787 关），切换「服务器」**不会**截断关卡、**不会**改变基地等级上限。基地等级 = **计数 ÷ 5 向下取整 + 1**，其中计数 = (普通关 − 2-12) + 困难关 + 1，上限 **Lv712**。前哨基地要到主线 2-12 才解锁，所以普通侧从 2-12 起算（0-1~2-11 共 18 关不计入），困难侧从 0-1 起算。该口径已与国际服 nikkeoutpost、国服 NikkeCalc 两站逐项核对一致。
-
-R63（2026-10-26）更正：上一版据国服客户端 `sd.bin` 缓存判定「国服只有 33 章 / 基地上限 Lv433」，但国服实际已开放到 40 章 —— 那份缓存是手机上的**过期快照**，已废止。国际服进度最超前，按其表列全部关卡对所有服都安全。
-
-「服务器」选择器保留，只剩登记作用（存档/云端/分享标注所属服），以及登记两服真实差异：
-
-| 项 | 国际服 | 国服 |
-| --- | --- | --- |
-| 关卡表 | Chapter 0~48 / 各 1,787 关 | **同上（共用国际服表）** |
-| 基地等级上限 | Lv712 | **Lv712** |
-| 每周重置日 | 周一 | 周日 |
-| 装备经验保存比例 | 0.9 | 1.0 |
-| 收益补正系数 `income_scale` | 1.0 | 1.0 |
-
-`income_scale` 是该服基地收益的整体倍率，1.0 = 直接用官方表原值。两服当前都是 1.0（无实测差异，不填猜的值）；若将来实测出偏差，只改 `data/servers.json` 这一个数即可，不必动关卡表、公式或 `outpost_income.json`。`0`、负数、缺省一律按 1 处理。
-
-- 切服不重置任何业务字段（资源/箱子/活动原样保留）；仅当旧存档里残留了超出 Chapter 48 的异常关卡时才收敛到末关。
-- 基地等级超过 Lv712 时不再自动带出收益（该等级在游戏内不存在），输入框下方给红字提示。
-- 存档版本：`nikke_planner_form_v1` 这个 localStorage 键名**永远不要改**（改了等于所有老玩家进度清零），版本靠存档内部的 `_schema` 字段区分。v1（无 `server`）打开时按国际服口径补齐，且迁移**只加字段、不删字段**。
-
-## 已知限制
-
-- 纯前端解析 XLSX 依赖 SheetJS CDN（`xlsx.full.min.js`）。**首次访问需联网**；缓存后离线可用
-- 关卡进度 / 收益数据来自当前数据集（国际服普通+困难各 1,787 关、基地 800 级），随游戏更新可能需要刷新 `data/` JSON
-- 关卡表统一用国际服官方静态表；国服进度略靠后（约 40 章），选到自己实际打到的关卡即可
-- localStorage 按域名隔离（同一浏览器访问不同站点数据互不影响）；同一站点不同浏览器也不共享
-- 暂未实现：批量升级区间总需求（page 字段已在表单中预留，需要时可接入）
-
-## 妮姬洗练战力与 Pinkuro 导入
-
-生产项目内的「洗练战力」Tab 位于 `combat_reroll.html`，按“账号基本属性 / 妮姬基本属性 / 装备情况”三块展示。Pinkuro 读取需要启动本地无依赖代理：
-
-```powershell
-cd C:\Users\Administrator\WorkBuddy\2026-08-05-14-55-15\nikke_src
-py pinkuro_server.py
-```
-
-然后访问 `http://127.0.0.1:8785/`。代理仅转发角色搜索和导入请求，不记录 URL 查询串、请求体或 Pinkuro Key。Pinkuro 当前接口已确认返回账号/妮姬/装备基础字段和 `statTotalValue`，未返回逐条词条类型与阶数，因此不会覆盖本地词条明细；同步面板会逐字段展示本地值、远程值、冲突状态和选择项。
+浏览器本地的存档键（`nikke_planner_form_v1`、`nikke_mod_stats_v3` 等）属于对外契约，改名等于让所有存量用户的数据失效；升级格式请走存档内部的 `_schema` 字段。
