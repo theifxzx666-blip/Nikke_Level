@@ -15,6 +15,13 @@
  * 分服上线后存档多了 server/_schema。跨设备、跨新旧版本、跨国服/国际服直接覆盖都不可逆，
  * 因此下载链路加了四道闸门（版本闸门 / 覆盖前自动备份 / 差异逐项确认 / 写入结果校验），
  * 并在面板里提供「恢复上一份」。详见下方 FEATURES 之后的注释。
+ *
+ * ---------- R65（2026-10-26）：定制模组统计换了记录结构，同步侧只看「条数」 ----------
+ * 作者把掉落记录从 d1/d2/d3 改成 runs + drops[]（同步器 400+ 每天 4 次、600+ 每天 5 次）。
+ * 该功能没有版本号，也没有"数据日期"，整份搬运时无从判断分量 —— 于是：
+ * ① 摘要里显示「国服 N 条 / 国际服 M 条」，覆盖确认能看清体量；
+ * ② 本地条数少于云端时，上传前二次确认（否则一次误点就把云端多的记录删了）。
+ * ⚠ 存储键 nikke_mod_stats_v3 没变，云端老数据照读；页内 read 时再归一化，不需要迁移脚本。
  */
 (function () {
   "use strict";
@@ -65,6 +72,15 @@
     try { localStorage.setItem(backupKey(f), JSON.stringify(arr)); return true; }
     catch (e) { return false; }   // 配额满：备份失败要让调用方知道，不能默默继续覆盖
   }
+  /* 记录条数（定制模组统计，R65）：正常形态 {cn:[…],global:[…]}；
+     历史遗留可能整份就是个数组（v1 时代），这里一并兜住。 */
+  function recCounts(obj) {
+    if (Array.isArray(obj)) return { cn: obj.length, global: 0, total: obj.length };
+    if (!obj || typeof obj !== "object") return { cn: 0, global: 0, total: 0 };
+    var cn = Array.isArray(obj.cn) ? obj.cn.length : 0;
+    var gl = Array.isArray(obj.global) ? obj.global.length : 0;
+    return { cn: cn, global: gl, total: cn + gl };
+  }
   /* 存档摘要：用于弹窗里对比"云端 vs 本地"，让玩家自己判断该不该覆盖 */
   function summarize(f, obj, fallbackTime) {
     if (!obj || typeof obj !== "object") return "（无数据）";
@@ -75,6 +91,11 @@
     var parts = [];
     if (srvText) parts.push(srvText);
     if (isPlanner(f)) parts.push("存档版本 v" + (Number(obj._schema) || 1));
+    /* R65：模组统计没有版本号，只有"攒了多少天战绩"，条数就是它的体量 */
+    if (f.id === "mod_stats") {
+      var rc = recCounts(obj);
+      parts.push("国服 " + rc.cn + " 条 / 国际服 " + rc.global + " 条");
+    }
     if (obj.saved_at) parts.push("数据日期 " + obj.saved_at);
     if (isPlanner(f)) {
       if (obj.current) parts.push("同步器 Lv" + obj.current);
@@ -656,6 +677,19 @@
             var raw = getLocal(f);
             var obj = parseSafe(raw);
             if (!obj) { tip("本地无有效数据，无法上传"); return; }
+            /* R65：定制模组统计是整份搬运（没有版本号可比），只能用"条数"判断体量。
+               本地比云端少 = 很可能是在另一台设备上还没同步完，直接上传会删掉云端多出来的记录。 */
+            if (f.id === "mod_stats" && cloud && cloud.data_json) {
+              var lc = recCounts(obj), cc = recCounts(cloud.data_json);
+              if (cc.total > lc.total) {
+                var goUpRec = window.confirm(
+                  "云端记录比本地多，继续上传会删掉云端多出来的部分：\n\n"
+                  + "云端：国服 " + cc.cn + " 条 / 国际服 " + cc.global + " 条\n"
+                  + "本地：国服 " + lc.cn + " 条 / 国际服 " + lc.global + " 条\n\n"
+                  + "确定用本地覆盖云端吗？（点「取消」可先改用「用云端覆盖」把云端拉下来）");
+                if (!goUpRec) { return; }
+              }
+            }
             stampSchema(f, obj);
             /* 云端更"新"时先问一句：多数人不想用旧手机上的旧数据盖掉新进度 */
             if (cloud && cloud.updated_at && isPlanner(f)) {
