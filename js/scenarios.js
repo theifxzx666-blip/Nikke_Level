@@ -153,7 +153,11 @@
     var start = new Date(snapshot.recorded_at.getTime());
     var natural = C.incomeBetween(snapshot, start, openAt);
     var wipeoutHours = snapshot.daily_wipeout_count * snapshot.wipeout_hours_each;
-    var days = Math.max(0, Math.round((openAt.getTime() - start.getTime()) / 86400000));
+    /* R62（2026-10-26）口径统一：歼灭次数与月卡箱都只能按「完整过去的天数」计
+       —— 7.5 天只做得了 7 天的歼灭、只领得到 7 天的月卡箱。
+       此处原为 Math.round（7.5→8），与 scenarioPlans 里 floor(daysF) 的同一指标相差 1 次歼灭，
+       导致「全箱梭哈」与「场景对比」两块给出不同的开放日等级。 */
+    var days = Math.max(0, Math.floor((openAt.getTime() - start.getTime()) / 86400000 + 1e-9));
     RESOURCES.forEach(function (r) {
       natural[r] += (snapshot.income_per_hour[r] || 0.0) * wipeoutHours * days;
     });

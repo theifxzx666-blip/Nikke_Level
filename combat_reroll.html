@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>妮姬洗练战力计算</title>
+  <link rel="stylesheet" href="combat_reroll.css?v=20260926c">
+</head>
+<body>
+  <main class="combat-app">
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">NIKKE · Pinkuro 导入 + A级静态表</p>
+        <h1>妮姬洗练战力计算</h1>
+        <p class="lead">按账号、妮姬、装备三块维护数据，逐项比较洗练前后的变化。</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn btn-primary" id="btnSettings">设置</button>
+        <button class="btn" id="btnLoad">读取本机</button>
+        <button class="btn" id="btnSave">保存本机</button>
+        <button class="btn" id="btnImport">导入 JSON</button>
+        <button class="btn" id="btnCopy">复制配置</button>
+        <button class="btn" id="btnExport">导出 JSON</button>
+        <input id="fileImport" type="file" accept="application/json,.json" hidden>
+      </div>
+    </header>
+
+    <section class="notice" id="sourceNotice"></section>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <section class="settings-drawer" id="settingsDrawer" hidden>
+      <div class="settings-panel panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="section-head"><h2 id="settingsTitle">设置</h2><button class="btn btn-small" id="btnCloseSettings">关闭</button></div>
+        <p class="block-subtitle">Pinkuro Key 只用于当前读取请求，不保存到本机配置、导出文件或日志。</p>
+        <div class="settings-pinkuro">
+          <div class="sync-toolbar">
+            <label>Pinkuro Key / 公开链接<input id="pinkuroKey" type="password" placeholder="仅当前会话使用" autocomplete="off"></label>
+            <button class="btn btn-primary" id="btnPinkuro">读取 Pinkuro</button>
+          </div>
+          <section class="sync-panel" id="pinkuroPanel" hidden>
+            <div class="section-head"><h3>同步选择</h3><span class="status" id="pinkuroStatus">等待选择</span></div>
+            <div class="sync-meta" id="pinkuroMeta"></div>
+            <div class="sync-toolbar">
+              <label>导入角色<select id="pinkuroCharacter"></select></label>
+              <button class="btn btn-small" id="btnSelectRemote">全选 Pinkuro</button>
+              <button class="btn btn-small" id="btnKeepLocal">全部保留本地</button>
+              <label class="check"><input id="onlyConflicts" type="checkbox">只看冲突</label>
+            </div>
+            <p class="warning" id="pinkuroWarning" hidden></p>
+            <div id="pinkuroRows" class="sync-groups"></div>
+            <div class="sync-actions"><button class="btn btn-primary" id="btnApplyPinkuro">应用已选择项</button><button class="btn" id="btnCancelPinkuro">取消本次同步</button></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="data-block panel account-block">
+      <div class="section-head"><h2>1. 账号基本属性</h2><span class="source-badge" id="accountSource">本地输入</span></div>
+      <div class="block-subtitle">同步器、主机和账号整体状态。Pinkuro 读取时间只记录当前会话，不保存 Key。</div>
+      <div class="profile-grid">
+        <label>同步器等级<input id="syncLevel" type="number" min="1" step="1"></label>
+        <label>主机基础等级<input id="hostBaseRecycleLv" type="number" min="0" step="1"></label>
+        <label>伊莱格<span class="field-caption">企业等级</span><input id="elysionCorp" type="number" min="0" step="1"></label>
+        <label>米西利斯<span class="field-caption">企业等级</span><input id="missilisCorp" type="number" min="0" step="1"></label>
+        <label>泰特拉<span class="field-caption">企业等级</span><input id="tetraCorp" type="number" min="0" step="1"></label>
+        <label>朝圣者<span class="field-caption">企业等级</span><input id="pilgrimCorp" type="number" min="0" step="1"></label>
+        <label>异常<span class="field-caption">企业等级</span><input id="abnormalCorp" type="number" min="0" step="1"></label>
+        <label>火力型<span class="field-caption">类型等级</span><input id="fireType" type="number" min="0" step="1"></label>
+        <label>防御型<span class="field-caption">类型等级</span><input id="defenseType" type="number" min="0" step="1"></label>
+        <label>辅助型<span class="field-caption">类型等级</span><input id="supportType" type="number" min="0" step="1"></label>
+        <label>账号公开标识摘要<input id="publicSummary" type="text" readonly placeholder="未读取"></label>
+        <label>Pinkuro 读取时间<input id="pinkuroFetchedAt" type="text" readonly placeholder="未读取"></label>
+      </div>
+    </section>
+
+    <section class="data-block panel nikke-block">
+      <div class="section-head"><h2>2. 妮姬基本属性</h2><span class="source-badge" id="nikkeSource">本地输入</span></div>
+      <div class="character-picker">
+        <label>选择妮姬
+          <input id="characterSearch" type="search" autocomplete="off" placeholder="输入中文名、英文名、别名或角色 ID">
+          <input id="character" type="hidden">
+          <div id="characterSuggestions" class="suggestions" hidden></div>
+        </label>
+      </div>
+      <div class="profile-grid">
+        <label>星级<input id="starLevel" type="number" min="0" step="1"></label>
+        <label>好感度<input id="affectionLevel" type="number" min="0" step="1"></label>
+        <label>技能 1<input id="skill1Level" type="number" min="0" step="1"></label>
+        <label>技能 2<input id="skill2Level" type="number" min="0" step="1"></label>
+        <label>爆裂技能<input id="burstLevel" type="number" min="0" step="1"></label>
+        <label>收藏品类型<select id="favoriteItem"><option value="">未填写</option><option>无</option><option>R</option><option>SR</option><option>SSR</option></select></label>
+        <label>收藏品等级<input id="favoriteLevel" type="number" min="0" step="1"></label>
+        <label>魔方类型<input id="cubeType" type="text" placeholder="未填写"></label>
+        <label>魔方等级<input id="cubeLevel" type="number" min="0" step="1"></label>
+      </div>
+      <div class="visible-formula formula-grid">
+        <label>攻击力<input id="attack" type="number" min="0" step="1"></label>
+        <label>生命值<input id="hp" type="number" min="0" step="1"></label>
+        <label>防御力<input id="defense" type="number" min="0" step="1"></label>
+      </div>
+      <details class="advanced-formula"><summary>高级公式属性（通常无需填写）</summary>
+        <div class="formula-grid">
+          <label>暴击率（%）<input id="criticalRatePercent" type="number" min="0" step="0.01"></label>
+          <label>暴击伤害（%）<input id="criticalDamagePercent" type="number" min="0" step="0.01"></label>
+          <label>额外 StateEffect 战力<input id="extraStateEffectBattlepower" type="number" min="0" step="1"></label>
+        </div>
+        <p class="hint">隐藏属性仅在 Pinkuro、客户端数据或用户明确输入后参与精确公式。缺失时不会默认填 0。</p>
+      </details>
+    </section>
+
+    <section class="result-strip" aria-live="polite">
+      <div><span>洗前总战力</span><strong id="beforePower">—</strong></div>
+      <div><span>洗后总战力</span><strong id="afterPower">—</strong></div>
+      <div class="result-delta"><span>战力变化</span><strong id="powerDelta">—</strong></div>
+      <div><span>内部词条参数变化</span><strong id="internalDelta">0</strong></div>
+    </section>
+    <p class="calculation-status" id="calcStatus">等待输入</p>
+
+    <section class="data-block panel equipment-panel">
+      <div class="section-head"><h2>3. 装备情况</h2><label class="check"><input id="onlyChanged" type="checkbox">只看变化项</label></div>
+      <p class="block-subtitle">四件超载装备分别填写洗练前/洗练后；第 2、3 词条可以明确选择为空。</p>
+      <div id="equipmentGrid" class="equipment-grid"></div>
+    </section>
+
+    <section class="detail-panel panel">
+      <div class="section-head"><h2>计算依据与来源</h2><button class="btn btn-small" id="toggleDetails">展开</button></div>
+      <div id="detailContent" class="details" hidden></div>
+    </section>
+  </main>
+  <script src="js/overload_combat_core.js?v=20260926c"></script>
+  <script src="combat_reroll.js?v=20260926c"></script>
+</body>
+</html>

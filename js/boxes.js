@@ -1,4 +1,5 @@
-/* boxes.js — 固定小时箱折算（红球 TRUNC）+ 自选箱优化（自 Python calculator/boxes 移植） */
+/* boxes.js — 固定小时箱折算 + 自选箱优化（自 Python calculator/boxes 移植）
+   R62（2026-10-26）红球口径定案：见下方 dustTrunc / hoursOfFixed 注释 */
 (function (global) {
   "use strict";
 
@@ -6,31 +7,61 @@
   var RESOURCES = C.RESOURCES;
   var addRes = C.addRes;
 
-  function fixedBoxResources(snapshot, incomePerHour) {
-    var result = C.zeroRes();
+  /* ================= 红球（core_dust）定点口径 · R62 定案 =================
+     官方 OutpostBattleTable（800 行，20261026 包）三资源公式：
+       信用点     = Credit         / Time_credit   / 10000 × 3600
+       战斗数据辑  = Character_exp1 / Time_charexp1 / 10000 × 3600
+       红球(芯尘)  = Character_exp2 / Time_charexp2 / 10000 × 3600
+     实测：lv1 2326/60/10000×3600 = 13.956/h、lv500 10348/60/... = 62.088/h、
+           lv800 14466/60/... = 86.796/h —— 与 outpost_income.json 全 800 级逐级吻合
+           （表内为向下截断到 0.01，故有 -0.01~0 的尾差）。
+     关键：Time_charexp2 恒为 60 秒，每 60 秒只产 2326/10000 = 0.2326 个 < 1。
+          若「每次结算取整成整数」，0.2326 → 0，玩家永远拿不到红球 ——
+          故游戏内部必然以【万分之一为单位的定点数】持续累计，只在显示时取整。
+     ⇒ 开箱加的是定点数值，正确折算 = floor(rate × 总小时数)：
+       必须先把所有箱（固定小时箱 + 自选箱的「X 小时」选项）折算成总小时数、
+       最后统一取整一次。旧的「逐箱 floor」在 100 个 1H 盒上少算 41~95 个
+       （lv518 少 0.65%、lv1 少 6.8%），因为每箱都丢掉 rate 的小数部分。
+     ---------------------------------------------------------------- */
+
+  /* 定点取整：加 1e-9 防 0.7*30 = 20.999999999999996 这类浮点少算 1 个 */
+  function dustTrunc(v) { return Math.floor(v + 1e-9); }
+
+  /* 固定小时箱 → 各资源总小时数（成长套组对三资源同时计）。
+     只累计小时数、不折算资源，供 joinHours 统一乘收益率并取整。 */
+  function hoursOfFixed(snapshot) {
+    var hours = { credit: 0, battle_data: 0, core_dust: 0 };
     var names = { "芯尘盒": "core_dust", "信用点盒": "credit", "战斗数据辑盒": "battle_data" };
-    function boxValue(resource, hours) {
-      var rate = incomePerHour[resource] || 0.0;
-      if (resource === "core_dust") return Math.floor(rate * hours);
-      return rate * hours;
-    }
     Object.keys(snapshot.fixed_boxes || {}).forEach(function (name) {
-      var hoursMap = snapshot.fixed_boxes[name] || {};
+      var map = snapshot.fixed_boxes[name] || {};
       if (name === "成长套组") {
-        // 成长套组计入固定箱折算：对信用/战斗/芯尘三类各按小时收益*数量叠加（纳入计算口径）
-        Object.keys(hoursMap).forEach(function (h) {
-          var count = hoursMap[h];
-          RESOURCES.forEach(function (r) { result[r] += boxValue(r, parseInt(h, 10)) * count; });
+        Object.keys(map).forEach(function (h) {
+          var hh = parseInt(h, 10) || 0, cnt = map[h] || 0;
+          RESOURCES.forEach(function (r) { hours[r] += hh * cnt; });
         });
         return;
       }
-      var resource = names[name];
-      if (!resource) return;
-      Object.keys(hoursMap).forEach(function (h) {
-        result[resource] += boxValue(resource, parseInt(h, 10)) * hoursMap[h];
-      });
+      var r0 = names[name];
+      if (!r0) return;
+      Object.keys(map).forEach(function (h) { hours[r0] += (parseInt(h, 10) || 0) * (map[h] || 0); });
     });
-    return result;
+    return hours;
+  }
+
+  /* 总小时数 → 三资源量。红球最后统一取整一次（定点口径），其余资源本就是整数。 */
+  function joinHours(hours, incomePerHour) {
+    var inc = incomePerHour || {};
+    function out(r) {
+      var v = (inc[r] || 0.0) * (hours[r] || 0);
+      return r === "core_dust" ? dustTrunc(v) : v;
+    }
+    return { credit: out("credit"), battle_data: out("battle_data"), core_dust: out("core_dust") };
+  }
+
+  function fixedBoxResources(snapshot, incomePerHour) {
+    /* R62：先累加总小时数、最后一次折算（定点口径）。
+       旧实现逐箱 floor(rate*h) 再乘数量，100 个 1H 盒在 lv518 会少算 41 个红球。 */
+    return joinHours(hoursOfFixed(snapshot), incomePerHour);
   }
 
   /* 固定小时箱按缺口最小开启：单资源箱从大时长到小时长，成长套组同时补三资源。
@@ -40,9 +71,12 @@
     RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, gaps[r] || 0.0); });
     var used = {};
     var names = { "芯尘盒": "core_dust", "信用点盒": "credit", "战斗数据辑盒": "battle_data" };
-    function boxVal(res, h) {
-      return res === "core_dust" ? Math.floor((incomePerHour[res] || 0.0) * h) : (incomePerHour[res] || 0.0) * h;
-    }
+    var inc = incomePerHour || {};
+    /* R62：决策一律用**精确值** rate×h（不逐箱 floor）——
+       定点口径下 N 个箱的总贡献是 floor(rate×h×N)，与逐箱 floor 之和不同；
+       用精确值做贪心才能得到最少箱数。实际开出的数值统一由 planResources 按
+       「总小时数 → 一次 floor」给出，两边差 < 1 个红球。 */
+    function boxVal(res, h) { return (inc[res] || 0.0) * h; }
     ["芯尘盒", "信用点盒", "战斗数据辑盒"].forEach(function (name) {
       var res = names[name];
       var map = snapshot.fixed_boxes[name] || {};
@@ -77,26 +111,23 @@
      而该方案的 remaining_shortage 恒为 0（它在缩小的步数上可行），不能当缺口用。
      口径与本文件其它折算保持一致：红球 TRUNC、非 units 选项 × 该资源每小时收益。 */
   function planResources(snapshot, plan, incomePerHour) {
-    var res = C.zeroRes();
-    if (!plan) return res;
-    var inc = incomePerHour || {};
-    function boxValue(resource, hours) {
-      var rate = inc[resource] || 0.0;
-      return resource === "core_dust" ? Math.floor(rate * hours) : rate * hours;
-    }
+    if (!plan) return C.zeroRes();
     var names = { "芯尘盒": "core_dust", "信用点盒": "credit", "战斗数据辑盒": "battle_data" };
+    var hours = { credit: 0, battle_data: 0, core_dust: 0 };   // 小时制（固定箱 + 自选箱的「X 小时」选项）
+    var units = C.zeroRes();                                    // 直接给数量的选项（units 模式）
     var used = plan.fixed_used || {};
     Object.keys(used).forEach(function (name) {
       var hm = used[name] || {};
       if (name === "成长套组") {
         Object.keys(hm).forEach(function (h) {
-          RESOURCES.forEach(function (r) { res[r] += boxValue(r, parseInt(h, 10)) * hm[h]; });
+          var hh = parseInt(h, 10) || 0, cnt = hm[h] || 0;
+          RESOURCES.forEach(function (r) { hours[r] += hh * cnt; });
         });
         return;
       }
       var r0 = names[name];
       if (!r0) return;
-      Object.keys(hm).forEach(function (h) { res[r0] += boxValue(r0, parseInt(h, 10)) * hm[h]; });
+      Object.keys(hm).forEach(function (h) { hours[r0] += (parseInt(h, 10) || 0) * (hm[h] || 0); });
     });
     (plan.selectable || []).forEach(function (p) {
       var box = null;
@@ -110,11 +141,19 @@
         if (!opt) return;
         RESOURCES.forEach(function (r) {
           var v = (opt.rewards && opt.rewards[r]) || 0;
-          res[r] += (opt.mode === "units" ? v : v * (inc[r] || 0)) * cnt;
+          /* R62：hours 模式也累加进总小时数，与固定小时箱走同一条折算路径
+             （旧实现自选箱直接用 rate×v×cnt 不取整，与固定箱的逐箱 floor 口径不一致） */
+          if (opt.mode === "units") units[r] += v * cnt;
+          else hours[r] += v * cnt;
         });
       });
     });
-    return res;
+    var out = joinHours(hours, incomePerHour);
+    return {
+      credit: out.credit + units.credit,
+      battle_data: out.battle_data + units.battle_data,
+      core_dust: out.core_dust + units.core_dust,
+    };
   }
 
   /* 固定小时箱按需计算：从最大时长箱开始，开够「达到 target」所需的最少固定箱数量。

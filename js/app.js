@@ -2,8 +2,11 @@
 (function () {
   "use strict";
   var C = window.NikkeCore, O = window.NikkeOutpost, S = window.NikkeScenarios, B = window.NikkeBoxes;
+  var SV = window.NikkeServers;  // 服务器档案（国际服 / 国服）
   var EV = window.NikkeEvents;   // 活动收益（events.js）
   var LEDGER = window.NikkeLedger;   // 收益账单口径（ledger.js，独立页 ledger.html 共用）
+  /* ⚠ localStorage 键名带 v1，是历史遗留：**不要改名**，改名等于所有老玩家进度清零。
+     存档自身的版本靠内部的 _schema 字段区分（见 js/servers.js migrateForm）。 */
   var LS_KEY = "nikke_planner_form_v1";
   var DEFAULT_FIXED = {
     "芯尘盒": { 24: 30, 12: 26, 8: 7, 4: 1, 2: 315, 1: 1432 },
@@ -115,6 +118,8 @@
   /* ---------- 状态 ---------- */
   var state = {
     form: null,               // localStorage 表单值
+    fresh: true,              // 本机无历史存档（新访客）：分服默认值要等数据加载后再落
+    server: "intl",           // 当前生效的服务器档案 key（与 form.server 同步）
     normalManual: false,      // 用户手动改过困难（当前）
     completedAuto: true,      // 「今天已完成歼灭次数」是否仍跟随「每日一举歼灭次数」（用户单独改过即置 false）
     futureNormalManual: false,
@@ -130,6 +135,8 @@
   /* ---------- 表单值读写 ---------- */
   function defaultForm() {
     return {
+      _schema: 2,              // 存档版本（v1 = 无此字段；迁移见 SV.migrateForm）
+      server: "intl",          // 服务器：intl 国际服 / cn 国服
       recorded: "2026-09-02", current: "489", target: "501", alternate: "521",
       normal_stage: "", hard_stage: "", base: "518", tactics: "是",
       credit_rate: "59860/h", battle_rate: "600440/h", dust_rate: "91.95/h",
@@ -159,6 +166,8 @@
       if (raw) {
         var f = JSON.parse(raw);
         state.form = Object.assign(defaultForm(), f);
+        // 存档版本迁移：v1（无 _schema / 无 server）一律按国际服口径补齐，只加字段不删字段
+        if (SV) SV.migrateForm(state.form);
         // fixed 兼容旧结构
         Object.keys(DEFAULT_FIXED).forEach(function (k) {
           if (!state.form.fixed[k]) state.form.fixed[k] = JSON.parse(JSON.stringify(DEFAULT_FIXED[k]));
@@ -169,14 +178,22 @@
             state.form[k] = DEFAULT_STAGE_CLEAR[k];
           }
         });
+        state.fresh = false;
         return;
       }
     } catch (e) { /* ignore */ }
     state.form = defaultForm();
+    state.fresh = true;      // 全新访客：分服默认值还在数据加载后才好算（见 init）
   }
 
   function collectForm() {
     var f = state.form;
+    /* 分服字段与存档版本：所有落盘路径（本地保存 / 上传云端 / 生成分享码）都从这里过，
+       所以在收集时统一盖章，避免某条路径漏写版本号导致云端存下"无版本"数据。 */
+    if (SV) {
+      f.server = SV.normalizeKey(val("f_server") || f.server);
+      f._schema = SV.SCHEMA;
+    }
     f.recorded = val("f_recorded"); f.current = val("f_current"); f.target = val("f_target"); f.alternate = val("f_alternate");
     f.normal_stage = val("f_normal_stage"); f.hard_stage = val("f_hard_stage"); f.base = val("f_base"); f.tactics = val("f_tactics");
     f.credit_rate = val("f_credit_rate"); f.battle_rate = val("f_battle_rate"); f.dust_rate = val("f_dust_rate");
@@ -325,6 +342,13 @@
     // 新格式（v2，携带模组统计）：{ v:2, planner, mod_stats }；旧格式为纯 form，兼容不变
     var planner = (f && f.v === 2 && f.planner !== undefined) ? f.planner : f;
     state.form = Object.assign(defaultForm(), planner);
+    // 分享码同样要过版本迁移：老链接里没有 server 字段，按国际服口径补齐
+    if (SV) SV.migrateForm(state.form);
+    Object.keys(LEGACY_STAGE_CLEAR).forEach(function (k) {
+      if (state.form[k] !== undefined && String(state.form[k]) === LEGACY_STAGE_CLEAR[k]) {
+        state.form[k] = DEFAULT_STAGE_CLEAR[k];
+      }
+    });
     Object.keys(DEFAULT_FIXED).forEach(function (k) {
       if (!state.form.fixed[k]) state.form.fixed[k] = JSON.parse(JSON.stringify(DEFAULT_FIXED[k]));
     });
@@ -650,6 +674,7 @@
     setVal("f_recorded", f.recorded); setVal("f_current", f.current); setVal("f_target", f.target); setVal("f_alternate", f.alternate);
     setVal("f_saved_at", f.saved_at || "");
     setVal("f_collected_before", f.collected_before || "是");
+    setVal("f_server", f.server || "intl");   /* R63b：不再展示服务器说明条（用户要求屏蔽） */
     setVal("f_base", f.base); setVal("f_tactics", f.tactics);
     setVal("f_credit_rate", f.credit_rate); setVal("f_battle_rate", f.battle_rate); setVal("f_dust_rate", f.dust_rate);
     setVal("f_wipeouts", f.wipeouts); setVal("f_wipeout_hours", f.wipeout_hours); setVal("f_completed", f.completed);
@@ -710,14 +735,128 @@
     var map = isFuture ? (mode === "hard" ? state.futureHardStages : state.futureNormalStages) : (mode === "hard" ? state.hardStages : state.normalStages);
     var opts = map[chSel.value] || [];
     // 回填已保存的关卡值（修复刷新后关卡下拉重置）：优先当前下拉值，其次已保存值
+    // ⚠ 当前值必须**校验仍在新列表内**再沿用 —— 切服/换章后旧值（如 40-1）已不在本服范围内，
+    //   直接沿用会被 fillSelect 判为非法而落到「未选择」（R61 修）
     var saved = state.form[kind === "normal" ? "normal_stage" : kind === "hard" ? "hard_stage" : kind === "future_normal" ? "future_normal_stage" : "future_hard_stage"];
     var cur = stSel.value;
-    var selected = (cur && cur !== "") ? cur : (saved && opts.indexOf(saved) >= 0 ? saved : "未选择");
+    var selected = (cur && opts.indexOf(cur) >= 0) ? cur
+      : (saved && opts.indexOf(saved) >= 0 ? saved : "未选择");
     fillSelect(stSel, ["未选择"].concat(opts), selected);
   }
 
+  /* ---------- 分服：国际服 / 国服 ----------
+     R63（2026-10-26）：**关卡选择器统一按国际服官方表，两服不再分叉。**
+     曾据国服 sd.bin 缓存判定「国服 33 章 / 基地上限 433」，但国服实际已到 40 章 ——
+     那份缓存是过期快照，已废止。国际服最超前（49 章 / 各 1,787 关 / 基地上限 Lv712），
+     统一按国际服表对所有服都安全，国服玩家选到自己实际进度即可。
+     「服务器」选择器保留，仅用于存档归属标注与两服差异登记，不再截断关卡、不改基地上限。
+     ⚠ 切服**不重置其它字段**（资源、箱子、活动都不受影响）。 */
+  /* R63：serverProfile / serverName 已无调用者（超上限提示不再带服务器名），一并移除 */
+  function baseCap() { return SV ? SV.cap() : 712; }
+  function serverMaxChapter() { return SV ? SV.maxChapter() : 48; }
+
+  /* 按当前服务器重建「章节 → 关卡」表（R63 后两服档案一致，重建结果相同） */
+  function rebuildStageTables() {
+    state.normalChapters = O.chapters("normal");
+    state.hardChapters = O.chapters("hard");
+    state.normalStages = {}; state.hardStages = {};
+    state.futureNormalStages = {}; state.futureHardStages = {};
+    ["normal", "hard"].forEach(function (mode) {
+      var map = mode === "hard" ? state.hardStages : state.normalStages;
+      var fmap = mode === "hard" ? state.futureHardStages : state.futureNormalStages;
+      var chs = mode === "hard" ? state.hardChapters : state.normalChapters;
+      chs.forEach(function (ch) {
+        map[ch] = O.stagesInChapter(ch, mode);
+        fmap[ch] = map[ch].slice();
+      });
+    });
+  }
+
+  /* 把服务器档案同时灌进 outpost.js（公式按它封顶）与本地章节表 */
+  function applyServerRuntime(key) {
+    var p = SV.setCurrent(key);
+    state.server = p.key;
+    state.form.server = p.key;
+    /* R63b：incomeScale 是该服基地收益补正系数（两服当前均为 1.0）。
+       传进 outpost.js 后由 incomeForLevel 统一应用 —— 将来实测出差偏只改 servers.json 一个数。 */
+    if (O && O.setServer) O.setServer({
+      key: p.key,
+      maxChapter: Number(p.max_chapter),
+      cap: SV.capOf(p.key),
+      incomeScale: SV.incomeScaleOf(p.key),
+    });
+    rebuildStageTables();
+    return p;
+  }
+
+  /* 越界关卡 → 收缩到该服最后一关（读旧存档 / 切服时用）
+     R63 后两服都是 Chapter 48，正常情况不会触发；保留用于兜住旧存档里的异常值。
+     实现放在 outpost.js（依赖 stage_map，且便于 node 侧直接测） */
+  function clampSection(section, mode) {
+    return O.clampSection ? O.clampSection(section, mode) : section;
+  }
+
+  /* 用户切换服务器：先收表单（不能吞掉正在输入的数据），再收敛越界值，最后统一重绘 */
+  function applyServerSwitch(key) {
+    if (!SV) return;
+    var target = SV.normalizeKey(key);
+    if (target === state.server) return;
+    collectForm();
+    var p = applyServerRuntime(target);
+    var notes = [];
+    var baseClamped = false;
+
+    [["normal_stage", "normal", "普通关卡"],
+     ["hard_stage", "hard", "困难关卡"],
+     ["future_normal_stage", "normal", "预计普通关卡"],
+     ["future_hard_stage", "hard", "预计困难关卡"]].forEach(function (it) {
+      var k = it[0], old = state.form[k];
+      var nv = clampSection(old, it[1]);
+      if (nv !== old) {
+        state.form[k] = nv;
+        notes.push(it[2] + " " + old + " → " + (nv || "未选择"));
+      }
+    });
+
+    var cap = SV.capOf(p.key);
+    var b = parseInt(state.form.base, 10);
+    if (b && b > cap) { state.form.base = String(cap); baseClamped = true; notes.push("基地等级 " + b + " → " + cap); }
+    var fb = parseInt(state.form.future_base, 10);
+    if (fb && fb > cap) { state.form.future_base = String(cap); notes.push("预计基地等级 " + fb + " → " + cap); }
+
+    renderForm();
+    if (baseClamped) syncIncomeFromBase();
+    syncCurrentBase();
+    syncFutureBase();
+    saveForm();
+
+    /* R63：两服档案一致，下面两条通常不会触发；保留是为了「读旧存档里残留的越界关卡」
+       （例如曾有用户被打上 32 章上限后存过档）以及将来进度真分叉时能兜住。 */
+    var msg = "已标注为" + p.name + "（关卡表两服共用：Chapter 0~" + p.max_chapter + " / 基地上限 Lv" + cap + "）";
+    if (notes.length) {
+      var brief = notes.length > 3 ? notes.slice(0, 3).concat("等 " + notes.length + " 项") : notes;
+      msg += "；已调整 " + brief.join("、");
+    }
+    tip(msg);
+  }
+
+  /* 新访客：默认基地等级若超出当前服上限则压回上限
+     R63 后两服上限同为 Lv712、表单预设 518 < 712，故实际不再触发；
+     保留是为兜住将来档案变化（或分享链接带进超限值）。 */
+  function applyServerDefaults() {
+    if (!SV) return;
+    var p = SV.current();
+    var cap = SV.capOf(p.key);
+    if (parseInt(state.form.base, 10) > cap) {
+      state.form.base = String(cap);
+      setVal("f_base", cap);
+      syncIncomeFromBase();
+    }
+    if (parseInt(state.form.future_base, 10) > cap) state.form.future_base = String(cap);
+  }
+
   /* ---------- 联动 ---------- */
-  /* 关卡进度 → 基地等级推算（国际服口径：每通关 5 关 +1） */
+  /* 关卡进度 → 基地等级推算（官方口径：每通关 5 关 +1，普通 + 困难都计入；按所选服务器封顶） */
   function currentCalculatedBase() {
     var f = collectForm();
     return O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null);
@@ -731,10 +870,22 @@
     var hint = $("baseHint");
     var btn = $("btnAdoptBase");
     var cur = parseInt(val("f_base"), 10) || 0;
+    var cap = baseCap();
     function showBtn(lv) {
       if (btn) { btn.style.display = ""; btn.textContent = "采用推算值 lv." + lv; }
     }
     function setHint(t) { if (hint) hint.textContent = t || ""; }
+    /* 超出上限是硬错误：该等级在游戏里不存在，收益不能按它索引 —— 优先级高于其它所有提示。
+       R63：两服上限已统一，文案不再带服务器名（否则会让玩家误以为国服上限更低）。 */
+    if (cur > cap) {
+      var prof = SV ? SV.current() : null;
+      var cnt = prof ? Number(prof.normal_stages) || 0 : 0;
+      setHint("⚠ 基地等级上限为 Lv" + cap + (cnt
+        ? "（满进度 " + cnt.toLocaleString("en-US") + "×2 关 ÷ 5 + 1）"
+        : "") + "，你填的 lv." + cur + " 在游戏内不存在。请核对后再填；超上限时不自动带出收益。");
+      if (level) showBtn(level);
+      return;
+    }
     if (!level) {
       setHint("");
       if (btn) btn.style.display = "none";
@@ -761,6 +912,8 @@
   function syncIncomeFromBase() {
     var base = parseInt(val("f_base"), 10);
     if (!base) return;
+    /* 超出该服上限的等级不存在，不能用它去查收益表（否则会把国服玩家的收益整体算高） */
+    if (base > baseCap()) return;
     var income = O.incomeForLevel(base, val("f_tactics") !== "否");
     if (income) {
       setVal("f_credit_rate", Math.round(income.credit) + "/h");
@@ -1240,14 +1393,20 @@
       title: "当前基地等级",
       html: "手填游戏内实际显示的<b>前哨基地防御等级</b>，收益表按此等级索引（与同步器等级在游戏内无联动）。"
         + "也可选下方「关卡进度」自动推算后点「采用推算值」。<br>"
-        + "推算口径：每通关 5 关（普通 + 困难合计）基地等级 +1，基于国际服数据；"
-        + "国服统计进度约比国际服多 3 关，推算值可能偏高 —— <b>建议以游戏内实际等级为准</b>。"
+        + "推算口径（已与国际服 nikkeoutpost、国服 NikkeCalc 两站核对一致）：<br>"
+        + "<b>计数 = (普通关 − 2-12) + 困难关 + 1</b>，两个难度都计入，"
+        + "<b>基地等级 = 计数 ÷ 5 向下取整 + 1</b>。<br>"
+        + "前哨基地要到主线 <b>2-12</b> 通关才解锁，所以普通 0-1~2-11 这 18 关<b>不计入</b>；"
+        + "困难侧则从第一关起就计入。<br>"
+        + "上限：普通/困难各 1,787 关 → <b>Lv712</b>（国际服与国服共用同一套关卡表）。"
+        + "超过上限的等级在游戏内不存在，计算器不会按它带出收益。"
     },
     "tip-stage": {
       title: "关卡进度",
-      html: "推算口径：每通关 5 关（普通 + 困难合计）基地等级 +1，基于国际服数据；"
-        + "国服统计进度约比国际服多 3 关，推算值可能偏高 —— 建议以游戏内实际基地等级手填为准，"
-        + "选完进度后可点「采用推算值」。"
+      html: "推算口径：基地等级按「(普通关 − 2-12) + 困难关 + 1」每满 5 关升 1 级，"
+        + "普通侧从 2-12（前哨基地解锁关）起算，困难侧从 0-1 起算。<br>"
+        + "关卡下拉<b>两服共用同一套（Chapter 0~48）</b>，按你实际打到的关卡选即可 —— "
+        + "国服进度比国际服略靠后，选到自己当前章节就行，不会因为选了后面的章而被截断。"
     },
     "tip-stageclear": {
       title: "预计新主线推图收益",
@@ -1538,7 +1697,16 @@
     var byH = {}, maxH = 0, maxRes = null;
     C.RESOURCES.forEach(function (r) {
       var need = (shortage && shortage[r]) || 0, rate = (income && income[r]) || 0;
-      byH[r] = (need > 1e-6 && rate > 0) ? Math.ceil(need / rate - 1e-9) : 0;
+      /* R62（2026-10-26）：红球走「定点累计」口径 —— k 个 1H 盒给 floor(rate × k)，
+         不是 k × floor(rate)。官方 OutpostBattleTable.Character_exp2 / Time_charexp2(60s)
+         / 10000 × 3600 决定 rate，且每 60 秒仅产 0.2326 个 → 内部必为万分之一定点数。
+         故此处按「总量 floor」折算：先按精确 rate 求最少箱数，若 floor 吃掉 <1 个则补 1 个。 */
+      var k = 0;
+      if (need > 1e-6 && rate > 0) {
+        k = Math.ceil(need / rate - 1e-9);
+        if (r === "core_dust" && Math.floor(rate * k + 1e-9) < need - 1e-6) k += 1;
+      }
+      byH[r] = k;
       if (byH[r] > maxH) { maxH = byH[r]; maxRes = r; }
     });
     return { byH: byH, max: maxH, maxRes: maxRes };
@@ -2195,9 +2363,12 @@
     var dailyHours2 = 24 + (snap.daily_full === false ? 0
       : (snap.daily_wipeout_count || 0) * (snap.wipeout_hours_each || 0));
     var openMs2 = snap.main_story_open_at ? new Date(snap.main_story_open_at).getTime() : null;
-    var daysToOpen = (openMs2 && !isNaN(openMs2))
-      ? Math.max(0, Math.round((openMs2 - snap.recorded_at.getTime()) / 86400000)) : 0;
-    var rateGainDust = RATE_ADD * dailyHours2 * daysToOpen;
+    /* R62：收益按精确小时算（连续流），展示与歼灭按完整天数算（floor）。
+       此前同一个变量既当收益乘数又当展示天数、且用 round，与 scenarios.js 的 floor 口径不一致。 */
+    var daysToOpenExact = (openMs2 && !isNaN(openMs2))
+      ? Math.max(0, (openMs2 - snap.recorded_at.getTime()) / 86400000) : 0;
+    var daysToOpen = Math.floor(daysToOpenExact + 1e-9);
+    var rateGainDust = RATE_ADD * dailyHours2 * daysToOpenExact;
     var gainDust = rateGainDust + dHardDust;
     var gainBoxes = rateNow > 0 ? gainDust / rateNow : 0;   // 1H 芯尘盒 = 该资源 1 小时的收益
     var costBoxes = lose * plus1;
@@ -2678,6 +2849,10 @@
     });
     $("f_future_hard_stage").addEventListener("change", function () { state.futureHardManual = true; syncFutureBase(); onFormChange(); });
 
+    // 切服：先收敛越界值再重绘（不走通用 change 绑定，避免"先保存旧值再修正"的时序问题）
+    var srvSel = $("f_server");
+    if (srvSel) srvSel.addEventListener("change", function () { applyServerSwitch(srvSel.value); });
+
     $("f_tactics").addEventListener("change", function () { syncCurrentBase(); syncIncomeFromBase(); syncFutureBase(); onFormChange(); });
     // R40：「计入范围」决定「预计新主线推图收益」标题里列哪几章 → 变更后必须重刷标题
     $("f_stage_mode").addEventListener("change", function () {
@@ -2703,7 +2878,7 @@
     document.querySelectorAll("#formSection input, #formSection select").forEach(function (el) {
       if (["f_normal_chapter", "f_normal_stage", "f_hard_chapter", "f_hard_stage",
            "f_future_normal_chapter", "f_future_normal_stage", "f_future_hard_chapter", "f_future_hard_stage",
-           "f_tactics", "f_stage_mode"].indexOf(el.id) >= 0) return;
+           "f_tactics", "f_stage_mode", "f_server"].indexOf(el.id) >= 0) return;
       el.addEventListener("change", onFormChange);
       el.addEventListener("input", onFormChange);
     });
@@ -2783,17 +2958,14 @@
   function init() {
     loadForm();
     loadAutoSyncPref();
-    Promise.all([O.loadStageMap(), O.loadIncomeTable()])
+    /* 顺序有依赖：先读服务器档案 → 再读关卡表 → 才能按档案截断出章节/关卡列表 */
+    (SV ? SV.load() : Promise.resolve(null))
+      .then(function () { return Promise.all([O.loadStageMap(), O.loadIncomeTable()]); })
       .then(function () {
-        state.normalChapters = O.chapters("normal");
-        state.hardChapters = O.chapters("hard");
-        ["normal", "hard"].forEach(function (mode) {
-          var map = mode === "hard" ? state.hardStages : state.normalStages;
-          var chs = mode === "hard" ? state.hardChapters : state.normalChapters;
-          chs.forEach(function (ch) { map[ch] = O.stagesInChapter(ch, mode); });
-          var fmap = mode === "hard" ? state.futureHardStages : state.futureNormalStages;
-          chs.forEach(function (ch) { fmap[ch] = O.stagesInChapter(ch, mode); });
-        });
+        // servers.js 若被浏览器拦截/加载失败，退回国际服口径（此时 outpost.js 的默认值就是国际服）
+        if (SV) applyServerRuntime(state.form.server || "intl");
+        else rebuildStageTables();
+        if (state.fresh) applyServerDefaults();
         // 阶梯消耗表（带版本参数，避开 Pages/浏览器缓存导致档位表不生效）
         return fetch("data/level_cost_table.json?v=20260917b").then(function (r) { return r.json(); }).then(function (d) {
           if (d && d.kind === "tiered_per_level") COST_TIERS = d.tiers || [];

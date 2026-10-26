@@ -10,6 +10,11 @@
  * ③ 注册只返回 user 不给 session（邮箱确认仍开着）→ 进「待确认」视图，可重发确认信；
  * ④ 登录撞上 email_not_confirmed / invalid_credentials → 中文解释 + 一键重发确认信；
  * ⑤ 所有 Supabase 英文报错统一走 explainAuthError()，玩家看到的是「原因 + 该怎么办」。
+ *
+ * ---------- R61（2026-10-26）：下载覆盖不再可能吞掉进度 ----------
+ * 分服上线后存档多了 server/_schema。跨设备、跨新旧版本、跨国服/国际服直接覆盖都不可逆，
+ * 因此下载链路加了四道闸门（版本闸门 / 覆盖前自动备份 / 差异逐项确认 / 写入结果校验），
+ * 并在面板里提供「恢复上一份」。详见下方 FEATURES 之后的注释。
  */
 (function () {
   "use strict";
@@ -28,6 +33,63 @@
     { id: "mod_stats", name: "定制模组统计",   ls: "nikke_mod_stats_v3" },
     { id: "combat_power_beta", name: "战力计算Beta（角色练度 + 装备词条套装）", ls: "nikke_power_calc_v2" }
   ];
+
+  /* ============ 存档安全（R61，2026-10-26） ============
+     起因：分服上线后存档多了 server/_schema 字段。若玩家在两台设备上分别用新旧页面，
+     或一边国服一边国际服，直接「用云端覆盖」会把本地进度整份换掉 —— 这是不可逆的。
+     这里做四道闸门：
+       ① 版本闸门：云端 _schema 比本页面能读的版本高 → 拒绝下载（老页面读新数据必丢字段）；
+       ② 覆盖前自动备份：本地原样存一份（每个功能最多留 3 份），面板里可一键恢复；
+       ③ 差异告知：服务器/数据日期/基地等级不一致时，弹窗逐项列出再让人决定；
+       ④ 写入校验：写 localStorage 失败（配额满/隐私模式）时明确报错，而不是假装成功。
+     ⚠ 只有 planner 有 _schema/server 概念；另两个功能按原样整份搬运，不做版本判断。 */
+  var BACKUP_PREFIX = "nk_bak_";
+  var BACKUP_MAX = 3;
+  function schemaSupport() {
+    return (window.NikkeServers && window.NikkeServers.SCHEMA) || 2;
+  }
+  function isPlanner(f) { return f.id === "planner"; }
+  function backupKey(f) { return BACKUP_PREFIX + f.id; }
+  function readBackups(f) {
+    try {
+      var raw = localStorage.getItem(backupKey(f));
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  function pushBackup(f, obj) {
+    if (!obj || typeof obj !== "object") return false;
+    var arr = readBackups(f);
+    arr.unshift({ at: new Date().toISOString(), data: obj });
+    arr = arr.slice(0, BACKUP_MAX);
+    try { localStorage.setItem(backupKey(f), JSON.stringify(arr)); return true; }
+    catch (e) { return false; }   // 配额满：备份失败要让调用方知道，不能默默继续覆盖
+  }
+  /* 存档摘要：用于弹窗里对比"云端 vs 本地"，让玩家自己判断该不该覆盖 */
+  function summarize(f, obj, fallbackTime) {
+    if (!obj || typeof obj !== "object") return "（无数据）";
+    var sv = window.NikkeServers;
+    var srvText = isPlanner(f)
+      ? (sv ? sv.get(obj.server).name : (obj.server === "cn" ? "国服" : "国际服"))
+      : "";
+    var parts = [];
+    if (srvText) parts.push(srvText);
+    if (isPlanner(f)) parts.push("存档版本 v" + (Number(obj._schema) || 1));
+    if (obj.saved_at) parts.push("数据日期 " + obj.saved_at);
+    if (isPlanner(f)) {
+      if (obj.current) parts.push("同步器 Lv" + obj.current);
+      if (obj.base) parts.push("基地 Lv" + obj.base);
+    }
+    if (fallbackTime) parts.push("云端更新于 " + fmtTime(fallbackTime));
+    return parts.join(" · ");
+  }
+  /* 上传前盖章：确保云端不会存到"无版本号"的数据（老客户端读到时按 v1 处理即可） */
+  function stampSchema(f, obj) {
+    if (!isPlanner(f) || !obj || typeof obj !== "object") return obj;
+    if (!obj.server) obj.server = "intl";
+    obj._schema = schemaSupport();
+    return obj;
+  }
 
   var sdk = window.supabase;
   var supabase = null;
@@ -98,7 +160,8 @@
     try { return JSON.parse(s); } catch (e) { return null; }
   }
   function setLocalObject(f, obj) {
-    try { localStorage.setItem(f.ls, JSON.stringify(obj)); } catch (e) {}
+    try { localStorage.setItem(f.ls, JSON.stringify(obj)); return true; }
+    catch (e) { return false; }   // 配额满 / 隐私模式：调用方必须据此中止，不能当成写成功
   }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -515,7 +578,7 @@
     var anyErr = false;
     for (var i = 0; i < FEATURES.length; i++) {
       var f = FEATURES[i];
-      var st = { f: f, loc: hasLocal(f), ok: true, cloud: null, err: null };
+      var st = { f: f, loc: hasLocal(f), ok: true, cloud: null, err: null, bak: readBackups(f).length };
       try { st.cloud = await serverRow(f.id); }
       catch (e) { st.ok = false; st.err = e.message; anyErr = true; }
       states.push(st);
@@ -524,7 +587,7 @@
     for (i = 0; i < states.length; i++) {
       var s = states[i];
       var cloudAt = s.ok ? (s.cloud ? s.cloud.updated_at : null) : "unknown";
-      html += feaCard(s.f.id, s.f.name, s.loc, cloudAt);
+      html += feaCard(s.f.id, s.f.name, s.loc, cloudAt, s.bak);
       if (s.ok && s.cloud === null && s.loc) {
         // 核心需求：云端无 → 不覆盖本地，提示上传
         html += '<div class="nk-empty" data-for="' + s.f.id + '">云端尚无该功能数据。当前页面已保留，不会覆盖。请点「上传本地」同步。</div>';
@@ -545,12 +608,15 @@
     }
   }
 
-  function feaCard(fid, name, local, cloudAt) {
+  function feaCard(fid, name, local, cloudAt, bakCount) {
     var cloudText = cloudAt === "unknown" ? "未知（检查失败）" : (cloudAt ? fmtTime(cloudAt) : "无");
+    var bak = Number(bakCount) || 0;
     return '<div class="nk-fea" data-fid="' + fid + '">' +
       '<h4>' + esc(name) + '</h4>' +
       '<div class="nk-stat"><span>本地：' + (local ? "有数据" : "无数据") + '</span>' +
       '<span>云端：' + cloudText + "</span></div>" +
+      (bak ? '<div class="nk-stat"><span>覆盖前备份：' + bak + ' 份</span>'
+        + '<span><button type="button" class="nk-link" data-act="restore">恢复上一份</button></span></div>' : "") +
       '<div class="nk-bar">' +
       '<button class="nk-btn" data-act="up">上传本地</button>' +
       '<button class="nk-btn ghost2" data-act="down">用云端覆盖</button>' +
@@ -568,10 +634,40 @@
         btn.disabled = true;
         var act = btn.getAttribute("data-act");
         try {
+          if (act === "restore") {
+            /* 覆盖前自动备份的反向操作：一键回到上一次被覆盖前的状态 */
+            var baks = readBackups(f);
+            if (!baks.length) { tip("本机没有可恢复的备份"); return; }
+            var b = baks[0];
+            var curObj0 = parseSafe(getLocal(f));
+            var okGo = window.confirm(
+              "用本机备份覆盖当前数据？\n\n"
+              + "备份时间：" + fmtTime(b.at) + "\n备份内容：" + summarize(f, b.data) + "\n\n"
+              + "当前内容：" + (curObj0 ? summarize(f, curObj0) : "（无数据）")
+              + "\n\n覆盖前会把「当前」也存一份备份，恢复错了还能换回来。");
+            if (!okGo) { return; }
+            if (curObj0) pushBackup(f, curObj0);
+            if (!setLocalObject(f, b.data)) { tip("写入本机失败，本地数据未改动"); return; }
+            tip("已恢复备份，正在刷新页面…");
+            setTimeout(function () { location.reload(); }, 700);
+            return;
+          }
           if (act === "up") {
             var raw = getLocal(f);
             var obj = parseSafe(raw);
             if (!obj) { tip("本地无有效数据，无法上传"); return; }
+            stampSchema(f, obj);
+            /* 云端更"新"时先问一句：多数人不想用旧手机上的旧数据盖掉新进度 */
+            if (cloud && cloud.updated_at && isPlanner(f)) {
+              var cloudSaved = String((cloud.data_json && cloud.data_json.saved_at) || "");
+              var localSaved = String(obj.saved_at || "");
+              if (cloudSaved && localSaved && cloudSaved > localSaved) {
+                var goUp = window.confirm(
+                  "云端存档的数据日期（" + cloudSaved + "）比本地（" + localSaved + "）更新。\n\n"
+                  + "继续上传会用本地数据覆盖云端，确定吗？\n（点「取消」可先改用「用云端覆盖」把云端拉下来）");
+                if (!goUp) { return; }
+              }
+            }
             var r = await uploadOne(f, obj);
             if (r.error) throw r.error;
             tip("「" + f.name + "」已上传到云端");
@@ -583,7 +679,50 @@
             if (dl.error) throw dl.error;
             var row = dl.data && dl.data[0];
             if (!row) { tip("云端数据已不存在"); return; }
-            setLocalObject(f, row.data_json);
+            var cloudObj = row.data_json;
+            /* ① 结构校验：云端可能存了字符串/数组/null（历史脏数据或旧版写入），一律不覆盖本地 */
+            if (!cloudObj || typeof cloudObj !== "object" || Array.isArray(cloudObj)) {
+              tip("云端存档格式异常，已中止（本地数据未改动）");
+              report("sync", "E3001", "download", "cloud payload not an object", { fid: fid });
+              return;
+            }
+            /* ② 版本闸门：云端版本高于本页面能读的版本 → 拒绝，让玩家先刷新页面 */
+            var cVer = Number(cloudObj._schema) || 1;
+            if (isPlanner(f) && cVer > schemaSupport()) {
+              tip("云端存档来自更新版本（v" + cVer + "），本页面只能读到 v" + schemaSupport()
+                + "。请先刷新页面更新计算器再下载（本地数据未改动）。");
+              return;
+            }
+            /* ③ 差异告知：把"云端 / 本地"逐项摆出来，尤其是服务器不同 */
+            var localObj = parseSafe(getLocal(f));
+            var mismatch = [];
+            if (localObj && isPlanner(f)) {
+              var lSrv = window.NikkeServers ? window.NikkeServers.get(localObj.server).key : (localObj.server === "cn" ? "cn" : "intl");
+              var cSrv = window.NikkeServers ? window.NikkeServers.get(cloudObj.server).key : (cloudObj.server === "cn" ? "cn" : "intl");
+              if (lSrv !== cSrv) {
+                mismatch.push("服务器不同：本地 " + (lSrv === "cn" ? "国服" : "国际服")
+                  + " → 云端 " + (cSrv === "cn" ? "国服" : "国际服") + "（覆盖后表单会整体变成云端那一服）");
+              }
+              if (String(cloudObj.saved_at || "") && String(localObj.saved_at || "")
+                  && String(cloudObj.saved_at) < String(localObj.saved_at)) {
+                mismatch.push("云端存档的数据日期更旧：云端 " + cloudObj.saved_at + " / 本地 " + localObj.saved_at);
+              }
+            }
+            var msg = "将用云端数据覆盖本机「" + f.name + "」：\n\n"
+              + "云端：" + summarize(f, cloudObj, row.updated_at || cloud.updated_at) + "\n"
+              + "本地：" + (localObj ? summarize(f, localObj) : "（无数据）");
+            if (mismatch.length) msg += "\n\n⚠ 注意：\n· " + mismatch.join("\n· ");
+            msg += "\n\n覆盖前会把本地现状自动备份一份（本面板可一键恢复）。确定继续？";
+            if (!window.confirm(msg)) { return; }
+            /* ④ 先备份再覆盖；备份失败就不能覆盖（否则真丢进度） */
+            if (localObj && !pushBackup(f, localObj)) {
+              tip("本机存储空间不足，无法备份本地数据，已中止覆盖（本地未改动）");
+              return;
+            }
+            if (!setLocalObject(f, cloudObj)) {
+              tip("写入本机失败（浏览器存储已满或处于隐私模式），本地数据未改动");
+              return;
+            }
             tip("已下载「" + f.name + "」，正在刷新页面…");
             setTimeout(function () { location.reload(); }, 700);
           }
@@ -636,6 +775,7 @@
     }
     var obj = parseSafe(getLocal(f));
     if (!obj) { tip("本地暂无有效数据，无法上传"); return { ok: false, reason: "empty" }; }
+    stampSchema(f, obj);   // 保证云端永远带版本号与服务标识，避免跨版本读不懂
     try {
       var r = await uploadOne(f, obj);
       if (r.error) throw r.error;

@@ -4,8 +4,9 @@ const fs = require("fs");
 const path = require("path");
 
 // 模拟 fetch：相对路径 -> 读本地文件（node 的 fetch 不支持 file://）
+// 注意要剥掉 ?v=xxx 缓存参数（页面侧统一带版本号，node 没有 HTTP 缓存层）
 global.fetch = function (url) {
-  const p = path.resolve(__dirname, String(url));
+  const p = path.resolve(__dirname, String(url).split("?")[0]);
   return Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(p, "utf8"))) });
 };
 

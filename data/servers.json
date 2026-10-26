@@ -1,0 +1,45 @@
+{
+  "version": "20261026d",
+  "schema": 2,
+  "default": "intl",
+  "_note": "关卡表统一按国际服官方静态表（CampaignChapterTable 49 章 / CampaignStageTable 普通+困难各 1,787 关），两服共用同一套关卡选择器，不做按服截断。曾用国服客户端 sd.bin 缓存得出「国服只有 33 章」，经用户核实国服实际已开放到 40 章，说明那份 sd.bin 是过期缓存快照，不能作为进度上限依据，已废止。国际服进度最超前（48 章），按国际服表列全部关卡对所有服都安全。",
+  "_formula": "基地等级 = floor(total / 5) + 1，其中 total = max(0, 普通id - 19) + 困难id + 1（普通从 2-12 BOSS 起算、困难从 0-1 起算，前哨基地 2-12 解锁）。满进度 48-36 BOSS 双侧 → total 3556 → Lv712。口径已与国际服 nikkeoutpost、国服 NikkeCalc 两站逐项核对一致",
+  "_income_scale_note": "income_scale = 该服基地收益整体补正系数，1.0 表示直接采用官方表原值。当前两服都是 1.0 —— 没有任何实测证据表明国服基地收益与国际服不同，所以不填非 1 的数（编一个没有依据的系数只会引入误差）。它的作用是「万一将来实测出差偏」时的唯一开关：只改这一个数即可，不用动关卡表、公式或 outpost_income.json。",
+  "_server_field_note": "「服务器」选择器仍保留，但用途只剩三条：①在存档/云端/分享里标注玩家所在服；②登记两服真实差异（每周重置日、装备经验保存比例）；③为将来进度真的分叉留出扩展位。它不再参与关卡截断、不再影响可选关卡范围与基地上限。",
+  "servers": [
+    {
+      "key": "intl",
+      "name": "国际服",
+      "short": "国际服",
+      "chapters": 49,
+      "max_chapter": 48,
+      "normal_stages": 1787,
+      "hard_stages": 1787,
+      "base_cap": 712,
+      "income_scale": 1.0,
+      "weekly_reset_day": 1,
+      "weekly_reset_day_name": "周一",
+      "equipment_exp_save_ratio": 0.9,
+      "data_version": "20261026",
+      "source": "官方静态表 CampaignChapterTable(49 章) / CampaignStageTable(1,787 关)",
+      "note": "进度上限 Chapter 48（0-1 ~ 48-36 BOSS）；满进度基地 Lv712"
+    },
+    {
+      "key": "cn",
+      "name": "国服",
+      "short": "国服",
+      "chapters": 49,
+      "max_chapter": 48,
+      "normal_stages": 1787,
+      "hard_stages": 1787,
+      "base_cap": 712,
+      "income_scale": 1.0,
+      "weekly_reset_day": 0,
+      "weekly_reset_day_name": "周日",
+      "equipment_exp_save_ratio": 1.0,
+      "data_version": "20261026",
+      "source": "关卡表沿用国际服官方表（不做按服截断）；差异仅保留每周重置日与装备经验保存比例",
+      "note": "关卡选择器与国际服完全一致（Chapter 0~48 / 各 1,787 关 / 基地上限 Lv712）；国服实际进度约 40 章，选到自己所在关卡即可"
+    }
+  ]
+}

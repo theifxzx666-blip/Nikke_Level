@@ -1,5 +1,5 @@
 # ===== Python 编译缓存 =====
-# 本地脚本（pinkuro_server.py 等）运行后自动生成，可再生，不入库
+# 运行本地脚本（pinkuro_server.py 等）时自动生成的字节码，可再生，不入库
 __pycache__/
 *.py[cod]
 
