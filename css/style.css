@@ -145,14 +145,23 @@ input, select {
 input:focus, select:focus { outline: 2px solid #9fe1cb; border-color: var(--primary); }
 .hint { font-size: 12px; color: var(--muted); margin: 4px 0; }
 
-/* 分服选择条（账号状态分组顶部）：切换国际服 / 国服 */
-.srv-bar {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  margin: 0 0 10px; padding: 6px 9px;
-  background: #f2f8f6; border: 1px solid #d9ebe5; border-radius: 8px;
+/* 分服切换（R66）：从「账号状态」挪进「关卡进度」标题行，做成分段选项卡，一行显示。
+   legend 本体去背景，药丸只包 .lg-main，选项卡自成一组；真值在隐藏的 #f_server 上。 */
+legend.lg-split { display: inline-flex; align-items: center; gap: 10px; background: transparent !important; padding: 0 4px; }
+legend.lg-split .lg-main { background: #e5effa; padding: 2px 8px; border-radius: 6px; }
+.srv-tabs {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: #fff; border: 1px solid #cfe0f2; border-radius: 999px; padding: 2px;
 }
-.srv-bar > label { font-size: 12px; font-weight: 600; color: #556; }
-.srv-bar select { padding: 4px 8px; font-size: 13px; border-radius: 6px; }
+.srv-tabs .srv-tab {
+  border: none; background: transparent; color: #5a6b7d; cursor: pointer;
+  font: 600 12.5px/1 'MaiYuan', 'Microsoft YaHei', sans-serif;
+  min-width: 50px; padding: 6px 12px; border-radius: 999px;
+  transition: background .15s, color .15s;
+}
+.srv-tabs .srv-tab:hover { color: #185fa5; background: #eff5fb; }
+.srv-tabs .srv-tab.active { background: #185fa5; color: #fff; }
+.srv-tabs .srv-tab.active:hover { background: #134c86; color: #fff; }
 
 .fixed-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .fixed-table th, .fixed-table td { border: 1px solid var(--border); padding: 4px; text-align: center; }

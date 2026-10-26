@@ -119,7 +119,7 @@
   var state = {
     form: null,               // localStorage 表单值
     fresh: true,              // 本机无历史存档（新访客）：分服默认值要等数据加载后再落
-    server: "intl",           // 当前生效的服务器档案 key（与 form.server 同步）
+    server: "cn",             // 当前生效的服务器档案 key（与 form.server 同步）；R66 起默认国服
     normalManual: false,      // 用户手动改过困难（当前）
     completedAuto: true,      // 「今天已完成歼灭次数」是否仍跟随「每日一举歼灭次数」（用户单独改过即置 false）
     futureNormalManual: false,
@@ -136,7 +136,7 @@
   function defaultForm() {
     return {
       _schema: 2,              // 存档版本（v1 = 无此字段；迁移见 SV.migrateForm）
-      server: "intl",          // 服务器：intl 国际服 / cn 国服
+      server: "cn",            // 服务器：intl 国际服 / cn 国服（R66 起新访客默认国服）
       recorded: "2026-09-02", current: "489", target: "501", alternate: "521",
       normal_stage: "", hard_stage: "", base: "518", tactics: "是",
       credit_rate: "59860/h", battle_rate: "600440/h", dust_rate: "91.95/h",
@@ -674,7 +674,8 @@
     setVal("f_recorded", f.recorded); setVal("f_current", f.current); setVal("f_target", f.target); setVal("f_alternate", f.alternate);
     setVal("f_saved_at", f.saved_at || "");
     setVal("f_collected_before", f.collected_before || "是");
-    setVal("f_server", f.server || "intl");   /* R63b：不再展示服务器说明条（用户要求屏蔽） */
+    setVal("f_server", f.server || "cn");   /* R66：新访客默认国服；老存档仍按存档里的值 */
+    paintServerTabs(f.server || "cn");      /* 隐藏 select 改值不会触发重绘，选项卡选中态手动同步 */
     setVal("f_base", f.base); setVal("f_tactics", f.tactics);
     setVal("f_credit_rate", f.credit_rate); setVal("f_battle_rate", f.battle_rate); setVal("f_dust_rate", f.dust_rate);
     setVal("f_wipeouts", f.wipeouts); setVal("f_wipeout_hours", f.wipeout_hours); setVal("f_completed", f.completed);
@@ -796,48 +797,48 @@
     return O.clampSection ? O.clampSection(section, mode) : section;
   }
 
-  /* 用户切换服务器：先收表单（不能吞掉正在输入的数据），再收敛越界值，最后统一重绘 */
+  /* R66：标题行分段选项卡的选中态。
+     选项卡只是门面 —— 真值一直在隐藏的 #f_server 上（存档 / 云端 / 分享码 / 账单口径读的都是它），
+     所以这里只改 class，不碰 state。 */
+  function paintServerTabs(key) {
+    var k = SV ? SV.normalizeKey(key) : (key === "cn" ? "cn" : "intl");
+    document.querySelectorAll(".srv-tab").forEach(function (b) {
+      var on = b.getAttribute("data-srv") === k;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  /* 用户切换服务器：先收表单（不能吞掉正在输入的数据），再收敛越界值，最后统一重绘。
+     R66：用户要求切服不再弹 toast —— 反馈交给「关卡进度」标题行选项卡的选中态，
+     收敛的只是越界关卡（R63 后两服关卡表一致，通常根本不会触发）。 */
   function applyServerSwitch(key) {
     if (!SV) return;
     var target = SV.normalizeKey(key);
     if (target === state.server) return;
     collectForm();
     var p = applyServerRuntime(target);
-    var notes = [];
     var baseClamped = false;
 
-    [["normal_stage", "normal", "普通关卡"],
-     ["hard_stage", "hard", "困难关卡"],
-     ["future_normal_stage", "normal", "预计普通关卡"],
-     ["future_hard_stage", "hard", "预计困难关卡"]].forEach(function (it) {
-      var k = it[0], old = state.form[k];
-      var nv = clampSection(old, it[1]);
-      if (nv !== old) {
-        state.form[k] = nv;
-        notes.push(it[2] + " " + old + " → " + (nv || "未选择"));
-      }
+    [["normal_stage", "normal"],
+     ["hard_stage", "hard"],
+     ["future_normal_stage", "normal"],
+     ["future_hard_stage", "hard"]].forEach(function (it) {
+      var nv = clampSection(state.form[it[0]], it[1]);
+      if (nv !== state.form[it[0]]) state.form[it[0]] = nv;
     });
 
     var cap = SV.capOf(p.key);
     var b = parseInt(state.form.base, 10);
-    if (b && b > cap) { state.form.base = String(cap); baseClamped = true; notes.push("基地等级 " + b + " → " + cap); }
+    if (b && b > cap) { state.form.base = String(cap); baseClamped = true; }
     var fb = parseInt(state.form.future_base, 10);
-    if (fb && fb > cap) { state.form.future_base = String(cap); notes.push("预计基地等级 " + fb + " → " + cap); }
+    if (fb && fb > cap) state.form.future_base = String(cap);
 
     renderForm();
     if (baseClamped) syncIncomeFromBase();
     syncCurrentBase();
     syncFutureBase();
     saveForm();
-
-    /* R63：两服档案一致，下面两条通常不会触发；保留是为了「读旧存档里残留的越界关卡」
-       （例如曾有用户被打上 32 章上限后存过档）以及将来进度真分叉时能兜住。 */
-    var msg = "已标注为" + p.name + "（关卡表两服共用：Chapter 0~" + p.max_chapter + " / 基地上限 Lv" + cap + "）";
-    if (notes.length) {
-      var brief = notes.length > 3 ? notes.slice(0, 3).concat("等 " + notes.length + " 项") : notes;
-      msg += "；已调整 " + brief.join("、");
-    }
-    tip(msg);
   }
 
   /* 新访客：默认基地等级若超出当前服上限则压回上限
@@ -2851,7 +2852,27 @@
 
     // 切服：先收敛越界值再重绘（不走通用 change 绑定，避免"先保存旧值再修正"的时序问题）
     var srvSel = $("f_server");
-    if (srvSel) srvSel.addEventListener("change", function () { applyServerSwitch(srvSel.value); });
+    if (srvSel) srvSel.addEventListener("change", function () {
+      paintServerTabs(srvSel.value);
+      applyServerSwitch(srvSel.value);
+    });
+    /* R66：「关卡进度」标题行的分段选项卡。点一下把值写回隐藏的 #f_server 再走同一条链路，
+       所以行为与原来下拉框完全一致（含越界关卡收敛与存档落盘），只是不再弹 toast。
+       ⚠ 选项卡长在 <legend> 里，而手机端 legend 的 click 会折叠整个分组
+       （setupMobileForm）→ 必须 stopPropagation，否则点一下切服就把「关卡进度」收起来。 */
+    document.querySelectorAll(".srv-tab").forEach(function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var key = b.getAttribute("data-srv");
+        if (!srvSel) return;
+        if (srvSel.value !== key) { srvSel.value = key; applyServerSwitch(key); }
+        paintServerTabs(key);   // 同值点击也刷一次选中态，避免外部改过值后视觉不同步
+      });
+      // 触屏上 mousedown/touchstart 也会冒泡到 legend，一并掐掉
+      ["mousedown", "touchstart"].forEach(function (n) {
+        b.addEventListener(n, function (e) { e.stopPropagation(); }, { passive: true });
+      });
+    });
 
     $("f_tactics").addEventListener("change", function () { syncCurrentBase(); syncIncomeFromBase(); syncFutureBase(); onFormChange(); });
     // R40：「计入范围」决定「预计新主线推图收益」标题里列哪几章 → 变更后必须重刷标题
@@ -2963,7 +2984,7 @@
       .then(function () { return Promise.all([O.loadStageMap(), O.loadIncomeTable()]); })
       .then(function () {
         // servers.js 若被浏览器拦截/加载失败，退回国际服口径（此时 outpost.js 的默认值就是国际服）
-        if (SV) applyServerRuntime(state.form.server || "intl");
+        if (SV) applyServerRuntime(state.form.server || "cn");
         else rebuildStageTables();
         if (state.fresh) applyServerDefaults();
         // 阶梯消耗表（带版本参数，避开 Pages/浏览器缓存导致档位表不生效）

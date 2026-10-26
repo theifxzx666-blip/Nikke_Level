@@ -22,6 +22,11 @@
  * ① 摘要里显示「国服 N 条 / 国际服 M 条」，覆盖确认能看清体量；
  * ② 本地条数少于云端时，上传前二次确认（否则一次误点就把云端多的记录删了）。
  * ⚠ 存储键 nikke_mod_stats_v3 没变，云端老数据照读；页内 read 时再归一化，不需要迁移脚本。
+ *
+ * ---------- R66（2026-10-26）：点「用云端覆盖」不再弹确认框 ----------
+ * 用户要求点了就生效。R61 的「差异逐项确认」弹窗整段删除，但**覆盖前自动备份保留** ——
+ * 误点可以面板里一键「恢复上一份」，所以是可逆的。结构校验 ① 与版本闸门 ② 不动：
+ * 那两条挡的是"数据根本不该写进本机"，不是"要不要问一句"。
  */
 (function () {
   "use strict";
@@ -727,27 +732,10 @@
                 + "。请先刷新页面更新计算器再下载（本地数据未改动）。");
               return;
             }
-            /* ③ 差异告知：把"云端 / 本地"逐项摆出来，尤其是服务器不同 */
+            /* ③（R66 已取消确认弹窗）用户要求「用云端覆盖」点了就生效，不再弹窗问一遍。
+               安全网仍在：下面 ④ 会先把本地现状 pushBackup 一份（面板里可一键恢复），
+               所以误点也是可逆的；结构校验 ① 与版本闸门 ② 保留 —— 那两条是"根本不该写"的情况。 */
             var localObj = parseSafe(getLocal(f));
-            var mismatch = [];
-            if (localObj && isPlanner(f)) {
-              var lSrv = window.NikkeServers ? window.NikkeServers.get(localObj.server).key : (localObj.server === "cn" ? "cn" : "intl");
-              var cSrv = window.NikkeServers ? window.NikkeServers.get(cloudObj.server).key : (cloudObj.server === "cn" ? "cn" : "intl");
-              if (lSrv !== cSrv) {
-                mismatch.push("服务器不同：本地 " + (lSrv === "cn" ? "国服" : "国际服")
-                  + " → 云端 " + (cSrv === "cn" ? "国服" : "国际服") + "（覆盖后表单会整体变成云端那一服）");
-              }
-              if (String(cloudObj.saved_at || "") && String(localObj.saved_at || "")
-                  && String(cloudObj.saved_at) < String(localObj.saved_at)) {
-                mismatch.push("云端存档的数据日期更旧：云端 " + cloudObj.saved_at + " / 本地 " + localObj.saved_at);
-              }
-            }
-            var msg = "将用云端数据覆盖本机「" + f.name + "」：\n\n"
-              + "云端：" + summarize(f, cloudObj, row.updated_at || cloud.updated_at) + "\n"
-              + "本地：" + (localObj ? summarize(f, localObj) : "（无数据）");
-            if (mismatch.length) msg += "\n\n⚠ 注意：\n· " + mismatch.join("\n· ");
-            msg += "\n\n覆盖前会把本地现状自动备份一份（本面板可一键恢复）。确定继续？";
-            if (!window.confirm(msg)) { return; }
             /* ④ 先备份再覆盖；备份失败就不能覆盖（否则真丢进度） */
             if (localObj && !pushBackup(f, localObj)) {
               tip("本机存储空间不足，无法备份本地数据，已中止覆盖（本地未改动）");

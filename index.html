@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261019d">
+<link rel="stylesheet" href="css/style.css?v=20261027b">
 <!-- html2canvas（导出结果图用，gzip ≈46KB）与 xlsx（导入/导出 Excel 用，gzip ≈316KB）改为「用到才加载」，
      由 js/app.js 的 ensureVendor() 在点击导出/导入时注入，首屏不再跨境外拉 CDN，也不拖慢首屏 -->
 </head>
@@ -40,14 +40,6 @@
   <section id="formSection" class="form-panel">
     <fieldset class="grp-a">
       <legend>账号状态</legend>
-      <!-- 服务器标注：仅用于存档归属与周重置口径，关卡表两服共用同一套（玩家侧不展示章数说明） -->
-      <div class="srv-bar">
-        <label for="f_server">服务器</label>
-        <select id="f_server" title="仅标注存档所属服；关卡表两服共用同一套，不影响可选关卡范围">
-          <option value="intl">国际服</option>
-          <option value="cn">国服</option>
-        </select>
-      </div>
       <div class="grid g4">
         <label>数据日期
           <span class="input-row">
@@ -86,7 +78,13 @@
     </fieldset>
 
     <fieldset class="grp-b">
-      <legend><span class="lg-main">关卡进度<button type="button" class="info-tip" data-tip="tip-stage" aria-label="查看说明" aria-expanded="false"></button></span></legend>
+      <!-- R66：服务器从「账号状态」的独立选择块挪进本组标题行，一行分段选项卡；
+           真值仍写回隐藏的 #f_server（存档 / 云端 / 分享码读的都是它） -->
+      <legend class="lg-split"><span class="lg-main">关卡进度<button type="button" class="info-tip" data-tip="tip-stage" aria-label="查看说明" aria-expanded="false"></button></span><span class="srv-tabs" role="group" aria-label="服务器切换"><button type="button" class="srv-tab active" data-srv="cn" aria-pressed="true">国服</button><button type="button" class="srv-tab" data-srv="intl" aria-pressed="false">国际服</button></span></legend>
+      <select id="f_server" class="field-hidden" title="仅标注存档所属服；关卡表两服共用同一套，不影响可选关卡范围">
+        <option value="cn">国服</option>
+        <option value="intl">国际服</option>
+      </select>
       <div class="grid g2">
         <div>
           <label>普通主线关卡</label>
@@ -261,10 +259,10 @@
 <script src="js/ledger.js?v=20261019g"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=202610270b"></script>
+<script src="js/app.js?v=20261027c"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/errlog.js?v=20261019a"></script>
-<script src="js/sync.js?v=20261027a"></script>
+<script src="js/sync.js?v=20261027b"></script>
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->
 <script src="js/shell.js?v=20261009b"></script>
 </body>
