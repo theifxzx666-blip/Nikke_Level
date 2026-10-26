@@ -24,7 +24,7 @@
 
 另有半独立的 `combat_reroll.html`（洗练战力 / Pinkuro 导入），不挂在主站导航里，需要本地启动 `pinkuro_server.py` 作代理才能连第三方接口。
 
-移动端访问会引导到 `mobile.html`，它与桌面版共用 `js/app.js`，只换布局与样式。
+移动版是独立入口 `mobile.html`，与桌面版共用 `js/app.js`，只换布局与样式；访问哪个由链接决定，不按 UA 自动跳转。
 
 ## 目录结构
 
