@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-28",
+  "note": "静态表补录：data.bundle.js 的 roster 来自 149 版静态包（qa-260723-07c），Persona 联动三骑（QUEEN（真）870 / 雪子 871 / 埃癸斯 872）晚于该版本，roster 里没有，导致从阿卡导入时按名字匹配失败、被计入「站点角色表缺」。本文件是增量补丁，用 scripts/apply_roster_extra.py 合并进 bundle；bundle 重新生成后重跑一次即可补回，不会重复插入（按 rid 去重）。",
+  "source": {
+    "pack": "StaticData_intl_20261021",
+    "path": "F:/Codex/Nikke/Nikke_Skills/拆包/00_资源库/版本节点/静态包拉取_20261026/json_intl",
+    "tables": [
+      "CharacterTable（rid = Resource_id；rarity/enh/gc/critR/critD 直取）",
+      "CharacterShotTable（Shot_id → Weapon_type，与 roster.weapon 同编号体系，已用 196/196 存量角色验证一致）",
+      "Locale_Character.lss（870/871/872 的中文名）"
+    ]
+  },
+  "fieldRules": {
+    "gc": "rarity 3 → Grade_core_id 起连续 11 项（突破 0~10）；rarity 2 → 3 项；rarity 1 → 1 项",
+    "coll.R / coll.SR": "按 weapon 取 data.favorites[rarity][weapon].id（1→1001xx / 2→1003xx / 3→1006xx / 4→1002xx / 5→1004xx / 9→1005xx）",
+    "coll.SSR": "专属收藏品，按角色绑定；无则 null",
+    "py / ini": "站点拼音检索用，静态表里没有，手工补"
+  },
+  "items": [
+    {
+      "rid": 870,
+      "name": "QUEEN（真）",
+      "rarity": 3,
+      "corp": 7,
+      "cls": 1,
+      "enh": 5104,
+      "weapon": 5,
+      "critR": 1500,
+      "critD": 15000,
+      "gc": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      "coll": { "R": 100401, "SR": 100402, "SSR": null },
+      "py": "queenzhen",
+      "ini": "queen"
+    },
+    {
+      "rid": 871,
+      "name": "雪子",
+      "rarity": 3,
+      "corp": 7,
+      "cls": 1,
+      "enh": 5106,
+      "weapon": 4,
+      "critR": 1500,
+      "critD": 15000,
+      "gc": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      "coll": { "R": 100201, "SR": 100202, "SSR": null },
+      "py": "xuezi",
+      "ini": "xz"
+    },
+    {
+      "rid": 872,
+      "name": "埃癸斯",
+      "rarity": 2,
+      "corp": 7,
+      "cls": 3,
+      "enh": 3303,
+      "weapon": 9,
+      "critR": 1500,
+      "critD": 15000,
+      "gc": [101, 102, 103],
+      "coll": { "R": 100501, "SR": 100502, "SSR": null },
+      "py": "aiguisi",
+      "ini": "ags"
+    }
+  ]
+}
