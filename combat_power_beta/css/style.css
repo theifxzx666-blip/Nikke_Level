@@ -279,7 +279,7 @@ select.lv.t-max option,select.ty.t-max option{background:#fff;color:var(--ink)}
 .grp .grid3:last-of-type{margin-bottom:2px}
 .grp{border:1px solid rgba(221,227,224,.95);border-radius:var(--r-md);background:rgba(255,255,255,.62);
   padding:10px 11px;margin:10px 0}
-.grp-h{display:flex;align-items:center;gap:8px;margin:0 0 9px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.grp-h{position:relative;display:flex;align-items:center;gap:8px;margin:0 0 9px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
 .grp-h b{font-size:12.5px;font-weight:700;color:#3d4d47}
 .grp-h em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--accent-dark);
   background:var(--accent-soft);padding:1px 8px;border-radius:20px;letter-spacing:.2px}
@@ -315,8 +315,16 @@ input[readonly]::-webkit-outer-spin-button,
 input[readonly]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[readonly]{-moz-appearance:textfield;appearance:textfield}
 .cell.locked>span{color:var(--muted)}
-.cell.locked>span::after{content:"锁";margin-left:5px;font-size:9.5px;font-weight:700;color:#9aa8a2;
-  border:1px solid rgba(154,168,162,.5);border-radius:3px;padding:0 3px;vertical-align:1px}
+
+/* 推导结果：6 个只读值统一成「数值牌」——不再冒充可编辑输入框，
+   也去掉了每个标签后面的「锁」小方块（长标签 + 锁会换行，把同一行的格子挤得高低不齐）。 */
+#derived-box .cell.locked{gap:4px}
+#derived-box .cell.locked>span{font-size:11.5px;line-height:16px;white-space:nowrap;display:block}
+#derived-box .cell.locked>span::after{content:none}
+#derived-box .cell.locked input{height:34px;padding:2px 6px;text-align:right;
+  font-size:12px;font-weight:700;letter-spacing:-.15px;color:#22322c;
+  background:#f2f6f4;border-color:transparent;border-radius:var(--r-sm);
+  box-shadow:inset 0 0 0 1px rgba(221,227,224,.9)}
 
 /* ---------- 导入阿卡数据（2026-10-28） ---------- */
 #sync-box .key-row{display:flex;gap:6px;margin:5px 0 8px}
@@ -330,6 +338,27 @@ input[readonly]{-moz-appearance:textfield;appearance:textfield}
 .pk-json{width:100%;margin:6px 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:var(--r-sm);
   font:12px/1.5 ui-monospace,Consolas,monospace;color:var(--ink);background:#fff;resize:vertical;outline:none}
 .pk-json:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* ---------- 信息窗（InfoTip）：分组标题旁可点的 ⓘ，点击浮出说明面板 ----------
+   说明类长文案不再常驻占版面。面板宽度按左栏（302px 面板 / 内容 ~246px）收着放，
+   父级 .panel 有 overflow:hidden，面板绝不能超出容器。 */
+.tip-host{display:inline-flex;vertical-align:-3px}
+.info-tip{display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;padding:0;margin-left:5px;border:1px solid var(--line);border-radius:50%;
+  background:#fff;color:#9aa8a2;cursor:pointer;flex:0 0 auto;transition:color .15s,border-color .15s,background .15s}
+.info-tip:hover,.info-tip:focus-visible{color:var(--accent-dark);border-color:var(--accent);background:#f0faf6;outline:none}
+.info-tip[aria-expanded="true"]{color:#fff;border-color:var(--accent);background:var(--accent)}
+.info-tip svg{width:11px;height:11px;display:block}
+.info-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:60;
+  background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:9px;
+  padding:9px 10px;box-shadow:0 12px 28px rgba(15,110,86,.18);
+  font-size:11.5px;line-height:1.7;color:#43564f;text-align:left;white-space:normal;font-weight:400}
+.info-panel .ip-title{font-weight:700;color:var(--accent-dark);font-size:12px;margin-bottom:3px;padding-right:16px}
+.info-panel .ip-body b{color:var(--accent-dark)}
+.info-panel .ip-body i{font-style:normal;color:#8a9b94}
+.info-panel .ip-close{position:absolute;top:3px;right:4px;border:0;background:none;cursor:pointer;
+  color:#9aa8a2;font-size:13px;line-height:1;padding:2px 5px;border-radius:5px}
+.info-panel .ip-close:hover{background:rgba(0,0,0,.06);color:#33474a}
 
 @media(max-width:1320px){
   .layout{grid-template-columns:1fr 1fr}

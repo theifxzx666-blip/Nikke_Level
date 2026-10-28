@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NIKKE 战力计算器</title>
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261028d">
+<link rel="stylesheet" href="css/style.css?v=20261028e">
 </head>
 <body>
 <main class="page">
@@ -87,9 +87,7 @@
           <!-- 2026-10-28：Key 输入 / 保存 / 清除 / 导入按钮已上移到顶栏（与「账号同步」同排），
                这里只留导入状态、自定义中转地址与粘贴兜底，避免同一件事在页面上出现两处入口。 -->
           <div class="grp" id="sync-box">
-            <div class="grp-h"><b>导入阿卡数据</b><em id="sync-tag">未连接</em></div>
-            <p class="hint tight">在<b>顶栏</b>填阿卡的 Key，保存一次长期有效、不用每次重填。导入回填：词条明细 / 装备等级 / 突破 / 收藏 / 技能 / 魔方等级 / 企业·职业研究等级。
-              Key 只存<b>本机浏览器</b>，不写进导出文件、不进链接、不写日志。</p>
+            <div class="grp-h"><b>导入阿卡数据<span class="tip-host"><button type="button" class="info-tip" data-tip="tip-sync" aria-label="查看说明" aria-expanded="false"></button></span></b><em id="sync-tag">未导入</em></div>
             <p class="hint tight" id="pk-status">未保存 Key</p>
             <div class="key-row">
               <input id="pk-relay" type="text" placeholder="中转地址（留空=本机）" autocomplete="off" spellcheck="false">
@@ -154,8 +152,7 @@
               <label class="cell locked"><span>暴击率 %</span><input id="p-critRate" type="number" step="0.01" min="0" readonly tabindex="-1"></label>
               <label class="cell locked"><span>暴击伤害 %</span><input id="p-critDamage" type="number" step="0.01" min="0" readonly tabindex="-1"></label>
               <label class="cell locked"><span>附加效果战力</span><input id="p-extraBP" type="number" step="1" readonly tabindex="-1"></label>
-            </div>
-            <p class="hint">暴击 15 / 150 为全部角色共用的静态表常量；附加效果战力 = 魔方技能 + 收藏品技能内部战力。</p>
+            </div>            <p class="hint">暴击 15 / 150 为全部角色共用的静态表常量；附加效果战力 = 魔方技能 + 收藏品技能内部战力。</p>
           </div>
 
           <div class="grp">
@@ -294,10 +291,10 @@
   </footer>
 </main>
 
-<script src="data/data.bundle.js?v=20261028d"></script>
-<script src="js/core.js?v=20261028d"></script>
-<script src="js/panel.js?v=20261028d"></script>
-<script src="js/pinkuro.js?v=20261028d"></script>
-<script src="js/app.js?v=20261028d"></script>
+<script src="data/data.bundle.js?v=20261028e"></script>
+<script src="js/core.js?v=20261028e"></script>
+<script src="js/panel.js?v=20261028e"></script>
+<script src="js/pinkuro.js?v=20261028e"></script>
+<script src="js/app.js?v=20261028e"></script>
 </body>
 </html>

@@ -363,10 +363,19 @@
     Object.keys(state.gearByChar || {}).forEach(function (k) { if (scanGear(state.gearByChar[k])) out[k] = 1; });
     return out;
   }
+  /** 检索词：输入框平时显示的是「当前角色名」（选中回显）。
+   *  若把它当检索词，一打开候选就只剩自己一个 → 切「已记录」后无法再挑别的角色（2026-10-28 修）。
+   *  因此只有和当前角色名不同时才视为用户真的在搜。 */
+  function searchQuery() {
+    var si = $("char-search"), v = si ? String(si.value) : "";
+    var cur = String(state.char || "");
+    if (cur && v.trim() === cur) return "";
+    return v;
+  }
   /** 按「范围 + 关键词」筛出角色，并按命中质量 + 拼音序排序 */
   function filterRoster() {
     decorateRoster();
-    var kws = kwList($("char-search") ? $("char-search").value : "");
+    var kws = kwList(searchQuery());
     var pool = D.roster.slice();
     if (state.scope === "fav") { var fs = favSet(); pool = pool.filter(function (r) { return fs[String(r.rid)]; }); }
     else if (state.scope === "recorded") { var rs = recordedSet(); pool = pool.filter(function (r) { return rs[String(r.rid)]; }); }
@@ -408,7 +417,7 @@
   function updateCharCount(f) {
     var el = $("char-count");
     if (!el) return;
-    var raw = $("char-search") ? $("char-search").value.trim() : "";
+    var raw = searchQuery().trim();
     el.textContent = (raw || (state.scope && state.scope !== "all"))
       ? (f.list.length + " / " + f.total + " 名")
       : (D.roster.length + " 名角色");
@@ -470,7 +479,20 @@
       });
     });
   }
-  function openPicker() { var p = $("char-pop"); if (p) { renderPicker(); p.hidden = false; } }
+  function openPicker() {
+    var p = $("char-pop");
+    if (!p) return;
+    renderPicker();
+    p.hidden = false;
+    /* 没输检索词时把当前角色滚到浮层可视区，省得每次从头翻 */
+    if (!searchQuery().trim()) {
+      var cur = p.querySelector("button.roster-item.cur");
+      if (cur) {
+        var top = cur.offsetTop - p.clientHeight / 2 + cur.offsetHeight / 2;
+        p.scrollTop = top > 0 ? top : 0;
+      }
+    }
+  }
   function closePicker() { var p = $("char-pop"); if (p) p.hidden = true; }
   /** 选中某角色：写输入框 + 状态载体 → 走既有切角色流程 */
   function pickRoster(rid) {
@@ -1300,6 +1322,69 @@
     $("m-mode").value = state.sim.mode || "change";
     compute();
   }
+  /* ---------------- 信息窗（InfoTip） ----------------
+   *  说明类长文案不再常驻页面，收进分组标题旁的 ⓘ 浮层，点开才看。
+   *  HTML 端只留 <button type="button" class="info-tip" data-tip="tip-xxx" aria-expanded="false">，
+   *  图标 SVG 与正文都写在本文件 —— 文案集中一处，免得 HTML / JS 两头漂移。
+   *  交互：点图标开/关、点面板外收起、Esc 收起、同一时刻只开一个。 */
+  var INFO_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">'
+    + '<circle cx="8" cy="8" r="6.4"/><path d="M8 7.4v4" stroke-linecap="round"/>'
+    + '<circle cx="8" cy="4.9" r="0.95" fill="currentColor" stroke="none"/></svg>';
+  var INFO_TEXTS = {
+    "tip-sync": {
+      title: "导入阿卡数据",
+      html: "Key 在<b>顶栏</b>填写，保存一次长期有效、不用每次重填。<br>"
+        + "导入回填：<b>词条明细 / 装备等级 / 突破 / 收藏 / 技能 / 魔方等级 / 企业·职业研究等级</b>。<br>"
+        + "Key 只存<b>本机浏览器</b>，不写进导出文件、不进链接、不写日志。"
+    }
+  };
+  var _openTip = null;
+  function closeInfoPanel() {
+    if (!_openTip) return;
+    try { if (_openTip.panel.parentNode) _openTip.panel.parentNode.removeChild(_openTip.panel); } catch (e) { /* 已被移除 */ }
+    try { _openTip.btn.setAttribute("aria-expanded", "false"); } catch (e) { }
+    _openTip = null;
+  }
+  function openInfoPanel(btn) {
+    var def = INFO_TEXTS[btn.getAttribute("data-tip")];
+    if (!def) return;
+    var host = btn.parentNode;
+    while (host && host !== document.body && !(host.classList && host.classList.contains("tip-host"))) host = host.parentNode;
+    if (!host || host === document.body) host = btn.parentNode;
+    var p = document.createElement("div");
+    p.className = "info-panel";
+    p.setAttribute("role", "dialog");
+    p.innerHTML = '<div class="ip-title">' + def.title + "</div>"
+      + '<button type="button" class="ip-close" aria-label="关闭">✕</button>'
+      + '<div class="ip-body">' + def.html + "</div>";
+    host.appendChild(p);
+    p.querySelector(".ip-close").addEventListener("click", function (e) { e.stopPropagation(); closeInfoPanel(); });
+    btn.setAttribute("aria-expanded", "true");
+    _openTip = { btn: btn, panel: p };
+  }
+  function initInfoTips(root) {
+    var list = (root || document).querySelectorAll(".info-tip[data-tip]");
+    Array.prototype.forEach.call(list, function (btn) {
+      if (btn._tipBound) return;
+      btn._tipBound = true;
+      if (!btn.firstChild) btn.innerHTML = INFO_SVG;
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation(); e.preventDefault();
+        if (_openTip && _openTip.btn === btn) { closeInfoPanel(); return; }
+        closeInfoPanel();
+        openInfoPanel(btn);
+      });
+    });
+  }
+  document.addEventListener("click", function (e) {
+    if (!_openTip) return;
+    if (_openTip.btn && _openTip.btn.contains(e.target)) return;   // 图标自身交给它的 handler toggle
+    closeInfoPanel();
+  }, true);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" || e.key === "Esc") closeInfoPanel();
+  });
+
   /* ---------------- 导入阿卡数据（数据源 pinkuro 服务端） ----------------
    *  通路：页面 →（POST，本机）127.0.0.1:8785/api/pinkuro/import →（GET，带 X-API-KEY）pinkuro.top:9984
    *  为什么不让浏览器直连：远端预检 OPTIONS 返回 204 且不带 Access-Control-Allow-Origin，
@@ -1318,11 +1403,14 @@
     if (saved) return saved.replace(/\/+$/, "");
     return String(PRELAY_DEFAULT || "").trim().replace(/\/+$/, "");
   }
-  /** 走的是内置默认中转（而非用户自填）→ 该行对用户没有意义，直接藏掉 */
+  /** 走的是内置默认中转（而非用户自填）→ 中转地址行、通道名对用户都没有意义，一律不显示 */
+  function pkIsBuiltin() {
+    return !!PRELAY_DEFAULT && pkGetRelay() === String(PRELAY_DEFAULT).replace(/\/+$/, "");
+  }
   function pkHideRelayRowIfBuiltin() {
     var row = $("pk-relay") && $("pk-relay").closest(".key-row");
     var btn = $("btn-relay-save");
-    var builtin = !!PRELAY_DEFAULT && pkGetRelay() === String(PRELAY_DEFAULT).replace(/\/+$/, "");
+    var builtin = pkIsBuiltin();
     if (row) row.style.display = builtin ? "none" : "";
     if (btn) btn.style.display = builtin ? "none" : "";
   }
@@ -1347,9 +1435,10 @@
     /* Key 输入框现在在顶栏（2026-10-28），宽度有限 → placeholder 只说要点，细节交给下方状态行 */
     if (inp) inp.placeholder = k ? "已保存 · 覆盖请输入" : "粘贴 Key";
     if (rin) rin.placeholder = r ? r.replace(/^https?:\/\//, "") : "中转地址（留空=本机）";
-    if (tag) tag.textContent = state.account && state.account.enabled ? ("已同步 " + (state.account.qq || "")).trim() : "未连接";
+    if (tag) tag.textContent = state.account && state.account.enabled ? ("已导入 " + (state.account.qq || "")).trim() : "未导入";
     pkHideRelayRowIfBuiltin();
-    pkStatus((k ? pkMaskedKey(k) : "未保存 Key · 每次打开都要重新填") + " · 通道：" + pkChannelName(), k ? "ok" : "");
+    pkStatus((k ? pkMaskedKey(k) : "未保存 Key · 每次打开都要重新填")
+      + (pkIsBuiltin() ? "" : " · 通道：" + pkChannelName()), k ? "ok" : "");
   }
   /** 清掉「没有归属」的可选键，避免脏数据把 state 撑大 */
   function pkApply(raw, from) {
@@ -1407,8 +1496,9 @@
     if (btn) btn.disabled = true;
     var relay = pkGetRelay(), req;
     if (relay) {
-      /* 通道 A：公网中转（GET + X-API-KEY；中继端已放行 CORS，手机/别的电脑也能用） */
-      pkStatus("正在通过公网中转请求…（只发一次，不重试）", "");
+      /* 通道 A：公网中转（GET + X-API-KEY；中继端已放行 CORS，手机/别的电脑也能用）
+         走内置中转时对用户不提「中转」二字，只当它是一次普通请求 */
+      pkStatus(pkIsBuiltin() ? "正在获取数据…（只发一次，不重试）" : "正在通过公网中转请求…（只发一次，不重试）", "");
       req = fetch(relay, {
         method: "GET",
         headers: { "X-API-KEY": key, "Accept": "application/json" },
@@ -1429,7 +1519,7 @@
       return r.json();
     }).then(function (json) {
       pkSetKey(key);
-      pkApply(json, relay ? "中转导入" : "导入");
+      pkApply(json, relay && !pkIsBuiltin() ? "中转导入" : "导入");
     }).catch(function (e) {
       var m = String((e && e.message) || e), hint;
       if (/Failed to fetch|NetworkError|load failed/i.test(m)) {
@@ -1645,7 +1735,11 @@
     $("char-input").addEventListener("change", onCharPicked);
     var si = $("char-search"), pop = $("char-pop");
     if (si) {
-      si.addEventListener("focus", openPicker);
+      si.addEventListener("focus", function () {
+        openPicker();
+        /* 回显态整段选中 → 直接打字就替换，退格也不会把名字拆成检索词 */
+        if (state.char && si.value.trim() === String(state.char)) { try { si.select(); } catch (e) { } }
+      });
       si.addEventListener("click", openPicker);
       si.addEventListener("input", function () { renderPicker(); openPicker(); });
       si.addEventListener("keydown", pickerKey);
@@ -1728,6 +1822,7 @@
 
     initCloudSync();
     pkBind();     // 导入阿卡数据：Key 存取 / 导入 / 粘贴导入 / 研究联动
+    initInfoTips(document);   // 分组标题旁的说明浮层
   }
   document.addEventListener("DOMContentLoaded", init);
 })();
