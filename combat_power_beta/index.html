@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NIKKE 战力计算器</title>
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261028c">
+<link rel="stylesheet" href="css/style.css?v=20261028d">
 </head>
 <body>
 <main class="page">
@@ -18,15 +18,15 @@
       <!-- 手填面板已屏蔽（2026-10-13）：面板三围统一由练度参数推导，标定入口随之隐藏 -->
       <button id="btn-calibrate" class="btn" type="button" hidden>按游戏内战力标定</button>
 
-      <!-- Pinkuro Key：账号级凭据，2026-10-28 从左侧面板上移到「账号同步」这一排。
+      <!-- 阿卡 Key：账号级凭据，2026-10-28 从左侧面板上移到「账号同步」这一排。
            Key 只进 localStorage 独立键，不进 state ⇒ 不进「导出 JSON」、不进云同步。 -->
-      <div class="pk-bar" id="pk-bar" role="group" aria-label="Pinkuro 练度同步">
-        <span class="pk-bar-label">Pinkuro</span>
+      <div class="pk-bar" id="pk-bar" role="group" aria-label="导入阿卡数据">
+        <span class="pk-bar-label">阿卡</span>
         <input id="pk-key" type="password" placeholder="粘贴 Key" autocomplete="off" spellcheck="false">
         <button id="btn-key-eye" class="btn icon" type="button" title="显示 / 隐藏 Key">👁</button>
         <button id="btn-key-save" class="btn icon" type="button" title="保存 Key 到本机浏览器">✓</button>
         <button id="btn-key-clear" class="btn icon" type="button" title="清除本机保存的 Key">×</button>
-        <button id="btn-sync-pull" class="btn primary" type="button">⟳ 拉取</button>
+        <button id="btn-sync-pull" class="btn primary" type="button">⟳ 导入</button>
       </div>
 
       <span class="tb-sep" aria-hidden="true"></span>
@@ -84,11 +84,11 @@
             <p id="char-meta" class="meta">未选择角色</p>
           </div>
 
-          <!-- 2026-10-28：Key 输入 / 保存 / 清除 / 拉取按钮已上移到顶栏（与「账号同步」同排），
-               这里只留同步状态、自定义中转地址与粘贴兜底，避免同一件事在页面上出现两处入口。 -->
+          <!-- 2026-10-28：Key 输入 / 保存 / 清除 / 导入按钮已上移到顶栏（与「账号同步」同排），
+               这里只留导入状态、自定义中转地址与粘贴兜底，避免同一件事在页面上出现两处入口。 -->
           <div class="grp" id="sync-box">
-            <div class="grp-h"><b>Pinkuro 练度同步</b><em id="sync-tag">未连接</em></div>
-            <p class="hint tight">Key 在<b>右上角</b>填写，保存一次长期有效、不用每次重填。拉回：词条明细 / 装备等级 / 突破 / 收藏 / 技能 / 魔方等级 / 企业·职业研究等级。
+            <div class="grp-h"><b>导入阿卡数据</b><em id="sync-tag">未连接</em></div>
+            <p class="hint tight">在<b>顶栏</b>填阿卡的 Key，保存一次长期有效、不用每次重填。导入回填：词条明细 / 装备等级 / 突破 / 收藏 / 技能 / 魔方等级 / 企业·职业研究等级。
               Key 只存<b>本机浏览器</b>，不写进导出文件、不进链接、不写日志。</p>
             <p class="hint tight" id="pk-status">未保存 Key</p>
             <div class="key-row">
@@ -96,7 +96,7 @@
               <button id="btn-relay-save" class="btn icon" type="button" title="保存中转地址">✓</button>
             </div>
             <details class="fold-inline">
-              <summary>拉取失败？粘贴 JSON 兜底导入</summary>
+              <summary>导入失败？粘贴 JSON 兜底</summary>
               <p class="hint tight">同步服务不可用时，把接口原始响应整段粘进来，同样能回填（纯本地解析，不联网）：</p>
               <textarea id="pk-json" class="pk-json" rows="4" placeholder='{"success":true,"data":{"cnData":{…}}}' spellcheck="false"></textarea>
               <div class="gear-ops">
@@ -294,10 +294,10 @@
   </footer>
 </main>
 
-<script src="data/data.bundle.js?v=20261028c"></script>
-<script src="js/core.js?v=20261028c"></script>
-<script src="js/panel.js?v=20261028c"></script>
-<script src="js/pinkuro.js?v=20261028c"></script>
-<script src="js/app.js?v=20261028c"></script>
+<script src="data/data.bundle.js?v=20261028d"></script>
+<script src="js/core.js?v=20261028d"></script>
+<script src="js/panel.js?v=20261028d"></script>
+<script src="js/pinkuro.js?v=20261028d"></script>
+<script src="js/app.js?v=20261028d"></script>
 </body>
 </html>

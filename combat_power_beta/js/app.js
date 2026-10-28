@@ -1300,7 +1300,7 @@
     $("m-mode").value = state.sim.mode || "change";
     compute();
   }
-  /* ---------------- Pinkuro 练度同步 ----------------
+  /* ---------------- 导入阿卡数据（数据源 pinkuro 服务端） ----------------
    *  通路：页面 →（POST，本机）127.0.0.1:8785/api/pinkuro/import →（GET，带 X-API-KEY）pinkuro.top:9984
    *  为什么不让浏览器直连：远端预检 OPTIONS 返回 204 且不带 Access-Control-Allow-Origin，
    *  带自定义头 X-API-KEY 的跨域请求必被浏览器拦下（2026-10-28 实测）。
@@ -1355,7 +1355,7 @@
   function pkApply(raw, from) {
     if (!PK) { setNotice("映射模块 pinkuro.js 未加载", "error"); return; }
     var res = PK.mapBundle(raw, D);
-    if (!res.ok) { pkStatus("响应无法识别：" + (res.message || ""), "error"); setNotice("Pinkuro 响应无法识别", "error"); return; }
+    if (!res.ok) { pkStatus("响应无法识别：" + (res.message || ""), "error"); setNotice("阿卡数据无法识别", "error"); return; }
     var ac = res.account || {};
     if (ac.level) state.loadout.level = ac.level;
     state.account = {
@@ -1402,7 +1402,7 @@
   }
   function pkPull() {
     var key = ($("pk-key").value || "").trim() || pkGetKey();
-    if (!key) { pkStatus("请先在顶栏填写 Pinkuro Key（填一次保存即可）", "error"); setNotice("请先填写 Pinkuro Key", "error"); return; }
+    if (!key) { pkStatus("请先在顶栏填写阿卡 Key（填一次保存即可）", "error"); setNotice("请先填写阿卡 Key", "error"); return; }
     var btn = $("btn-sync-pull");
     if (btn) btn.disabled = true;
     var relay = pkGetRelay(), req;
@@ -1429,12 +1429,12 @@
       return r.json();
     }).then(function (json) {
       pkSetKey(key);
-      pkApply(json, relay ? "中转拉取" : "拉取");
+      pkApply(json, relay ? "中转导入" : "导入");
     }).catch(function (e) {
       var m = String((e && e.message) || e), hint;
       if (/Failed to fetch|NetworkError|load failed/i.test(m)) {
         if (!relay) {
-          hint = "连不上本机转发（127.0.0.1:8785）—— 先双击 start-pinkuro-agent.bat，或在左侧「Pinkuro 练度同步」里填一个公网中转地址";
+          hint = "连不上本机转发（127.0.0.1:8785）—— 先双击 start-pinkuro-agent.bat，或在左侧「导入阿卡数据」里填一个公网中转地址";
         } else if (PRELAY_DEFAULT && relay === String(PRELAY_DEFAULT).replace(/\/+$/, "")) {
           hint = "同步服务暂时不可用，请稍后重试（也可用下方「粘贴 JSON 导入」）";
         } else {
@@ -1444,7 +1444,7 @@
         hint = "请求失败：" + m;
       }
       pkStatus(hint, "error");
-      setNotice("Pinkuro 拉取未完成", "error");
+      setNotice("阿卡数据导入未完成", "error");
     }).then(function () { if (btn) btn.disabled = false; });
   }
   function pkPaste() {
@@ -1475,7 +1475,7 @@
       setNotice("Key 已保存到本机浏览器（不写进导出文件、不进链接、不写日志）", "ok");
     });
     if (btnClear) btnClear.addEventListener("click", function () {
-      if (!window.confirm("清除本机保存的 Pinkuro Key？已同步的练度数据不会删除。")) return;
+      if (!window.confirm("清除本机保存的阿卡 Key？已导入的练度数据不会删除。")) return;
       pkSetKey(""); inp.value = ""; pkRefreshUI();
       setNotice("已清除本机 Key", "ok");
     });
@@ -1727,7 +1727,7 @@
       + "</code> · ConfigGameTable <code>" + esc((s.ConfigGameTable || "").slice(0, 8)) + "</code>";
 
     initCloudSync();
-    pkBind();     // Pinkuro 同步：Key 存取 / 拉取 / 粘贴导入 / 研究联动
+    pkBind();     // 导入阿卡数据：Key 存取 / 导入 / 粘贴导入 / 研究联动
   }
   document.addEventListener("DOMContentLoaded", init);
 })();

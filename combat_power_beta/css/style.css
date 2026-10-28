@@ -54,7 +54,7 @@ code{background:rgba(29,158,117,.09);color:var(--accent-dark);padding:1px 5px;bo
 .btn.cloud[data-state="out"]{background:#fff;color:#0f6e56;border-color:rgba(29,158,117,.5)}
 .btn.cloud[data-state="out"]:hover{background:#f0faf6;border-color:#1d9e75}
 
-/* ---------- 顶栏 Pinkuro Key（2026-10-28 从左侧面板上移，与「账号同步」同排） ---------- */
+/* ---------- 顶栏阿卡 Key（2026-10-28 从左侧面板上移，与「账号同步」同排） ---------- */
 .pk-bar{display:flex;align-items:center;gap:5px;padding:3px 5px 3px 9px;
   border:1px solid var(--line);border-radius:var(--r-md);background:#fff}
 .pk-bar:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -318,7 +318,7 @@ input[readonly]{-moz-appearance:textfield;appearance:textfield}
 .cell.locked>span::after{content:"锁";margin-left:5px;font-size:9.5px;font-weight:700;color:#9aa8a2;
   border:1px solid rgba(154,168,162,.5);border-radius:3px;padding:0 3px;vertical-align:1px}
 
-/* ---------- Pinkuro 练度同步（2026-10-28） ---------- */
+/* ---------- 导入阿卡数据（2026-10-28） ---------- */
 #sync-box .key-row{display:flex;gap:6px;margin:5px 0 8px}
 #sync-box .key-row input{height:33px;font-size:12.5px;text-align:left;letter-spacing:.4px}
 .btn.icon{min-width:38px;padding:0 8px;font-size:14px;line-height:1}
