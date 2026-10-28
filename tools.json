@@ -30,7 +30,7 @@
       "frameId": "ledgerFrame",
       "version": "1.0.0",
       "order": 15,
-      "enabled": true,
+      "enabled": false,
       "sync": {
         "enabled": false,
         "storage": "none"
@@ -92,10 +92,10 @@
       "name": "战力计算Beta",
       "icon": "assets/nav_combatpower.webp",
       "type": "web",
-      "entry": "combat_power_beta/index.html?v=20261015a",
+      "entry": "combat_power_beta/index.html?v=20261028c",
       "viewId": "appCombatPowerBeta",
       "frameId": "combatPowerBetaFrame",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "order": 50,
       "enabled": true,
       "sync": {

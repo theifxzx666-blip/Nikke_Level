@@ -15,3 +15,9 @@ _cdp_*.js
 .DS_Store
 Thumbs.db
 *.log
+
+# 中转部署包（构建产物）
+relay-netlify-deploy.zip
+
+# Netlify CLI 本地状态（含 siteId 与打包产物）
+.netlify/

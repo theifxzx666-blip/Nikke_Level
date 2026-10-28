@@ -1,0 +1,13 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# 备用路径：即便函数自带 config.path 未生效，/api/relay 也能落到函数上
+[[redirects]]
+  from = "/api/relay"
+  to = "/.netlify/functions/relay"
+  status = 200
+  force = true

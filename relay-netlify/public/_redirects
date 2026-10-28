@@ -1,0 +1,2 @@
+# 前端统一走 /api/relay，实际落到函数
+/api/relay  /.netlify/functions/relay  200

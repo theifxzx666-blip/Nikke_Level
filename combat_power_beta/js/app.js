@@ -4,7 +4,23 @@
   var D = window.NIKKE_POWER_DATA;
   var C = window.NikkePowerCore;
   var P = window.NikkePanel;
+  var PK = window.NikkePinkuro;
   var KEY = "nikke_power_calc_v2";
+  /* Pinkuro Key 单独一个 localStorage 键：**不放进 state**，因此不会出现在「导出 JSON」和云同步里 */
+  var PKEY = "nikke_pinkuro_key";
+  /* 可选公网中转地址（同样不进 state）。留空则走下面的本机转发 */
+  var PRELAY = "nikke_pinkuro_relay";
+  /**
+   * 内置公网中转（项目自建）。
+   * 一旦在这里填上地址，页面就「只让用户填 Key」：
+   *   - 不再显示「中转地址」输入行，用户看不到也不需要理解这一层；
+   *   - 所有访问者默认走这个中转，手机 / 别的电脑 / 别人的电脑都直接可用；
+   *   - 站长（本机开发）仍可在地址后加 ?relay=http://127.0.0.1:8785 覆盖回本机通道。
+   * 留空 = 维持现状（默认本机转发，需自己部署）。
+   */
+  var PRELAY_DEFAULT = "https://nikke-lv-relay.netlify.app/api/relay";
+  /* 本机转发服务（仓库根目录 pinkuro_server.py）。远端接口无 CORS 头，浏览器不能直连 */
+  var PAGENT = "http://127.0.0.1:8785";
   var SLOT_LABEL = { head: "头部", body: "衣服", arms: "手部", legs: "鞋子" };
   /* 企业与职业枚举：取自 CharacterTable.Corporation / .Class（实测取值 1/2/3/4/7 与 1/2/3） */
   var CORP = { 1: "极乐净土", 2: "米西利斯", 3: "泰特拉", 4: "朝圣者", 5: "反常", 6: "反常", 7: "反常" };
@@ -88,6 +104,9 @@
          gear 一并按角色记忆 —— 每个角色各有自己的整套装备（4 个部位的装备等级 + 词条）。 */
       byChar: {},
       gearByChar: {},
+      /* 账号级研究表（Pinkuro 同步写入）：企业研究 corp{1..7} / 职业研究 cls{1,2,3}。
+         auto = true 时，切角色会按该角色的企业与职业自动取对应等级填入 l-rk / l-rc。 */
+      account: { enabled: false, auto: true, qq: null, level: null, corp: {}, cls: {}, syncedAt: null },
       fav: [],              // 收藏角色 rid 列表（检索区「★ 收藏」范围用）
       scope: "all",         // 角色检索范围：all | fav | recorded
       panel: { attack: "", hp: "", defense: "", critRate: 15, critDamage: 150, extraBP: "", skill1: 10, skill2: 10, burst: 10 },
@@ -158,6 +177,16 @@
       if (raw.mode) d.mode = raw.mode;
       if (raw.byChar && typeof raw.byChar === "object") d.byChar = raw.byChar;
       if (raw.gearByChar && typeof raw.gearByChar === "object") d.gearByChar = raw.gearByChar;
+      if (raw.account && typeof raw.account === "object") {
+        var ac = raw.account;
+        d.account.enabled = !!ac.enabled;
+        d.account.auto = ac.auto !== false;
+        d.account.qq = ac.qq || null;
+        d.account.level = ac.level || null;
+        d.account.syncedAt = ac.syncedAt || null;
+        if (ac.corp && typeof ac.corp === "object") d.account.corp = ac.corp;
+        if (ac.cls && typeof ac.cls === "object") d.account.cls = ac.cls;
+      }
       if (Array.isArray(raw.fav)) d.fav = raw.fav;
       if (raw.scope === "fav" || raw.scope === "recorded") d.scope = raw.scope;
       if (raw.loadout) {
@@ -493,12 +522,16 @@
     if (pop && !pop.hidden) renderPicker();
     else updateCharCount(filterRoster());
   }
-  /* 角色级记忆：突破档 / 收藏品 / 整套装备词条 —— 都随角色切换而存取 */
-  var CHAR_KEYS = ["bt", "coll"];
+  /* 角色级记忆：突破档 / 收藏品 / 好感 / 魔方等级 / 收藏等级 / 技能三项 / 整套装备词条
+   * —— 全部随角色切换而存取。
+   * 2026-10-28 扩展：原来只记 bt、coll，其余是全局字段；接 Pinkuro 同步后这些值都是**按角色**回来的，
+   * 若不跟着切，拉完 25 个角色再切换就会把上一个角色的技能/魔方等级套到下一个角色身上。 */
+  var CHAR_KEYS = ["bt", "coll", "attr", "cubeLv", "collLv"];
   function rememberChar(rid) {
     if (rid == null) return;
     var o = {};
     CHAR_KEYS.forEach(function (k) { o[k] = state.loadout[k]; });
+    o.skills = { s1: state.panel.skill1, s2: state.panel.skill2, burst: state.panel.burst };
     o.gear = clone(state.gear);       // 该角色的整套装备：4 部位装备等级 + 当前词条 + 洗练目标
     state.byChar[String(rid)] = o;
   }
@@ -507,6 +540,10 @@
     CHAR_KEYS.forEach(function (k) {
       state.loadout[k] = (saved && saved[k] !== undefined && saved[k] !== null) ? saved[k] : d[k];
     });
+    var dp = defaults().panel, sk = saved && saved.skills;
+    state.panel.skill1 = (sk && sk.s1 !== undefined) ? sk.s1 : dp.skill1;
+    state.panel.skill2 = (sk && sk.s2 !== undefined) ? sk.s2 : dp.skill2;
+    state.panel.burst = (sk && sk.burst !== undefined) ? sk.burst : dp.burst;
     // 恢复该角色的整套装备（含装备等级）；没记录就从零录入（新角色各录各的，等级默认满级 5）
     state.gear = (saved && saved.gear) ? normalizeGear(saved.gear) : blankGear();
   }
@@ -516,6 +553,13 @@
     state.char = $("char-input").value.trim();
     state.loadout.rid = currentRid();
     recallChar(state.loadout.rid);
+    /* recall 恢复的是 state，输入框还是上一个角色的值 —— 必须先回写，否则随后的 collectLoadout
+       会把旧值又抄回 state，等于「切了角色但练度没切」（2026-10-28 修） */
+    $("l-attr").value = state.loadout.attr;
+    $("l-cubelv").value = state.loadout.cubeLv;
+    $("l-colllv").value = state.loadout.collLv;
+    renderPanelValues();
+    applyAccountRecycle();
     renderBreakthroughOptions(); renderCollOptions(); renderCharMeta();
     renderGear(); gearDirty = false; renderGearState();
     collectLoadout();
@@ -543,12 +587,27 @@
     $("l-cubelv").value = lo.cubeLv;
     $("l-colllv").value = lo.collLv;
     $("l-rp").value = lo.rp; $("l-rc").value = lo.rc; $("l-rk").value = lo.rk;
-    $("l-corpbonus").checked = !!lo.corpBonus;
     $("l-auto").checked = lo.auto !== false;
+    var ra = $("l-recycle-auto"); if (ra) ra.checked = state.account.auto !== false;
     renderBreakthroughOptions();
     renderCubeOptions();
     renderCollOptions();
     renderCharMeta();
+    // 研究联动放最后：直接改 l-rk / l-rc 的输入值，随后的 collectLoadout 读到的就是联动结果
+    applyAccountRecycle();
+    renderPanelValues();          // 技能三项已随角色记忆恢复，回写到输入框
+  }
+  /** 账号研究表 → 当前角色的企业研究 / 职业研究（联动关闭或尚未同步时不动） */
+  function applyAccountRecycle() {
+    var ac = state.account;
+    if (!ac || !ac.enabled || ac.auto === false) return false;
+    var ch = P.findRoster(D, currentRid());
+    if (!ch) return false;
+    var hit = false;
+    var rk = ac.corp[String(ch.corp)], rc = ac.cls[String(ch.cls)];
+    if (rk !== undefined && rk !== null) { state.loadout.rk = Math.trunc(num(rk)); $("l-rk").value = state.loadout.rk; hit = true; }
+    if (rc !== undefined && rc !== null) { state.loadout.rc = Math.trunc(num(rc)); $("l-rc").value = state.loadout.rc; hit = true; }
+    return hit;
   }
   function renderBreakthroughOptions() {
     var lim = P.limits(D, currentRid());
@@ -560,6 +619,8 @@
     }).join("");
   }
   function renderCubeOptions() {
+    /* 魔方类型已屏蔽（2026-10-28）：静态表 16 款魔方的 stats/bp 逐元素相同，只保留等级。
+       这个 hidden 的 #l-cube 仅作状态载体，collectLoadout 已不再读取它的值。 */
     $("l-cube").innerHTML = D.cubes.map(function (c) {
       var nm = String(c.name || "").replace(/^Locale_Item:/, "");
       return '<option value="' + c.id + '"' + (c.id === Math.trunc(state.loadout.cubeId) ? " selected" : "") + ">" + esc(nm) + "</option>";
@@ -584,15 +645,19 @@
     lo.level = Math.max(1, Math.trunc(num($("l-level").value, 492)));
     lo.bt = Math.max(0, Math.min(10, Math.trunc(num($("l-bt").value, 0))));
     lo.attr = Math.max(0, Math.trunc(num($("l-attr").value, 0)));
-    lo.cubeId = Math.trunc(num($("l-cube").value, 1000301));
+    /* 魔方类型不参与计算（16 款数值一致），固定第一款；字段保留只为兼容旧存档与导出结构 */
+    lo.cubeId = 1000301;
     lo.cubeLv = Math.max(0, Math.min(15, Math.trunc(num($("l-cubelv").value, 0))));
     lo.coll = $("l-coll").value || null;
     lo.collLv = Math.max(0, Math.trunc(num($("l-colllv").value, 0)));
     lo.rp = Math.max(0, Math.trunc(num($("l-rp").value, 0)));
     lo.rc = Math.max(0, Math.trunc(num($("l-rc").value, 0)));
     lo.rk = Math.max(0, Math.trunc(num($("l-rk").value, 0)));
-    lo.corpBonus = $("l-corpbonus").checked;
+    /* 装备同厂加成开关已移除（2026-10-28）：UI 不再提供，固定关闭（panel.js 仍保留该分支以便日后复核） */
+    lo.corpBonus = false;
     lo.auto = $("l-auto").checked;
+    var ra = $("l-recycle-auto");
+    if (ra) state.account.auto = ra.checked;
   }
   function loadoutOf() {
     var lo = state.loadout;
@@ -1235,6 +1300,216 @@
     $("m-mode").value = state.sim.mode || "change";
     compute();
   }
+  /* ---------------- Pinkuro 练度同步 ----------------
+   *  通路：页面 →（POST，本机）127.0.0.1:8785/api/pinkuro/import →（GET，带 X-API-KEY）pinkuro.top:9984
+   *  为什么不让浏览器直连：远端预检 OPTIONS 返回 204 且不带 Access-Control-Allow-Origin，
+   *  带自定义头 X-API-KEY 的跨域请求必被浏览器拦下（2026-10-28 实测）。
+   *  Key 存单独 localStorage 键，不进 state ⇒ 不进「导出 JSON」、不进云同步。
+   */
+  function pkGetKey() { try { return String(localStorage.getItem(PKEY) || ""); } catch (e) { return ""; } }
+  function pkSetKey(v) { try { if (v) localStorage.setItem(PKEY, String(v)); else localStorage.removeItem(PKEY); } catch (e) { /* 隐私模式忽略 */ } }
+  /** 有效中转地址：?relay= 覆盖 > 用户保存值 > 内置默认（空则本机通道） */
+  function pkGetRelay() {
+    var q = "";
+    try { q = String(new URLSearchParams(location.search).get("relay") || "").trim(); } catch (e) { q = ""; }
+    if (q) return q.replace(/\/+$/, "");
+    var saved = "";
+    try { saved = String(localStorage.getItem(PRELAY) || "").trim(); } catch (e) { saved = ""; }
+    if (saved) return saved.replace(/\/+$/, "");
+    return String(PRELAY_DEFAULT || "").trim().replace(/\/+$/, "");
+  }
+  /** 走的是内置默认中转（而非用户自填）→ 该行对用户没有意义，直接藏掉 */
+  function pkHideRelayRowIfBuiltin() {
+    var row = $("pk-relay") && $("pk-relay").closest(".key-row");
+    var btn = $("btn-relay-save");
+    var builtin = !!PRELAY_DEFAULT && pkGetRelay() === String(PRELAY_DEFAULT).replace(/\/+$/, "");
+    if (row) row.style.display = builtin ? "none" : "";
+    if (btn) btn.style.display = builtin ? "none" : "";
+  }
+  function pkSetRelay(v) {
+    try { if (v) localStorage.setItem(PRELAY, String(v).trim().replace(/\/+$/, "")); else localStorage.removeItem(PRELAY); }
+    catch (e) { /* 隐私模式忽略 */ }
+  }
+  function pkChannelName() {
+    var r = pkGetRelay();
+    if (!r) return "本机转发";
+    try { return "公网中转 " + new URL(r).host; } catch (e) { return "公网中转"; }
+  }
+  function pkStatus(t, k) {
+    var el = $("pk-status");
+    if (!el) return;
+    el.textContent = t || "";
+    el.className = "hint tight" + (k ? " " + k : "");
+  }
+  function pkMaskedKey(k) { return k ? ("已保存 Key · " + k.slice(0, 4) + "…" + k.slice(-3) + " · " + k.length + " 位") : "未保存 Key"; }
+  function pkRefreshUI() {
+    var k = pkGetKey(), inp = $("pk-key"), tag = $("sync-tag"), rin = $("pk-relay"), r = pkGetRelay();
+    /* Key 输入框现在在顶栏（2026-10-28），宽度有限 → placeholder 只说要点，细节交给下方状态行 */
+    if (inp) inp.placeholder = k ? "已保存 · 覆盖请输入" : "粘贴 Key";
+    if (rin) rin.placeholder = r ? r.replace(/^https?:\/\//, "") : "中转地址（留空=本机）";
+    if (tag) tag.textContent = state.account && state.account.enabled ? ("已同步 " + (state.account.qq || "")).trim() : "未连接";
+    pkHideRelayRowIfBuiltin();
+    pkStatus((k ? pkMaskedKey(k) : "未保存 Key · 每次打开都要重新填") + " · 通道：" + pkChannelName(), k ? "ok" : "");
+  }
+  /** 清掉「没有归属」的可选键，避免脏数据把 state 撑大 */
+  function pkApply(raw, from) {
+    if (!PK) { setNotice("映射模块 pinkuro.js 未加载", "error"); return; }
+    var res = PK.mapBundle(raw, D);
+    if (!res.ok) { pkStatus("响应无法识别：" + (res.message || ""), "error"); setNotice("Pinkuro 响应无法识别", "error"); return; }
+    var ac = res.account || {};
+    if (ac.level) state.loadout.level = ac.level;
+    state.account = {
+      enabled: true,
+      auto: state.account.auto !== false,
+      qq: ac.qq || null,
+      level: ac.level || null,
+      corp: ac.corp || {},
+      cls: ac.cls || {},
+      syncedAt: Date.now()
+    };
+    var applied = 0;
+    res.characters.forEach(function (c) {
+      if (c.rid === null) return;                 // 站点角色表里没有 → 无法入库
+      var k = String(c.rid), rec = state.byChar[k] || {};
+      rec.bt = c.patch.bt;
+      rec.attr = c.patch.attr;
+      rec.cubeLv = c.patch.cubeLv;
+      rec.coll = c.patch.coll;
+      rec.collLv = c.patch.collLv;
+      rec.skills = { s1: c.patch.skill1, s2: c.patch.skill2, burst: c.patch.burst };
+      rec.gear = normalizeGear(c.gear);
+      state.byChar[k] = rec;
+      state.gearByChar[k] = normalizeGear(c.gear);
+      applied++;
+    });
+    /* 落到「当前角色」若它也在同步结果里，否则落到第一个可用角色 */
+    var cur = res.characters.filter(function (c) { return c.rid !== null && c.rid === state.loadout.rid; })[0]
+      || res.characters.filter(function (c) { return c.rid !== null; })[0];
+    if (cur) {
+      state.char = cur.name;
+      state.loadout.rid = cur.rid;
+      recallChar(cur.rid);
+    }
+    renderAll();
+    setMode("loadout");
+    save(true);
+    pkRefreshUI();
+    var miss = res.report.missing || [];
+    var msg = from + "成功 · " + applied + " 个角色已回填（响应 " + res.report.total + " 条）";
+    if (miss.length) msg += " · 站点角色表缺 " + miss.join("、");
+    pkStatus(msg + " · 阶数自检 " + res.report.verifyOk + "/" + res.report.total, "ok");
+    setNotice(msg + " · 同步器 Lv." + (ac.level || "-") + " · 企业/职业研究随角色自动取值", "ok");
+  }
+  function pkPull() {
+    var key = ($("pk-key").value || "").trim() || pkGetKey();
+    if (!key) { pkStatus("请先在顶栏填写 Pinkuro Key（填一次保存即可）", "error"); setNotice("请先填写 Pinkuro Key", "error"); return; }
+    var btn = $("btn-sync-pull");
+    if (btn) btn.disabled = true;
+    var relay = pkGetRelay(), req;
+    if (relay) {
+      /* 通道 A：公网中转（GET + X-API-KEY；中继端已放行 CORS，手机/别的电脑也能用） */
+      pkStatus("正在通过公网中转请求…（只发一次，不重试）", "");
+      req = fetch(relay, {
+        method: "GET",
+        headers: { "X-API-KEY": key, "Accept": "application/json" },
+        cache: "no-store"
+      });
+    } else {
+      /* 通道 B：本机转发（loopback，服务端补了 CORS） */
+      pkStatus("正在向本机转发服务请求…（只发一次，不重试）", "");
+      req = fetch(PAGENT + "/api/pinkuro/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: key })
+      });
+    }
+    req.then(function (r) {
+      if (r.status === 401 || r.status === 403) throw new Error("Key 无效或无权限（HTTP " + r.status + "）");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (json) {
+      pkSetKey(key);
+      pkApply(json, relay ? "中转拉取" : "拉取");
+    }).catch(function (e) {
+      var m = String((e && e.message) || e), hint;
+      if (/Failed to fetch|NetworkError|load failed/i.test(m)) {
+        if (!relay) {
+          hint = "连不上本机转发（127.0.0.1:8785）—— 先双击 start-pinkuro-agent.bat，或在左侧「Pinkuro 练度同步」里填一个公网中转地址";
+        } else if (PRELAY_DEFAULT && relay === String(PRELAY_DEFAULT).replace(/\/+$/, "")) {
+          hint = "同步服务暂时不可用，请稍后重试（也可用下方「粘贴 JSON 导入」）";
+        } else {
+          hint = "连不上中转 " + relay + " —— 地址是否写对 / 服务是否已部署？清空中转地址即可切回本机通道";
+        }
+      } else {
+        hint = "请求失败：" + m;
+      }
+      pkStatus(hint, "error");
+      setNotice("Pinkuro 拉取未完成", "error");
+    }).then(function () { if (btn) btn.disabled = false; });
+  }
+  function pkPaste() {
+    var txt = ($("pk-json").value || "").trim();
+    if (!txt) { pkStatus("请先粘贴接口原始响应", "error"); return; }
+    var json;
+    try { json = JSON.parse(txt); }
+    catch (e) { pkStatus("不是合法 JSON：" + e.message, "error"); return; }
+    pkApply(json, "粘贴导入");
+  }
+  function pkBind() {
+    var btnSave = $("btn-key-save"), btnClear = $("btn-key-clear"), btnPull = $("btn-sync-pull"),
+      btnPaste = $("btn-sync-paste"), btnEye = $("btn-key-eye"), inp = $("pk-key"),
+      rin = $("pk-relay"), btnRelay = $("btn-relay-save");
+    if (btnRelay) btnRelay.addEventListener("click", function () {
+      var v = (rin.value || "").trim();
+      if (v && !/^https?:\/\//i.test(v)) { pkStatus("中转地址要以 http:// 或 https:// 开头", "error"); return; }
+      pkSetRelay(v);
+      rin.value = "";
+      pkRefreshUI();
+      setNotice(v ? ("已切换到公网中转：" + v) : "已清空中转地址，回到本机转发通道", "ok");
+    });
+    if (btnSave) btnSave.addEventListener("click", function () {
+      var v = (inp.value || "").trim();
+      if (!v) { pkStatus("输入框为空：要清除 Key 请点右侧「×」", "error"); return; }
+      pkSetKey(v);
+      pkRefreshUI();
+      setNotice("Key 已保存到本机浏览器（不写进导出文件、不进链接、不写日志）", "ok");
+    });
+    if (btnClear) btnClear.addEventListener("click", function () {
+      if (!window.confirm("清除本机保存的 Pinkuro Key？已同步的练度数据不会删除。")) return;
+      pkSetKey(""); inp.value = ""; pkRefreshUI();
+      setNotice("已清除本机 Key", "ok");
+    });
+    if (btnEye) btnEye.addEventListener("click", function () {
+      if (inp.type === "password") {
+        if (!inp.value) inp.value = pkGetKey();     // 输入框空 → 把已保存的 Key 调出来看
+        inp.type = "text";
+        btnEye.textContent = "🙈";
+      } else { inp.type = "password"; btnEye.textContent = "👁"; }
+    });
+    if (btnPull) btnPull.addEventListener("click", pkPull);
+    if (btnPaste) btnPaste.addEventListener("click", pkPaste);
+    /* 研究联动：手动改 rk / rc 就视为「不想联动」，自动关掉勾选，避免下次切角色被覆盖 */
+    ["l-rk", "l-rc"].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      el.addEventListener("change", function () {
+        var box = $("l-recycle-auto");
+        if (box && box.checked && state.account.enabled) {
+          box.checked = false;
+          state.account.auto = false;
+          setNotice("已关闭「企业/职业研究自动取值」，当前为手动值", "");
+        }
+      });
+    });
+    var box = $("l-recycle-auto");
+    if (box) box.addEventListener("change", function () {
+      state.account.auto = box.checked;
+      if (box.checked) { collectLoadout(); applyAccountRecycle(); collectLoadout(); derivePanel(); save(true); }
+      else { save(true); }
+    });
+    pkRefreshUI();
+  }
+
   /* ---------------- 示例数据（?demo=1）---------------- */
   function keyOf(name) {
     var g = D.overload.filter(function (x) { return x.name === name; })[0];
@@ -1262,11 +1537,15 @@
   /* ---------------- 云端同步（同源 iframe 内直连父页面的账号同步模块） ----------------
    * 本页在「工具箱」里是以同源 iframe 打开的，父页面（资源规划计算器）的 js/sync.js 通过
    * window.__nikkeSync 暴露了账号状态与「快速上传」。因此这里不需要重复一套登录 UI：
-   *   · 已登录 → 一键把本 Tab 的练度 + 整套装备词条（localStorage: KEY）推到云端；
-   *   · 未登录 → 唤起父页面账号面板完成登录（面板会自动定位到「战力计算Beta」卡片）；
-   *   · 单独打开本页（没有父页面接口）→ 两个按钮保持隐藏，不误导用户。
+   *   · 「保存」右侧一个圆形云开关（与资源规划计算器同款交互）：
+   *       开 → 点「保存」时本地落盘后顺手推云端；关 → 只留本机；
+   *   · 「👤 账号面板」→ 唤起父页面账号面板（登录 / 下载覆盖 / 看云端时间，面板会定位到本 Tab 的卡片）；
+   *   · 单独打开本页（没有父页面接口）→ 这两个入口保持隐藏，不误导用户。
+   *   2026-10-28：原独立「☁ 同步到云端」按钮按需求移除，功能并入保存。
    */
   var CLOUD_FID = "combat_power_beta";
+  var CLOUD_TOG = "nikke_power_cloud_auto";   // 开关本身也存本机，刷新后保持上次选择
+  var cloudApiRef = null;
 
   function cloudApi() {
     try {
@@ -1277,60 +1556,67 @@
   function cloudStatus(api) {
     try { return (api && api.status) ? api.status() : null; } catch (e) { return null; }
   }
+  function cloudAutoOn() { try { return localStorage.getItem(CLOUD_TOG) !== "0"; } catch (e) { return true; } }
+  function setCloudAuto(v) { try { localStorage.setItem(CLOUD_TOG, v ? "1" : "0"); } catch (e) { /* 隐私模式忽略 */ } }
+
+  /** 重绘云开关：可点状态只看 [data-on]，文案（含未登录提示）只放 hover 气泡里 */
+  function paintCloudUI() {
+    var tog = $("cloud-tog"), chk = $("chk-cloud-auto"), btnAcct = $("btn-account");
+    if (!tog) return;
+    var st = cloudStatus(cloudApiRef);
+    var logged = !!(st && st.loggedIn), want = cloudAutoOn();
+    tog.dataset.on = want ? "1" : "0";
+    if (chk) chk.checked = want;
+    var txt = !want ? "云同步已关：保存只留在本机"
+      : (logged ? "已开启：点「保存」时同步到云端" + (st.email ? "（" + st.email + "）" : "")
+                : "已开启，但还没登录：点「账号面板」登录后生效");
+    var tip = tog.querySelector(".cloud-tip");
+    if (tip) tip.textContent = txt;
+    tog.title = txt;
+    if (btnAcct) btnAcct.title = logged ? "打开账号云同步面板（可下载覆盖 / 查看云端时间）" : "登录并管理云端数据";
+  }
+
+  /** 保存之后的云同步尾巴：开关关着 / 没登录 / 不在工具箱里 → 静默跳过，不打扰 */
+  function cloudPushAfterSave() {
+    var api = cloudApiRef;
+    if (!api || !cloudAutoOn()) return;
+    var st = cloudStatus(api);
+    if (!st || !st.configured) return;                       // 云端组件没就绪：当纯本地保存
+    if (!st.loggedIn) { setNotice("已保存到本机浏览器 · 未登录，未上传云端", ""); return; }
+    setNotice("已保存，正在同步到云端…", "");
+    var p = api.quickUpload(CLOUD_FID);
+    if (p && typeof p.then === "function") {
+      p.then(function (r) {
+        paintCloudUI();
+        if (r && r.ok) setNotice("已保存并同步到云端 · " + new Date().toLocaleTimeString("zh-CN", { hour12: false }), "ok");
+        else if (r && (r.reason === "nologin" || r.reason === "noconfig" || r.reason === "noclient")) setNotice("已保存到本机 · 云端未登录，未同步", "");
+        else if (r && r.reason === "empty") setNotice("已保存到本机浏览器（云端：本机暂无数据）", "error");
+        else setNotice("已保存到本机，云端同步失败：" + ((r && r.message) || "未知错误"), "error");
+      });
+    }
+  }
 
   function initCloudSync() {
     var api = cloudApi();
-    var btnQuick = $("btn-cloud-sync");
-    var btnAcct = $("btn-account");
-    if (!btnQuick && !btnAcct) return;
+    var tog = $("cloud-tog"), chk = $("chk-cloud-auto"), btnAcct = $("btn-account");
+    cloudApiRef = api;
+    if (!tog && !btnAcct) return;
     if (!api) {                              // 独立打开：本页不适用云同步入口
-      if (btnQuick) btnQuick.hidden = true;
+      if (tog) tog.hidden = true;
       if (btnAcct) btnAcct.hidden = true;
       return;
     }
-    if (btnQuick) btnQuick.hidden = false;
+    if (tog) tog.hidden = false;
     if (btnAcct) btnAcct.hidden = false;
+    paintCloudUI();
+    window.addEventListener("focus", paintCloudUI);
+    document.addEventListener("visibilitychange", paintCloudUI);
 
-    function paint() {
-      var st = cloudStatus(api);
-      var on = !!(st && st.loggedIn);
-      if (btnQuick) {
-        btnQuick.dataset.state = on ? "in" : "out";
-        btnQuick.title = on
-          ? "把本页的角色练度 + 整套装备词条一键同步到云端" + (st.email ? "（" + st.email + "）" : "")
-          : "尚未登录：点击后打开账号面板，登录后可一键同步";
-      }
-      if (btnAcct) btnAcct.title = on ? "打开账号云同步面板（可下载覆盖 / 查看云端时间）" : "登录并管理云端数据";
-    }
-
-    paint();
-    window.addEventListener("focus", paint);
-    document.addEventListener("visibilitychange", paint);
-
-    if (btnQuick) btnQuick.addEventListener("click", function () {
-      var st = cloudStatus(api);
-      if (!st || !st.configured) { setNotice("云同步暂不可用（组件未就绪或网络受限）", "error"); return; }
-      if (!st.loggedIn) {
-        api.open(CLOUD_FID);                 // 打开面板走登录；面板会高亮本功能卡片
-        setNotice("请先登录账号，登录后点「上传本地」即可同步", "");
-        return;
-      }
-      setNotice("正在同步到云端…", "");
-      // 先把「当前页面所见」静默落盘再上传：本页若从未交互过，localStorage 里还没有存档，
-      // 直接上传会得到「本地无数据」。这样点一下 = 同步当前状态，不用先手动点「保存」。
-      try { save(true); } catch (e) { /* 落盘失败也让上传按现有存档走，由 reason=empty 兜底 */ }
-      var p = api.quickUpload(CLOUD_FID);
-      if (p && typeof p.then === "function") {
-        p.then(function (r) {
-          paint();
-          if (r && r.ok) setNotice("已同步到云端 · " + new Date().toLocaleTimeString("zh-CN", { hour12: false }), "ok");
-          else if (r && (r.reason === "nologin" || r.reason === "noconfig" || r.reason === "noclient")) setNotice("未同步：请在弹出的账号面板中完成登录后重试", "error");
-          else if (r && r.reason === "empty") setNotice("本机暂无数据可同步（存档为空）", "error");
-          else setNotice("同步失败：" + ((r && r.message) || "未知错误"), "error");
-        });
-      }
+    if (chk) chk.addEventListener("change", function () {
+      setCloudAuto(chk.checked);
+      paintCloudUI();
+      setNotice(chk.checked ? "已开启云同步：点「保存」时会同时上传到云端" : "已关闭云同步：保存只留在本机浏览器", "");
     });
-
     if (btnAcct) btnAcct.addEventListener("click", function () { api.open(CLOUD_FID); });
   }
 
@@ -1349,7 +1635,7 @@
     panelFields().forEach(function (p) { $(p[1]).addEventListener("input", compute); });
 
     // 练度模式联动
-    ["l-level", "l-attr", "l-cubelv", "l-colllv", "l-rp", "l-rc", "l-rk", "l-cube", "l-coll", "l-bt", "l-corpbonus"].forEach(function (id) {
+    ["l-level", "l-attr", "l-cubelv", "l-colllv", "l-rp", "l-rc", "l-rk", "l-cube", "l-coll", "l-bt"].forEach(function (id) {
       $(id).addEventListener("input", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); else { renderTiers(); compute(); } save(true); });
       $(id).addEventListener("change", function () { collectLoadout(); if (state.loadout.auto) derivePanel(); else { renderTiers(); compute(); } save(true); });
     });
@@ -1407,7 +1693,8 @@
       renderGear(); derivePanel(); renderGearState(); save(true);
       setNotice("已用洗练结果覆盖「当前装备」——练度 + 整套装备（等级 + 词条）已一并保存", "ok");
     });
-    $("btn-save").addEventListener("click", function () { save(false); });
+    /* 保存 = 本地落盘（+ 云开关打开且已登录时顺手上传）。同厂加成已移除，不再参与联动 */
+    $("btn-save").addEventListener("click", function () { save(false); cloudPushAfterSave(); });
     $("btn-load").addEventListener("click", function () { load(); renderAll(); setMode(state.mode || "loadout"); setNotice("已读取本机保存", "ok"); });
     $("btn-export").addEventListener("click", exportJson);
     $("btn-import").addEventListener("click", function () { $("file-import").click(); });
@@ -1440,6 +1727,7 @@
       + "</code> · ConfigGameTable <code>" + esc((s.ConfigGameTable || "").slice(0, 8)) + "</code>";
 
     initCloudSync();
+    pkBind();     // Pinkuro 同步：Key 存取 / 拉取 / 粘贴导入 / 研究联动
   }
   document.addEventListener("DOMContentLoaded", init);
 })();

@@ -54,6 +54,39 @@ code{background:rgba(29,158,117,.09);color:var(--accent-dark);padding:1px 5px;bo
 .btn.cloud[data-state="out"]{background:#fff;color:#0f6e56;border-color:rgba(29,158,117,.5)}
 .btn.cloud[data-state="out"]:hover{background:#f0faf6;border-color:#1d9e75}
 
+/* ---------- 顶栏 Pinkuro Key（2026-10-28 从左侧面板上移，与「账号同步」同排） ---------- */
+.pk-bar{display:flex;align-items:center;gap:5px;padding:3px 5px 3px 9px;
+  border:1px solid var(--line);border-radius:var(--r-md);background:#fff}
+.pk-bar:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.pk-bar-label{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.3px}
+.pk-bar input{width:168px;height:26px;padding:0;border:0;background:transparent;outline:none;
+  font:12.5px/1 var(--font);letter-spacing:.4px;text-align:left;color:var(--ink)}
+.pk-bar input::placeholder{letter-spacing:0;color:#9aa8a2}
+.pk-bar .btn{min-height:27px;padding:0 9px;font-size:12px}
+.pk-bar .btn.icon{min-width:27px;padding:0 5px}
+.tb-sep{width:1px;height:22px;background:var(--line)}
+
+/* ---------- 「保存」右侧的云同步开关（对齐资源规划计算器的圆形云图标） ----------
+   开关只决定「点保存时要不要顺手上传云端」，本地保存永远都做。状态写在 [data-on] 上。 */
+.cloud-tog{position:relative;display:flex;align-items:center;justify-content:center;
+  width:33px;height:33px;margin:0;border:1px solid var(--line);border-radius:50%;
+  background:#fff;color:var(--muted);cursor:pointer;user-select:none;
+  transition:color .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
+.cloud-tog:hover{color:var(--accent-dark);border-color:rgba(29,158,117,.5);background:#f4faf7}
+.cloud-tog[data-on="1"]{color:var(--accent);border-color:rgba(29,158,117,.45);background:#eaf6f1}
+.cloud-tog[data-on="1"]:hover{box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+.cloud-tog[data-on="0"] .cloud-ico{opacity:.6}
+.cloud-tog input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.cloud-ico{width:19px;height:19px;display:block}
+/* 文案不常驻（太长抢视线），hover / 键盘聚焦时在图标下方浮出 */
+.cloud-tip{position:absolute;right:0;top:calc(100% + 8px);transform:translate(0,-4px);
+  padding:6px 10px;border-radius:8px;white-space:nowrap;background:#22322c;color:#fff;
+  font-size:12px;line-height:1.35;box-shadow:0 6px 16px rgba(0,0,0,.2);
+  opacity:0;pointer-events:none;transition:opacity .16s ease,transform .16s ease;z-index:20}
+.cloud-tip::after{content:"";position:absolute;right:13px;bottom:100%;
+  border:5px solid transparent;border-bottom-color:#22322c}
+.cloud-tog:hover .cloud-tip,.cloud-tog:focus-within .cloud-tip{opacity:1;transform:translate(0,0)}
+
 .notice{min-height:20px;margin:0 4px 10px;font-size:12.5px;font-weight:600;color:var(--muted)}
 .notice.error{color:var(--down)} .notice.ok{color:var(--accent-dark)}
 
@@ -285,6 +318,19 @@ input[readonly]{-moz-appearance:textfield;appearance:textfield}
 .cell.locked>span::after{content:"锁";margin-left:5px;font-size:9.5px;font-weight:700;color:#9aa8a2;
   border:1px solid rgba(154,168,162,.5);border-radius:3px;padding:0 3px;vertical-align:1px}
 
+/* ---------- Pinkuro 练度同步（2026-10-28） ---------- */
+#sync-box .key-row{display:flex;gap:6px;margin:5px 0 8px}
+#sync-box .key-row input{height:33px;font-size:12.5px;text-align:left;letter-spacing:.4px}
+.btn.icon{min-width:38px;padding:0 8px;font-size:14px;line-height:1}
+#sync-box .hint{font-size:11.5px;line-height:1.62}
+#pk-status{font-weight:600;color:var(--muted);word-break:break-all}
+#pk-status.ok{color:var(--accent-dark)}
+#pk-status.error{color:var(--down)}
+#pk-status.warn{color:var(--warn)}
+.pk-json{width:100%;margin:6px 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:var(--r-sm);
+  font:12px/1.5 ui-monospace,Consolas,monospace;color:var(--ink);background:#fff;resize:vertical;outline:none}
+.pk-json:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
 @media(max-width:1320px){
   .layout{grid-template-columns:1fr 1fr}
   .rail{grid-column:1/span 2}
@@ -298,4 +344,7 @@ input[readonly]{-moz-appearance:textfield;appearance:textfield}
   .layout{grid-template-columns:1fr}
   .center,.rail{grid-column:1}
   .toolbar{align-items:flex-start}
+  /* 顶栏换行后 Key 组独占一行、输入框吃掉剩余宽度 */
+  .pk-bar{flex:1 1 100%}
+  .pk-bar input{flex:1 1 auto;width:auto}
 }

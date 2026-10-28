@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["hkg1"],
+  "functions": {
+    "api/relay.js": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/relay",
+      "headers": [{ "key": "X-Relay", "value": "nikke-pinkuro" }]
+    }
+  ]
+}

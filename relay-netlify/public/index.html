@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NIKKE 练度中转 · 运行中</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f1115;color:#e6e8ee;
+       font:15px/1.7 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  .card{max-width:560px;padding:36px 40px;border:1px solid #242833;border-radius:16px;background:#151922}
+  h1{margin:0 0 6px;font-size:19px;letter-spacing:.3px}
+  .ok{color:#3ddc84;font-weight:600}
+  p{margin:10px 0;color:#a8afc0}
+  code{background:#0d1017;border:1px solid #242833;border-radius:6px;padding:2px 7px;color:#7fd1ff;font-size:13px}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>NIKKE 练度中转 <span class="ok">运行中</span></h1>
+    <p>这是给战力计算器用的转发服务，本身没有界面。</p>
+    <p>接口：<code>/api/relay</code>（GET，需请求头 <code>X-API-KEY</code>）</p>
+    <p>只做三件事：放行指定来源的跨域、替你带上 Key 去请求上游、把结果原样送回。Key 不记录、不落盘。</p>
+  </div>
+</body>
+</html>
