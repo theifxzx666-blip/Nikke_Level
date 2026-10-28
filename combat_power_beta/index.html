@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NIKKE 战力计算器</title>
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261028f">
+<link rel="stylesheet" href="css/style.css?v=20261028g">
 </head>
 <body>
 <main class="page">
@@ -21,7 +21,7 @@
       <!-- 阿卡 Key：账号级凭据，2026-10-28 从左侧面板上移到「账号同步」这一排。
            Key 只进 localStorage 独立键，不进 state ⇒ 不进「导出 JSON」、不进云同步。 -->
       <div class="pk-bar" id="pk-bar" role="group" aria-label="导入阿卡数据">
-        <span class="pk-bar-label">阿卡</span>
+        <span class="pk-bar-label">阿卡Key</span>
         <input id="pk-key" type="password" placeholder="粘贴 Key" autocomplete="off" spellcheck="false">
         <button id="btn-key-eye" class="btn icon" type="button" title="显示 / 隐藏 Key">👁</button>
         <button id="btn-key-save" class="btn icon" type="button" title="保存 Key 到本机浏览器">✓</button>
@@ -174,11 +174,8 @@
     <div class="center center-stack">
       <!-- ① 当前装备：选好角色后先录入并保存，它是洗练的基准 -->
       <section class="panel">
-        <div class="panel-head"><h2>① 当前装备（装备等级 + 词条）</h2><span class="tag" id="gear-save-tag">未录入</span></div>
+        <div class="panel-head"><h2>① 当前装备（装备等级 + 词条）<span class="tip-host"><button type="button" class="info-tip" data-tip="tip-gear" aria-label="查看说明" aria-expanded="false"></button></span></h2><span class="tag" id="gear-save-tag">未录入</span></div>
         <div class="panel-body">
-          <p class="gear-tip">先选好角色，再把该角色在游戏里的<b>整套装备</b>录入这里并<b>保存</b>：每个部位先填<b>装备等级</b>（强化 0 ~ 5，每级 +10% 装备基础属性），
-            再填 3 条<b>装备词条</b>（T12~14 蓝字、T15 黑底白字，与游戏内一致）。同一件装备<b>不会出现重复词条</b>，被本部位其它行选走的类型会自动置灰。
-            这份记录是下方「装备词条洗练」的<b>基准</b>，且<b>按角色分别记录</b>。</p>
           <div class="gear-ops">
             <button id="btn-save-gear" class="btn primary" type="button">保存当前装备</button>
             <button id="btn-clear-gear" class="btn" type="button">清空</button>
@@ -228,48 +225,51 @@
         </div>
       </section>
 
-      <!-- 洗练模拟（按部位）：选定一件装备，模拟其词条重洗后的战力分布 + 定制模组消耗 -->
+      <!-- 洗练模拟（按部位）：选定一件装备 + 一组目标词条，算「洗一次会变成什么样」与「洗到目标要多少石头」。
+           概率模型对齐 ChrisLu7899/NIKKE-Workshop（见 js/reroll.js 头部注释）。 -->
       <section class="panel">
-        <div class="panel-head"><h2>洗练模拟（按部位）</h2><span class="tag">蒙特卡洛</span></div>
+        <div class="panel-head"><h2>洗练模拟（按部位）<span class="tip-host"><button type="button" class="info-tip" data-tip="tip-sim" aria-label="查看说明" aria-expanded="false"></button></span></h2><span class="tag">概率模型</span></div>
         <div class="panel-body sim-body">
           <div class="grid2">
             <label class="cell"><span>部位</span><select id="m-slot"></select></label>
-            <label class="cell"><span>操作类型</span><select id="m-mode">
-              <option value="change">换词条（种类+数值）</option>
-              <option value="value">只洗数值（种类不变）</option>
+            <label class="cell"><span>操作</span><select id="m-mode">
+              <option value="auto">自动：先洗词条→再洗数值</option>
+              <option value="change">只洗词条（变更效果）</option>
+              <option value="value">只洗数值（重置属性）</option>
             </select></label>
           </div>
-          <p class="hint tight">每行 = 该部位的一条词条。勾选 = <b>参与重洗</b>，并设定<b>目标词条</b>与<b>目标阶数</b>（达成 = 类型命中且阶数 ≥ 目标）；
-            不勾选 = <b>锁定保留</b>现状。锁定要额外付费（见下）。</p>
+          <div class="grid2">
+            <label class="cell"><span>服务器规则</span><select id="m-rule">
+              <option value="cn">国服 · 旧规则</option>
+              <option value="global">国际服 · 新规则</option>
+            </select></label>
+            <label class="cell"><span>模拟次数</span><input id="m-rolls" type="number" min="200" max="200000" step="100" value="4000"></label>
+          </div>
+          <p class="hint tight">给这个部位设 <b>1 ~ 3 条目标词条</b>（类型 + 最低档数）。已达标的那几条会自动锁住不动，
+            其余继续洗；洗出一条就锁一条是最省的打法。</p>
           <div id="m-target" class="targets"></div>
-          <label class="cell"><span>模拟次数</span><input id="m-rolls" type="number" min="100" max="200000" step="100" value="5000"></label>
 
           <div class="card sim-out" style="margin-top:12px">
-            <div class="card-h">洗后战力分布</div>
+            <div class="card-h">洗一次会变成什么样</div>
             <div class="kv"><span>当前整套战力</span><b id="m-cur">--</b></div>
             <div class="kv"><span>该部位现状</span><b id="m-slotcur">--</b></div>
             <div class="kv"><span>洗后最低 / 最高</span><b id="m-minmax">--</b></div>
             <div class="kv"><span>洗后 P10 / P50 / P90</span><b id="m-pct">--</b></div>
             <div class="kv"><span>洗后平均战力</span><b id="m-mean">--</b></div>
-            <div class="kv delta"><span>平均提升</span><b id="m-vs">--</b></div>
-            <div class="kv delta"><span>提升 P10 / P50 / P90</span><b id="m-pctgain">--</b></div>
+            <div class="kv delta"><span>平均变化</span><b id="m-vs">--</b></div>
+            <div class="kv delta"><span>变化 P10 / P50 / P90</span><b id="m-pctgain">--</b></div>
             <div id="m-hist" class="hist"></div>
           </div>
 
           <div class="card cost">
-            <div class="card-h">定制模组消耗预估</div>
-            <div class="kv"><span>每次洗练消耗</span><b id="c-per">--</b></div>
-            <div class="kv"><span>上锁一次性成本</span><b id="c-lock">--</b></div>
-            <div class="kv"><span>达成概率</span><b id="c-p">--</b></div>
-            <div class="kv"><span>期望洗练次数</span><b id="c-rolls">--</b></div>
+            <div class="card-h">洗到目标要多少石头</div>
+            <div class="kv"><span>目标 / 已达成</span><b id="c-goal">--</b></div>
+            <div class="kv"><span>每次重洗消耗</span><b id="c-per">--</b></div>
+            <div class="kv"><span>洗一次就命中的概率</span><b id="c-p">--</b></div>
+            <div class="kv"><span>路线拆分</span><b id="c-route">--</b></div>
             <div class="kv big"><span>期望总消耗</span><b id="c-exp">--</b></div>
-            <p class="hint">游戏规则（nikke.gg 口径）：<b>重洗一次 = 锁定条数 + 1 颗</b>；<b>「点锁定」本身也要付</b>「锁到 N 条 = N+1 颗」，
-              且<b>解锁不退</b>。故总消耗 = <b>上锁一次性 + 每次重洗 × 期望次数</b>。
-              达成 = 参与重洗的词条行<b>全部</b>命中目标类型且阶数 ≥ 目标阶数。</p>
+            <p class="hint" id="c-note">…</p>
           </div>
-
-          <p class="hint">类型概率按实测权重（优越/攻击/暴伤/防御 10，其余 12）；阶数按「1~5 阶 60% / 6~10 阶 35% / 11~15 阶 5%」分段，<b>段内暂按平均</b>占位。
-            同一输入必得同一结果（确定性种子）。<b>概率为社区实测口径，非官方公布值</b>，用于比较相对高低与消耗量级。</p>
         </div>
       </section>
     </div>
@@ -291,10 +291,11 @@
   </footer>
 </main>
 
-<script src="data/data.bundle.js?v=20261028f"></script>
-<script src="js/core.js?v=20261028f"></script>
-<script src="js/panel.js?v=20261028f"></script>
-<script src="js/pinkuro.js?v=20261028f"></script>
-<script src="js/app.js?v=20261028f"></script>
+<script src="data/data.bundle.js?v=20261028g"></script>
+<script src="js/core.js?v=20261028g"></script>
+<script src="js/panel.js?v=20261028g"></script>
+<script src="js/pinkuro.js?v=20261028g"></script>
+<script src="js/reroll.js?v=20261028g"></script>
+<script src="js/app.js?v=20261028g"></script>
 </body>
 </html>

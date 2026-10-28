@@ -64,7 +64,9 @@ code{background:rgba(29,158,117,.09);color:var(--accent-dark);padding:1px 5px;bo
 .pk-bar input::placeholder{letter-spacing:0;color:#9aa8a2}
 .pk-bar .btn{min-height:27px;padding:0 9px;font-size:12px}
 .pk-bar .btn.icon{min-width:27px;padding:0 5px}
-.tb-sep{width:1px;height:22px;background:var(--line)}
+/* 顶栏分隔条：把「阿卡Key」这组导入凭据与右侧的存档 / 账号 / 导入导出分开一点 */
+.tb-sep{width:2px;height:28px;margin:0 13px;border-radius:1px;
+  background:linear-gradient(180deg,rgba(34,48,43,0),#c3cec9 22%,#c3cec9 78%,rgba(34,48,43,0));flex:0 0 auto}
 
 /* ---------- 「保存」右侧的云同步开关（对齐资源规划计算器的圆形云图标） ----------
    开关只决定「点保存时要不要顺手上传云端」，本地保存永远都做。状态写在 [data-on] 上。 */
@@ -95,7 +97,7 @@ code{background:rgba(29,158,117,.09);color:var(--accent-dark);padding:1px 5px;bo
 .panel{background:var(--panel);border:1px solid rgba(255,255,255,.9);border-radius:var(--r-lg);
   box-shadow:0 6px 22px rgba(15,110,86,.07);backdrop-filter:blur(14px);overflow:hidden}
 .panel+.panel{margin-top:14px}
-.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+.panel-head{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:11px 15px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.55)}
 .panel-body{padding:13px 15px}
 .tag{color:var(--accent-dark);background:var(--accent-soft);padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap}
@@ -349,7 +351,7 @@ input[readonly]{-moz-appearance:textfield;appearance:textfield}
 .info-tip:hover,.info-tip:focus-visible{color:var(--accent-dark);border-color:var(--accent);background:#f0faf6;outline:none}
 .info-tip[aria-expanded="true"]{color:#fff;border-color:var(--accent);background:var(--accent)}
 .info-tip svg{width:11px;height:11px;display:block}
-.info-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:60;
+.info-panel{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:60;max-width:360px;
   background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:9px;
   padding:9px 10px;box-shadow:0 12px 28px rgba(15,110,86,.18);
   font-size:11.5px;line-height:1.7;color:#43564f;text-align:left;white-space:normal;font-weight:400}

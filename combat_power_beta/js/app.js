@@ -5,6 +5,7 @@
   var C = window.NikkePowerCore;
   var P = window.NikkePanel;
   var PK = window.NikkePinkuro;
+  var R = window.NikkeReroll;   // 洗词条概率 / 消耗模型（js/reroll.js）
   var KEY = "nikke_power_calc_v2";
   /* Pinkuro Key 单独一个 localStorage 键：**不放进 state**，因此不会出现在「导出 JSON」和云同步里 */
   var PKEY = "nikke_pinkuro_key";
@@ -111,14 +112,16 @@
       scope: "all",         // 角色检索范围：all | fav | recorded
       panel: { attack: "", hp: "", defense: "", critRate: 15, critDamage: 150, extraBP: "", skill1: 10, skill2: 10, burst: 10 },
       gear: blankGear(),
-      /* 洗练模拟（按部位）：只重洗「该部位被勾选的词条位」，其余词条保持现状。
-         active[部位] = 该部位 3 条词条的「参与重洗」开关（1 = 参与，0 = 锁定保留）。 */
+      /* 洗练模拟（按部位 · 目标驱动）：给某一件装备设 1~3 条目标词条，算「洗到目标要多少石头」。
+         mode = auto（先洗词条出名 → 再洗数值拉档位，实际最省）｜change（只洗词条）｜value（只洗数值）；
+         rule = cn（国服旧规则）｜global（国际服新规则，排除与当前相同的档位后重抽）；
+         target[部位][行] = { key, level }，level 是「最低档数」（≥ 口径）。 */
       sim: {
         slot: "head",
-        mode: "change",   // change = 换词条（Change Effects）｜value = 只洗数值（Reset Attributes）
-        active: { head: [1, 1, 1], body: [1, 1, 1], arms: [1, 1, 1], legs: [1, 1, 1] },
-        rolls: 5000,
-        target: {}        // target[部位][行] = { key, level, autoKey, autoLevel }
+        mode: "auto",
+        rule: "cn",
+        rolls: 4000,
+        target: {}
       }
     };
   }
@@ -146,17 +149,12 @@
       }
       if (raw.sim) {
         if (C.SLOTS.indexOf(raw.sim.slot) >= 0) d.sim.slot = raw.sim.slot;   // 旧存档无 slot → 默认 head
-        d.sim.rolls = Math.max(100, Math.min(200000, Math.trunc(num(raw.sim.rolls, d.sim.rolls))));
-        if (raw.sim.mode === "value") d.sim.mode = "value";
-        if (raw.sim.active && typeof raw.sim.active === "object") {
-          C.SLOTS.forEach(function (s) {
-            var a = raw.sim.active[s];
-            if (Array.isArray(a) && a.length === 3) {
-              var norm = a.map(function (v) { return v ? 1 : 0; });
-              d.sim.active[s] = norm.some(Boolean) ? norm : [1, 1, 1];
-            }
-          });
-        }
+        d.sim.rolls = Math.max(200, Math.min(200000, Math.trunc(num(raw.sim.rolls, d.sim.rolls))));
+        // mode 取值集变了（旧版只有 change / value，勾选锁定那套已废弃）→ 只认白名单
+        if (raw.sim.mode === "change" || raw.sim.mode === "value") d.sim.mode = raw.sim.mode;
+        if (raw.sim.rule === "global") d.sim.rule = "global";
+        /* 旧目标结构带 autoKey / autoLevel（跟随「当前装备」），新版只留 key + level；
+           顺手丢掉已经不存在的 active（勾选锁定）字段。 */
         if (raw.sim.target && typeof raw.sim.target === "object") {
           C.SLOTS.forEach(function (s) {
             var arr = raw.sim.target[s];
@@ -166,8 +164,7 @@
               var t = arr[i] || {};
               out.push({
                 key: String(t.key || ""),
-                level: Math.max(0, Math.min(15, Math.trunc(num(t.level)))),
-                autoKey: t.autoKey !== false, autoLevel: t.autoLevel !== false
+                level: Math.max(0, Math.min(15, Math.trunc(num(t.level))))
               });
             }
             d.sim.target[s] = out;
@@ -948,8 +945,8 @@
       $("m-cur").textContent = $("m-slotcur").textContent = $("m-minmax").textContent = "--";
       $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = $("m-pctgain").textContent = "--";
       $("m-hist").innerHTML = "";
-      $("c-per").textContent = $("c-lock").textContent = $("c-p").textContent = "--";
-      $("c-rolls").textContent = $("c-exp").textContent = "--";
+      $("c-goal").textContent = $("c-per").textContent = $("c-p").textContent = "--";
+      $("c-route").textContent = $("c-exp").textContent = "--";
       setNotice("等待面板数据：请先在左侧选好角色与练度参数（面板三围会自动推导）", "");
       return;
     }
@@ -1020,19 +1017,24 @@
   }
 
   /* ---------------- 洗练模拟（按部位 · 目标驱动） ----------------
-   * 对照游戏实际：洗练是针对「一件装备」做的 —— 可以锁住满意的词条、只重洗其余。
-   * 交互顺序与游戏一致：① 选部位 → ② 选操作类型 → ③ 给参与重洗的行设定「目标词条 + 目标阶数」
-   *                      → ④ 输出「达成概率 / 期望次数 / 期望总消耗（含上锁一次性成本）」。
-   * 达成口径（Q2 裁决）：目标行的类型命中 且 阶数 ≥ 目标阶数（洗得更高也算成）。 */
+   * 概率与消耗口径全部交给 js/reroll.js（对齐 ChrisLu7899/NIKKE-Workshop），
+   * 这里只做三件事：收输入 → 调求解 → 把结果铺到 DOM。
+   *
+   * 与旧实现的差别，正是「反直觉」的根因：
+   *   旧：期望总消耗 = 上锁一次性 + 每次重洗 × (1 / 一次性全命中率)
+   *       —— 口径是「所有目标必须同一把同时命中」，三目标会算出几百颗，跟实际手感差一个量级。
+   *   新：洗出一条就锁一条、逐条推进（子集 DP，精确值），三目标通常只有几十颗。
+   *       同时区分国服旧规则（可能抽出与当前完全相同的档位）与国际服新规则（排除原档位后重新归一）。
+   */
+  var SIM_MIN_TIER_DEFAULT = 10;   // 新设一条目标时，最低档数默认按 T10（通用毕业线）
   function renderSimSlotOptions() {
     $("m-slot").innerHTML = C.SLOTS.map(function (s) {
       return '<option value="' + s + '"' + (s === state.sim.slot ? " selected" : "") + ">" + SLOT_LABEL[s] + "</option>";
     }).join("");
   }
-  /** 该部位 3 行的目标。
-   *  ⚠ **必须原地修改并返回「同一个数组引用」** —— 目标行的下拉 change 闭包持有这个引用，
-   *  若每次都新建数组，闭包写进的是旧数组、`renderSim()` 读的是新数组，用户设定会被静默丢弃。
-   *  autoKey / autoLevel 为 true 时该字段跟随「当前装备」，用户手动改过就置 false 保留其设定。 */
+  /** 该部位的目标（最多 3 条：类型 + 最低档数）。
+   *  ⚠ **必须原地维护并返回同一个数组引用** —— 渲染出来的下拉闭包持有它，
+   *  若每次都新建数组，闭包写进的是旧数组、`renderSim()` 读的是新数组，用户设定会被静默丢弃。 */
   function ensureTargets(slot) {
     if (!state.sim.target || typeof state.sim.target !== "object") state.sim.target = {};
     var arr = state.sim.target[slot];
@@ -1041,19 +1043,72 @@
     for (var i = 0; i < 3; i++) {
       if (!arr[i] || typeof arr[i] !== "object") arr[i] = {};
       var t = arr[i];
-      if (t.autoKey === undefined) t.autoKey = true;
-      if (t.autoLevel === undefined) t.autoLevel = true;
       t.key = String(t.key || "");
       t.level = Math.max(0, Math.min(15, Math.trunc(num(t.level))));
-      var b = state.gear[slot].before[i] || { key: "", level: 0 };
-      if (t.autoKey) t.key = b.key || "";
-      if (t.autoLevel) t.level = t.key ? Math.max(0, Math.min(15, Math.trunc(num(b.level)))) : 0;
-      else if (!t.key) t.level = 0;
+      if (!t.key) t.level = 0;
+      else if (!(t.level > 0)) t.level = SIM_MIN_TIER_DEFAULT;
     }
     return arr;
   }
-  /* 洗练概率模型（社区实测口径，非官方）：类型权重 优越/攻击/暴伤/防御 = 10，其余 = 12；
-     阶数按段概率 60% / 35% / 5%，段内暂按平均占位（C.LEVEL_TABLE_AVG）。 */
+  /** 目标类型下拉：空 = 不设；同一部位其它目标已选走的类型置灰（同一件装备不会出现重复词条） */
+  function targetTypeOptions(selected, exclude) {
+    var ex = {};
+    (exclude || []).forEach(function (k) { if (k && k !== selected) ex[k] = 1; });
+    var h = '<option value="">— 不设 —</option>';
+    D.overload.forEach(function (g) {
+      h += '<option value="' + esc(g.key) + '"' + (g.key === selected ? " selected" : "") + (ex[g.key] ? " disabled" : "") + ">" + esc(g.name) + "</option>";
+    });
+    return h;
+  }
+  /** 最低档数下拉（1 ~ 15，「≥」口径：洗到更高档也算达成） */
+  function minTierOptions(key, selected) {
+    var sel = Math.max(1, Math.min(15, Math.trunc(num(selected, SIM_MIN_TIER_DEFAULT))));
+    var h = "";
+    for (var lv = 1; lv <= 15; lv++) {
+      var vt = key ? C.statValueText(D, key, lv) : "";
+      var tc = tierCls(lv);
+      h += '<option value="' + lv + '"' + (tc ? ' class="' + tc + '"' : "") + (lv === sel ? " selected" : "") + ">≥ " + lv + " 阶" + (vt ? " · " + esc(vt) : "") + "</option>";
+    }
+    return h;
+  }
+  /** 3 行「目标词条 + 最低档数」 */
+  function renderSimTargets() {
+    var el = $("m-target");
+    if (!el) return;
+    var slot = state.sim.slot;
+    var tgt = ensureTargets(slot);
+    var html = "";
+    for (var i = 0; i < 3; i++) {
+      var sib = [];
+      for (var j = 0; j < 3; j++) if (j !== i && tgt[j].key) sib.push(tgt[j].key);
+      html += '<div class="trow' + (tgt[i].key ? " on" : "") + '" title="第 ' + (i + 1) + ' 条目标">'
+        + '<label class="tchk"><em>' + (i + 1) + "</em></label>"
+        + '<select class="ty" data-idx="' + i + '" aria-label="目标词条 ' + (i + 1) + '">' + targetTypeOptions(tgt[i].key, sib) + "</select>"
+        + '<select class="lv ' + tierCls(tgt[i].level) + '" data-lv="' + i + '" aria-label="最低档数 ' + (i + 1) + '"'
+        + (tgt[i].key ? "" : " disabled") + ">" + minTierOptions(tgt[i].key, tgt[i].level) + "</select>"
+        + "</div>";
+    }
+    el.innerHTML = html;
+    el.querySelectorAll("select.ty").forEach(function (s) {
+      s.addEventListener("change", function () {
+        var i = Number(s.dataset.idx);
+        tgt[i].key = s.value;
+        tgt[i].level = s.value ? Math.max(1, tgt[i].level || SIM_MIN_TIER_DEFAULT) : 0;
+        renderSimTargets();                          // 兄弟行的置灰状态要跟着变
+        renderSim(profile()); save(true);
+      });
+    });
+    el.querySelectorAll("select.lv").forEach(function (s) {
+      s.addEventListener("change", function () {
+        var i = Number(s.dataset.lv);
+        tgt[i].level = Math.max(1, Math.min(15, Math.trunc(num(s.value, 1))));
+        s.className = "lv " + tierCls(tgt[i].level);
+        renderSim(profile()); save(true);
+      });
+    });
+  }
+  /* 洗练权重（社区实测口径，非官方）：优越/攻击/暴伤/防御 = 10，其余 = 12。
+     reroll.js 不硬编码词条 key，权重由这里从静态表映射后传进去。 */
   var TYPE_WNAMES = { "优越代码伤害": 10, "命中率": 12, "最大装弹数": 12, "攻击力": 10, "蓄力伤害": 12,
     "蓄力时间": 12, "暴击率": 12, "暴击伤害": 10, "防御力": 10 };
   function typeWeights() {
@@ -1061,166 +1116,146 @@
     D.overload.forEach(function (g) { o[g.key] = TYPE_WNAMES[g.name] !== undefined ? TYPE_WNAMES[g.name] : 12; });
     return o;
   }
-  /** 稳定哈希（FNV-1a 32 位）→ 模拟种子：同输入必得同输出，修掉「改任意词条分布就整体跳变」 */
+  function simModel() {
+    return R.makeModel(D.overload.map(function (g) { return g.key; }), typeWeights());
+  }
+  /** 稳定哈希（FNV-1a 32 位）→ 模拟种子：同输入必得同输出，改其它地方时抽样序列不跳变 */
   function hashStr(s) {
     var h = 2166136261;
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
     return h >>> 0;
   }
-  /** 3 行「目标词条 + 目标阶数」，带「参与重洗」勾选（不勾 = 锁定保留现状） */
-  function renderSimTargets() {
-    var el = $("m-target");
-    if (!el) return;
-    var slot = state.sim.slot;
-    var act = (state.sim.active[slot] || [1, 1, 1]).slice(0, 3);
-    var tgt = ensureTargets(slot);
-    var isVal = state.sim.mode === "value";
-    var html = "";
-    for (var i = 0; i < 3; i++) {
-      var b = state.gear[slot].before[i] || { key: "", level: 0 };
-      var opts = '<option value="">空（无词条）</option>';
-      D.overload.forEach(function (g) {
-        opts += '<option value="' + esc(g.key) + '"' + (g.key === tgt[i].key ? " selected" : "") + ">" + esc(g.name) + "</option>";
-      });
-      html += '<div class="trow' + (act[i] ? " on" : "") + '" title="该部位现状：' + esc(curRefText(b)) + '">'
-        + '<label class="tchk" title="勾选 = 参与重洗；不勾 = 锁定保留现状（锁定要额外付费）">'
-        + '<input type="checkbox" data-act="' + i + '"' + (act[i] ? " checked" : "") + "><em>" + (i + 1) + "</em></label>"
-        + '<select class="ty" data-tgt="ty" data-idx="' + i + '" aria-label="目标词条 ' + (i + 1) + '"'
-        + (act[i] && !isVal ? "" : " disabled") + ">" + opts + "</select>"
-        + '<select class="lv ' + tierCls(tgt[i].level) + '" data-tgt="lv" data-idx="' + i + '" aria-label="目标阶数 ' + (i + 1) + '"'
-        + (act[i] ? "" : " disabled") + ">" + levelOptions(tgt[i].key, tgt[i].level) + "</select>"
-        + "</div>";
-    }
-    el.innerHTML = html;
-
-    function setRowEnabled(i, on) {
-      var row = el.querySelectorAll(".trow")[i];
-      if (!row) return;
-      row.className = "trow" + (on ? " on" : "");
-      row.querySelectorAll("select").forEach(function (s) {
-        s.disabled = !on || (s.classList.contains("ty") && state.sim.mode === "value");
-      });
-    }
-    el.querySelectorAll("input[data-act]").forEach(function (cb) {
-      cb.addEventListener("change", function () {
-        var i = Number(cb.dataset.act);
-        if (!state.sim.active[slot]) state.sim.active[slot] = [1, 1, 1];
-        state.sim.active[slot][i] = cb.checked ? 1 : 0;
-        if (!state.sim.active[slot].some(Boolean)) {          // 不允许一条都不洗
-          cb.checked = true; state.sim.active[slot][i] = 1;
-          setNotice("至少要留 1 条词条参与重洗（不参与的行会被锁定，需要额外付费）", "error");
-        }
-        setRowEnabled(i, cb.checked);
-        renderSim(profile()); save(true);
-      });
-    });
-    el.querySelectorAll('select[data-tgt="ty"]').forEach(function (s) {
-      s.addEventListener("change", function () {
-        var i = Number(s.dataset.idx);
-        tgt[i].key = s.value; tgt[i].autoKey = false;            // 手动设过 → 不再跟随「当前装备」
-        if (!s.value) { tgt[i].level = 0; tgt[i].autoLevel = true; }
-        var lv = el.querySelector('select[data-tgt="lv"][data-idx="' + i + '"]');
-        lv.innerHTML = levelOptions(tgt[i].key, tgt[i].level);   // 类型换了 → 阶数文本的数值要跟着换
-        lv.className = "lv " + tierCls(tgt[i].level);
-        lv.disabled = !(state.sim.active[slot] || [1, 1, 1])[i];
-        renderSim(profile()); save(true);
-      });
-    });
-    el.querySelectorAll('select[data-tgt="lv"]').forEach(function (s) {
-      s.addEventListener("change", function () {
-        var i = Number(s.dataset.idx);
-        tgt[i].level = Math.max(0, Math.min(15, Math.trunc(num(s.value))));
-        tgt[i].autoLevel = false;                                // 手动设过 → 不再跟随「当前装备」
-        s.className = "lv " + tierCls(tgt[i].level);
-        renderSim(profile()); save(true);
-      });
-    });
+  /** mulberry32：小而够用的可复现随机数发生器 */
+  function mulberry32(a) {
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
   }
+  /** 石头数：< 100 留一位小数，≥ 100 取整（几千颗时小数没意义） */
+  function stones(v) {
+    if (!Number.isFinite(v)) return "—";
+    return v >= 100 ? fmt(Math.round(v)) : (Math.round(v * 10) / 10).toFixed(1);
+  }
+  /** 蒙特卡洛：在当前记录上把这个部位重洗一次，抽 rolls 次看战力分布 */
+  function sampleSlot(pf, base, slot, lines, targets, mode, rule, rolls, seed) {
+    var model = simModel();
+    var rng = mulberry32(hashStr(seed));
+    var otherBP = base.bp - base.slots[slot].bp;    // 另外三个部位；本部位每次重算后加回来
+    var bpCache = {};
+    function rowBP(k, lv) {
+      var kk = k + "@" + lv;
+      if (bpCache[kk] === undefined) bpCache[kk] = C.resolveOption(D, k, lv).bp;
+      return bpCache[kk];
+    }
+    var vals = new Array(rolls), i, j;
+    for (i = 0; i < rolls; i++) {
+      var out = R.drawOnce(model, { lines: lines, targets: targets, mode: mode, rule: rule }, rng);
+      var sbp = 0;
+      for (j = 0; j < 3; j++) sbp += rowBP(out[j].key, out[j].level);
+      vals[i] = C.calcBattlePower(D.config, pf, otherBP + sbp).value;
+    }
+    vals.sort(function (a, b) { return a - b; });
+    function q(p) { return vals[Math.max(0, Math.min(vals.length - 1, Math.round((vals.length - 1) * p)))]; }
+    var sum = 0;
+    for (i = 0; i < vals.length; i++) sum += vals[i];
+    return { values: vals, min: vals[0], max: vals[vals.length - 1], p10: q(0.1), p50: q(0.5), p90: q(0.9), mean: sum / vals.length };
+  }
+  var SIM_MODE_TXT = { auto: "自动（先洗词条 → 再洗数值）", change: "只洗词条", value: "只洗数值" };
+  var SIM_NOTE = {
+    auto: "口径：洗出一条就锁一条、逐条推进 —— 不是「三条必须同一把同时命中」，所以消耗比按概率相乘估的小一个量级。",
+    change: "只洗词条（变更效果）：类型和档位要同一把抽到位，已达标的那几条自动锁住。",
+    value: "只洗数值（重置属性）：类型不变，只重抽目标词条的档位。"
+  };
   var lastSimKey = null, lastSim = null;
   function renderSim(pf) {
+    var IDS = ["m-cur", "m-slotcur", "m-minmax", "m-pct", "m-mean", "m-vs", "m-pctgain",
+      "c-goal", "c-per", "c-p", "c-route", "c-exp"];
     function blank() {
-      $("m-cur").textContent = $("m-slotcur").textContent = $("m-minmax").textContent = "--";
-      $("m-pct").textContent = $("m-mean").textContent = $("m-vs").textContent = $("m-pctgain").textContent = "--";
+      IDS.forEach(function (id) { var el = $(id); if (el) el.textContent = "--"; });
       $("m-hist").innerHTML = "";
-      $("c-per").textContent = $("c-lock").textContent = $("c-p").textContent = "--";
-      $("c-rolls").textContent = $("c-exp").textContent = "--";
+      $("c-note").textContent = "…";
       lastSimKey = null; lastSim = null;
     }
     if (!hasPanel()) { blank(); return; }
+
     var slot = state.sim.slot;
-    var mode = state.sim.mode === "value" ? "value" : "change";
-    var act = (state.sim.active[slot] || [1, 1, 1]).slice(0, 3);
+    var mode = state.sim.mode === "change" ? "change" : (state.sim.mode === "value" ? "value" : "auto");
+    var rule = state.sim.rule === "global" ? "global" : "cn";
     var tgt = ensureTargets(slot);
-    var rolls = Math.max(100, Math.min(200000, Math.trunc(num($("m-rolls").value, 5000))));
+    var rolls = Math.max(200, Math.min(200000, Math.trunc(num($("m-rolls").value, 4000))));
 
     var base = C.gearSummary(D, flatGear("before"));
     var cur = C.calcBattlePower(D.config, pf, base.bp).value;
     var slotCur = base.slots[slot];
+    var lines = slotCur.rows.map(function (r) { return { key: r.key || "", level: r.level || 0 }; });
 
-    // 参与重洗的行。「只洗数值」模式下「当前为空」的行没什么可洗，自动排除。
-    var activeIdx = [];
+    var targets = [];
     for (var i = 0; i < 3; i++) {
-      if (!act[i]) continue;
-      if (mode === "value" && !(slotCur.rows[i] && slotCur.rows[i].key)) continue;
-      activeIdx.push(i);
+      if (tgt[i].key) targets.push({ key: tgt[i].key, minTier: Math.max(1, Math.min(15, tgt[i].level || 1)) });
     }
-    // 锁定条数 = 本部位「不参与重洗」且当前有词条的行（空行没有可保住的值，不计费）
-    var lockCount = 0;
-    for (var j = 0; j < 3; j++) if (!act[j] && slotCur.rows[j] && slotCur.rows[j].level > 0) lockCount++;
-    var perRoll = lockCount + 1;
-    var lockCost = lockCount * (lockCount + 3) / 2;   // 锁到 1 条 2 颗 / 2 条 5 颗 / 3 条 9 颗
 
     $("m-cur").textContent = fmt(cur);
-    $("m-slotcur").textContent = SLOT_LABEL[slot] + " 内部战力 " + fmt(slotCur.bp) + " · 等效总阶 " + slotCur.totalLevel.toFixed(1)
-      + " · 重洗 " + activeIdx.length + " 条" + (lockCount ? " · 锁定 " + lockCount + " 条" : "");
-    $("c-per").textContent = perRoll + " 颗" + (lockCount ? "（锁定 " + lockCount + " 条）" : "（不锁定）");
-    $("c-lock").textContent = lockCount ? (lockCost + " 颗（锁 " + lockCount + " 条 · 解锁不退）") : "0 颗（无需锁定）";
+    $("m-slotcur").textContent = SLOT_LABEL[slot] + " · 内部 " + fmt(slotCur.bp) + " · 词条 "
+      + slotCur.rows.map(function (r) { return r.level ? (overloadName(r.key) + " " + r.level + "阶") : "空"; }).join(" / ");
+    $("c-per").textContent = "1 颗起（每锁 1 条 +1，锁满 3 条 4 颗）";
 
-    if (!activeIdx.length) {
-      $("m-minmax").textContent = $("m-pct").textContent = $("m-mean").textContent = "—";
-      $("m-vs").textContent = $("m-pctgain").textContent = "—";
-      $("m-hist").innerHTML = "";
-      $("c-p").textContent = "—（没有可洗的行）";
-      $("c-rolls").textContent = "—";
+    /* ---- 消耗：精确求解（DP），不是「概率相乘取倒数」 ---- */
+    if (!targets.length) {
+      $("c-goal").textContent = "—";
+      $("c-p").textContent = "—"; $("c-p").className = "";
+      $("c-route").textContent = "—";
       $("c-exp").textContent = "—";
-      lastSimKey = null; lastSim = null;
-      return;
+      $("c-note").textContent = "先给这个部位设 1 ~ 3 条目标词条（类型 + 最低档数），才会算「洗到目标要多少石头」。";
+    } else {
+      var res = R.plan(simModel(), { lines: lines, targets: targets, mode: mode, rule: rule });
+      $("c-goal").textContent = targets.length + " 条 · 已达成 " + (res.has || 0) + " 条 · "
+        + (rule === "global" ? "国际服新规则" : "国服旧规则");
+      if (res.firstHitProb !== undefined && Number.isFinite(res.firstHitProb)) {
+        $("c-p").textContent = (res.firstHitProb * 100).toFixed(res.firstHitProb < 0.01 ? 3 : 1) + "%";
+        $("c-p").className = res.firstHitProb > 0 ? "pos" : "neg";
+      } else { $("c-p").textContent = "—"; $("c-p").className = ""; }
+
+      if (!res.ok) {
+        $("c-route").textContent = "—";
+        $("c-exp").textContent = "—";
+        $("c-note").textContent = res.reason === "missing-name"
+          ? "「" + (res.missing || []).map(overloadName).join("、") + "」还不在这个部位的盘面上 —— "
+            + "只洗数值改不了词条类型，得先用「自动」或「只洗词条」把它洗出来。"
+          : "这个目标组合不可达（最低档数设得过高或盘面冲突），把档数调低再试。";
+      } else if (res.done) {
+        $("c-route").textContent = "—";
+        $("c-exp").textContent = "0 颗";
+        $("c-note").textContent = "当前记录的" + SLOT_LABEL[slot] + "已经满足全部目标，不用洗。";
+      } else {
+        $("c-route").textContent = mode === "auto"
+          ? ((res.nameStones < 0.05 ? "词条阶段 无需（名字已在盘上）" : "词条阶段 " + stones(res.nameStones) + " 颗")
+            + " → 数值阶段 " + stones(res.valueStones) + " 颗")
+          : "重洗 " + stones(res.rerollStones) + " 颗（≈ "
+            + (Number.isFinite(res.rerolls) ? res.rerolls.toFixed(1) : "—") + " 次）+ 上锁 " + stones(res.lockStones) + " 颗";
+        $("c-exp").textContent = "≈ " + stones(res.total) + " 颗";
+        $("c-note").textContent = SIM_NOTE[mode] + (rule === "global"
+          ? "　国际服新规则：抽到与当前完全相同的档位会被排除后重抽，所以洗数值阶段更快。"
+          : "　国服旧规则：抽到与当前完全相同的档位也算一次结果。");
+      }
     }
 
-    var activeBP = 0;
-    activeIdx.forEach(function (i) { activeBP += slotCur.rows[i].bp; });
-    var keepBP = base.bp - activeBP;      // 锁定行 + 另外三个部位，保持现状
-
-    // 目标：参与行都要有「类型 + 阶数」，才谈得上「达成」
-    var target = [], tgtOK = true;
-    activeIdx.forEach(function (i, k) {
-      var t = tgt[i];
-      if (!t || !t.key || !(t.level > 0)) { tgtOK = false; return; }
-      target.push({ i: k, key: t.key, minLevel: t.level });
-    });
-    if (!tgtOK || !target.length) target = null;
-
-    var curKeys = activeIdx.map(function (i) { return (slotCur.rows[i] && slotCur.rows[i].key) || ""; });
-    /* 种子只由「模拟的随机部分」决定 —— 这样改其它部位 / 改面板时，抽样序列保持不变，
-     * 分布只会整体平移、形状稳定，不会再出现「点一下词条数值就整体乱跳」。
-     * 缓存键则用完整输入，保证该重算时一定重算。 */
-    var seedKey = [state.loadout.rid, slot, mode, act.join(""), activeIdx.join(","),
-      target ? target.map(function (t) { return t.key + "@" + t.minLevel; }).join(",") : "-",
-      curKeys.join(","), rolls].join("|");
-    var cacheKey = seedKey + "|" + keepBP
+    /* ---- 「洗一次会变成什么样」：蒙特卡洛 ---- */
+    var mcMode = (mode === "value" && targets.length) ? "value" : "change";
+    var seedKey = [state.loadout.rid, slot, mode, rule, mcMode,
+      targets.map(function (t) { return t.key + ">=" + t.minTier; }).join(","),
+      lines.map(function (l) { return l.key + "@" + l.level; }).join(","), rolls].join("|");
+    var cacheKey = seedKey + "|" + base.bp
       + "|" + Math.round(num(pf.attack)) + "|" + Math.round(num(pf.hp)) + "|" + Math.round(num(pf.defense))
       + "|" + Math.round(num(pf.critRatio)) + "|" + Math.round(num(pf.critDamage))
       + "|" + Math.round(num(pf.skill1)) + "|" + Math.round(num(pf.skill2)) + "|" + Math.round(num(pf.burst))
       + "|" + Math.round(num(pf.extraBP));
     if (cacheKey !== lastSimKey) {
       lastSimKey = cacheKey;
-      lastSim = C.simulate(D.config, pf, D, {
-        pool: D.overload.map(function (g) { return g.key; }),
-        rolls: rolls, slots: activeIdx.length, keepBP: keepBP,
-        mode: mode, curKeys: curKeys, seed: hashStr(seedKey),
-        typeWeights: typeWeights(), levelTable: C.LEVEL_TABLE_AVG,
-        target: target
-      });
+      lastSim = sampleSlot(pf, base, slot, lines, targets, mcMode, rule, rolls, seedKey);
     }
     var sim = lastSim;
 
@@ -1240,31 +1275,6 @@
     sim.values.forEach(function (v) { var k = Math.min(B - 1, Math.floor((v - lo) / span * B)); buckets[k]++; });
     var mx = Math.max.apply(null, buckets) || 1;
     $("m-hist").innerHTML = buckets.map(function (c) { return '<i style="height:' + Math.max(2, Math.round(c / mx * 100)) + 'px"></i>'; }).join("");
-
-    /* ---- 定制模组消耗预估 ----
-     * 游戏规则（nikke.gg 口径）：
-     *   · 重洗一次   = 锁定条数 + 1 颗；
-     *   · 点「锁定」本身也要付费，同样是「锁到 N 条 = N+1 颗」，解锁不退 →
-     *     锁 1 条 2 颗 / 锁 2 条 2+3=5 颗 / 锁 3 条 2+3+4=9 颗（一次性）。
-     *   → 期望总消耗 = 上锁一次性成本 + 每次重洗成本 × 期望次数（1/p）。 */
-    var pEl = $("c-p");
-    var pw = sim.p;
-    if (pw === null || pw === undefined) {
-      pEl.textContent = "—（请给参与行设目标）"; pEl.className = "";
-      $("c-rolls").textContent = "—";
-      $("c-exp").textContent = "—";
-    } else if (pw > 0) {
-      pEl.textContent = (pw * 100).toFixed(1) + "%";
-      pEl.className = "pos";
-      $("c-rolls").textContent = "≈ " + (1 / pw).toFixed(1) + " 次";
-      var expCost = lockCost + perRoll / pw;
-      $("c-exp").textContent = "≈ " + (expCost >= 100 ? fmt(Math.round(expCost)) : expCost.toFixed(1)) + " 颗";
-    } else {
-      pEl.textContent = "0.0%";
-      pEl.className = "neg";
-      $("c-rolls").textContent = "—";
-      $("c-exp").textContent = "该目标在 " + fmt(rolls) + " 次抽样内未出现（几乎不可能达成）";
-    }
   }
 
   /* ---------------- 标定 ---------------- */
@@ -1319,7 +1329,8 @@
     renderSimSlotOptions();
     renderSimTargets();
     $("m-rolls").value = state.sim.rolls;
-    $("m-mode").value = state.sim.mode || "change";
+    $("m-mode").value = state.sim.mode || "auto";
+    $("m-rule").value = state.sim.rule === "global" ? "global" : "cn";
     compute();
   }
   /* ---------------- 信息窗（InfoTip） ----------------
@@ -1336,6 +1347,25 @@
       html: "Key 在<b>顶栏</b>填写，保存一次长期有效、不用每次重填。<br>"
         + "导入回填：<b>词条明细 / 装备等级 / 突破 / 收藏 / 技能 / 魔方等级 / 企业·职业研究等级</b>。<br>"
         + "Key 只存<b>本机浏览器</b>，不写进导出文件、不进链接、不写日志。"
+    },
+    "tip-gear": {
+      title: "① 当前装备怎么录",
+      html: "先选好角色，再把该角色在游戏里的<b>整套装备</b>录入这里并<b>保存</b>：每个部位先填<b>装备等级</b>"
+        + "（强化 0 ~ 5，每级 +10% 装备基础属性），再填 3 条<b>装备词条</b>"
+        + "（T12~14 蓝字、T15 黑底白字，与游戏内一致）。<br>"
+        + "同一件装备<b>不会出现重复词条</b>，被本部位其它行选走的类型会自动置灰。<br>"
+        + "这份记录是下方「② 装备词条洗练」与右栏「洗练模拟」的<b>基准</b>，且<b>按角色分别记录</b>。"
+    },
+    "tip-sim": {
+      title: "洗练模拟的算法口径",
+      html: "概率模型对齐开源实现 <b>ChrisLu7899/NIKKE-Workshop</b>，不是「概率相乘取倒数」那种估算。<br>"
+        + "<b>每次重洗</b>：1 / 2 / 3 号词条位出词条的概率分别是 <b>100% / 50% / 30%</b>；"
+        + "阶数 1~5 各占 12、6~10 各占 7、11~15 各占 1（合计 100）；"
+        + "九类词条里优越 / 攻击 / 暴伤 / 防御权重 10，其余 12；同一次重洗<b>类型不重复</b>。<br>"
+        + "<b>石头</b>：每次重洗 <b>锁定条数 + 1</b> 颗；点锁定本身一次性付费，锁到 1 / 2 / 3 条累计 <b>2 / 5 / 9</b> 颗，解锁不退。<br>"
+        + "<b>打法</b>：洗出一条就锁一条、逐条推进 —— 所以三条目标的期望消耗是几十颗，不是几百颗。<br>"
+        + "<b>服务器差异</b>：国服（旧规则）结果直接覆盖，可能抽出与当前完全相同的档位；"
+        + "国际服（新规则）会把与当前完全相同的档位排除后重新归一，因此<b>洗数值阶段更快</b>。"
     }
   };
   var _openTip = null;
@@ -1806,11 +1836,16 @@
       collectPanel(); renderSimTargets(); renderSim(profile()); save(true);
     });
     $("m-mode").addEventListener("change", function () {
-      state.sim.mode = $("m-mode").value === "value" ? "value" : "change";
+      var v = $("m-mode").value;
+      state.sim.mode = (v === "value" || v === "change") ? v : "auto";
       renderSimTargets(); renderSim(profile()); save(true);
     });
+    $("m-rule").addEventListener("change", function () {
+      state.sim.rule = $("m-rule").value === "global" ? "global" : "cn";
+      renderSim(profile()); save(true);
+    });
     $("m-rolls").addEventListener("input", function () {
-      state.sim.rolls = num($("m-rolls").value, 5000);
+      state.sim.rolls = Math.max(200, Math.min(200000, Math.trunc(num($("m-rolls").value, 4000))));
       collectPanel(); renderSim(profile());
     });
 
