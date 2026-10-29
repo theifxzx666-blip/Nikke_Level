@@ -748,13 +748,13 @@
   /* ---------- 分服：国际服 / 国服 ----------
      R63（2026-10-26）：**关卡选择器统一按国际服官方表，两服不再分叉。**
      曾据国服 sd.bin 缓存判定「国服 33 章 / 基地上限 433」，但国服实际已到 40 章 ——
-     那份缓存是过期快照，已废止。国际服最超前（49 章 / 各 1,787 关 / 基地上限 Lv712），
+     那份缓存是过期快照，已废止。国际服最超前（51 章 / 各 1,875 关 / 基地上限 Lv747），
      统一按国际服表对所有服都安全，国服玩家选到自己实际进度即可。
      「服务器」选择器保留，仅用于存档归属标注与两服差异登记，不再截断关卡、不改基地上限。
      ⚠ 切服**不重置其它字段**（资源、箱子、活动都不受影响）。 */
   /* R63：serverProfile / serverName 已无调用者（超上限提示不再带服务器名），一并移除 */
-  function baseCap() { return SV ? SV.cap() : 712; }
-  function serverMaxChapter() { return SV ? SV.maxChapter() : 48; }
+  function baseCap() { return SV ? SV.cap() : 747; }
+  function serverMaxChapter() { return SV ? SV.maxChapter() : 50; }
 
   /* 按当前服务器重建「章节 → 关卡」表（R63 后两服档案一致，重建结果相同） */
   function rebuildStageTables() {
@@ -791,7 +791,7 @@
   }
 
   /* 越界关卡 → 收缩到该服最后一关（读旧存档 / 切服时用）
-     R63 后两服都是 Chapter 48，正常情况不会触发；保留用于兜住旧存档里的异常值。
+     R68 起两服都是 Chapter 50，正常情况不会触发；保留用于兜住旧存档里的异常值。
      实现放在 outpost.js（依赖 stage_map，且便于 node 侧直接测） */
   function clampSection(section, mode) {
     return O.clampSection ? O.clampSection(section, mode) : section;
@@ -842,7 +842,7 @@
   }
 
   /* 新访客：默认基地等级若超出当前服上限则压回上限
-     R63 后两服上限同为 Lv712、表单预设 518 < 712，故实际不再触发；
+     R68 起两服上限同为 Lv747、表单预设 518 < 747，故实际不再触发；
      保留是为兜住将来档案变化（或分享链接带进超限值）。 */
   function applyServerDefaults() {
     if (!SV) return;
@@ -1399,14 +1399,14 @@
         + "<b>基地等级 = 计数 ÷ 5 向下取整 + 1</b>。<br>"
         + "前哨基地要到主线 <b>2-12</b> 通关才解锁，所以普通 0-1~2-11 这 18 关<b>不计入</b>；"
         + "困难侧则从第一关起就计入。<br>"
-        + "上限：普通/困难各 1,787 关 → <b>Lv712</b>（国际服与国服共用同一套关卡表）。"
+        + "上限：普通/困难各 1,875 关 → <b>Lv747</b>（国际服与国服共用同一套关卡表）。"
         + "超过上限的等级在游戏内不存在，计算器不会按它带出收益。"
     },
     "tip-stage": {
       title: "关卡进度",
       html: "推算口径：基地等级按「(普通关 − 2-12) + 困难关 + 1」每满 5 关升 1 级，"
         + "普通侧从 2-12（前哨基地解锁关）起算，困难侧从 0-1 起算。<br>"
-        + "关卡下拉<b>两服共用同一套（Chapter 0~48）</b>，按你实际打到的关卡选即可 —— "
+        + "关卡下拉<b>两服共用同一套（Chapter 0~50）</b>，按你实际打到的关卡选即可 —— "
         + "国服进度比国际服略靠后，选到自己当前章节就行，不会因为选了后面的章而被截断。"
     },
     "tip-stageclear": {
@@ -2993,7 +2993,7 @@
         }).catch(function () { COST_TIERS = []; });
       })
       .then(function () {
-        return fetch("data/stage_clear_resources.json?v=20261014a").then(function (r) { return r.json(); }).then(function (d) {
+        return fetch("data/stage_clear_resources.json?v=20261029a").then(function (r) { return r.json(); }).then(function (d) {
           state.stageClearEntries = (d && d.chapters) || {};
           state.stageClearFallback = (d && d.fallback_chapter) || null;
         }).catch(function () { state.stageClearEntries = {}; state.stageClearFallback = null; });

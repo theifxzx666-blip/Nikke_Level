@@ -1,7 +1,7 @@
 /* test_server_split.js — 分服（国际服 / 国服）与存档迁移回归测试
  *
  * 覆盖：
- *   ① 关卡表规模与基地上限（R63：**两服共用国际服表** 1,787/1,787 → Lv715，不再按服截断）
+ *   ① 关卡表规模与基地上限（R63：**两服共用国际服表**；R68 起 1,875/1,875 → Lv747，不再按服截断）
  *   ② 基地等级公式 golden 点（官方 OutpostBattleTable 口径）与全量逐关扫
  *   ③ 两服关卡列表完全一致（R63 的核心诉求：选国服不会少关卡）
  *   ④ 存档迁移（v1 无 server/_schema → v2，且不丢任何字段）
@@ -72,9 +72,10 @@ function r61Formula(nId, hId) {
   eq(Number(SM.base_start_normal_id), 19, "base_start_normal_id = 19（基地计数从 2-12 起算）");
   eq(SM.stages.find((s) => Number(s.id) === 19).section, "2-12 BOSS", "id=19 确为 2-12 BOSS");
   const EXPECT = {
-    intl: { chapters: 49, max: 48, n: 1787, h: 1787, cap: 712 },
+    /* R68（2026-10-29）：主线 49/50 章上线 → 51 章 / 上限 Chapter 50 / 各 1,875 关 / Lv747 */
+    intl: { chapters: 51, max: 50, n: 1875, h: 1875, cap: 747 },
     /* R63：国服不再单独截断。曾据 sd.bin 过期缓存写 33 章/1,081 关，国服实到 40 章已证伪 */
-    cn:   { chapters: 49, max: 48, n: 1787, h: 1787, cap: 712 },
+    cn:   { chapters: 51, max: 50, n: 1875, h: 1875, cap: 747 },
   };
   for (const key of Object.keys(EXPECT)) {
     const e = EXPECT[key];
@@ -117,12 +118,14 @@ function r61Formula(nId, hId) {
     ["intl", "2-12 BOSS", null, 1],   // 19-19=0 → total 1 → Lv1（2-12 是第 1 个计入的关）
     ["intl", "2-12 BOSS", "2-12 BOSS", 5],  // 0+19+1 = 20 → Lv5
     ["intl", "20-1", "20-1", 208],    // (528-19)+528+1 = 1038 → Lv208
-    ["intl", "48-36 BOSS", "48-36 BOSS", 712],  // (1787-19)+1787+1 = 3556 → Lv712
+    ["intl", "48-36 BOSS", "48-36 BOSS", 712],  // (1787-19)+1787+1 = 3556 → Lv712（R68 前满级）
+    ["intl", "50-36 BOSS", "50-36 BOSS", 747],  // (1875-19)+1875+1 = 3732 → Lv747（R68 满级）
     ["cn", "20-1", "20-1", 208],
     ["cn", "32-33 BOSS", null, 213],  // (1081-19)+0+1 = 1063 → Lv213
     ["cn", "32-33 BOSS", "32-33 BOSS", 429],   // (1081-19)+1081+1 = 2144 → Lv429
     ["cn", "40-1", "40-1", 554],              // (1392-19)+1392+1 = 2766 → Lv554
     ["cn", "48-36 BOSS", "48-36 BOSS", 712],
+    ["cn", "50-36 BOSS", "50-36 BOSS", 747],
   ];
   /* 逐关扫：对每个服务器的每一关，令普通=困难=该关，核对新口径公式（并封顶） */
   for (const key of Object.keys(EXPECT)) {
@@ -148,12 +151,15 @@ function r61Formula(nId, hId) {
     eq(O.clampSection("40-1", "normal"), "40-1", key + "：40-1 不被截断");
     eq(O.clampSection("32-33 BOSS", "normal"), "32-33 BOSS", key + "：32-33 BOSS 不被截断");
     eq(O.clampSection("48-36 BOSS", "hard"), "48-36 BOSS", key + "：48-36 BOSS 不被截断");
+    eq(O.clampSection("50-36 BOSS", "hard"), "50-36 BOSS", key + "：50-36 BOSS 不被截断（R68 新满进度）");
+    eq(O.clampSection("49-25A-1", "normal"), "49-25A-1", key + "：49-25A-1（新章分支关）不被截断");
     eq(O.clampSection("", "normal"), "", key + "：空值原样返回");
-    eq(O.computeBaseLevel("48-36 BOSS", "48-36 BOSS"), 712, key + "：满进度基地 Lv712");
+    eq(O.computeBaseLevel("48-36 BOSS", "48-36 BOSS"), 712, key + "：R68 前满进度基地 Lv712");
+    eq(O.computeBaseLevel("50-36 BOSS", "50-36 BOSS"), 747, key + "：满进度基地 Lv747");
     eq(O.computeBaseLevel("40-1", "40-1"), 554, key + "：40-1 普通+困难 = Lv554");
   }
   /* 两服对同一组输入必须给出同一个基地等级（否则说明仍有残留分叉） */
-  const probe = ["0-1", "20-1", "32-33 BOSS", "40-1", "48-36 BOSS"];
+  const probe = ["0-1", "20-1", "32-33 BOSS", "40-1", "48-36 BOSS", "49-1", "50-36 BOSS"];
   for (const sec of probe) {
     useServer("intl");
     const a = O.computeBaseLevel(sec, sec);
@@ -197,6 +203,7 @@ function r61Formula(nId, hId) {
     ["20-1", "20-1", 208],
     ["40-1", "40-1", 554],
     ["48-36 BOSS", "48-36 BOSS", 712],
+    ["50-36 BOSS", "50-36 BOSS", 747],
   ];
   for (const [n, h, correct] of cmp) {
     const nId = idOf(n), hId = idOf(h);
@@ -208,11 +215,11 @@ function r61Formula(nId, hId) {
 
   /* ---------- ⑥ 收益表在两服上限处都有值 ---------- */
   await O.loadIncomeTable();
-  const i712 = O.incomeForLevel(712, true);
+  const i747 = O.incomeForLevel(747, true);
   const i433 = O.incomeForLevel(433, true);
-  ok(!!i712 && i712.credit > 0, "两服上限 Lv712 收益存在");
+  ok(!!i747 && i747.credit > 0, "两服上限 Lv747 收益存在");
   ok(!!i433 && i433.credit > 0, "Lv433 收益存在（国服实际可达区间）");
-  ok(i712.credit > i433.credit, "Lv712 收益高于 Lv433（表格单调）");
+  ok(i747.credit > i433.credit, "Lv747 收益高于 Lv433（表格单调）");
 
   /* ---------- ⑦ 分服收益补正系数（R63b） ---------- */
   eq(SV.incomeScaleOf("intl"), 1, "intl income_scale = 1");
@@ -240,6 +247,50 @@ function r61Formula(nId, hId) {
   eq(O.incomeForLevel(518, true).credit, base518.credit, "不传 incomeScale → 回落 1");
   useServer("cn");                                        // 恢复
   eq(SV.incomeScale(), 1, "恢复后系数回到 1");
+
+  /* ---------- ⑥ 推图收益数据与新上限对齐（R68：主线 49/50 章） ---------- */
+  {
+    const scr = JSON.parse(fs.readFileSync(path.resolve(__dirname, "data/stage_clear_resources.json"), "utf8"));
+    const keys = Object.keys(scr.chapters);
+    const maxCh = Math.max.apply(null, keys.map(Number));
+
+    eq(keys.length, 51, "推图收益覆盖 51 个章节键（0~50）");
+    eq(maxCh, Number(SV.get("intl").max_chapter), "推图收益末键 == 服务器进度上限章号");
+
+    /* 键 = 官方 ChapterId − 1：逐键自洽，防止以后插错位 */
+    let misaligned = 0;
+    keys.forEach(function (k) {
+      if (Number(scr.chapters[k].official_chapter) !== Number(k) + 1) misaligned++;
+    });
+    eq(misaligned, 0, "全部章节键满足 official_chapter == 键 + 1");
+
+    /* fallback 必须指向末章，否则缺章时会带出一个已经落后的旧章 */
+    eq(String(scr.fallback_chapter), String(maxCh), "fallback_chapter 指向末章");
+
+    /* 新章数值（官方 50/51 章，44 普通 + 44 困难） */
+    const c49 = scr.chapters["49"], c50 = scr.chapters["50"];
+    ok(!!c49 && !!c50, "存在 49 / 50 两个新章");
+    if (c49 && c50) {
+      eq(c49.official_chapter, 50, "键 49 = 官方第 50 章");
+      eq(c50.official_chapter, 51, "键 50 = 官方第 51 章");
+      eq(c49.n_normal, 44, "键 49 普通关卡数");
+      eq(c49.n_hard, 44, "键 49 困难关卡数");
+      eq(c50.n_normal, 44, "键 50 普通关卡数");
+      eq(c50.n_hard, 44, "键 50 困难关卡数");
+      /* 收益必须逐章递增，否则说明爬到了重复或错误的 reward 行 */
+      const c48 = scr.chapters["48"];
+      ok(c49.credit > c48.credit && c50.credit > c49.credit, "普通信用点逐章递增");
+      ok(c49.battle > c48.battle && c50.battle > c49.battle, "普通战斗数据逐章递增");
+      ok(c49.credit_hard > c48.credit_hard && c50.credit_hard > c49.credit_hard, "困难信用点逐章递增");
+      ok(c49.battle_hard > c48.battle_hard && c50.battle_hard > c49.battle_hard, "困难战斗数据逐章递增");
+    }
+
+    /* 关卡表末章必须与推图收益末章一致 —— 两处数据源同源，不能各说各话 */
+    const sm = JSON.parse(fs.readFileSync(path.resolve(__dirname, "data/stage_map.json"), "utf8")).stages;
+    const lastCh = Math.max.apply(null, sm.map(function (s) { return Number(String(s.chapter).replace(/\D/g, "")); }));
+    eq(lastCh, maxCh, "stage_map 末章 == 推图收益末键");
+    eq(sm.length, Number(SV.get("intl").normal_stages), "stage_map 关卡总数 == normal_stages");
+  }
 
   /* ---------- 汇总 ---------- */
   console.log("\n=== test_server_split ===");

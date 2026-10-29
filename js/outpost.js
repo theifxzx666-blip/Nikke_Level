@@ -11,7 +11,7 @@
  *
  * 关键点：前哨基地在主线 **2-12** 通关后才解锁 —— 普通 0-1~2-11 共 18 关不计入
  * 基地等级（故普通侧减 19），困难侧从第一关起就计入（t-1+1 = t）。
- * 满进度 48-36 BOSS 双侧 → total 3556 → **Lv712**。
+ * 满进度 50-36 BOSS 双侧 → total 3732 → **Lv747**（R68 主线 49/50 章上线后由 712 提升）。
  *
  * 沿革（勿再"修正"回原样）：R61 曾据拆包 OutpostBattleTable.Main_stage_clear_count
  * 把公式改成 total = e + t（不减 19），等于把解锁前的 18 关算了进去 → 全站恒定偏高
@@ -24,12 +24,12 @@
   var INCOME_TABLE = null;
 
   /* 当前生效的服务器档案（由 NikkeServers / 调用方通过 setServer 注入）。
-     maxChapter = 关卡进度上限章号（R63 起两服共用国际服表，均为 48）；cap = 基地等级理论上限。 */
-  var SERVER = { key: "intl", maxChapter: 48, cap: 712, incomeScale: 1 };
+     maxChapter = 关卡进度上限章号（R63 起两服共用国际服表，R68 起均为 50）；cap = 基地等级理论上限。 */
+  var SERVER = { key: "intl", maxChapter: 50, cap: 747, incomeScale: 1 };
 
   function loadStageMap() {
     if (STAGE_MAP) return Promise.resolve(STAGE_MAP);
-    return fetch("data/stage_map.json?v=20261026b").then(function (r) { return r.json(); }).then(function (d) {
+    return fetch("data/stage_map.json?v=20261029a").then(function (r) { return r.json(); }).then(function (d) {
       STAGE_MAP = d || {
         stages: [], normal_start_id: 1, hard_start_id: 1,
         base_start_normal_id: 19, base_start_hard_id: 1
@@ -54,7 +54,7 @@
       ? c.incomeScale : 1;
     SERVER = {
       key: c.key || "intl",
-      maxChapter: (typeof c.maxChapter === "number") ? c.maxChapter : 48,
+      maxChapter: (typeof c.maxChapter === "number") ? c.maxChapter : 50,
       cap: (typeof c.cap === "number" && c.cap > 0) ? c.cap : null,
       /* R63b：分服收益补正系数。1 = 与该服官方表原值一致（当前两服都是 1）。
          用途：若将来实测出某服基地收益与国际服表有系统性偏差，只改 data/servers.json
@@ -98,10 +98,12 @@
    * R61 曾把这里改成 total = e + t（不减 19），依据是拆包 OutpostBattleTable 的
    * Main_stage_clear_count（Lv1 填 0、Lv2~800 恒填 5）。那张表本身没错，错在把
    * "累计通关数"当成了普通侧的**原始 id**，于是把解锁前的 18 关也算进来 →
-   * 全站基地等级**恒定偏高 3 级**（早期进度偏高 4 级），满级被误算成 715（实为 712）。
+   * 全站基地等级**恒定偏高 3 级**（早期进度偏高 4 级），满级被误算成 715（R68 前实为 712）。
    * R64 已按两站实现改回。
    *
    * 已知核对结果（R64）：满进度 48-36 BOSS 双侧 → total 3556 → Lv712；
+   * R68（2026-10-29）：主线 49/50 章上线，关卡 1,787 → 1,875 关，满进度 50-36 BOSS
+   *   双侧 → total 3732 → Lv747。
    * 收益表 data/outpost_income.json 与两站 outpost.json 逐级 800 级 0 差异。 */
   function computeBaseLevel(normalStage, hardStage, cap) {
     if (!STAGE_MAP) return null;
@@ -142,8 +144,8 @@
     return out;
   }
 
-  /* 关卡集合：普通/困难都从 0-1 起（官方两份难度各自 1,787 关），
-     再按当前服务器章号上限截断。R63 起两服上限同为 Chapter 48，实际不截断任何关。 */
+  /* 关卡集合：普通/困难都从 0-1 起（官方两份难度各自 1,875 关），
+     再按当前服务器章号上限截断。R68 起两服上限同为 Chapter 50，实际不截断任何关。 */
   function allStages(mode) {
     var stages = (STAGE_MAP && STAGE_MAP.stages) || [];
     var startId = mode === "normal" ? (STAGE_MAP.normal_start_id || 1) : (STAGE_MAP.hard_start_id || 1);

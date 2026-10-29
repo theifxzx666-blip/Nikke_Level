@@ -5,12 +5,14 @@
  * 为什么收回分服截断：
  *   上一版据国服客户端 sd.bin 缓存判断「国服只有 33 章 / 基地上限 433」，
  *   但用户核实国服实际已开放到 40 章 —— 那份 sd.bin 是手机上的过期缓存快照，不能作依据。
- *   国际服进度最超前（48 章 / 各 1,787 关），统一按国际服表列全部关卡对所有服都安全；
+ *   国际服进度最超前（2026-10-29 起 51 章 / 上限 Chapter 50 / 各 1,875 关），
+ *   统一按国际服表列全部关卡对所有服都安全；
  *   国服玩家只是还没打到那么远，选到自己实际进度即可。
  *
  * 于是两服的 chapters / max_chapter / normal_stages / base_cap 全部相同：
- *   49 章 / 普通 1,787 + 困难 1,787，普通从 2-12 起算 → 基地上限 **Lv712**
- *   （total = (1787-19) + 1787 + 1 = 3556 → floor(3556/5)+1 = 712；R61 曾误作 715）
+ *   51 章 / 普通 1,875 + 困难 1,875，普通从 2-12 起算 → 基地上限 **Lv747**
+ *   （total = (1875-19) + 1875 + 1 = 3732 → floor(3732/5)+1 = 747；R61 曾误作 715，
+ *     R68 主线 49/50 章上线后由 712 → 747）
  *
  * 「服务器」选择器保留，但只剩标注与登记作用（存档归属、每周重置日、装备经验保存比例），
  * 不影响可选关卡范围，也不再改变基地上限。公式本身在 outpost.js。
@@ -27,13 +29,14 @@
     schema: SCHEMA,
     servers: [
       {
-        key: "intl", name: "国际服", short: "国际服", chapters: 49, max_chapter: 48,
-        normal_stages: 1787, hard_stages: 1787, base_cap: 712, income_scale: 1.0, weekly_reset_day: 1,
+        key: "intl", name: "国际服", short: "国际服", chapters: 51, max_chapter: 50,
+        normal_stages: 1875, hard_stages: 1875, base_cap: 747, income_scale: 1.0, weekly_reset_day: 1,
       },
       {
-        /* R63：兜底档案也必须是 49 章 —— 否则 servers.json 读取失败时国服会被截到 33 章 */
-        key: "cn", name: "国服", short: "国服", chapters: 49, max_chapter: 48,
-        normal_stages: 1787, hard_stages: 1787, base_cap: 712, income_scale: 1.0, weekly_reset_day: 0,
+        /* R63：兜底档案必须与 servers.json 同步（R68 起 51 章 / 上限 Chapter 50 / Lv747）——
+           否则 servers.json 读取失败时国服会被截到旧章节 */
+        key: "cn", name: "国服", short: "国服", chapters: 51, max_chapter: 50,
+        normal_stages: 1875, hard_stages: 1875, base_cap: 747, income_scale: 1.0, weekly_reset_day: 0,
       },
     ],
   };
@@ -43,7 +46,7 @@
 
   function load() {
     if (DATA) return Promise.resolve(DATA);
-    return fetch("data/servers.json?v=20261026d").then(function (r) { return r.json(); }).then(function (d) {
+    return fetch("data/servers.json?v=20261029a").then(function (r) { return r.json(); }).then(function (d) {
       DATA = (d && d.servers && d.servers.length) ? d : FALLBACK;
       return DATA;
     }).catch(function () { DATA = FALLBACK; return DATA; });
@@ -77,10 +80,10 @@
   function capOf(key) {
     var p = get(key);
     /* base_cap 是唯一真源（servers.json）。此处曾用 (normal_stages+hard_stages)/5+1 推导，
-       那是 R61 的错误口径（把 2-12 解锁前的 18 关算了进去），会得 715；正解是 712 ——
+       那是 R61 的错误口径（把 2-12 解锁前的 18 关算了进去），会得 715；正解是 747（R68 前为 712）——
        普通从 2-12 起算，推导过程见 outpost.js computeBaseLevel 注释，
        一致性由 test_server_split.js 交叉校验，不在这里重复实现公式。 */
-    return Number(p.base_cap) || 712;
+    return Number(p.base_cap) || 747;
   }
   function cap() { return capOf(current().key); }
 
