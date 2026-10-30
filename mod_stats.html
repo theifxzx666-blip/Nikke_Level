@@ -39,7 +39,6 @@ button:focus-visible,.date-trigger:focus-visible,.del-btn:focus-visible{outline:
 .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.header-actions button,.server-btn{border:1px solid var(--border);background:linear-gradient(180deg,var(--bg3),var(--bg2));color:var(--text3);padding:0 14px;height:38px;border-radius:10px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:border-color .18s,background .18s,color .18s,transform .12s}.header-actions button:hover{border-color:#8fb8a6;background:var(--bg4);color:var(--text)}.header-actions button:active{transform:translateY(1px)}.danger:hover{border-color:var(--red)!important;color:var(--red)!important;background:rgba(214,57,75,.06)!important}
 .server-switch{display:flex;gap:4px;padding:4px;border:1px solid var(--border);background:#e4eeea;border-radius:12px;box-shadow:inset 0 1px 3px rgba(24,60,45,.08)}.server-btn{border:0;background:transparent;padding:0 13px;font-size:13px;height:32px;box-shadow:none;white-space:nowrap}.srv-suffix{display:none}.server-btn:hover{color:var(--text);background:rgba(29,158,117,.06)}.header-actions .server-btn.active{background:linear-gradient(180deg,var(--primary),var(--primary-dark));color:#fff;font-weight:600;box-shadow:0 4px 12px rgba(29,158,117,.22),inset 0 1px 0 rgba(255,255,255,.15)}
 .server-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:linear-gradient(90deg,rgba(29,158,117,.08),rgba(184,134,11,.04) 55%,rgba(29,158,117,.04));border:1px solid var(--border);padding:12px 14px;border-radius:var(--radius-sm);color:var(--text2);font-size:13px;line-height:1.65}.server-info strong{color:var(--text);font-weight:600}.param{padding:4px 9px;border-radius:8px;background:#f4faf7;border:1px solid #cfe0d7;color:var(--text3);font-size:12px;max-width:100%;overflow-wrap:anywhere}
-.server-details{margin-bottom:20px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg2);overflow:hidden}.server-details summary{padding:10px 16px;font-size:13px;font-weight:500}.server-details .server-info{border:0;border-radius:0;background:transparent}.server-details[open] summary{border-bottom:1px solid var(--border)}
 summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px}summary::-webkit-details-marker{display:none}summary:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}.details-toggle{color:var(--text2);font-size:12px;font-weight:400;white-space:nowrap}.details-toggle::after{content:'展开 +'}details[open]>summary .details-toggle::after{content:'收起 −'}
 .overview{margin-bottom:24px}.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
 .stat-card{position:relative;overflow:hidden;background:linear-gradient(180deg,#ffffff,#f8fcf9);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm);min-height:124px;transition:border-color .2s,transform .2s,box-shadow .2s}
@@ -129,6 +128,24 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .author-chip-txt{display:flex;flex-direction:column;line-height:1.25;white-space:nowrap}
 .author-chip-txt b{font-size:13px;color:var(--text)}
 .author-chip-txt em{font-style:normal;font-size:11px;color:var(--primary)}
+/* ===================== R79 标题旁信息窗 =====================
+   原「奖励参数与期望口径」是页面顶部一条可折叠长条：默认收起仍占 46px，
+   展开后又是一整块与 KPI 争视线的参数行。改为标题旁 ⓘ 按钮 + 居中浮层：
+   默认零占位，需要时再看。内容容器仍叫 #serverInfo（updateServerSummary 渲染它）。 */
+.info-btn{width:20px;height:20px;padding:0;margin-left:8px;border:1px solid #b9d3c6;border-radius:50%;background:var(--bg3);color:var(--primary);display:inline-grid;place-items:center;vertical-align:middle;transition:background .18s,border-color .18s,color .18s,transform .12s}
+.info-btn:hover{background:#e2f1ea;border-color:var(--primary);color:var(--primary-dark)}
+.info-btn:active{transform:translateY(1px)}
+.info-btn svg{display:block;pointer-events:none}
+.info-mask{position:fixed;inset:0;z-index:2050;background:rgba(24,60,45,.32)}
+.info-mask[hidden],.info-pop[hidden]{display:none}
+/* 固定高度上限（px）而非 vh：本页会被 index.html 以 iframe 嵌入，vh 会随父页撑高来回变 */
+.info-pop{position:fixed;z-index:2060;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,calc(100vw - 28px));max-height:460px;display:flex;flex-direction:column;background:#fff;border:1px solid #c8d8d0;border-radius:16px;box-shadow:0 24px 60px rgba(24,60,45,.22);overflow:hidden}
+.info-pop-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#f7fcf9,#eff6f2)}
+.info-pop-head b{font-size:15px;font-weight:600;color:var(--text)}
+.info-pop-x{width:28px;height:28px;flex:0 0 auto;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text2);font-size:13px;line-height:1;display:grid;place-items:center;transition:border-color .18s,color .18s,background .18s}
+.info-pop-x:hover{border-color:var(--red);color:var(--red);background:rgba(214,57,75,.07)}
+.info-pop-body{padding:14px 16px 16px;overflow-y:auto;min-height:0}
+.info-pop .server-info{border:0;border-radius:0;background:transparent;padding:0;gap:7px}
 /* ===================== R78 桌面右列填空（全部周期一览） =====================
    只在 >1080px 两列布局下出现：此时周期卡（~198px）与左侧表单（~414px）并排，
    卡下方会空出 200px 左右。清单用 flex:1 吃掉这段空白，行高 32~56 自适应。
@@ -158,15 +175,9 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   .period-all-row .pa-dot.lucky{background:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.14)}
   .period-all-row .pa-dot.unlucky{background:var(--red);box-shadow:0 0 0 3px rgba(214,57,75,.13)}
   .period-all-row .pa-dot.normal{background:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.13)}
-  /* 行底细条：已完成周期＝偏差量尺（|偏差%| / 20% 满格，颜色同偏差带），
-     未完成周期＝样本进度（灰绿）。两条语义不同但同一根 track，读法一致：越长越极端 */
-  .period-all-row .pa-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:#eef4f1}
-  .period-all-row .pa-bar i{display:block;height:100%;border-radius:0 2px 2px 0;transition:width .3s}
-  .period-all-row .pa-bar i.good{background:var(--green)}
-  .period-all-row .pa-bar i.bad{background:var(--red)}
-  .period-all-row .pa-bar i.near{background:var(--gold)}
-  .period-all-row .pa-bar i.pending{background:#b7d5c7}
-  .period-all-row.on .pa-bar{background:#d9ece3}
+  /* R79：删掉行底细条（.pa-bar）。已完成周期它是 |偏差%| 量尺、未完成周期它是样本完成度，
+     但两者都与同一行里的「-11.4%」「还需 26 天」以及顶部样本条进度条重复 —— 三条同类信息
+     挤在 12px 行里只会互相打架。行内改为纯文本 + 圆点，留白换呼吸感。 */
 }
 
 /* ===================== R76 手机竖屏紧凑化 =====================
@@ -203,7 +214,6 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   .sample-item{width:auto;gap:3px 6px}
   .sample-value{font-size:15px}
   .sample-hint{font-size:11px;color:var(--text2)}
-  #statDoubleSub{display:none}    /* 保留「还需 N 天」这类有信息量的提示，只砍纯装饰注释 */
   .sample-bar .progress{width:56px}
   /* ④ 表单两列：日期 | Boss、次数 | 双倍 → 省约 130px 纵深
      ⚠ 必须带 .entry-period 前缀：第 122 行 `.entry-period .form-grid{grid-template-columns:1fr}`
@@ -244,7 +254,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 <body>
 <div class="app">
 <header class="header">
-  <div class="brand"><div class="brand-mark"><img src="assets/nav_modstats.webp?v=20261030a" alt="定制模组统计图标" width="48" height="48"></div><div><h1>定制模组统计</h1><small>NIKKE · 五 Boss 长期掉落统计与概率偏差分析</small></div><a class="author-chip" href="https://space.bilibili.com/76579052?spm_id_from=333.337.0.0" target="_blank" rel="noopener" title="本工具（定制模组统计）由 sa_yuki 制作维护，点击查看 B站主页"><img class="author-avatar" src="assets/author_sa_yuki.webp?v=20261016c" alt="作者 sa_yuki"><span class="author-chip-txt"><b>作者 · sa_yuki</b><em>B站主页 ↗</em></span></a></div>
+  <div class="brand"><div class="brand-mark"><img src="assets/nav_modstats.webp?v=20261030a" alt="定制模组统计图标" width="48" height="48"></div><div><h1>定制模组统计<button type="button" class="info-btn" id="infoBtn" aria-expanded="false" aria-controls="infoPop" aria-label="查看奖励参数与期望口径" title="奖励参数与期望口径"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="6.6" width="1.5" height="4.7" rx=".75" fill="currentColor"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg></button></h1><small>NIKKE · 五 Boss 长期掉落统计与概率偏差分析</small></div><a class="author-chip" href="https://space.bilibili.com/76579052?spm_id_from=333.337.0.0" target="_blank" rel="noopener" title="本工具（定制模组统计）由 sa_yuki 制作维护，点击查看 B站主页"><img class="author-avatar" src="assets/author_sa_yuki.webp?v=20261016c" alt="作者 sa_yuki"><span class="author-chip-txt"><b>作者 · sa_yuki</b><em>B站主页 ↗</em></span></a></div>
   <div class="header-actions">
     <div class="server-switch" aria-label="服务器切换">
       <button class="server-btn active" id="serverCN" onclick="switchServer('cn')">🇨🇳 国服<span class="srv-suffix"> · 对应国际服 3.5 周年前</span></button>
@@ -270,11 +280,6 @@ function openParentSync(){
 }
 </script>
 
-<details class="server-details">
-  <summary><span>奖励参数与期望口径</span><span class="details-toggle"></span></summary>
-  <div class="server-info" id="serverInfo"></div>
-</details>
-
 <section class="overview" aria-label="统计总览">
   <div class="stats-grid">
     <div class="stat-card"><div class="label">实际累计模组</div><div class="value gold" id="statActual">0.00</div><div class="sub" id="statActualSub">含碎片折算</div></div>
@@ -282,9 +287,11 @@ function openParentSync(){
     <div class="stat-card"><div class="label">累计偏差（实际 − 理论）</div><div class="value" id="statDev">0.00</div><div class="sub" id="statDevSub">—</div></div>
     <div class="stat-card"><div class="label">累计偏差 %</div><div class="value" id="statDevPct">0.0%</div><div class="sub" id="statDevStatus">暂无数据</div></div>
   </div>
+  <!-- R79：双倍日从天数样本条挪到「历史记录」面板头（碎片累计 / 可兑换旁边）——
+       它本质是「记录条里有多少条双倍」，和明细表同属一块，挨着看更顺；
+       样本条只留「已记录 N 天」这一条主线，不再左右各挂一个数字 -->
   <div class="sample-bar">
     <div class="sample-item"><span>已记录</span><strong class="sample-value" id="statDays">0</strong><span>天</span><span class="sample-hint" id="statDaysSub">建议至少 90 天</span><div class="progress"><span id="sampleProgress"></span></div></div>
-    <div class="sample-item"><span>双倍日</span><strong class="sample-value orange" id="statDouble">0</strong><span>天</span><span class="sample-hint" id="statDoubleSub">活动双倍记录</span></div>
   </div>
 </section>
 
@@ -326,7 +333,7 @@ function openParentSync(){
 </div>
 
 <section class="panel" id="historyPanel" aria-labelledby="historyTitle">
-  <div class="panel-head"><div><h2 class="panel-title" id="historyTitle">📋 历史记录</h2><div class="panel-sub" id="recordCount">当前服务器共 0 条</div></div><div class="table-tools"><span class="badge" id="fragmentSummary">碎片累计：0</span><span class="badge" id="completeFragmentSummary">可兑换：0 + 0 碎片</span></div></div>
+  <div class="panel-head"><div><h2 class="panel-title" id="historyTitle">📋 历史记录</h2><div class="panel-sub" id="recordCount">当前服务器共 0 条</div></div><div class="table-tools"><span class="badge double" id="doubleDaySummary">双倍日：0 天</span><span class="badge" id="fragmentSummary">碎片累计：0</span><span class="badge" id="completeFragmentSummary">可兑换：0 + 0 碎片</span></div></div>
   <div class="table-scroll" tabindex="0" role="region" aria-label="完整历史明细，可横向和纵向滚动">
     <table>
       <thead>
@@ -348,6 +355,14 @@ function openParentSync(){
 
 <div class="toast" id="toast"></div>
 <button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- R79：奖励参数与期望口径 → 标题旁 ⓘ 打开的信息窗。
+     弹窗放在 .app 外层，fixed 定位不参与文档流，iframe 内也不会撑高父页 -->
+<div class="info-mask" id="infoMask" hidden></div>
+<div class="info-pop" id="infoPop" role="dialog" aria-modal="true" aria-labelledby="infoPopTitle" hidden>
+  <div class="info-pop-head"><b id="infoPopTitle">奖励参数与期望口径</b><button type="button" class="info-pop-x" id="infoClose" aria-label="关闭信息窗">✕</button></div>
+  <div class="info-pop-body"><div class="server-info" id="serverInfo"></div></div>
+</div>
 
 <div class="calendar-pop" id="calendarPop">
   <div class="cal-head"><div class="cal-title" id="calTitle"></div><div class="cal-nav"><button type="button" onclick="changeMonth(-1)">‹</button><button type="button" onclick="changeMonth(1)">›</button></div></div>
@@ -536,7 +551,7 @@ function updateServerSummary(){
     <li>活动双倍日选择“是”，系统会将当天<strong>直接掉落</strong>和克拉肯<strong>碎片</strong>按双倍规则计算；录入实际直接掉落数量时<strong>不要自己乘双倍</strong>。</li>
     <li>${c.note}</li>
     <li>碎片只属于<strong>克拉肯</strong>：${c.fragmentPerRun} × 每日 ${runs} 次；100 碎片折算 1 个定制模组，余数完整保留。</li>
-    <li><strong>周期统计</strong>一屏一张卡、<strong>最近完成的周期排在最上</strong>（后面两张卡只露出顶边）：默认每 2.6 秒自动往后轮播一张，鼠标停在卡片上或手动翻页后 9 秒内会暂停；滚轮 / 上下滑动 / 点底部圆点 / 方向键都能手动切。卡片主数是到第 N 天为止的<strong>累计值</strong>，下方「本段」只统计该区间的<strong>增量</strong>（如第 31–60 天），不含之前的累计。</li>
+    <li><strong>周期统计</strong>一屏一张卡、<strong>最近完成的周期排在最上</strong>（后面两张卡只露出顶边）：默认每 4.6 秒自动往后轮播一张（可无限循环），鼠标停在卡片上或手动翻页后 9 秒内会暂停；滚轮 / 上下滑动 / 点底部圆点 / 方向键都能手动切。卡片主数是到第 N 天为止的<strong>累计值</strong>，下方「本段」只统计该区间的<strong>增量</strong>（如第 31–60 天），不含之前的累计。</li>
     <li>建议至少连续记录 <strong>90 天</strong>，更适合判断长期偏欧 / 偏非。</li>
     <li><strong>Boss 标签配色按游戏内属性：</strong><span class="badge boss elem-fire">死神 · 火</span> <span class="badge boss elem-water">镜像容器 · 水</span> <span class="badge boss elem-elec">过激派 · 电</span> <span class="badge boss elem-wind">茵迪维利亚 · 风</span> <span class="badge boss elem-iron">克拉肯 · 铁甲</span></li>
     <li>数据保存在浏览器 <strong>localStorage</strong>；导出 JSON 可备份两套服务器的数据，登录账号后也可用「☁️ 账号同步」上传云端。</li>`;
@@ -561,7 +576,9 @@ function render(stats){
   document.getElementById('statActual').textContent=stats.totalActual.toFixed(2);
   document.getElementById('statDays').textContent=stats.days;
   document.getElementById('statDaysSub').textContent=stats.days<90?`还需 ${90-stats.days} 天达到建议样本`:'已达到 90 天建议样本';
-  document.getElementById('statDouble').textContent=stats.doubleDays;
+  /* R79：双倍日挪到历史记录面板头（原 #statDouble / #statDoubleSub 已从样本条移除） */
+  const dblEl=document.getElementById('doubleDaySummary');
+  if(dblEl) dblEl.textContent=`双倍日：${stats.doubleDays} 天`;
   document.getElementById('statTheory').textContent=stats.totalTheory.toFixed(2);
   document.getElementById('statTheorySub').textContent=`普通日 ${normalExpectation().toFixed(2)} · 双倍日 ${doubleExpectation().toFixed(2)}`;
   const dev=stats.totalDev,pct=stats.devPct*100,devBand=cmpBand(dev,0.3),pctBand=cmpBand(pct,5);
@@ -686,8 +703,9 @@ function periodGo(i,opts){
   document.querySelectorAll('#periodAllList .period-all-row').forEach((d,j)=>d.classList.toggle('on',j===periodIdx));
 }
 /* R78：桌面右列「全部周期」一览（只在 >1080px 两列时显示）。
-   与堆叠卡共用同一份 order：点行即切卡，当前卡那一行高亮；行底细条＝实际/期望完成度，
-   颜色按偏差带（绿=偏欧 / 红=偏非 / 金=正常）。未完成的周期显示还差几天。 */
+   与堆叠卡共用同一份 order：点行即切卡，当前卡那一行高亮；颜色按偏差带
+   （绿=偏欧 / 红=偏非 / 金=正常）。未完成的周期显示还差几天。
+   R79：去掉行底进度细条 —— 与「还需 N 天」「-11.4%」及顶部样本条重复。 */
 function periodAllRow(o,i,stats){
   const total=stats.list.length;
   if(!o.done){
@@ -697,7 +715,6 @@ function periodAllRow(o,i,stats){
       <span class="pa-main">还需 ${need} 天</span>
       <span class="pa-dev muted">—</span>
       <span class="pa-dot"></span>
-      <span class="pa-bar"><i class="pending" style="width:${Math.min(100,total/o.target*100).toFixed(1)}%"></i></span>
     </button>`;
   }
   const r=stats.list[o.target-1],pct=r.devPct*100,sb=cmpBand(pct,5);
@@ -708,7 +725,6 @@ function periodAllRow(o,i,stats){
     <span class="pa-main">${r.cumActual.toFixed(2)}<em> / ${r.cumTheory.toFixed(2)}</em></span>
     <span class="pa-dev ${cls}">${pct>=0?'+':''}${pct.toFixed(1)}%</span>
     <span class="pa-dot ${dot}"></span>
-    <span class="pa-bar"><i class="${cls}" style="width:${Math.min(100,Math.abs(pct)/20*100).toFixed(1)}%"></i></span>
   </button>`;
 }
 /* R75：自动轮播 —— 每 4.6s 前进一张（末张之后环形回到首张，R77 起不再需要瞬切）。
@@ -949,6 +965,29 @@ document.addEventListener('click',e=>{const p=document.getElementById('calendarP
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCalendar()});
 document.getElementById('dropFields').addEventListener('input',updateDirectPreview);
 window.addEventListener('scroll',()=>document.getElementById('backTop').classList.toggle('show',window.scrollY>450));
+
+/* R79：标题旁 ⓘ → 「奖励参数与期望口径」信息窗（替代原页面顶部的折叠长条）。
+   内容容器 #serverInfo 未变，updateServerSummary() 仍照旧往里渲染。 */
+function openInfo(){
+  const m=document.getElementById('infoMask'),p=document.getElementById('infoPop'),b=document.getElementById('infoBtn');
+  if(!p||!m) return;
+  m.hidden=false;p.hidden=false;
+  if(b) b.setAttribute('aria-expanded','true');
+  const x=document.getElementById('infoClose');
+  if(x) x.focus({preventScroll:true});
+}
+function closeInfo(){
+  const m=document.getElementById('infoMask'),p=document.getElementById('infoPop'),b=document.getElementById('infoBtn');
+  if(!p||!m||p.hidden) return;
+  m.hidden=true;p.hidden=true;
+  if(b){ b.setAttribute('aria-expanded','false'); b.focus({preventScroll:true}); }
+}
+document.getElementById('infoBtn').addEventListener('click',()=>{
+  document.getElementById('infoPop').hidden?openInfo():closeInfo();
+});
+document.getElementById('infoMask').addEventListener('click',closeInfo);
+document.getElementById('infoClose').addEventListener('click',closeInfo);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeInfo(); });
 
 function init(){initBossSelector();resetForm();render(computeStats(loadRecords()));}
 init();
