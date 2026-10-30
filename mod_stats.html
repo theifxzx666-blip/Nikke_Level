@@ -129,6 +129,46 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .author-chip-txt{display:flex;flex-direction:column;line-height:1.25;white-space:nowrap}
 .author-chip-txt b{font-size:13px;color:var(--text)}
 .author-chip-txt em{font-style:normal;font-size:11px;color:var(--primary)}
+/* ===================== R78 桌面右列填空（全部周期一览） =====================
+   只在 >1080px 两列布局下出现：此时周期卡（~198px）与左侧表单（~414px）并排，
+   卡下方会空出 200px 左右。清单用 flex:1 吃掉这段空白，行高 32~56 自适应。
+   ≤1080px 单列时右列跟着表单走，不存在并排空白 → display:none，手机/平板零影响。 */
+.period-all{display:none}
+@media(min-width:1081px){
+  #periodPanel{align-self:stretch;display:flex;flex-direction:column;min-width:0}
+  #periodPanel .period-wrap{flex:0 0 auto}
+  .period-all{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin-top:16px}
+  .period-all-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 3px 7px;font-size:11.5px;color:var(--text2)}
+  .period-all-head b{font-size:12.5px;font-weight:600;color:var(--text3);letter-spacing:.2px}
+  .period-all-list{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;min-height:0}
+  .period-all-row{position:relative;flex:1 1 0;min-height:32px;max-height:56px;overflow:hidden;display:grid;
+    grid-template-columns:minmax(0,52px) minmax(0,1fr) 62px 14px;align-items:center;gap:10px;padding:0 11px;
+    border:1px solid var(--border);border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(24,60,45,.04);
+    font:inherit;font-size:12.5px;color:var(--text3);text-align:left;cursor:pointer;
+    transition:border-color .18s,background .18s,box-shadow .18s}
+  .period-all-row:hover{border-color:#93c4b0;background:#fbfefd}
+  .period-all-row.on{border-color:var(--primary);background:linear-gradient(180deg,#f3fbf7,#eaf7f1);box-shadow:0 2px 8px rgba(29,158,117,.14)}
+  .period-all-row.pending{background:#fbfcfc;color:var(--text2)}
+  .period-all-row .pa-day{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .period-all-row .pa-main{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .period-all-row .pa-main em{font-style:normal;font-size:11.5px;font-weight:400;color:var(--text2)}
+  .period-all-row.pending .pa-main{font-weight:500}
+  .period-all-row .pa-dev{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .period-all-row .pa-dot{width:8px;height:8px;border-radius:99px;background:#cfdcd5}
+  .period-all-row .pa-dot.lucky{background:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.14)}
+  .period-all-row .pa-dot.unlucky{background:var(--red);box-shadow:0 0 0 3px rgba(214,57,75,.13)}
+  .period-all-row .pa-dot.normal{background:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.13)}
+  /* 行底细条：已完成周期＝偏差量尺（|偏差%| / 20% 满格，颜色同偏差带），
+     未完成周期＝样本进度（灰绿）。两条语义不同但同一根 track，读法一致：越长越极端 */
+  .period-all-row .pa-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:#eef4f1}
+  .period-all-row .pa-bar i{display:block;height:100%;border-radius:0 2px 2px 0;transition:width .3s}
+  .period-all-row .pa-bar i.good{background:var(--green)}
+  .period-all-row .pa-bar i.bad{background:var(--red)}
+  .period-all-row .pa-bar i.near{background:var(--gold)}
+  .period-all-row .pa-bar i.pending{background:#b7d5c7}
+  .period-all-row.on .pa-bar{background:#d9ece3}
+}
+
 /* ===================== R76 手机竖屏紧凑化 =====================
    全部限定在 ≤720 / ≤560，桌面与平板布局零影响。
    核心：手机上 .entry-row 变成 flex-direction:column 后，子项的 flex-basis
@@ -275,6 +315,12 @@ function openParentSync(){
   <div class="period-wrap">
     <div class="period-view" id="periodGrid" tabindex="0" role="group" aria-label="周期统计，可用鼠标滚轮或上下滑动翻看各周期，页数见下方圆点"></div>
     <div class="period-dots" id="periodDots" aria-label="周期页数"></div>
+  </div>
+  <!-- R78：桌面两列时周期卡下方原本空 ~215px；补一块「全部周期」紧凑清单填空。
+       ≤1080px 单列时没有并排空白，CSS 直接 display:none，手机上零影响 -->
+  <div class="period-all" id="periodAll">
+    <div class="period-all-head"><b>全部周期</b><span>点击切换 · 当前卡片同步高亮</span></div>
+    <div class="period-all-list" id="periodAllList" role="list"></div>
   </div>
 </section>
 </div>
@@ -573,6 +619,8 @@ function renderPeriods(stats){
   periodIdx=Math.max(0,order.findIndex(o=>o.target===periodFocus));
   view.innerHTML=order.map(o=>o.html).join('');
   dots.innerHTML=order.map((o,i)=>`<button type="button" data-i="${i}" class="${i===periodIdx?'on':''}" aria-label="第 ${i+1} 张，共 ${order.length} 张：${o.target} 天${o.done?'':'（未完成）'}"></button>`).join('');
+  const allList=document.getElementById('periodAllList');
+  if(allList) allList.innerHTML=order.map((o,i)=>periodAllRow(o,i,stats)).join('');
   bindPeriodNav();
   layoutPeriods();
   periodAutoStart();
@@ -635,6 +683,33 @@ function periodGo(i,opts){
   periodFocus=cur?Number(cur.dataset.target):null;
   layoutPeriods();
   document.querySelectorAll('#periodDots button').forEach((d,j)=>d.classList.toggle('on',j===periodIdx));
+  document.querySelectorAll('#periodAllList .period-all-row').forEach((d,j)=>d.classList.toggle('on',j===periodIdx));
+}
+/* R78：桌面右列「全部周期」一览（只在 >1080px 两列时显示）。
+   与堆叠卡共用同一份 order：点行即切卡，当前卡那一行高亮；行底细条＝实际/期望完成度，
+   颜色按偏差带（绿=偏欧 / 红=偏非 / 金=正常）。未完成的周期显示还差几天。 */
+function periodAllRow(o,i,stats){
+  const total=stats.list.length;
+  if(!o.done){
+    const need=o.target-total;
+    return `<button type="button" class="period-all-row pending" data-i="${i}" data-target="${o.target}" title="${o.target} 天周期：还需 ${need} 天数据（当前 ${total} 天）">
+      <span class="pa-day">${o.target} 天</span>
+      <span class="pa-main">还需 ${need} 天</span>
+      <span class="pa-dev muted">—</span>
+      <span class="pa-dot"></span>
+      <span class="pa-bar"><i class="pending" style="width:${Math.min(100,total/o.target*100).toFixed(1)}%"></i></span>
+    </button>`;
+  }
+  const r=stats.list[o.target-1],pct=r.devPct*100,sb=cmpBand(pct,5);
+  const cls=sb>0?'good':sb<0?'bad':'near',dot=sb>0?'lucky':sb<0?'unlucky':'normal';
+  return `<button type="button" class="period-all-row${i===periodIdx?' on':''}" data-i="${i}" data-target="${o.target}"
+    title="${o.target} 天：累计 ${r.cumActual.toFixed(2)} / 期望 ${r.cumTheory.toFixed(2)}">
+    <span class="pa-day">${o.target} 天</span>
+    <span class="pa-main">${r.cumActual.toFixed(2)}<em> / ${r.cumTheory.toFixed(2)}</em></span>
+    <span class="pa-dev ${cls}">${pct>=0?'+':''}${pct.toFixed(1)}%</span>
+    <span class="pa-dot ${dot}"></span>
+    <span class="pa-bar"><i class="${cls}" style="width:${Math.min(100,Math.abs(pct)/20*100).toFixed(1)}%"></i></span>
+  </button>`;
 }
 /* R75：自动轮播 —— 每 4.6s 前进一张（末张之后环形回到首张，R77 起不再需要瞬切）。
    以下情况自动暂停：鼠标悬停在卡片上 / 手动翻页后 9s 内 / 页面切到后台 / 系统开启「减弱动效」 */
@@ -661,10 +736,16 @@ function periodAutoStart(){
   periodAutoTimer=setInterval(periodAutoStep,150);  /* 150ms 轮询：4.6s 的间隔实测落在 4600~4750ms */
   document.addEventListener('visibilitychange',periodAutoDelay);
 }
-/* R77：无限循环后的「页面让位」状态。环绕一次 → 同方向继续操作时把滚动交还给页面，
-   否则鼠标 / 手指停在卡片上时整页会被锁死（历史坑：滚轮到边界必须放行） */
-const PERIOD_WHEEL_PASS_MS=900;
-let periodWheelAt=0, periodWheelDir=0, periodTouchPass=false;
+/* R78：滚轮改「累计位移分页」。R77 的时间锁（380ms 内只翻一张）会把快速滚动整段吃掉，
+   表现为「滚动没反应」；R77 的「环绕后 0.9s 一律让位」又会让环绕那一下直接把页面滚走。
+   新规则：
+   - 累计滚动位移满 PERIOD_WHEEL_STEP 才翻一张 → 快滚慢滚都能一格格翻；
+   - 手势判定用 200ms 间隔，慢慢滚每格都算新手势 → 永远在翻页，不会误触发页面滚动；
+   - 只有「环绕之后同一次手势里继续同向滚」累计到 PERIOD_WHEEL_ESCAPE 才把滚动交还页面，
+     此时差不多已绕满一圈，用户明显是想滚页面了（保留铁律：滚轮不能把整页锁死） */
+const PERIOD_WHEEL_STEP=100, PERIOD_WHEEL_ESCAPE=520, PERIOD_WHEEL_GESTURE_MS=200;
+const PERIOD_TOUCH_PASS_MS=600;   /* 触摸环绕后 600ms 内起手的手势让给页面滚动 */
+let periodTouchPassUntil=0;
 let periodNavBound=false;
 function bindPeriodNav(){
   const view=document.getElementById('periodGrid'),dots=document.getElementById('periodDots');
@@ -674,21 +755,35 @@ function bindPeriodNav(){
     const b=e.target.closest('button');
     if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i)); }
   });
+  /* R78：桌面右列清单点行切卡（元素本身不重建，只换 innerHTML，绑一次即可） */
+  const allList=document.getElementById('periodAllList');
+  if(allList) allList.addEventListener('click',e=>{
+    const b=e.target.closest('.period-all-row');
+    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i)); }
+  });
   /* 鼠标停在卡片上时不要自动翻走 */
   view.addEventListener('mouseenter',()=>{periodAutoHover=true});
   view.addEventListener('mouseleave',()=>{periodAutoHover=false;periodAutoDelay()});
-  /* 鼠标滚轮：R77 起可无限循环（末张再往下就是首张）。为了不把整页滚死，
-     环绕过一次之后，同方向继续滚的 0.9s 内一律放行给页面滚动 */
-  let lock=0;
+  /* 鼠标滚轮：环形无限循环 + 累计位移分页（详见 PERIOD_WHEEL_* 注释） */
+  let wAcc=0, wLast=0, wDir=0, wPass=false, wWrapDir=0, wWrapAcc=0;
   view.addEventListener('wheel',e=>{
-    if(Math.abs(e.deltaY)<6) return;
-    const down=e.deltaY>0,dir=down?1:-1,n=view.querySelectorAll('.period-card').length,now=Date.now();
-    if(periodWheelDir===dir&&now-periodWheelAt<PERIOD_WHEEL_PASS_MS) return; /* 刚绕过，让页面滚 */
+    const raw=e.deltaMode===1?e.deltaY*16:e.deltaY;
+    if(Math.abs(raw)<2) return;
+    const now=Date.now(),dir=raw>0?1:-1,n=view.querySelectorAll('.period-card').length;
+    if(now-wLast>PERIOD_WHEEL_GESTURE_MS){ wAcc=0; wPass=false; wDir=0; wWrapDir=0; wWrapAcc=0; } /* 新手势 */
+    wLast=now;
+    if(wPass) return;                                   /* 本手势剩下的滚动都交给页面 */
+    if(wWrapDir===dir){
+      wWrapAcc+=Math.abs(raw);
+      if(wWrapAcc>=PERIOD_WHEEL_ESCAPE) wPass=true;      /* 环绕后又滚了约一圈：下一格起页面接管 */
+    }else if(wWrapDir){ wWrapDir=0; wWrapAcc=0; }        /* 反向 = 想继续翻页，取消让位计数 */
     e.preventDefault();
-    if(now-lock<380) return;
-    lock=now;
+    if(dir!==wDir){ wAcc=0; wDir=dir; }
+    wAcc+=Math.abs(raw);
+    if(wAcc<PERIOD_WHEEL_STEP) return;                   /* 位移不满一张：只拦不翻 */
+    wAcc=0;
     periodAutoHoldFor();
-    if((down&&periodIdx===n-1)||(!down&&periodIdx===0)){ periodWheelAt=now; periodWheelDir=dir; }
+    if((dir>0&&periodIdx===n-1)||(dir<0&&periodIdx===0)){ wWrapDir=dir; wWrapAcc=0; }
     periodGo(periodIdx+dir);
   },{passive:false});
   /* 触摸：R77 起竖向手势可无限循环。同样为了不把页面滚死：
@@ -696,7 +791,7 @@ function bindPeriodNav(){
   let sy=0,sx=0,active=false,skip=false;
   view.addEventListener('touchstart',e=>{
     if(e.touches.length!==1){active=false;return;}
-    active=true; skip=periodTouchPass; periodTouchPass=false;
+    active=true; skip=Date.now()<periodTouchPassUntil;
     sy=e.touches[0].clientY; sx=e.touches[0].clientX;
   },{passive:true});
   view.addEventListener('touchmove',e=>{
@@ -713,7 +808,7 @@ function bindPeriodNav(){
     if(Math.abs(dy)<40||Math.abs(dy)<=Math.abs(dx)) return;
     periodAutoHoldFor();
     const n=view.querySelectorAll('.period-card').length,dir=dy<0?1:-1;
-    if((dir>0&&periodIdx===n-1)||(dir<0&&periodIdx===0)) periodTouchPass=true;
+    if((dir>0&&periodIdx===n-1)||(dir<0&&periodIdx===0)) periodTouchPassUntil=Date.now()+PERIOD_TOUCH_PASS_MS;
     periodGo(periodIdx+dir);
   },{passive:true});
   view.addEventListener('keydown',e=>{

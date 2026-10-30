@@ -359,7 +359,7 @@ t("⑬b 排序与翻页逻辑：最近完成的排最上、到边界放行、数
   assert.ok(/periodFocus/.test(html), "缺少 periodFocus（数据刷新后按天数复位，而不是按序号）");
   assert.ok(/function layoutPeriods\(\)/.test(html) && /c\.style\.height=maxH\+'px'/.test(html), "缺少统一卡高的 layoutPeriods");
   /* R77：不再在边界停住，改环形无限循环；但环绕过一次后必须把滚动让回页面，否则整页锁死 */
-  assert.ok(/periodWheelDir===dir&&now-periodWheelAt<PERIOD_WHEEL_PASS_MS\) return;/.test(html), "滚轮环绕后没有把滚动让回页面");
+  assert.ok(/if\(wWrapDir===dir\)\{/.test(html) && /if\(wWrapAcc>=PERIOD_WHEEL_ESCAPE\) wPass=true;/.test(html), "滚轮环绕后没有把滚动让回页面");
   assert.ok(/addEventListener\('wheel'/.test(html) && /addEventListener\('touchstart'/.test(html), "缺少滚轮 / 触摸翻页");
 });
 
@@ -430,10 +430,30 @@ t("⑰ R77：堆叠卡环形无限循环（末→首、首→末）+ 环绕后�
   /* 3. 方向判定：跨过一半圈数当反向，动画才不会横扫整圈 */
   assert.ok(/periodDir=\(\(\(next-periodIdx\+n\)%n\)>n\/2\)\?-1:1;/.test(html), "缺少前进/后退方向判定");
   /* 4. 环绕后的页面让位：滚轮 0.9s 窗口 + 触摸下一手势 */
-  assert.ok(/const PERIOD_WHEEL_PASS_MS=900;/.test(html), "缺少滚轮让位窗口常量");
-  assert.ok(/periodTouchPass=true;/.test(html) && /skip=periodTouchPass; periodTouchPass=false;/.test(html),
+  assert.ok(/const PERIOD_WHEEL_STEP=100, PERIOD_WHEEL_ESCAPE=520, PERIOD_WHEEL_GESTURE_MS=200;/.test(html), "缺少滚轮累计位移分页常量");
+  assert.ok(/if\(wWrapAcc>=PERIOD_WHEEL_ESCAPE\) wPass=true;/.test(html), "滚轮环绕后没有把滚动让回页面");
+  assert.ok(/periodTouchPassUntil=Date.now\(\)\+PERIOD_TOUCH_PASS_MS;/.test(html) && /skip=Date.now\(\)<periodTouchPassUntil;/.test(html),
     "触摸环绕后没有把下一次手势让给页面滚动");
   assert.ok(/if\(!active\|\|skip\|\|e\.touches\.length!==1\) return;/.test(html), "让位手势不应再拦截 touchmove");
+});
+
+/* ---------- ⑧ R78：桌面右列填空 + 滚轮累计位移分页 ---------- */
+t("⑱ R78：桌面右列补「全部周期」清单 + 滚轮改累计位移分页", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  /* 1. 清单只在桌面两列时出现，≤1080 必须隐藏（不影响手机） */
+  assert.ok(/\.period-all\{display:none\}/.test(html), "清单默认应 display:none，手机端不占空间");
+  assert.ok(/@media\(min-width:1081px\)\{[\s\S]{0,400}\.period-all\{display:flex/.test(html), "清单应只在 >1080px 显示");
+  assert.ok(/#periodPanel\{align-self:stretch;display:flex;flex-direction:column;min-width:0\}/.test(html), "桌面下 #periodPanel 需撑满行高才能填空");
+  /* 2. 清单与堆叠卡同源 */
+  assert.ok(/allList.innerHTML=order.map\(\(o,i\)=>periodAllRow\(o,i,stats\)\)/.test(html), "清单必须与卡片共用同一份 order");
+  assert.ok(/function periodAllRow\(o,i,stats\)\{/.test(html), "缺少 periodAllRow 渲染函数");
+  assert.ok(/allList.addEventListener\('click'/.test(html), "清单行需要可点击切卡");
+  assert.ok(/#periodAllList \.period-all-row'\)\.forEach\(\(d,j\)=>d\.classList\.toggle\('on',j===periodIdx\)\)/.test(html), "切卡后清单高亮要同步");
+  /* 3. 滚轮：位移累积分页 */
+  assert.ok(html.indexOf("now-lock<380") === -1, "380ms 时间锁会把快速滚动整段吃掉，必须移除");
+  assert.ok(/wAcc\+=Math\.abs\(raw\);/.test(html) && /if\(wAcc<PERIOD_WHEEL_STEP\) return;/.test(html), "滚轮应按累计位移满一张才翻页");
+  assert.ok(/if\(now-wLast>PERIOD_WHEEL_GESTURE_MS\)/.test(html), "需要手势间隔判定，慢滚才不会误让位");
+  assert.ok(/e\.deltaMode===1\?e\.deltaY\*16:e\.deltaY/.test(html), "行模式滚轮要归一化 deltaY");
 });
 
 console.log("\n===== test_mod_stats: PASS=" + pass + "  FAIL=" + fail + " =====");
