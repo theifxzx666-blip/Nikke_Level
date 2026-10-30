@@ -336,6 +336,10 @@ t("⑬ 周期统计容器结构：period-view 视口 + period-dots 圆点，旧�
   assert.ok(/target===SAMPLE_DAYS\?'<em class="sample-tag p-sample">建议样本<\/em>'/.test(html), "周期卡缺少 p-sample tag");
   assert.ok(/\.p-sample\{display:none\}/.test(html), "卡内 p-sample 宽屏应隐藏（避免与清单重复）");
   assert.ok(html.indexOf(".p-sample{display:inline-block") > html.indexOf("@media(max-width:1080px)"), "窄屏媒体查询需显示卡内 p-sample");
+  /* R82：顶部「已记录 N 天 + 进度条」样本条整块移除，类名与 DOM 挂点都不得再出现 */
+  assert.ok(html.indexOf('class="sample-bar"') === -1 && html.indexOf('id="statDays"') === -1,
+    "顶部样本条（.sample-bar / #statDays）已按用户要求删除，不该再加回来");
+  assert.ok(!/\.sample-(bar|item|value|hint|track)\s*\{/.test(html), "样本条相关 CSS 应一并删除");
 });
 
 t("⑬c R74：周期统计不再有面板外框与标题行，只留卡片本体 + 底部圆点", function () {

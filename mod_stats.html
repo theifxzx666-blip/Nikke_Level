@@ -45,11 +45,10 @@ summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-c
 .stat-card::before{content:'';position:absolute;left:20px;right:20px;top:0;height:2px;background:linear-gradient(90deg,rgba(29,158,117,.75),rgba(14,143,156,.3),transparent);opacity:.6}
 .stat-card:hover{border-color:#93c4b0;transform:translateY(-2px);box-shadow:0 18px 40px rgba(24,60,45,.1)}
 .label{font-size:13px;font-weight:500;color:var(--text3)}.value{font-size:30px;font-weight:700;margin-top:8px;line-height:1.2;letter-spacing:-.3px;font-variant-numeric:tabular-nums}.value.gold{color:var(--gold)}.value.green{color:var(--green)}.value.red{color:var(--red)}.value.orange{color:var(--orange)}.sub{font-size:12px;color:var(--text2);margin-top:7px;line-height:1.6}
-.sample-bar{display:flex;align-items:center;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;padding:10px 4px 0;color:var(--text2);font-size:13px}.sample-item{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;min-width:0}.sample-value{font-size:16px;color:var(--text);font-variant-numeric:tabular-nums}.sample-value.orange{color:var(--orange)}.sample-hint{font-size:12px}.sample-bar .progress{width:96px;margin:0;height:5px;flex:0 0 auto}
-/* R81：「建议样本」tag 从顶部样本条挪到「全部周期」清单里的 90 天行。
-   90 天就是建议样本周期，标签贴在自己那一行才有指向性；顶部那行只留
-   「已记录 N 天 + 进度条」，不再挂尾巴（R80 挂在那儿被反馈成「打在已记录后面」） */
-.sample-track{display:flex;align-items:center;gap:7px;min-width:0}
+/* R82：`.sample-bar` / `.sample-item` / `.sample-value` / `.sample-hint` 一并删除 ——
+   那一条「已记录 N 天 + 96px 进度条」整块移除，页面里已无任何元素引用这些类名 */
+/* R81：「建议样本」tag 挂在「全部周期」清单里的 90 天行（窄屏挂在 90 天卡标题行）。
+   90 天就是建议样本周期，标签贴在自己那一行才有指向性 */
 .sample-tag{display:inline-block;flex:0 0 auto;margin-left:6px;font-size:10.5px;line-height:1.35;font-weight:600;
   color:var(--primary);white-space:nowrap;vertical-align:1px;letter-spacing:.2px;
   border:1px solid #cfe0d7;border-radius:5px;padding:1px 5px;background:#f1faf6}
@@ -135,7 +134,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 @media(max-width:1200px){thead tr.group{display:none}}
 @media(max-width:1080px){.entry-period{grid-template-columns:minmax(0,1fr)}.entry-period>.panel{margin-bottom:24px}.entry-period>#periodPanel .period-wrap{margin-bottom:24px}/* R81b：清单隐藏了，建议样本 tag 改由 90 天那张卡的标题行承担 */.p-sample{display:inline-block;font-size:10px;padding:0 4px;vertical-align:2px}}
 @media(max-width:1000px){.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:720px){body{padding:14px}.header{align-items:flex-start}.brand{flex-wrap:wrap}.brand h1{font-size:21px}.header-actions{width:100%}/* 我方多一个「☁️ 账号同步」，等分四格会把「清空当前服」挤成两行 → 按内容宽度、放不下就换行 */.header-actions button{flex:1 1 auto;white-space:nowrap}.server-switch{width:100%}.server-btn{flex:1}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.entry-row{flex-direction:column;align-items:stretch;gap:18px;padding-bottom:0;padding-top:16px}.entry-row .drop-sum{position:static;margin-top:6px}.sample-bar{justify-content:flex-start}.sample-item{width:100%}.calendar-pop{width:min(330px,calc(100vw - 24px))}}
+@media(max-width:720px){body{padding:14px}.header{align-items:flex-start}.brand{flex-wrap:wrap}.brand h1{font-size:21px}.header-actions{width:100%}/* 我方多一个「☁️ 账号同步」，等分四格会把「清空当前服」挤成两行 → 按内容宽度、放不下就换行 */.header-actions button{flex:1 1 auto;white-space:nowrap}.server-switch{width:100%}.server-btn{flex:1}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.entry-row{flex-direction:column;align-items:stretch;gap:18px;padding-bottom:0;padding-top:16px}.entry-row .drop-sum{position:static;margin-top:6px}.calendar-pop{width:min(330px,calc(100vw - 24px))}}
 @media(max-width:560px){body{padding:12px}.form-grid{grid-template-columns:1fr;gap:16px}.form-body{padding:16px}.entry-period .form-grid{grid-template-columns:1fr}.entry-row .form-actions{margin-left:0}.form-actions .btn-primary,.form-actions .btn-secondary{flex:1}.server-switch .server-btn{font-size:13px;padding:0 10px}.stat-card{padding:16px}.stat-card::before{left:16px;right:16px}}
 @media(max-width:480px){.value{font-size:26px}.panel-head{align-items:flex-start;flex-direction:column}.server-info{line-height:1.7}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
@@ -240,13 +239,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   .stat-card .label{font-size:12px}
   .stat-card .value{font-size:23px;margin:1px 0}
   .stat-card .sub{font-size:11px;margin-top:2px}
-  /* ③ 样本条压成一行：只留数字与单位 */
-  .sample-bar{padding:10px 2px 0;gap:2px 14px;font-size:12px}
-  .sample-item{width:auto;gap:3px 6px}
-  .sample-value{font-size:15px}
-  .sample-hint{font-size:11px;color:var(--text2)}
-  .sample-bar .progress{width:52px}
-  .sample-track{gap:5px}
+/* R82：样本条（.sample-bar/.sample-item/.sample-value/.sample-hint/.sample-track）整块删除 */
   /* R81：.sample-tag 现在只在「全部周期」清单行里出现，清单 ≤1080px 不渲染，这里不再需要窄屏覆盖 */
   /* ④ 表单两列：日期 | Boss、次数 | 双倍 → 省约 130px 纵深
      ⚠ 必须带 .entry-period 前缀：第 122 行 `.entry-period .form-grid{grid-template-columns:1fr}`
@@ -320,14 +313,9 @@ function openParentSync(){
     <div class="stat-card"><div class="label">累计偏差（实际 − 理论）</div><div class="value" id="statDev">0.00</div><div class="sub" id="statDevSub">—</div></div>
     <div class="stat-card"><div class="label">累计偏差 %</div><div class="value" id="statDevPct">0.0%</div><div class="sub" id="statDevStatus">暂无数据</div></div>
   </div>
-  <!-- R79：双倍日从天数样本条挪到「历史记录」面板头（碎片累计 / 可兑换旁边）——
-       它本质是「记录条里有多少条双倍」，和明细表同属一块，挨着看更顺；
-       样本条只留「已记录 N 天」这一条主线，不再左右各挂一个数字 -->
-  <div class="sample-bar">
-    <div class="sample-item"><span>已记录</span><strong class="sample-value" id="statDays">0</strong><span>天</span>
-      <div class="sample-track"><div class="progress"><span id="sampleProgress"></span></div></div>
-    </div>
-  </div>
+  <!-- R82：整条「已记录 N 天 + 进度条」样本条按用户要求移除 ——
+       天数在「历史记录」头的「共 N 条」里已有，样本进度则由「全部周期」清单的
+       90 天行（含「建议样本」tag 与偏差色点）表达，这里不再重复一条主线 -->
 </section>
 
 <!-- R75：添加每日记录 + 周期统计并排一行（左表单 / 右周期卡）；≤1080px 回落上下单列 -->
@@ -626,7 +614,7 @@ function renderServerInfo(){
 function render(stats){
   renderServerInfo();
   document.getElementById('statActual').textContent=stats.totalActual.toFixed(2);
-  document.getElementById('statDays').textContent=stats.days;
+  /* R82：原来这里写 #statDays / #sampleProgress，样本条整块移除后一并删除 */
   /* R80：删掉「还需 N 天达到建议样本」—— 信息量全在那根进度条 + 终点的「建议样本」tag 上 */
   /* R79：双倍日挪到历史记录面板头（原 #statDouble / #statDoubleSub 已从样本条移除） */
   const dblEl=document.getElementById('doubleDaySummary');
@@ -638,7 +626,6 @@ function render(stats){
   document.getElementById('statDevSub').textContent=stats.days?`累计碎片 ${stats.cumFragments}`:'—';
   const pctEl=document.getElementById('statDevPct'); pctEl.textContent=(pct>=0?'+':'')+pct.toFixed(1)+'%'; pctEl.className='value '+(pctBand>0?'green':pctBand<0?'red':'');
   const status=document.getElementById('statDevStatus'); status.textContent=!stats.days?'暂无数据':pctBand>0?'🔥 偏欧 · 继续观察':pctBand<0?'🌧 偏非 · 继续观察':'✅ 正常范围'; status.style.color=!stats.days?'var(--text2)':pctBand>0?'var(--green)':pctBand<0?'var(--red)':'var(--gold)';
-  document.getElementById('sampleProgress').style.width=Math.min(100,stats.days/SAMPLE_DAYS*100)+'%';
 
   document.getElementById('fragmentSummary').textContent=`碎片累计：${stats.cumFragments}`;
   document.getElementById('completeFragmentSummary').textContent=`可兑换：${Math.floor(stats.cumFragments/100)} + ${stats.cumFragments%100} 碎片`;
