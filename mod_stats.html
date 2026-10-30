@@ -32,7 +32,7 @@ button{cursor:pointer}
 button:focus-visible,.date-trigger:focus-visible,.del-btn:focus-visible{outline:2px solid rgba(29,158,117,.6);outline-offset:2px}
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:var(--bg3)}::-webkit-scrollbar-thumb{background:#b8cbc2;border-radius:99px}::-webkit-scrollbar-thumb:hover{background:#93b3a6}
 .app{width:min(1480px,100%);margin:auto}
-.header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
 .brand{display:flex;gap:14px;align-items:center}.brand-mark{width:48px;height:48px;flex:0 0 auto;border:1px solid #b9d3c6;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#e3efe9,#d2e6da);box-shadow:inset 0 1px 0 #fff,var(--shadow-sm);overflow:hidden}
 .brand-mark img{width:100%;height:100%;object-fit:contain;display:block;padding:5px;box-sizing:border-box;filter:drop-shadow(0 2px 6px rgba(29,158,117,.22))}
 .brand h1{font-size:25px;font-weight:700;line-height:1.25;letter-spacing:.2px;color:var(--text)}.brand small{display:block;color:var(--text2);font-size:13px;font-weight:400;margin-top:5px}
@@ -40,31 +40,39 @@ button:focus-visible,.date-trigger:focus-visible,.del-btn:focus-visible{outline:
 .server-switch{display:flex;gap:4px;padding:4px;border:1px solid var(--border);background:#e4eeea;border-radius:12px;box-shadow:inset 0 1px 3px rgba(24,60,45,.08)}.server-btn{border:0;background:transparent;padding:0 13px;font-size:13px;height:32px;box-shadow:none;white-space:nowrap}.srv-suffix{display:none}.server-btn:hover{color:var(--text);background:rgba(29,158,117,.06)}.header-actions .server-btn.active{background:linear-gradient(180deg,var(--primary),var(--primary-dark));color:#fff;font-weight:600;box-shadow:0 4px 12px rgba(29,158,117,.22),inset 0 1px 0 rgba(255,255,255,.15)}
 .server-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:linear-gradient(90deg,rgba(29,158,117,.08),rgba(184,134,11,.04) 55%,rgba(29,158,117,.04));border:1px solid var(--border);padding:12px 14px;border-radius:var(--radius-sm);color:var(--text2);font-size:13px;line-height:1.65}.server-info strong{color:var(--text);font-weight:600}.param{padding:4px 9px;border-radius:8px;background:#f4faf7;border:1px solid #cfe0d7;color:var(--text3);font-size:12px;max-width:100%;overflow-wrap:anywhere}
 summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px}summary::-webkit-details-marker{display:none}summary:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}.details-toggle{color:var(--text2);font-size:12px;font-weight:400;white-space:nowrap}.details-toggle::after{content:'展开 +'}details[open]>summary .details-toggle::after{content:'收起 −'}
-.overview{margin-bottom:24px}.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.stat-card{position:relative;overflow:hidden;background:linear-gradient(180deg,#ffffff,#f8fcf9);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm);min-height:124px;transition:border-color .2s,transform .2s,box-shadow .2s}
+.overview{margin-bottom:14px}.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.stat-card{position:relative;overflow:hidden;background:linear-gradient(180deg,#ffffff,#f8fcf9);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow-sm);min-height:112px;transition:border-color .2s,transform .2s,box-shadow .2s}
 .stat-card::before{content:'';position:absolute;left:20px;right:20px;top:0;height:2px;background:linear-gradient(90deg,rgba(29,158,117,.75),rgba(14,143,156,.3),transparent);opacity:.6}
 .stat-card:hover{border-color:#93c4b0;transform:translateY(-2px);box-shadow:0 18px 40px rgba(24,60,45,.1)}
 .label{font-size:13px;font-weight:500;color:var(--text3)}.value{font-size:30px;font-weight:700;margin-top:8px;line-height:1.2;letter-spacing:-.3px;font-variant-numeric:tabular-nums}.value.gold{color:var(--gold)}.value.green{color:var(--green)}.value.red{color:var(--red)}.value.orange{color:var(--orange)}.sub{font-size:12px;color:var(--text2);margin-top:7px;line-height:1.6}
-.sample-bar{display:flex;align-items:center;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;padding:12px 4px 0;color:var(--text2);font-size:13px}.sample-item{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;min-width:0}.sample-value{font-size:16px;color:var(--text);font-variant-numeric:tabular-nums}.sample-value.orange{color:var(--orange)}.sample-hint{font-size:12px}.sample-bar .progress{width:96px;margin:0;height:5px;flex:0 0 auto}
+.sample-bar{display:flex;align-items:center;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;padding:10px 4px 0;color:var(--text2);font-size:13px}.sample-item{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;min-width:0}.sample-value{font-size:16px;color:var(--text);font-variant-numeric:tabular-nums}.sample-value.orange{color:var(--orange)}.sample-hint{font-size:12px}.sample-bar .progress{width:96px;margin:0;height:5px;flex:0 0 auto}
+/* R80：进度条右边挂「建议样本」标签 —— 条满 = 90 天，标签就是终点刻度（R79 那行
+   「还需 N 天达到建议样本」已按用户要求删除，信息合并到这个 tag 上） */
+.sample-track{display:flex;align-items:center;gap:7px;min-width:0}
+.sample-tag{flex:0 0 auto;font-size:11px;line-height:1.35;color:var(--text2);white-space:nowrap;
+  border:1px solid #cfe0d7;border-left:2px solid var(--primary);border-radius:0 6px 6px 0;
+  padding:2px 7px 2px 6px;background:#f4faf7}
 .panel{background:linear-gradient(180deg,#ffffff,#fafdfb);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);margin-bottom:24px;overflow:hidden}
-.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#f7fcf9,#eff6f2)}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#f7fcf9,#eff6f2)}
 .panel-title{font-size:17px;font-weight:600;letter-spacing:.2px}.panel-sub{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.6}
-.form-body{padding:20px}
+.form-body{padding:15px 16px}
 .form-grid{display:grid;grid-template-columns:minmax(140px,.85fr) minmax(220px,1.4fr) minmax(190px,1.15fr) minmax(140px,.85fr);gap:16px;align-items:start}
 /* R75：添加每日记录与周期统计并排一行（左表单 / 右周期卡）；窄屏回落单列 */
-.entry-period{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(0,1fr);gap:18px;align-items:start;margin-bottom:24px}
+.entry-period{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(0,1fr);gap:18px;align-items:start;margin-bottom:14px}
 .entry-period>.panel{margin-bottom:0}
 .entry-period>#periodPanel .period-wrap{margin-bottom:0}
 /* 表单只占左列时，原来 4 列会被挤成 145px 一格 → 固定 2 列 */
 .entry-period .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 /* 掉落 / 备注 / 按钮压成一行；真的放不下才换行，不硬裁文字 */
-.entry-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-top:18px;padding-top:18px;padding-bottom:28px;border-top:1px solid var(--border)}
+.entry-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-top:14px;padding-top:14px;padding-bottom:26px;border-top:1px solid var(--border)}
 /* 「当天直接模组 / 每次 0~3」不占格内高度，绝对挂到行底部预留区 —— 这样三个格子都以输入框收尾，底边才对得齐 */
 .entry-row .drop-sum{position:absolute;left:0;top:calc(100% + 6px);margin:0}
 .entry-row .drop-wrap{flex:1 1 250px;min-width:0}
 .entry-row .note-wrap{flex:1 1 140px;min-width:0}
 .entry-row .form-actions{margin-left:auto}
 .lbl-note{font-size:12px;font-weight:400;color:var(--text2);margin-left:2px;white-space:nowrap}
+/* R80：双倍日「填实际数量、不要自己乘 2」是录入最容易错的点，标红提示 */
+.lbl-note.warn{color:var(--red);font-weight:500}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}.field label{font-size:14px;color:var(--text3);font-weight:500}
 .field input,.field select,.date-trigger{width:100%;height:42px;font-size:15px;line-height:1.4;border-radius:10px;border:1px solid #c8d8d0;background:#ffffff;color:var(--text);padding:0 12px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s}
 .field input::placeholder{color:var(--text2);opacity:1}
@@ -106,7 +114,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .del-btn{border:0;background:transparent;color:var(--text2);padding:6px;border-radius:8px;transition:color .15s,background .15s}.del-btn:hover{color:var(--red);background:rgba(214,57,75,.08)}
 .note{max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .empty{padding:54px 20px;text-align:center;color:var(--text2)}.empty-icon{font-size:38px;display:block;margin-bottom:8px}
-.period-wrap{padding:0;margin-bottom:24px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-card{position:absolute;left:0;right:0;top:0;transform-origin:50% 100%;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff,#f7fcf9);box-shadow:0 1px 3px rgba(24,60,45,.05);border-radius:12px;padding:14px;transition:border-color .2s,box-shadow .2s,transform .45s cubic-bezier(.22,.7,.24,1),opacity .3s;will-change:transform}.period-card:hover{border-color:#93c4b0;box-shadow:0 6px 16px rgba(24,60,45,.09)}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:12px}.period-dots button{width:6px;height:6px;border:0;padding:0;border-radius:99px;background:#cfdcd5;cursor:pointer;transition:width .22s,background .22s}.period-dots button:hover{background:#a9c7ba}.period-dots button.on{width:18px;background:var(--primary)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;flex-wrap:wrap;margin-top:6px}.p-left{min-width:0}.p-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.p-main{font-size:28px;font-weight:700;margin:0 0 2px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:flex-start;gap:14px;margin-top:0}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
+.period-wrap{padding:0;margin-bottom:24px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-card{position:absolute;left:0;right:0;top:0;transform-origin:50% 100%;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff,#f7fcf9);box-shadow:0 1px 3px rgba(24,60,45,.05);border-radius:12px;padding:12px;transition:border-color .2s,box-shadow .2s,transform .42s cubic-bezier(.22,.72,.2,1),opacity .26s;will-change:transform}.period-card:hover{border-color:#93c4b0;box-shadow:0 6px 16px rgba(24,60,45,.09)}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:9px}.period-dots button{width:6px;height:6px;border:0;padding:0;border-radius:99px;background:#cfdcd5;cursor:pointer;transition:width .22s,background .22s}.period-dots button:hover{background:#a9c7ba}.period-dots button.on{width:18px;background:var(--primary)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;flex-wrap:wrap;margin-top:6px}.p-left{min-width:0}.p-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.p-main{font-size:26px;font-weight:700;margin:0 0 2px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:flex-start;gap:14px;margin-top:0}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
 .help-body{padding:16px 18px 18px;color:var(--text2);font-size:14px;line-height:1.85}.help-body ul{padding-left:18px}.help-body li+li{margin-top:3px}.help-body strong{color:var(--text)}.help-body code{padding:2px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text3)}
 .progress{height:7px;background:#e2ece7;border-radius:999px;overflow:hidden;margin-top:10px}.progress>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--cyan));width:0}
 .toast{position:fixed;right:24px;bottom:24px;z-index:1000;padding:12px 15px;border:1px solid var(--border);background:#ffffff;border-radius:11px;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);pointer-events:none;transition:.22s;max-width:min(420px,calc(100vw - 30px));font-size:14px;color:var(--text)}.toast.show{opacity:1;transform:translateY(0)}.toast.success{border-left:4px solid var(--green)}.toast.error{border-left:4px solid var(--red)}.toast.info{border-left:4px solid var(--accent)}
@@ -136,16 +144,29 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .info-btn:hover{background:#e2f1ea;border-color:var(--primary);color:var(--primary-dark)}
 .info-btn:active{transform:translateY(1px)}
 .info-btn svg{display:block;pointer-events:none}
-.info-mask{position:fixed;inset:0;z-index:2050;background:rgba(24,60,45,.32)}
-.info-mask[hidden],.info-pop[hidden]{display:none}
-/* 固定高度上限（px）而非 vh：本页会被 index.html 以 iframe 嵌入，vh 会随父页撑高来回变 */
-.info-pop{position:fixed;z-index:2060;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,calc(100vw - 28px));max-height:460px;display:flex;flex-direction:column;background:#fff;border:1px solid #c8d8d0;border-radius:16px;box-shadow:0 24px 60px rgba(24,60,45,.22);overflow:hidden}
-.info-pop-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#f7fcf9,#eff6f2)}
-.info-pop-head b{font-size:15px;font-weight:600;color:var(--text)}
-.info-pop-x{width:28px;height:28px;flex:0 0 auto;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text2);font-size:13px;line-height:1;display:grid;place-items:center;transition:border-color .18s,color .18s,background .18s}
-.info-pop-x:hover{border-color:var(--red);color:var(--red);background:rgba(214,57,75,.07)}
-.info-pop-body{padding:14px 16px 16px;overflow-y:auto;min-height:0}
-.info-pop .server-info{border:0;border-radius:0;background:transparent;padding:0;gap:7px}
+/* R80：信息窗从「居中 dialog + 半透明遮罩」改成「贴着按钮旁边浮出的小卡片」，
+   悬停即看、移开即收（也可点击固定、✕ / Esc 关闭）。没有任何遮罩，不挡页面，
+   也没有尺寸回填动作 → iframe 内高度零漂移。定位坐标由 JS 按按钮矩形算，
+   内容宽度与 max-height 都用 JS 按当前视口写 px（不用 vh，避免 iframe 内正反馈）。 */
+.info-tip{position:fixed;z-index:2060;left:0;top:0;width:min(440px,calc(100vw - 20px));display:flex;flex-direction:column;
+  background:#fff;border:1px solid #c8d8d0;border-radius:12px;box-shadow:0 16px 38px rgba(24,60,45,.2);overflow:hidden;
+  animation:infoTipIn .14s cubic-bezier(.22,.7,.24,1)}
+@keyframes infoTipIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.info-tip[hidden]{display:none}
+.info-tip::before{content:'';position:absolute;left:var(--tip-arrow,14px);top:-5px;width:8px;height:8px;background:#f7fcf9;border-left:1px solid #c8d8d0;border-top:1px solid #c8d8d0;transform:rotate(45deg)}
+.info-tip.up::before{top:auto;bottom:-5px;border:0;border-right:1px solid #c8d8d0;border-bottom:1px solid #c8d8d0}
+.info-tip-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 12px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#f7fcf9,#eff6f2)}
+.info-tip-head b{font-size:12.5px;font-weight:600;color:var(--text);letter-spacing:.2px}
+.info-tip-x{width:20px;height:20px;flex:0 0 auto;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text2);font-size:11px;line-height:1;display:grid;place-items:center;transition:border-color .18s,color .18s,background .18s}
+.info-tip-x:hover{border-color:var(--red);color:var(--red);background:rgba(214,57,75,.07)}
+.info-tip-body{padding:10px 12px 11px;overflow-y:auto;min-height:0;font-size:12.5px;color:var(--text2);line-height:1.7}
+.info-tip-body p{margin:0 0 7px}
+.info-tip-body p:last-child{margin-bottom:0}
+.info-tip-body ul{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:5px}
+.info-tip-body b,.info-tip-body strong{color:var(--text);font-weight:600}
+.info-tip-body .warn{color:var(--red);font-weight:600}
+.info-tip .server-info{border:0;border-radius:0;background:transparent;padding:0;gap:6px;font-size:12px}
+.info-tip .server-info .param{font-size:11.5px;padding:3px 7px}
 /* ===================== R78 桌面右列填空（全部周期一览） =====================
    只在 >1080px 两列布局下出现：此时周期卡（~198px）与左侧表单（~414px）并排，
    卡下方会空出 200px 左右。清单用 flex:1 吃掉这段空白，行高 32~56 自适应。
@@ -154,7 +175,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 @media(min-width:1081px){
   #periodPanel{align-self:stretch;display:flex;flex-direction:column;min-width:0}
   #periodPanel .period-wrap{flex:0 0 auto}
-  .period-all{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin-top:16px}
+  .period-all{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin-top:12px}
   .period-all-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 3px 7px;font-size:11.5px;color:var(--text2)}
   .period-all-head b{font-size:12.5px;font-weight:600;color:var(--text3);letter-spacing:.2px}
   .period-all-list{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;min-height:0}
@@ -214,12 +235,14 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   .sample-item{width:auto;gap:3px 6px}
   .sample-value{font-size:15px}
   .sample-hint{font-size:11px;color:var(--text2)}
-  .sample-bar .progress{width:56px}
+  .sample-bar .progress{width:52px}
+  .sample-track{gap:5px}
+  .sample-tag{font-size:10px;padding:1px 5px 1px 4px}
   /* ④ 表单两列：日期 | Boss、次数 | 双倍 → 省约 130px 纵深
      ⚠ 必须带 .entry-period 前缀：第 122 行 `.entry-period .form-grid{grid-template-columns:1fr}`
        特异性 (0,2,0) 会盖掉裸 .form-grid，导致手机上仍是单列 */
-  .form-grid,.entry-period .form-grid{grid-template-columns:minmax(0,139px) minmax(0,1fr);gap:12px 10px;align-items:end}
-  .form-body{padding:14px}
+  .form-grid,.entry-period .form-grid{grid-template-columns:minmax(0,139px) minmax(0,1fr);gap:10px 10px;align-items:end}
+  .form-body{padding:11px 12px}
   .field label{font-size:12.5px;line-height:1.35}
   .field input,.field select,.date-trigger{font-size:12.5px;height:40px;padding:0 8px}
   #inputRuns{font-size:11.5px}  /* 「3 次（同步器 <400）」是表单里最长的一条，留 ~6px 余量防不同中文字体偏差 */
@@ -231,9 +254,9 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   .drop-input{height:40px!important;font-size:15px!important}
   .lbl-note{display:block;font-size:11px;line-height:1.4;margin-top:1px}
   .drop-fields{gap:8px}
-  .entry-row{gap:12px;padding-top:12px;margin-top:12px}
+  .entry-row{gap:10px;padding-top:10px;margin-top:10px}
   /* ⑤ 面板头：标题与徽章同行，别整体竖成三行 */
-  .panel-head{flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px 14px;gap:6px 10px}
+  .panel-head{flex-direction:row;flex-wrap:wrap;align-items:center;padding:9px 12px;gap:5px 9px}
   .panel-head>div:first-child{min-width:0}
   .panel-title{font-size:15px}
   .panel-sub{font-size:12px;line-height:1.5}
@@ -246,15 +269,15 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   #historyPanel tbody td{padding:7px 8px}
   .table-scroll td.date-col{position:sticky;left:0;z-index:2;background:#fff;box-shadow:6px 0 6px -6px rgba(24,60,45,.14)}
   /* ⑦ 周期卡在窄屏再收一点 */
-  .period-card{padding:12px}
-  .p-main{font-size:26px}
+  .period-card{padding:11px}
+  .p-main{font-size:25px}
 }
 </style>
 </head>
 <body>
 <div class="app">
 <header class="header">
-  <div class="brand"><div class="brand-mark"><img src="assets/nav_modstats.webp?v=20261030a" alt="定制模组统计图标" width="48" height="48"></div><div><h1>定制模组统计<button type="button" class="info-btn" id="infoBtn" aria-expanded="false" aria-controls="infoPop" aria-label="查看奖励参数与期望口径" title="奖励参数与期望口径"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="6.6" width="1.5" height="4.7" rx=".75" fill="currentColor"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg></button></h1><small>NIKKE · 五 Boss 长期掉落统计与概率偏差分析</small></div><a class="author-chip" href="https://space.bilibili.com/76579052?spm_id_from=333.337.0.0" target="_blank" rel="noopener" title="本工具（定制模组统计）由 sa_yuki 制作维护，点击查看 B站主页"><img class="author-avatar" src="assets/author_sa_yuki.webp?v=20261016c" alt="作者 sa_yuki"><span class="author-chip-txt"><b>作者 · sa_yuki</b><em>B站主页 ↗</em></span></a></div>
+  <div class="brand"><div class="brand-mark"><img src="assets/nav_modstats.webp?v=20261030a" alt="定制模组统计图标" width="48" height="48"></div><div><h1>定制模组统计<button type="button" class="info-btn" id="infoBtn" data-tip="tipServer" aria-expanded="false" aria-controls="tipServer" aria-label="奖励参数与期望口径" title="奖励参数与期望口径"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="6.6" width="1.5" height="4.7" rx=".75" fill="currentColor"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg></button></h1><small>NIKKE · 五 Boss 长期掉落统计与概率偏差分析</small></div><a class="author-chip" href="https://space.bilibili.com/76579052?spm_id_from=333.337.0.0" target="_blank" rel="noopener" title="本工具（定制模组统计）由 sa_yuki 制作维护，点击查看 B站主页"><img class="author-avatar" src="assets/author_sa_yuki.webp?v=20261016c" alt="作者 sa_yuki"><span class="author-chip-txt"><b>作者 · sa_yuki</b><em>B站主页 ↗</em></span></a></div>
   <div class="header-actions">
     <div class="server-switch" aria-label="服务器切换">
       <button class="server-btn active" id="serverCN" onclick="switchServer('cn')">🇨🇳 国服<span class="srv-suffix"> · 对应国际服 3.5 周年前</span></button>
@@ -291,14 +314,16 @@ function openParentSync(){
        它本质是「记录条里有多少条双倍」，和明细表同属一块，挨着看更顺；
        样本条只留「已记录 N 天」这一条主线，不再左右各挂一个数字 -->
   <div class="sample-bar">
-    <div class="sample-item"><span>已记录</span><strong class="sample-value" id="statDays">0</strong><span>天</span><span class="sample-hint" id="statDaysSub">建议至少 90 天</span><div class="progress"><span id="sampleProgress"></span></div></div>
+    <div class="sample-item"><span>已记录</span><strong class="sample-value" id="statDays">0</strong><span>天</span>
+      <div class="sample-track"><div class="progress"><span id="sampleProgress"></span></div><em class="sample-tag" title="满格 = 连续记录 90 天">建议样本</em></div>
+    </div>
   </div>
 </section>
 
 <!-- R75：添加每日记录 + 周期统计并排一行（左表单 / 右周期卡）；≤1080px 回落上下单列 -->
 <div class="entry-period">
 <section class="panel" id="entryPanel" aria-labelledby="entryTitle">
-  <div class="panel-head"><div><h2 class="panel-title" id="entryTitle">📝 添加每日记录</h2><div class="panel-sub">先选择当天设置，再按顺序填写实际掉落；克拉肯碎片自动累计</div></div><div class="badge" id="dropRangeBadge">普通日 0 ~ 3</div></div>
+  <div class="panel-head"><div><h2 class="panel-title" id="entryTitle">📝 添加每日记录<button type="button" class="info-btn" id="entryInfoBtn" data-tip="tipEntry" aria-expanded="false" aria-controls="tipEntry" aria-label="录入说明" title="录入说明"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="6.6" width="1.5" height="4.7" rx=".75" fill="currentColor"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg></button></h2></div><div class="badge" id="dropRangeBadge">普通日 0 ~ 3</div></div>
   <div class="form-body">
     <form id="recordForm" onsubmit="addRecord(event)">
       <div class="form-grid">
@@ -308,7 +333,7 @@ function openParentSync(){
         <div class="field"><label for="inputDouble">活动双倍</label><select id="inputDouble" onchange="updateDropLimits()"><option value="false">否 · 普通日</option><option value="true">是 · 双倍日</option></select></div>
       </div>
       <div class="entry-row">
-        <div class="field drop-wrap"><label id="dropFieldsLabel">每次直接掉落<span class="lbl-note">（双倍日也填写实际数量，不要自行乘以 2）</span></label><div class="drop-fields" id="dropFields" role="group" aria-labelledby="dropFieldsLabel"></div><div class="drop-sum"><span>当天直接模组：<strong id="directPreview">0</strong></span><span id="dropHint">每次 0 ~ 3</span></div></div>
+        <div class="field drop-wrap"><label id="dropFieldsLabel">每次直接掉落<span class="lbl-note warn">（双倍日也填写实际数量，不要自行乘以 2）</span></label><div class="drop-fields" id="dropFields" role="group" aria-labelledby="dropFieldsLabel"></div><div class="drop-sum"><span>当天直接模组：<strong id="directPreview">0</strong></span><span id="dropHint">每次 0 ~ 3</span></div></div>
         <div class="field note-wrap"><label for="inputNote">备注（可选）</label><input type="text" id="inputNote" maxlength="60" placeholder="例如：漏记一天"></div>
         <div class="form-actions"><button class="btn-primary" type="submit">➕ 保存记录</button><button class="btn-secondary" type="button" onclick="resetForm()">重置</button></div>
       </div>
@@ -333,7 +358,7 @@ function openParentSync(){
 </div>
 
 <section class="panel" id="historyPanel" aria-labelledby="historyTitle">
-  <div class="panel-head"><div><h2 class="panel-title" id="historyTitle">📋 历史记录</h2><div class="panel-sub" id="recordCount">当前服务器共 0 条</div></div><div class="table-tools"><span class="badge double" id="doubleDaySummary">双倍日：0 天</span><span class="badge" id="fragmentSummary">碎片累计：0</span><span class="badge" id="completeFragmentSummary">可兑换：0 + 0 碎片</span></div></div>
+  <div class="panel-head"><div><h2 class="panel-title" id="historyTitle">📋 历史记录<button type="button" class="info-btn" id="histInfoBtn" data-tip="tipHistory" aria-expanded="false" aria-controls="tipHistory" aria-label="记录概况" title="记录概况"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="6.6" width="1.5" height="4.7" rx=".75" fill="currentColor"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg></button></h2></div><div class="table-tools"><span class="badge double" id="doubleDaySummary">双倍日：0 天</span><span class="badge" id="fragmentSummary">碎片累计：0</span><span class="badge" id="completeFragmentSummary">可兑换：0 + 0 碎片</span></div></div>
   <div class="table-scroll" tabindex="0" role="region" aria-label="完整历史明细，可横向和纵向滚动">
     <table>
       <thead>
@@ -356,12 +381,29 @@ function openParentSync(){
 <div class="toast" id="toast"></div>
 <button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<!-- R79：奖励参数与期望口径 → 标题旁 ⓘ 打开的信息窗。
-     弹窗放在 .app 外层，fixed 定位不参与文档流，iframe 内也不会撑高父页 -->
-<div class="info-mask" id="infoMask" hidden></div>
-<div class="info-pop" id="infoPop" role="dialog" aria-modal="true" aria-labelledby="infoPopTitle" hidden>
-  <div class="info-pop-head"><b id="infoPopTitle">奖励参数与期望口径</b><button type="button" class="info-pop-x" id="infoClose" aria-label="关闭信息窗">✕</button></div>
-  <div class="info-pop-body"><div class="server-info" id="serverInfo"></div></div>
+<!-- R80：三处 ⓘ 信息窗 —— 悬停（或点击）在按钮旁边浮出，不用遮罩弹窗。
+     全部 fixed 定位、不参与文档流，iframe 内不会撑高父页；坐标由 bindInfoTips() 计算 -->
+<div class="info-tip" id="tipServer" role="tooltip" aria-labelledby="tipServerHead" hidden>
+  <div class="info-tip-head"><b id="tipServerHead">奖励参数与期望口径</b><button type="button" class="info-tip-x" aria-label="关闭信息窗">✕</button></div>
+  <div class="info-tip-body"><div class="server-info" id="serverInfo"></div></div>
+</div>
+
+<div class="info-tip" id="tipEntry" role="tooltip" aria-labelledby="tipEntryHead" hidden>
+  <div class="info-tip-head"><b id="tipEntryHead">录入说明</b><button type="button" class="info-tip-x" aria-label="关闭信息窗">✕</button></div>
+  <div class="info-tip-body">
+    <p>先选择当天设置，再按顺序填写<strong>实际掉落</strong>；克拉肯碎片自动累计。</p>
+    <ul>
+      <li><strong>顺序</strong>：日期 → Boss → 同步器次数 → 活动双倍，都按当天实际情况选。</li>
+      <li><strong>每次直接掉落</strong>：从左到右对应当天第 1 ~ N 次拦截的实得数量。</li>
+      <li>克拉肯碎片按次数自动累计，<strong>满 100 折算 1 个模组</strong>，余数完整保留。</li>
+    </ul>
+    <p class="warn" style="margin-top:7px">双倍日也填写实际数量，不要自行乘以 2。</p>
+  </div>
+</div>
+
+<div class="info-tip" id="tipHistory" role="tooltip" aria-labelledby="tipHistoryHead" hidden>
+  <div class="info-tip-head"><b id="tipHistoryHead">记录概况</b><button type="button" class="info-tip-x" aria-label="关闭信息窗">✕</button></div>
+  <div class="info-tip-body"><div class="panel-sub" id="recordCount">当前服务器共 0 条</div></div>
 </div>
 
 <div class="calendar-pop" id="calendarPop">
@@ -548,7 +590,7 @@ function updateServerSummary(){
     <li>${extraRunsFrom()
       ? `<strong>${extraRunsFrom()} 起</strong>，同步器 400 级以上每日拦截 <strong>4 次</strong>、600 级以上每日 <strong>5 次</strong>（每天最多 5 次）；录入时按当天实际次数选择。每条记录会保存次数，历史数据不会按新规则回算。`
       : '国服按每日 <strong>3 次</strong>计算，暂未启用同步器额外拦截次数。'}</li>
-    <li>活动双倍日选择“是”，系统会将当天<strong>直接掉落</strong>和克拉肯<strong>碎片</strong>按双倍规则计算；录入实际直接掉落数量时<strong>不要自己乘双倍</strong>。</li>
+    <li>活动双倍日选择“是”后：克拉肯<strong>碎片自动按双倍累计</strong>；<strong>直接掉落请填当天实得数量，系统不再乘 2</strong>（单次上限相应提高到 0 ~ 6）。</li>
     <li>${c.note}</li>
     <li>碎片只属于<strong>克拉肯</strong>：${c.fragmentPerRun} × 每日 ${runs} 次；100 碎片折算 1 个定制模组，余数完整保留。</li>
     <li><strong>周期统计</strong>一屏一张卡、<strong>最近完成的周期排在最上</strong>（后面两张卡只露出顶边）：默认每 4.6 秒自动往后轮播一张（可无限循环），鼠标停在卡片上或手动翻页后 9 秒内会暂停；滚轮 / 上下滑动 / 点底部圆点 / 方向键都能手动切。卡片主数是到第 N 天为止的<strong>累计值</strong>，下方「本段」只统计该区间的<strong>增量</strong>（如第 31–60 天），不含之前的累计。</li>
@@ -575,7 +617,7 @@ function render(stats){
   renderServerInfo();
   document.getElementById('statActual').textContent=stats.totalActual.toFixed(2);
   document.getElementById('statDays').textContent=stats.days;
-  document.getElementById('statDaysSub').textContent=stats.days<90?`还需 ${90-stats.days} 天达到建议样本`:'已达到 90 天建议样本';
+  /* R80：删掉「还需 N 天达到建议样本」—— 信息量全在那根进度条 + 终点的「建议样本」tag 上 */
   /* R79：双倍日挪到历史记录面板头（原 #statDouble / #statDoubleSub 已从样本条移除） */
   const dblEl=document.getElementById('doubleDaySummary');
   if(dblEl) dblEl.textContent=`双倍日：${stats.doubleDays} 天`;
@@ -635,6 +677,7 @@ function renderPeriods(stats){
   if(!view||!dots) return;
   periodIdx=Math.max(0,order.findIndex(o=>o.target===periodFocus));
   view.innerHTML=order.map(o=>o.html).join('');
+  periodY=[]; periodMaxH=0; markPeriodDirty();   /* R80：卡片是新建的，缓存与跳位记录都要清 */
   dots.innerHTML=order.map((o,i)=>`<button type="button" data-i="${i}" class="${i===periodIdx?'on':''}" aria-label="第 ${i+1} 张，共 ${order.length} 张：${o.target} 天${o.done?'':'（未完成）'}"></button>`).join('');
   const allList=document.getElementById('periodAllList');
   if(allList) allList.innerHTML=order.map((o,i)=>periodAllRow(o,i,stats)).join('');
@@ -654,45 +697,72 @@ function periodOffset(i,n){
   if(d<=PERIOD_PEEK_MAX) return d;
   return periodDir>=0?d:d-n;
 }
+/* R80：卡高只在「内容可能变了」时重量一次（periodDirty）。原来每次 layout 都先把所有卡
+   height 设 auto 再量 —— 快滚时每秒触发十余次，每次 2×5 次强制同步布局，是「鬼畜」的一半原因。 */
+let periodMaxH=0, periodDirty=true, periodY=[];
+function markPeriodDirty(){ periodDirty=true; }
 function layoutPeriods(){
   const view=document.getElementById('periodGrid');
   if(!view) return;
   const cards=[...view.querySelectorAll('.period-card')];
   if(!cards.length) return;
-  let maxH=0;
-  cards.forEach(c=>{c.style.height='auto'});
-  cards.forEach(c=>{maxH=Math.max(maxH,c.offsetHeight)});
-  cards.forEach(c=>{c.style.height=maxH+'px'});
+  if(periodDirty||!periodMaxH){
+    cards.forEach(c=>{c.style.height='auto'});
+    let m=0;
+    cards.forEach(c=>{m=Math.max(m,c.offsetHeight)});
+    periodMaxH=m; periodDirty=false;
+    cards.forEach(c=>{c.style.height=m+'px'});
+  }
+  const maxH=periodMaxH;
   const topPad=PERIOD_PEEK*PERIOD_PEEK_MAX;
-  view.style.height=(maxH+topPad)+'px';
+  const wantH=(maxH+topPad)+'px';
+  if(view.style.height!==wantH) view.style.height=wantH;
   const n=cards.length;
   cards.forEach((c,i)=>{
     const off=periodOffset(i,n);
+    let y,scale=1,opacity='1',z='1';
     if(off<0){
       /* 已翻过去的卡：整张挪到视口上方（含底部余量，别露一条边出来） */
-      c.style.transform=`translate3d(0,${off*(maxH+topPad+10)}px,0)`;
-      c.style.opacity='0'; c.style.zIndex='1';
+      y=off*(maxH+topPad+10); opacity='0';
     }else if(off>PERIOD_PEEK_MAX){
       /* 后面更远的卡：挪到视口下方并透明 */
-      c.style.transform=`translate3d(0,${topPad+off*(maxH+10)}px,0)`;
-      c.style.opacity='0'; c.style.zIndex='1';
+      y=topPad+off*(maxH+10); opacity='0';
     }else if(off===0){
-      c.style.transform=`translate3d(0,${topPad}px,0)`;
-      c.style.opacity='1'; c.style.zIndex='100';
+      y=topPad; z='100';
     }else{
-      c.style.transform=`translate3d(0,${topPad-off*PERIOD_PEEK}px,0) scale(${1-off*PERIOD_PEEK_SCALE})`;
-      c.style.opacity='1'; c.style.zIndex=String(100-off);
+      y=topPad-off*PERIOD_PEEK; scale=1-off*PERIOD_PEEK_SCALE; z=String(100-off);
+    }
+    /* R80：跨越到「视野外另一侧」时位移会接近一个卡高 —— 若也走 transition，旧主卡会
+       反向穿过整张卡飞出去（用户看到的「鬼畜 / 偏移」）。这种跳位直接瞬移，不参与动画 */
+    const prevY=periodY[i];
+    const jump = prevY!==undefined && Math.abs(y-prevY) > maxH*0.5;
+    periodY[i]=y;
+    if(jump){ c.style.transition='none'; }
+    c.style.transform=`translate3d(0,${y}px,0)`+(scale===1?'':` scale(${scale})`);
+    c.style.opacity=opacity; c.style.zIndex=z;
+    if(jump){
+      void c.offsetWidth;             /* 强制该帧先落到新位置，再恢复过渡 */
+      requestAnimationFrame(()=>{ c.style.transition=''; });
     }
     c.setAttribute('aria-hidden',off===0?'false':'true');
   });
 }
+/* R80：滚轮快速滚动时 wheel 事件每秒可来 20~30 个，每个都翻一张 → 动画互相打断，
+   视觉上就是「鬼畜」。这里给 periodGo 一个最小间隔：滚轮 / 自动轮播走节流（被拒时
+   返回 false，调用方保留累计位移，下一帧继续翻，不丢滚动量）；点击圆点、清单行、
+   键盘、触摸是离散操作，force 直通。 */
+const PERIOD_STEP_MIN_MS=110;
+let periodLastGo=0;
 function periodGo(i,opts){
   const view=document.getElementById('periodGrid');
-  if(!view) return;
+  if(!view) return false;
   const n=view.querySelectorAll('.period-card').length;
-  if(!n) return;
+  if(!n) return false;
   const next=((i%n)+n)%n;   /* 环形：-1 = 末张，n = 首张，越界自动绕回，不再夹在 0..n-1 */
-  if(next===periodIdx) return;
+  if(next===periodIdx) return true;
+  const force=!!(opts&&opts.force), now=Date.now();
+  if(!force && now-periodLastGo<PERIOD_STEP_MIN_MS) return false;
+  periodLastGo=now;
   /* 只取「最近的那一圈」判断方向：跨过一半圈数就当反向，动画才不会横扫整圈 */
   periodDir=(((next-periodIdx+n)%n)>n/2)?-1:1;
   periodIdx=next;
@@ -701,6 +771,7 @@ function periodGo(i,opts){
   layoutPeriods();
   document.querySelectorAll('#periodDots button').forEach((d,j)=>d.classList.toggle('on',j===periodIdx));
   document.querySelectorAll('#periodAllList .period-all-row').forEach((d,j)=>d.classList.toggle('on',j===periodIdx));
+  return true;
 }
 /* R78：桌面右列「全部周期」一览（只在 >1080px 两列时显示）。
    与堆叠卡共用同一份 order：点行即切卡，当前卡那一行高亮；颜色按偏差带
@@ -758,8 +829,10 @@ function periodAutoStart(){
    - 累计滚动位移满 PERIOD_WHEEL_STEP 才翻一张 → 快滚慢滚都能一格格翻；
    - 手势判定用 200ms 间隔，慢慢滚每格都算新手势 → 永远在翻页，不会误触发页面滚动；
    - 只有「环绕之后同一次手势里继续同向滚」累计到 PERIOD_WHEEL_ESCAPE 才把滚动交还页面，
-     此时差不多已绕满一圈，用户明显是想滚页面了（保留铁律：滚轮不能把整页锁死） */
-const PERIOD_WHEEL_STEP=100, PERIOD_WHEEL_ESCAPE=520, PERIOD_WHEEL_GESTURE_MS=200;
+     此时已绕满两圈，用户明显是想滚页面了（保留铁律：滚轮不能把整页锁死）。
+   R80：阈值 520（一圈）→ 1000（两圈）。实测用户「快速连滚看几张」时 520 太容易命中，
+   命中那一下页面会突然滚走 400~500px，正是被反馈成「鬼畜 / 位置偏移」的现象。 */
+const PERIOD_WHEEL_STEP=100, PERIOD_WHEEL_ESCAPE=1000, PERIOD_WHEEL_GESTURE_MS=200;
 const PERIOD_TOUCH_PASS_MS=600;   /* 触摸环绕后 600ms 内起手的手势让给页面滚动 */
 let periodTouchPassUntil=0;
 let periodNavBound=false;
@@ -769,13 +842,13 @@ function bindPeriodNav(){
   periodNavBound=true;
   dots.addEventListener('click',e=>{
     const b=e.target.closest('button');
-    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i)); }
+    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i),{force:true}); }
   });
   /* R78：桌面右列清单点行切卡（元素本身不重建，只换 innerHTML，绑一次即可） */
   const allList=document.getElementById('periodAllList');
   if(allList) allList.addEventListener('click',e=>{
     const b=e.target.closest('.period-all-row');
-    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i)); }
+    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i),{force:true}); }
   });
   /* 鼠标停在卡片上时不要自动翻走 */
   view.addEventListener('mouseenter',()=>{periodAutoHover=true});
@@ -791,16 +864,22 @@ function bindPeriodNav(){
     if(wPass) return;                                   /* 本手势剩下的滚动都交给页面 */
     if(wWrapDir===dir){
       wWrapAcc+=Math.abs(raw);
-      if(wWrapAcc>=PERIOD_WHEEL_ESCAPE) wPass=true;      /* 环绕后又滚了约一圈：下一格起页面接管 */
+      if(wWrapAcc>=PERIOD_WHEEL_ESCAPE){
+        wPass=true;                                     /* 环绕后又滚了两圈：下一格起页面接管 */
+        e.preventDefault(); return;                     /* 让位这一格仍吃掉，避免「咔」一下整段滚走 */
+      }
     }else if(wWrapDir){ wWrapDir=0; wWrapAcc=0; }        /* 反向 = 想继续翻页，取消让位计数 */
     e.preventDefault();
     if(dir!==wDir){ wAcc=0; wDir=dir; }
     wAcc+=Math.abs(raw);
     if(wAcc<PERIOD_WHEEL_STEP) return;                   /* 位移不满一张：只拦不翻 */
-    wAcc=0;
+    /* R80：节流没通过时不清零 —— 滚动量攒着，下一帧接着翻（快滚不丢位移、也不鬼畜） */
+    const fromIdx=periodIdx, wrapped=(dir>0&&fromIdx===n-1)||(dir<0&&fromIdx===0);
+    if(periodGo(fromIdx+dir)===false) return;
+    wAcc-=PERIOD_WHEEL_STEP;
+    if(wAcc<0) wAcc=0;
     periodAutoHoldFor();
-    if((dir>0&&periodIdx===n-1)||(dir<0&&periodIdx===0)){ wWrapDir=dir; wWrapAcc=0; }
-    periodGo(periodIdx+dir);
+    if(wrapped){ wWrapDir=dir; wWrapAcc=0; }
   },{passive:false});
   /* 触摸：R77 起竖向手势可无限循环。同样为了不把页面滚死：
      环绕过一次之后，下一次手势整段让给页面滚动（不拦截、不翻页） */
@@ -825,17 +904,21 @@ function bindPeriodNav(){
     periodAutoHoldFor();
     const n=view.querySelectorAll('.period-card').length,dir=dy<0?1:-1;
     if((dir>0&&periodIdx===n-1)||(dir<0&&periodIdx===0)) periodTouchPassUntil=Date.now()+PERIOD_TOUCH_PASS_MS;
-    periodGo(periodIdx+dir);
+    periodGo(periodIdx+dir,{force:true});
   },{passive:true});
   view.addEventListener('keydown',e=>{
     const n=view.querySelectorAll('.period-card').length;
     if(/^(ArrowDown|ArrowUp|PageDown|PageUp|Home|End)$/.test(e.key)) periodAutoHoldFor();
-    if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();periodGo(periodIdx+1)}
-    else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();periodGo(periodIdx-1)}
-    else if(e.key==='Home'){e.preventDefault();periodGo(0)}
-    else if(e.key==='End'){e.preventDefault();periodGo(n-1)}
+    if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();periodGo(periodIdx+1,{force:true})}
+    else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();periodGo(periodIdx-1,{force:true})}
+    else if(e.key==='Home'){e.preventDefault();periodGo(0,{force:true})}
+    else if(e.key==='End'){e.preventDefault();periodGo(n-1,{force:true})}
   });
-  window.addEventListener('resize',()=>{if(view.querySelector('.period-card')) layoutPeriods()});
+  window.addEventListener('resize',()=>{
+    if(!view.querySelector('.period-card')) return;
+    periodMaxH=0; markPeriodDirty();   /* R80：宽度变了卡高可能变，重量一次 */
+    layoutPeriods();
+  });
 }
 /* 掉落格子按当日次数动态生成（3~5 格），切次数 / 切日期时保留已填的值 */
 function renderDropInputs(count){
@@ -966,30 +1049,92 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCalendar()});
 document.getElementById('dropFields').addEventListener('input',updateDirectPreview);
 window.addEventListener('scroll',()=>document.getElementById('backTop').classList.toggle('show',window.scrollY>450));
 
-/* R79：标题旁 ⓘ → 「奖励参数与期望口径」信息窗（替代原页面顶部的折叠长条）。
-   内容容器 #serverInfo 未变，updateServerSummary() 仍照旧往里渲染。 */
-function openInfo(){
-  const m=document.getElementById('infoMask'),p=document.getElementById('infoPop'),b=document.getElementById('infoBtn');
-  if(!p||!m) return;
-  m.hidden=false;p.hidden=false;
-  if(b) b.setAttribute('aria-expanded','true');
-  const x=document.getElementById('infoClose');
-  if(x) x.focus({preventScroll:true});
-}
-function closeInfo(){
-  const m=document.getElementById('infoMask'),p=document.getElementById('infoPop'),b=document.getElementById('infoBtn');
-  if(!p||!m||p.hidden) return;
-  m.hidden=true;p.hidden=true;
-  if(b){ b.setAttribute('aria-expanded','false'); b.focus({preventScroll:true}); }
-}
-document.getElementById('infoBtn').addEventListener('click',()=>{
-  document.getElementById('infoPop').hidden?openInfo():closeInfo();
-});
-document.getElementById('infoMask').addEventListener('click',closeInfo);
-document.getElementById('infoClose').addEventListener('click',closeInfo);
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeInfo(); });
+/* ============================================================================
+ * R80：ⓘ 信息窗 —— 从「居中 dialog + 遮罩」改成「悬停/点击在按钮旁边浮出」。
+ *   三处共用：标题旁（奖励参数）、添加每日记录（录入说明）、历史记录（记录概况）。
+ *   定位全用 JS 按按钮矩形写 px（宽度 / max-height 也写 px，绝不用 vh ——
+ *   本页会被 index.html 以 iframe 嵌入，vh 等于 iframe 自身高度，会正反馈）。
+ * ========================================================================== */
+const INFO_TIP_W = 440, INFO_TIP_GAP = 7, INFO_TIP_MARGIN = 10;
+let infoTipOpenEl = null, infoTipAnchor = null, infoTipTimer = 0;
 
-function init(){initBossSelector();resetForm();render(computeStats(loadRecords()));}
+function placeInfoTip(btn, tip) {
+  const r = btn.getBoundingClientRect();
+  const vw = document.documentElement.clientWidth || window.innerWidth;
+  const vh = window.innerHeight;
+  const w = Math.min(INFO_TIP_W, vw - INFO_TIP_MARGIN * 2);
+  /* 宽度交给 shrink-to-fit（inline 固定宽会让「共 52 条」这种短内容拖出一条 440px 空条）：
+     max-width 卡上限，短内容自然收窄 */
+  tip.style.width = 'auto';
+  tip.style.maxWidth = w + 'px';
+  tip.style.maxHeight = '';
+  tip.style.visibility = 'hidden';
+  tip.style.left = '0px';
+  tip.style.top = '-9999px';
+  tip.hidden = false;
+  /* 先按「下方展开」量一次总高，再定 max-height 与上下翻向 */
+  const maxH = Math.max(160, vh - INFO_TIP_MARGIN * 2);
+  if (tip.offsetHeight > maxH) tip.style.maxHeight = maxH + 'px';
+  const h = Math.min(tip.offsetHeight, maxH);
+  let top = r.bottom + INFO_TIP_GAP;
+  let up = false;
+  if (top + h > vh - INFO_TIP_MARGIN) {
+    const above = r.top - INFO_TIP_GAP - h;
+    if (above >= INFO_TIP_MARGIN) { top = above; up = true; }
+    else { top = Math.max(INFO_TIP_MARGIN, vh - INFO_TIP_MARGIN - h); up = false; }
+  }
+  const left = Math.min(Math.max(INFO_TIP_MARGIN, r.left - 4), Math.max(INFO_TIP_MARGIN, vw - w - INFO_TIP_MARGIN));
+  tip.style.left = Math.round(left) + 'px';
+  tip.style.top = Math.round(top) + 'px';
+  tip.style.setProperty('--tip-arrow', Math.max(10, Math.min(w - 24, Math.round(r.left + r.width / 2 - left - 4))) + 'px');
+  tip.classList.toggle('up', up);
+  tip.style.visibility = '';
+}
+function openInfoTip(btn) {
+  const tip = document.getElementById(btn.dataset.tip);
+  if (!tip) return;
+  if (infoTipAnchor && infoTipAnchor !== btn) closeInfoTip();
+  infoTipAnchor = btn;
+  infoTipOpenEl = tip;
+  btn.setAttribute('aria-expanded', 'true');
+  placeInfoTip(btn, tip);
+}
+function closeInfoTip() {
+  clearTimeout(infoTipTimer);
+  if (infoTipOpenEl) { infoTipOpenEl.hidden = true; infoTipOpenEl.style.visibility = ''; infoTipOpenEl = null; }
+  if (infoTipAnchor) { infoTipAnchor.setAttribute('aria-expanded', 'false'); infoTipAnchor = null; }
+}
+function bindInfoTips() {
+  document.querySelectorAll('.info-btn').forEach(btn => {
+    const tip = document.getElementById(btn.dataset.tip);
+    if (!tip) return;
+    const leave = () => { clearTimeout(infoTipTimer); infoTipTimer = setTimeout(() => { if (!tip.matches(':hover')) closeInfoTip(); }, 160); };
+    btn.addEventListener('mouseenter', () => { clearTimeout(infoTipTimer); openInfoTip(btn); });
+    btn.addEventListener('mouseleave', leave);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (infoTipOpenEl === tip) closeInfoTip(); else openInfoTip(btn);
+    });
+    tip.addEventListener('mouseenter', () => clearTimeout(infoTipTimer));
+    tip.addEventListener('mouseleave', leave);
+    tip.querySelector('.info-tip-x')?.addEventListener('click', e => { e.stopPropagation(); closeInfoTip(); });
+  });
+  /* 手机没有 hover：点页面任何空白处收起 */
+  document.addEventListener('click', e => {
+    if (infoTipOpenEl && !e.target.closest('.info-tip') && !e.target.closest('.info-btn')) closeInfoTip();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInfoTip(); });
+  const reposition = () => { if (infoTipOpenEl && infoTipAnchor) placeInfoTip(infoTipAnchor, infoTipOpenEl); };
+  window.addEventListener('scroll', reposition, { passive: true });
+  window.addEventListener('resize', reposition);
+}
+bindInfoTips();
+
+function init(){
+  initBossSelector();resetForm();render(computeStats(loadRecords()));
+  /* R80：网络字体到位后文字行高会变，卡高缓存要失效（GH Pages 上字体常最后到） */
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ periodMaxH=0; markPeriodDirty(); layoutPeriods(); });
+}
 init();
 </script>
 </body>

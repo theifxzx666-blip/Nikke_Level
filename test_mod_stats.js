@@ -357,9 +357,9 @@ t("⑬b 排序与翻页逻辑：最近完成的排最上、到边界放行、数
   /* 已完成按天数倒序（最近完成的在最上），未完成按天数正序排在后面 */
   assert.ok(/a\.done\?b\.target-a\.target:a\.target-b\.target/.test(html), "排序规则不是「已完成倒序 + 未完成正序」");
   assert.ok(/periodFocus/.test(html), "缺少 periodFocus（数据刷新后按天数复位，而不是按序号）");
-  assert.ok(/function layoutPeriods\(\)/.test(html) && /c\.style\.height=maxH\+'px'/.test(html), "缺少统一卡高的 layoutPeriods");
+  assert.ok(/function layoutPeriods\(\)/.test(html) && /cards\.forEach\(c=>\{c\.style\.height=m\+'px'\}\)/.test(html), "缺少统一卡高的 layoutPeriods");
   /* R77：不再在边界停住，改环形无限循环；但环绕过一次后必须把滚动让回页面，否则整页锁死 */
-  assert.ok(/if\(wWrapDir===dir\)\{/.test(html) && /if\(wWrapAcc>=PERIOD_WHEEL_ESCAPE\) wPass=true;/.test(html), "滚轮环绕后没有把滚动让回页面");
+  assert.ok(/if\(wWrapDir===dir\)\{/.test(html) && /wWrapAcc>=PERIOD_WHEEL_ESCAPE/.test(html) && /wPass=true;/.test(html), "滚轮环绕后没有把滚动让回页面");
   assert.ok(/addEventListener\('wheel'/.test(html) && /addEventListener\('touchstart'/.test(html), "缺少滚轮 / 触摸翻页");
 });
 
@@ -388,7 +388,7 @@ t("⑮ R75：同步器与掉落说明并进 label，输入框下方那行已删�
   var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
   assert.ok(/id="runsLabelNote"[^>]*>（国服按每日 3 次计算）</.test(html), "同步器 label 需要带（国服按每日 3 次计算）");
   assert.ok(html.indexOf('id="runsHint"') === -1, "旧的 runsHint 节点残留");
-  assert.ok(/id="dropFieldsLabel">每次直接掉落<span class="lbl-note">（双倍日也填写实际数量，不要自行乘以 2）/.test(html), "掉落 label 文案不对");
+  assert.ok(/id="dropFieldsLabel">每次直接掉落<span class="lbl-note warn">（双倍日也填写实际数量，不要自行乘以 2）/.test(html), "掉落 label 文案不对（R80 起带 warn 类，需标红）");
   assert.ok(/\.lbl-note\{font-size:12px/.test(html), "缺少 .lbl-note 小字样式");
   /* 国际服仍要有分级说明的落点（写进同一个 note 的 title） */
   assert.ok(/note\.textContent='（400\+ 4 次 · 600\+ 5 次）'/.test(html), "国际服说明没接上 label");
@@ -398,8 +398,8 @@ t("⑮ R75：同步器与掉落说明并进 label，输入框下方那行已删�
 t("⑯ R75：周期卡改 A 版轻堆叠（2 层露边）+ 自动轮播（R77 起 4.6 秒）", function () {
   var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
   assert.ok(/const PERIOD_PEEK=12, PERIOD_PEEK_SCALE=0\.035, PERIOD_PEEK_MAX=2;/.test(html), "露边常量应为 12px / 3.5% / 2 层");
-  assert.ok(/view\.style\.height=\(maxH\+topPad\)\+'px'/.test(html), "视口高度应为卡高 + 露边");
-  assert.ok(/translate3d\(0,\$\{topPad-off\*PERIOD_PEEK\}px,0\) scale\(\$\{1-off\*PERIOD_PEEK_SCALE\}\)/.test(html), "露边卡需要上移 + 缩放");
+  assert.ok(/const wantH=\(maxH\+topPad\)\+'px';/.test(html) && /view\.style\.height=wantH;/.test(html), "视口高度应为卡高 + 露边");
+  assert.ok(/y=topPad-off\*PERIOD_PEEK; scale=1-off\*PERIOD_PEEK_SCALE;/.test(html) && /translate3d\(0,\$\{y\}px,0\)/.test(html) && /scale\(\$\{scale\}\)/.test(html), "露边卡需要上移 + 缩放");
   assert.ok(/\.period-card\{[^}]*transform-origin:50% 100%/.test(html), "卡片需要从底边缩放");
   /* 自动轮播：2~3 秒一张、末张回卷、悬停/手动/后台/减弱动效都停 */
   var m = html.match(/const PERIOD_AUTO_MS=(\d+)/);
@@ -430,8 +430,8 @@ t("⑰ R77：堆叠卡环形无限循环（末→首、首→末）+ 环绕后�
   /* 3. 方向判定：跨过一半圈数当反向，动画才不会横扫整圈 */
   assert.ok(/periodDir=\(\(\(next-periodIdx\+n\)%n\)>n\/2\)\?-1:1;/.test(html), "缺少前进/后退方向判定");
   /* 4. 环绕后的页面让位：滚轮 0.9s 窗口 + 触摸下一手势 */
-  assert.ok(/const PERIOD_WHEEL_STEP=100, PERIOD_WHEEL_ESCAPE=520, PERIOD_WHEEL_GESTURE_MS=200;/.test(html), "缺少滚轮累计位移分页常量");
-  assert.ok(/if\(wWrapAcc>=PERIOD_WHEEL_ESCAPE\) wPass=true;/.test(html), "滚轮环绕后没有把滚动让回页面");
+  assert.ok(/const PERIOD_WHEEL_STEP=100, PERIOD_WHEEL_ESCAPE=1000, PERIOD_WHEEL_GESTURE_MS=200;/.test(html), "缺少滚轮累计位移分页常量（R80：让位阈值 1000 = 两圈）");
+  assert.ok(/wWrapAcc>=PERIOD_WHEEL_ESCAPE/.test(html) && /wPass=true;/.test(html), "滚轮环绕后没有把滚动让回页面");
   assert.ok(/periodTouchPassUntil=Date.now\(\)\+PERIOD_TOUCH_PASS_MS;/.test(html) && /skip=Date.now\(\)<periodTouchPassUntil;/.test(html),
     "触摸环绕后没有把下一次手势让给页面滚动");
   assert.ok(/if\(!active\|\|skip\|\|e\.touches\.length!==1\) return;/.test(html), "让位手势不应再拦截 touchmove");
