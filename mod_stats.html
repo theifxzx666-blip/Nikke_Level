@@ -94,7 +94,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .del-btn{border:0;background:transparent;color:var(--text2);padding:6px;border-radius:8px;transition:color .15s,background .15s}.del-btn:hover{color:var(--red);background:rgba(214,57,75,.08)}
 .note{max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .empty{padding:54px 20px;text-align:center;color:var(--text2)}.empty-icon{font-size:38px;display:block;margin-bottom:8px}
-.period-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:16px}.period-card{border:1px solid var(--border);background:linear-gradient(180deg,#f9fdfb,#f0f7f4);border-radius:12px;padding:14px;transition:border-color .2s,transform .2s}.period-card:hover{border-color:#93c4b0;transform:translateY(-1px)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-main{font-size:24px;font-weight:700;margin:12px 0 4px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:space-between;gap:8px;margin-top:10px}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{margin-top:10px;display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
+.period-wrap{padding:16px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-card{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#f9fdfb,#f0f7f4);border-radius:12px;padding:14px;transition:border-color .2s,transform .38s cubic-bezier(.22,.7,.24,1),opacity .3s;will-change:transform}.period-card:hover{border-color:#93c4b0}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:12px}.period-dots button{width:6px;height:6px;border:0;padding:0;border-radius:99px;background:#cfdcd5;cursor:pointer;transition:width .22s,background .22s}.period-dots button:hover{background:#a9c7ba}.period-dots button.on{width:18px;background:var(--primary)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;flex-wrap:wrap;margin-top:6px}.p-left{min-width:0}.p-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.p-main{font-size:28px;font-weight:700;margin:0 0 2px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:flex-start;gap:14px;margin-top:0}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
 .help-body{padding:16px 18px 18px;color:var(--text2);font-size:14px;line-height:1.85}.help-body ul{padding-left:18px}.help-body li+li{margin-top:3px}.help-body strong{color:var(--text)}.help-body code{padding:2px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text3)}
 .progress{height:7px;background:#e2ece7;border-radius:999px;overflow:hidden;margin-top:10px}.progress>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--cyan));width:0}
 .toast{position:fixed;right:24px;bottom:24px;z-index:1000;padding:12px 15px;border:1px solid var(--border);background:#ffffff;border-radius:11px;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);pointer-events:none;transition:.22s;max-width:min(420px,calc(100vw - 30px));font-size:14px;color:var(--text)}.toast.show{opacity:1;transform:translateY(0)}.toast.success{border-left:4px solid var(--green)}.toast.error{border-left:4px solid var(--red)}.toast.info{border-left:4px solid var(--accent)}
@@ -102,12 +102,11 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 /* 日历弹窗 */
 .calendar-pop{position:fixed;z-index:2000;width:330px;max-height:calc(100dvh - 24px);overflow-y:auto;background:#ffffff;border:1px solid #c8d8d0;border-radius:16px;box-shadow:0 24px 60px rgba(24,60,45,.18);padding:14px;display:none}.calendar-pop.show{display:block}.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.cal-title{font-size:15px;font-weight:600}.cal-nav{display:flex;gap:5px}.cal-nav button{width:32px;height:30px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);border-radius:8px}.cal-nav button:hover{border-color:#8fb8a6}.cal-week,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal-week div{text-align:center;font-size:12px;color:var(--text2);padding:4px 0}.cal-day{height:34px;font-size:14px;font-weight:500;border:1px solid transparent;background:transparent;color:var(--text3);border-radius:8px}.cal-day:hover:not(:disabled){background:var(--bg3);border-color:#8fb8a6}.cal-day.muted{color:var(--text2)}.cal-day.today{border-color:var(--accent)}.cal-day.selected,.cal-day.selected:hover:not(:disabled){background:var(--accent);color:#fff;font-weight:600}.cal-day:disabled{opacity:.28;cursor:not-allowed}.cal-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}.cal-foot span{font-size:12px;color:var(--text2)}.cal-today{border:1px solid var(--border);background:var(--bg3);color:var(--text3);border-radius:8px;padding:6px 9px;font-size:12px;font-weight:500}
 .panel-head>.badge{white-space:normal}.help-panel:not([open]) .panel-head{border-bottom:0}
-@media(max-width:1150px){.period-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:1200px){thead tr.group{display:none}}
 @media(max-width:1000px){.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:720px){body{padding:14px}.header{align-items:flex-start}.brand{flex-wrap:wrap}.brand h1{font-size:21px}.header-actions{width:100%}/* 我方多一个「☁️ 账号同步」，等分四格会把「清空当前服」挤成两行 → 按内容宽度、放不下就换行 */.header-actions button{flex:1 1 auto;white-space:nowrap}.server-switch{width:100%}.server-btn{flex:1}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.entry-bottom{grid-template-columns:1fr;gap:18px}.sample-bar{justify-content:flex-start}.sample-item{width:100%}.period-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.calendar-pop{width:min(330px,calc(100vw - 24px))}}
+@media(max-width:720px){body{padding:14px}.header{align-items:flex-start}.brand{flex-wrap:wrap}.brand h1{font-size:21px}.header-actions{width:100%}/* 我方多一个「☁️ 账号同步」，等分四格会把「清空当前服」挤成两行 → 按内容宽度、放不下就换行 */.header-actions button{flex:1 1 auto;white-space:nowrap}.server-switch{width:100%}.server-btn{flex:1}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.entry-bottom{grid-template-columns:1fr;gap:18px}.sample-bar{justify-content:flex-start}.sample-item{width:100%}.calendar-pop{width:min(330px,calc(100vw - 24px))}}
 @media(max-width:560px){body{padding:12px}.form-grid{grid-template-columns:1fr;gap:16px}.form-body{padding:16px}.form-footer{align-items:stretch;flex-direction:column}.form-actions .btn-primary,.form-actions .btn-secondary{flex:1}.server-switch .server-btn{font-size:13px;padding:0 10px}.stat-card{padding:16px}.stat-card::before{left:16px;right:16px}}
-@media(max-width:480px){.value{font-size:26px}.period-grid{grid-template-columns:1fr}.panel-head{align-items:flex-start;flex-direction:column}.server-info{line-height:1.7}}
+@media(max-width:480px){.value{font-size:26px}.panel-head{align-items:flex-start;flex-direction:column}.server-info{line-height:1.7}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
 /* 作者名牌（标题旁） */
 .author-chip{display:flex;align-items:center;gap:8px;text-decoration:none;margin-left:6px;padding:4px 11px 4px 5px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;transition:.2s}
@@ -189,7 +188,10 @@ function openParentSync(){
 
 <section class="panel" id="periodPanel" aria-labelledby="periodTitle">
   <div class="panel-head"><div><h2 class="panel-title" id="periodTitle">📊 周期统计</h2><div class="panel-sub">累计：第 1–N 天 · 本段：仅当前区间，不含之前累计</div></div></div>
-  <div class="period-grid" id="periodGrid"></div>
+  <div class="period-wrap">
+    <div class="period-view" id="periodGrid" tabindex="0" role="group" aria-label="周期统计，可用鼠标滚轮或上下滑动翻看各周期，页数见下方圆点"></div>
+    <div class="period-dots" id="periodDots" aria-label="周期页数"></div>
+  </div>
 </section>
 
 <section class="panel" id="historyPanel" aria-labelledby="historyTitle">
@@ -403,7 +405,7 @@ function updateServerSummary(){
     <li>活动双倍日选择“是”，系统会将当天<strong>直接掉落</strong>和克拉肯<strong>碎片</strong>按双倍规则计算；录入实际直接掉落数量时<strong>不要自己乘双倍</strong>。</li>
     <li>${c.note}</li>
     <li>碎片只属于<strong>克拉肯</strong>：${c.fragmentPerRun} × 每日 ${runs} 次；100 碎片折算 1 个定制模组，余数完整保留。</li>
-    <li><strong>周期统计</strong>卡片主数是到第 N 天为止的<strong>累计值</strong>；下方「本段」只统计该区间的<strong>增量</strong>（如第 31–60 天），不含之前的累计。</li>
+    <li><strong>周期统计</strong>一屏一张卡：<strong>最近完成的周期排在最上</strong>，滚轮 / 上下滑动 / 点底部圆点切换；卡片主数是到第 N 天为止的<strong>累计值</strong>，下方「本段」只统计该区间的<strong>增量</strong>（如第 31–60 天），不含之前的累计。</li>
     <li>建议至少连续记录 <strong>90 天</strong>，更适合判断长期偏欧 / 偏非。</li>
     <li><strong>Boss 标签配色按游戏内属性：</strong><span class="badge boss elem-fire">死神 · 火</span> <span class="badge boss elem-water">镜像容器 · 水</span> <span class="badge boss elem-elec">过激派 · 电</span> <span class="badge boss elem-wind">茵迪维利亚 · 风</span> <span class="badge boss elem-iron">克拉肯 · 铁甲</span></li>
     <li>数据保存在浏览器 <strong>localStorage</strong>；导出 JSON 可备份两套服务器的数据，登录账号后也可用「☁️ 账号同步」上传云端。</li>`;
@@ -461,15 +463,114 @@ function render(stats){
   }
   renderPeriods(stats);
 }
+/* R73：周期统计改为「堆叠翻页」——一屏一张，置顶＝最近已完成的周期，底部只留页数圆点 */
+const PERIOD_TARGETS=[30,60,90,180,365];
+let periodIdx=0;      /* 当前显示第几张（按排序后的位置） */
+let periodFocus=null; /* 当前卡的天数，数据刷新后据此复位，避免用户看着 60 天却被跳走 */
 function renderPeriods(stats){
-  const targets=[30,60,90,180,365];
-  document.getElementById('periodGrid').innerHTML=targets.map((target,ti)=>{
-    if(stats.list.length<target){return `<div class="period-card"><div class="p-top"><span class="p-label">📆 ${target} 天</span><span class="p-stage">样本期</span></div><div class="p-main muted">未完成</div><div class="p-theory">还需 ${target-stats.list.length} 天数据</div><div class="progress"><span style="width:${Math.min(100,stats.list.length/target*100)}%"></span></div></div>`}
-    const r=stats.list[target-1],pct=r.devPct*100,cb=cmpBand(pct,1),sb=cmpBand(pct,5),cls=cb>0?'good':cb<0?'bad':'near', status=sb>0?'🔥 偏欧':sb<0?'🌧 偏非':'✅ 正常范围',scls=sb>0?'lucky':sb<0?'unlucky':'normal';
-    const start=(ti?targets[ti-1]:0)+1,prev=ti?stats.list[start-2]:null;
-    const segActual=r.cumActual-(prev?prev.cumActual:0),segTheory=r.cumTheory-(prev?prev.cumTheory:0),segDev=segActual-segTheory,segPct=segTheory?segDev/segTheory*100:0,segBand=cmpBand(segPct,1),segCls=segBand>0?'good':segBand<0?'bad':'near';
-    return `<div class="period-card"><div class="p-top"><span class="p-label">📆 ${target} 天</span><span class="p-stage">第 ${target} 天</span></div><div class="p-main">${r.cumActual.toFixed(2)}</div><div class="p-theory">期望 ${r.cumTheory.toFixed(2)} 模组</div><div class="p-row"><span class="p-dev ${cls}">${r.dev>=0?'+':''}${r.dev.toFixed(2)}</span><span class="p-dev ${cls}">${pct>=0?'+':''}${pct.toFixed(1)}%</span></div><span class="p-status ${scls}">${status}</span><div class="p-seg" title="只统计第 ${start}–${target} 天，不含之前的累计"><span>本段 ${start}–${target} 天</span><span class="p-dev ${segCls}">${segDev>=0?'+':''}${segDev.toFixed(2)} · ${segPct>=0?'+':''}${segPct.toFixed(1)}%</span></div></div>`;
-  }).join('');
+  const targets=PERIOD_TARGETS;
+  const items=targets.map((target,ti)=>{
+    const done=stats.list.length>=target;
+    let html;
+    if(!done){html=`<div class="period-card" data-target="${target}"><div class="p-top"><span class="p-label">📆 ${target} 天</span><span class="p-stage">样本期</span></div><div class="p-mid"><div class="p-left"><div class="p-main muted">未完成</div><div class="p-theory">还需 ${target-stats.list.length} 天数据</div></div></div><div class="progress"><span style="width:${Math.min(100,stats.list.length/target*100)}%"></span></div></div>`}
+    else{
+      const r=stats.list[target-1],pct=r.devPct*100,cb=cmpBand(pct,1),sb=cmpBand(pct,5),cls=cb>0?'good':cb<0?'bad':'near', status=sb>0?'🔥 偏欧':sb<0?'🌧 偏非':'✅ 正常范围',scls=sb>0?'lucky':sb<0?'unlucky':'normal';
+      const start=(ti?targets[ti-1]:0)+1,prev=ti?stats.list[start-2]:null;
+      const segActual=r.cumActual-(prev?prev.cumActual:0),segTheory=r.cumTheory-(prev?prev.cumTheory:0),segDev=segActual-segTheory,segPct=segTheory?segDev/segTheory*100:0,segBand=cmpBand(segPct,1),segCls=segBand>0?'good':segBand<0?'bad':'near';
+      html=`<div class="period-card" data-target="${target}"><div class="p-top"><span class="p-label">📆 ${target} 天</span><span class="p-stage">第 ${target} 天</span></div><div class="p-mid"><div class="p-left"><div class="p-main">${r.cumActual.toFixed(2)}</div><div class="p-theory">期望 ${r.cumTheory.toFixed(2)} 模组</div></div><div class="p-right"><div class="p-row"><span class="p-dev ${cls}">${r.dev>=0?'+':''}${r.dev.toFixed(2)}</span><span class="p-dev ${cls}">${pct>=0?'+':''}${pct.toFixed(1)}%</span></div><span class="p-status ${scls}">${status}</span></div></div><div class="p-seg" title="只统计第 ${start}–${target} 天，不含之前的累计"><span>本段 ${start}–${target} 天</span><span class="p-dev ${segCls}">${segDev>=0?'+':''}${segDev.toFixed(2)} · ${segPct>=0?'+':''}${segPct.toFixed(1)}%</span></div></div>`;
+    }
+    return {target, done, html};
+  });
+  /* 排序：已完成的按天数倒序（最近完成的排最上），未完成的按天数正序排在后面 */
+  const order=items.slice().sort((a,b)=>(a.done!==b.done)?(a.done?-1:1):(a.done?b.target-a.target:a.target-b.target));
+  const view=document.getElementById('periodGrid'),dots=document.getElementById('periodDots');
+  if(!view||!dots) return;
+  periodIdx=Math.max(0,order.findIndex(o=>o.target===periodFocus));
+  view.innerHTML=order.map(o=>o.html).join('');
+  dots.innerHTML=order.map((o,i)=>`<button type="button" data-i="${i}" class="${i===periodIdx?'on':''}" aria-label="第 ${i+1} 张，共 ${order.length} 张：${o.target} 天${o.done?'':'（未完成）'}"></button>`).join('');
+  bindPeriodNav();
+  layoutPeriods();
+}
+/* 统一卡高并摆放：只有当前卡在视口内，其余按 ±(卡高+10) 平移出视口 */
+function layoutPeriods(){
+  const view=document.getElementById('periodGrid');
+  if(!view) return;
+  const cards=[...view.querySelectorAll('.period-card')];
+  if(!cards.length) return;
+  let maxH=0;
+  cards.forEach(c=>{c.style.height='auto'});
+  cards.forEach(c=>{maxH=Math.max(maxH,c.offsetHeight)});
+  cards.forEach(c=>{c.style.height=maxH+'px'});
+  view.style.height=maxH+'px';
+  cards.forEach((c,i)=>{
+    const off=i-periodIdx;
+    c.style.transform=`translate3d(0,${off*(maxH+10)}px,0)`;
+    c.style.opacity=Math.abs(off)>1?'0':'1';
+    c.setAttribute('aria-hidden',off===0?'false':'true');
+  });
+}
+function periodGo(i){
+  const view=document.getElementById('periodGrid');
+  if(!view) return;
+  const n=view.querySelectorAll('.period-card').length;
+  const next=Math.max(0,Math.min(n-1,i));
+  if(next===periodIdx) return;
+  periodIdx=next;
+  const cur=view.querySelectorAll('.period-card')[periodIdx];
+  periodFocus=cur?Number(cur.dataset.target):null;
+  layoutPeriods();
+  document.querySelectorAll('#periodDots button').forEach((d,j)=>d.classList.toggle('on',j===periodIdx));
+}
+let periodNavBound=false;
+function bindPeriodNav(){
+  const view=document.getElementById('periodGrid'),dots=document.getElementById('periodDots');
+  if(periodNavBound||!view||!dots) return;
+  periodNavBound=true;
+  dots.addEventListener('click',e=>{
+    const b=e.target.closest('button');
+    if(b) periodGo(Number(b.dataset.i));
+  });
+  /* 鼠标滚轮：到边界就放行，让页面继续滚动，不锁死 */
+  let lock=0;
+  view.addEventListener('wheel',e=>{
+    if(Math.abs(e.deltaY)<6) return;
+    const down=e.deltaY>0,n=view.querySelectorAll('.period-card').length;
+    if((down&&periodIdx>=n-1)||(!down&&periodIdx<=0)) return;
+    e.preventDefault();
+    const now=Date.now();
+    if(now-lock<380) return;
+    lock=now;
+    periodGo(periodIdx+(down?1:-1));
+  },{passive:false});
+  /* 触摸：竖向手势翻页，到边界同样放行 */
+  let sy=0,sx=0,active=false;
+  view.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1) return;
+    active=true; sy=e.touches[0].clientY; sx=e.touches[0].clientX;
+  },{passive:true});
+  view.addEventListener('touchmove',e=>{
+    if(!active||e.touches.length!==1) return;
+    const dy=e.touches[0].clientY-sy,dx=e.touches[0].clientX-sx;
+    if(Math.abs(dy)<=Math.abs(dx)||Math.abs(dy)<10) return;
+    const n=view.querySelectorAll('.period-card').length;
+    const want=dy<0?periodIdx+1:periodIdx-1;
+    if(want>=0&&want<=n-1) e.preventDefault();
+  },{passive:false});
+  view.addEventListener('touchend',e=>{
+    if(!active) return;
+    active=false;
+    const t=e.changedTouches[0],dy=t.clientY-sy,dx=t.clientX-sx;
+    if(Math.abs(dy)<40||Math.abs(dy)<=Math.abs(dx)) return;
+    periodGo(periodIdx+(dy<0?1:-1));
+  },{passive:true});
+  view.addEventListener('keydown',e=>{
+    const n=view.querySelectorAll('.period-card').length;
+    if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();periodGo(Math.min(n-1,periodIdx+1))}
+    else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();periodGo(Math.max(0,periodIdx-1))}
+    else if(e.key==='Home'){e.preventDefault();periodGo(0)}
+    else if(e.key==='End'){e.preventDefault();periodGo(n-1)}
+  });
+  window.addEventListener('resize',()=>{if(view.querySelector('.period-card')) layoutPeriods()});
 }
 /* 掉落格子按当日次数动态生成（3~5 格），切次数 / 切日期时保留已填的值 */
 function renderDropInputs(count){

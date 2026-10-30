@@ -305,5 +305,36 @@ t("⑫ 属性配色：火红/水蓝/电紫/风绿/铁甲黄，四层（徽章/�
   });
 });
 
+/* ---------- ⑬ R73：周期统计改「一屏一张的堆叠翻页 + 底部页数圆点」 ---------- */
+t("⑬ 周期统计容器结构：period-view 视口 + period-dots 圆点，旧的 5 列网格已不存在", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  /* 视口必须能裁掉平移出界的卡，且不吃子元素内在宽度（否则窄屏会被撑宽） */
+  assert.ok(/\.period-view\{[^}]*overflow:hidden/.test(html), ".period-view 需要 overflow:hidden");
+  assert.ok(/\.period-view\{[^}]*contain:inline-size/.test(html), ".period-view 需要 contain:inline-size");
+  assert.ok(/\.period-card\{[^}]*position:absolute/.test(html), ".period-card 必须是绝对定位（叠在同一格里）");
+  assert.ok(/\.period-dots button\.on\{/.test(html), ".period-dots 需要选中态样式");
+  /* 旧的五列网格与「顶条胶囊 / 右侧竖条」都不许回来 */
+  assert.ok(!/\.period-grid\{display:grid/.test(html), "旧的 5 列网格样式残留");
+  assert.ok(html.indexOf('class="period-grid"') === -1, "旧的 period-grid 容器残留");
+  assert.ok(html.indexOf("period-peek") === -1 && html.indexOf("period-rail") === -1, "顶部胶囊 / 右侧竖条不该存在");
+  /* DOM 挂点 */
+  assert.ok(/id="periodGrid"[^>]*role="group"/.test(html), "视口需要 id=periodGrid + role=group");
+  assert.ok(/id="periodDots"/.test(html), "缺少 id=periodDots");
+  /* 每张卡带 data-target，才可以按天数而不是 DOM 序号记忆当前页 */
+  assert.ok(/class="period-card" data-target="\$\{target\}"/.test(html), "周期卡需要 data-target");
+});
+
+t("⑬b 排序与翻页逻辑：最近完成的排最上、到边界放行、数据刷新不跳页", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  assert.ok(/PERIOD_TARGETS=\[30,60,90,180,365\]/.test(html), "目标天数数组应为 30/60/90/180/365");
+  /* 已完成按天数倒序（最近完成的在最上），未完成按天数正序排在后面 */
+  assert.ok(/a\.done\?b\.target-a\.target:a\.target-b\.target/.test(html), "排序规则不是「已完成倒序 + 未完成正序」");
+  assert.ok(/periodFocus/.test(html), "缺少 periodFocus（数据刷新后按天数复位，而不是按序号）");
+  assert.ok(/function layoutPeriods\(\)/.test(html) && /c\.style\.height=maxH\+'px'/.test(html), "缺少统一卡高的 layoutPeriods");
+  /* 滚轮到边界必须放行，否则页面滚不动 */
+  assert.ok(/down&&periodIdx>=n-1\)\|\|\(!down&&periodIdx<=0\)\) return;/.test(html), "滚轮在边界没有放行");
+  assert.ok(/addEventListener\('wheel'/.test(html) && /addEventListener\('touchstart'/.test(html), "缺少滚轮 / 触摸翻页");
+});
+
 console.log("\n===== test_mod_stats: PASS=" + pass + "  FAIL=" + fail + " =====");
 process.exit(fail ? 1 : 0);
