@@ -324,6 +324,27 @@ t("⑬ 周期统计容器结构：period-view 视口 + period-dots 圆点，旧�
   assert.ok(/class="period-card" data-target="\$\{target\}"/.test(html), "周期卡需要 data-target");
 });
 
+t("⑬c R74：周期统计不再有面板外框与标题行，只留卡片本体 + 底部圆点", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  /* 节上不许再挂 panel（白底 + 边框 + 阴影 + 圆角的外框） */
+  assert.ok(/<section id="periodPanel" aria-label="周期统计">/.test(html), "periodPanel 应是无外框的裸 section");
+  assert.ok(!/<section class="panel" id="periodPanel"/.test(html), "面板外框 class=panel 不许回来");
+  /* 只判 periodPanel 这一段：panel-head / panel-title 在其它面板里本来就有，不能对全文件判 */
+  var a = html.indexOf('<section id="periodPanel"');
+  assert.ok(a !== -1, "找不到 periodPanel");
+  var seg = html.slice(a, html.indexOf("</section>", a) + 10);
+  assert.ok(seg.indexOf("panel-head") === -1, "周期统计里不许再有标题行 panel-head");
+  assert.ok(seg.indexOf("panel-title") === -1, "周期统计里不许再有标题 panel-title");
+  assert.ok(seg.indexOf("periodTitle") === -1, "标题 id=periodTitle 残留");
+  assert.ok(seg.indexOf("累计：第 1–N 天") === -1, "副标题那段累计/本段描述残留");
+  assert.ok(seg.indexOf("aria-labelledby") === -1, "aria-labelledby 指向已删标题");
+  /* 卡片仍在，且自带白色底 + 细投影，否则会融进 body 的浅绿渐变 */
+  assert.ok(/\.period-card\{[^}]*background:linear-gradient\(180deg,#ffffff,#f7fcf9\)/.test(html), "卡片需要白色渐变底");
+  assert.ok(/\.period-card\{[^}]*box-shadow:0 1px 3px/.test(html), "卡片需要自身细投影");
+  assert.ok(/\.period-wrap\{padding:0;margin-bottom:24px\}/.test(html), "wrap 去内边距并保留底距");
+  assert.ok(seg.indexOf('id="periodGrid"') !== -1 && seg.indexOf('id="periodDots"') !== -1, "卡片视口与圆点必须仍在");
+});
+
 t("⑬b 排序与翻页逻辑：最近完成的排最上、到边界放行、数据刷新不跳页", function () {
   var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
   assert.ok(/PERIOD_TARGETS=\[30,60,90,180,365\]/.test(html), "目标天数数组应为 30/60/90/180/365");
