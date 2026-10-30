@@ -19,7 +19,12 @@
  color-scheme:light;
 }
 html{scroll-behavior:smooth}
-body{font-family:var(--font);font-size:14px;font-weight:400;line-height:1.6;background:radial-gradient(circle at 20% 0%,rgba(29,158,117,.07),transparent 32%),linear-gradient(180deg,#f7fbf9,#eff5f2 45%,var(--bg));color:var(--text);min-height:100vh;padding:22px}
+body{font-family:var(--font);font-size:14px;font-weight:400;line-height:1.6;background:radial-gradient(circle at 20% 0%,rgba(29,158,117,.07),transparent 32%),linear-gradient(180deg,#f7fbf9,#eff5f2 45%,var(--bg));color:var(--text);padding:22px}
+/* 禁用 min-height:100vh —— 本页会被 index.html 以 iframe 嵌入，父页 fitFrame() 按
+   「内容高度 + 6px」设置 iframe 高度；iframe 内 100vh 等于 iframe 自身高度，会形成
+   「100vh 把 body 撑到视口高 → 父页再 +6 → 100vh 又变高」的正反馈，页面高度无限增长
+   （R70 实测 6 秒从 492px 涨到 3768px）。独立打开时 body 背景会自动传播到 canvas，
+   照样铺满整个视口，删掉这条不影响观感。 */
 button,input,select{font:inherit}
 strong{font-weight:600}
 button{cursor:pointer}

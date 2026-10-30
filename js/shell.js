@@ -147,7 +147,15 @@
           (doc.documentElement && doc.documentElement.scrollHeight) || 0
         );
         if (h <= 0) h = (appEl && appEl.getBoundingClientRect().height) || 0;
-        if (h > 0) iframe.style.height = (h + 6) + "px";
+        if (h <= 0) return;
+        /* 收敛判定：iframe 内 documentElement.scrollHeight 的下限就是 iframe 自身的视口高度，
+           当内容比视口矮时它会返回视口高度，于是「+6 → 视口变高 → 又返回视口高度」每轮自举 +6px。
+           R70 实测：mod_stats 曾因 body{min-height:100vh} 把 100vh 取成 iframe 高度，
+           演变成无限增长（6 秒 492 → 3768px，页面滚动条跟着无限变长）。
+           目标高度与当前高度相差 ≤6px 即视为已收敛，不再改动。 */
+        var target = h + 6;
+        if (Math.abs(target - iframe.getBoundingClientRect().height) <= 6) return;
+        iframe.style.height = target + "px";
       }
       apply();
       if (window.__frameRO && window.__frameRO[id] && window.__frameRO[id].disconnect) {
