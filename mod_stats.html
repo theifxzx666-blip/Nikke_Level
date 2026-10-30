@@ -46,12 +46,13 @@ summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-c
 .stat-card:hover{border-color:#93c4b0;transform:translateY(-2px);box-shadow:0 18px 40px rgba(24,60,45,.1)}
 .label{font-size:13px;font-weight:500;color:var(--text3)}.value{font-size:30px;font-weight:700;margin-top:8px;line-height:1.2;letter-spacing:-.3px;font-variant-numeric:tabular-nums}.value.gold{color:var(--gold)}.value.green{color:var(--green)}.value.red{color:var(--red)}.value.orange{color:var(--orange)}.sub{font-size:12px;color:var(--text2);margin-top:7px;line-height:1.6}
 .sample-bar{display:flex;align-items:center;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;padding:10px 4px 0;color:var(--text2);font-size:13px}.sample-item{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;min-width:0}.sample-value{font-size:16px;color:var(--text);font-variant-numeric:tabular-nums}.sample-value.orange{color:var(--orange)}.sample-hint{font-size:12px}.sample-bar .progress{width:96px;margin:0;height:5px;flex:0 0 auto}
-/* R80：进度条右边挂「建议样本」标签 —— 条满 = 90 天，标签就是终点刻度（R79 那行
-   「还需 N 天达到建议样本」已按用户要求删除，信息合并到这个 tag 上） */
+/* R81：「建议样本」tag 从顶部样本条挪到「全部周期」清单里的 90 天行。
+   90 天就是建议样本周期，标签贴在自己那一行才有指向性；顶部那行只留
+   「已记录 N 天 + 进度条」，不再挂尾巴（R80 挂在那儿被反馈成「打在已记录后面」） */
 .sample-track{display:flex;align-items:center;gap:7px;min-width:0}
-.sample-tag{flex:0 0 auto;font-size:11px;line-height:1.35;color:var(--text2);white-space:nowrap;
-  border:1px solid #cfe0d7;border-left:2px solid var(--primary);border-radius:0 6px 6px 0;
-  padding:2px 7px 2px 6px;background:#f4faf7}
+.sample-tag{display:inline-block;flex:0 0 auto;margin-left:6px;font-size:10.5px;line-height:1.35;font-weight:600;
+  color:var(--primary);white-space:nowrap;vertical-align:1px;letter-spacing:.2px;
+  border:1px solid #cfe0d7;border-radius:5px;padding:1px 5px;background:#f1faf6}
 .panel{background:linear-gradient(180deg,#ffffff,#fafdfb);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);margin-bottom:24px;overflow:hidden}
 .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#f7fcf9,#eff6f2)}
 .panel-title{font-size:17px;font-weight:600;letter-spacing:.2px}.panel-sub{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.6}
@@ -114,7 +115,14 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .del-btn{border:0;background:transparent;color:var(--text2);padding:6px;border-radius:8px;transition:color .15s,background .15s}.del-btn:hover{color:var(--red);background:rgba(214,57,75,.08)}
 .note{max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .empty{padding:54px 20px;text-align:center;color:var(--text2)}.empty-icon{font-size:38px;display:block;margin-bottom:8px}
-.period-wrap{padding:0;margin-bottom:24px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-card{position:absolute;left:0;right:0;top:0;transform-origin:50% 100%;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff,#f7fcf9);box-shadow:0 1px 3px rgba(24,60,45,.05);border-radius:12px;padding:12px;transition:border-color .2s,box-shadow .2s,transform .42s cubic-bezier(.22,.72,.2,1),opacity .26s;will-change:transform}.period-card:hover{border-color:#93c4b0;box-shadow:0 6px 16px rgba(24,60,45,.09)}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:9px}.period-dots button{width:6px;height:6px;border:0;padding:0;border-radius:99px;background:#cfdcd5;cursor:pointer;transition:width .22s,background .22s}.period-dots button:hover{background:#a9c7ba}.period-dots button.on{width:18px;background:var(--primary)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;flex-wrap:wrap;margin-top:6px}.p-left{min-width:0}.p-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.p-main{font-size:26px;font-weight:700;margin:0 0 2px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:flex-start;gap:14px;margin-top:0}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
+.period-wrap{padding:0;margin-bottom:24px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-card{position:absolute;left:0;right:0;top:0;transform-origin:50% 100%;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff,#f7fcf9);box-shadow:0 1px 3px rgba(24,60,45,.05);border-radius:12px;padding:12px;transition:border-color .2s,box-shadow .2s,transform .42s cubic-bezier(.22,.72,.2,1),opacity .26s;will-change:transform}.period-card:hover{border-color:#93c4b0;box-shadow:0 6px 16px rgba(24,60,45,.09)}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:1px;justify-content:center;align-items:center;margin-top:6px}
+/* R81：视觉点仍是 6px，但热区给到 18×24 —— 之前热区就等于 6px 的点本身，鼠标/手指点第 5 个点
+   很容易落空，表现成「点了没反应 / 只能按顺序点」。点由 ::after 画，容器宽度恒定，
+   高亮拉长时也不会挤动相邻点 */
+.period-dots button{display:flex;align-items:center;justify-content:center;width:18px;height:24px;border:0;padding:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.period-dots button::after{content:'';display:block;width:6px;height:6px;border-radius:99px;background:#cfdcd5;transition:width .22s,background .22s}
+.period-dots button:hover::after{background:#a9c7ba}
+.period-dots button.on::after{width:16px;background:var(--primary)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;flex-wrap:wrap;margin-top:6px}.p-left{min-width:0}.p-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.p-main{font-size:26px;font-weight:700;margin:0 0 2px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:flex-start;gap:14px;margin-top:0}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
 .help-body{padding:16px 18px 18px;color:var(--text2);font-size:14px;line-height:1.85}.help-body ul{padding-left:18px}.help-body li+li{margin-top:3px}.help-body strong{color:var(--text)}.help-body code{padding:2px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text3)}
 .progress{height:7px;background:#e2ece7;border-radius:999px;overflow:hidden;margin-top:10px}.progress>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--cyan));width:0}
 .toast{position:fixed;right:24px;bottom:24px;z-index:1000;padding:12px 15px;border:1px solid var(--border);background:#ffffff;border-radius:11px;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);pointer-events:none;transition:.22s;max-width:min(420px,calc(100vw - 30px));font-size:14px;color:var(--text)}.toast.show{opacity:1;transform:translateY(0)}.toast.success{border-left:4px solid var(--green)}.toast.error{border-left:4px solid var(--red)}.toast.info{border-left:4px solid var(--accent)}
@@ -237,7 +245,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   .sample-hint{font-size:11px;color:var(--text2)}
   .sample-bar .progress{width:52px}
   .sample-track{gap:5px}
-  .sample-tag{font-size:10px;padding:1px 5px 1px 4px}
+  /* R81：.sample-tag 现在只在「全部周期」清单行里出现，清单 ≤1080px 不渲染，这里不再需要窄屏覆盖 */
   /* ④ 表单两列：日期 | Boss、次数 | 双倍 → 省约 130px 纵深
      ⚠ 必须带 .entry-period 前缀：第 122 行 `.entry-period .form-grid{grid-template-columns:1fr}`
        特异性 (0,2,0) 会盖掉裸 .form-grid，导致手机上仍是单列 */
@@ -315,7 +323,7 @@ function openParentSync(){
        样本条只留「已记录 N 天」这一条主线，不再左右各挂一个数字 -->
   <div class="sample-bar">
     <div class="sample-item"><span>已记录</span><strong class="sample-value" id="statDays">0</strong><span>天</span>
-      <div class="sample-track"><div class="progress"><span id="sampleProgress"></span></div><em class="sample-tag" title="满格 = 连续记录 90 天">建议样本</em></div>
+      <div class="sample-track"><div class="progress"><span id="sampleProgress"></span></div></div>
     </div>
   </div>
 </section>
@@ -628,7 +636,7 @@ function render(stats){
   document.getElementById('statDevSub').textContent=stats.days?`累计碎片 ${stats.cumFragments}`:'—';
   const pctEl=document.getElementById('statDevPct'); pctEl.textContent=(pct>=0?'+':'')+pct.toFixed(1)+'%'; pctEl.className='value '+(pctBand>0?'green':pctBand<0?'red':'');
   const status=document.getElementById('statDevStatus'); status.textContent=!stats.days?'暂无数据':pctBand>0?'🔥 偏欧 · 继续观察':pctBand<0?'🌧 偏非 · 继续观察':'✅ 正常范围'; status.style.color=!stats.days?'var(--text2)':pctBand>0?'var(--green)':pctBand<0?'var(--red)':'var(--gold)';
-  document.getElementById('sampleProgress').style.width=Math.min(100,stats.days/90*100)+'%';
+  document.getElementById('sampleProgress').style.width=Math.min(100,stats.days/SAMPLE_DAYS*100)+'%';
 
   document.getElementById('fragmentSummary').textContent=`碎片累计：${stats.cumFragments}`;
   document.getElementById('completeFragmentSummary').textContent=`可兑换：${Math.floor(stats.cumFragments/100)} + ${stats.cumFragments%100} 碎片`;
@@ -654,7 +662,8 @@ function render(stats){
   renderPeriods(stats);
 }
 /* R73：周期统计改为「堆叠翻页」——一屏一张，置顶＝最近已完成的周期，底部只留页数圆点 */
-const PERIOD_TARGETS=[30,60,90,180,365];
+const SAMPLE_DAYS=90;                    /* R81：建议样本线的天数，「建议样本」tag 就挂在清单的这一天 */
+const PERIOD_TARGETS=[30,60,SAMPLE_DAYS,180,365];
 let periodIdx=0;      /* 当前显示第几张（按排序后的位置） */
 let periodFocus=null; /* 当前卡的天数，数据刷新后据此复位，避免用户看着 60 天却被跳走 */
 function renderPeriods(stats){
@@ -748,9 +757,11 @@ function layoutPeriods(){
   });
 }
 /* R80：滚轮快速滚动时 wheel 事件每秒可来 20~30 个，每个都翻一张 → 动画互相打断，
-   视觉上就是「鬼畜」。这里给 periodGo 一个最小间隔：滚轮 / 自动轮播走节流（被拒时
-   返回 false，调用方保留累计位移，下一帧继续翻，不丢滚动量）；点击圆点、清单行、
-   键盘、触摸是离散操作，force 直通。 */
+   视觉上就是「鬼畜」。R80 给 periodGo 加了全局最小间隔，结果连点击圆点 / 清单行也被卡住
+   （任何漏传 force 的调用都变成「一次只翻一格」）。
+   R81 改成白名单：只有滚轮传 {gate:true} 才走 PERIOD_STEP_MIN_MS 闸门（被拒时返回 false，
+   调用方保留累计位移，下一帧接着翻，不丢滚动量）；点击、清单行、键盘、触摸、自动轮播
+   一律直通，可以「从第 1 张直接点到第 5 张」 */
 const PERIOD_STEP_MIN_MS=110;
 let periodLastGo=0;
 function periodGo(i,opts){
@@ -760,8 +771,8 @@ function periodGo(i,opts){
   if(!n) return false;
   const next=((i%n)+n)%n;   /* 环形：-1 = 末张，n = 首张，越界自动绕回，不再夹在 0..n-1 */
   if(next===periodIdx) return true;
-  const force=!!(opts&&opts.force), now=Date.now();
-  if(!force && now-periodLastGo<PERIOD_STEP_MIN_MS) return false;
+  const gate=!!(opts&&opts.gate), now=Date.now();
+  if(gate && now-periodLastGo<PERIOD_STEP_MIN_MS) return false;
   periodLastGo=now;
   /* 只取「最近的那一圈」判断方向：跨过一半圈数就当反向，动画才不会横扫整圈 */
   periodDir=(((next-periodIdx+n)%n)>n/2)?-1:1;
@@ -779,11 +790,14 @@ function periodGo(i,opts){
    R79：去掉行底进度细条 —— 与「还需 N 天」「-11.4%」及顶部样本条重复。 */
 function periodAllRow(o,i,stats){
   const total=stats.list.length;
+  /* R81：「建议样本」tag 只挂在 90 天那一行的文本尾部（行宽不富裕，放在 pa-main 里
+     才不会破坏 4 列对齐；单独占一列会让 90 天行的正文起点和其他行错开） */
+  const tag=o.target===SAMPLE_DAYS?`<em class="sample-tag" title="连续记录满 ${SAMPLE_DAYS} 天即建议样本">建议样本</em>`:'';
   if(!o.done){
     const need=o.target-total;
     return `<button type="button" class="period-all-row pending" data-i="${i}" data-target="${o.target}" title="${o.target} 天周期：还需 ${need} 天数据（当前 ${total} 天）">
       <span class="pa-day">${o.target} 天</span>
-      <span class="pa-main">还需 ${need} 天</span>
+      <span class="pa-main">还需 ${need} 天${tag}</span>
       <span class="pa-dev muted">—</span>
       <span class="pa-dot"></span>
     </button>`;
@@ -793,7 +807,7 @@ function periodAllRow(o,i,stats){
   return `<button type="button" class="period-all-row${i===periodIdx?' on':''}" data-i="${i}" data-target="${o.target}"
     title="${o.target} 天：累计 ${r.cumActual.toFixed(2)} / 期望 ${r.cumTheory.toFixed(2)}">
     <span class="pa-day">${o.target} 天</span>
-    <span class="pa-main">${r.cumActual.toFixed(2)}<em> / ${r.cumTheory.toFixed(2)}</em></span>
+    <span class="pa-main">${r.cumActual.toFixed(2)}<em> / ${r.cumTheory.toFixed(2)}</em>${tag}</span>
     <span class="pa-dev ${cls}">${pct>=0?'+':''}${pct.toFixed(1)}%</span>
     <span class="pa-dot ${dot}"></span>
   </button>`;
@@ -842,13 +856,13 @@ function bindPeriodNav(){
   periodNavBound=true;
   dots.addEventListener('click',e=>{
     const b=e.target.closest('button');
-    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i),{force:true}); }
+    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i)); }
   });
   /* R78：桌面右列清单点行切卡（元素本身不重建，只换 innerHTML，绑一次即可） */
   const allList=document.getElementById('periodAllList');
   if(allList) allList.addEventListener('click',e=>{
     const b=e.target.closest('.period-all-row');
-    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i),{force:true}); }
+    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i)); }
   });
   /* 鼠标停在卡片上时不要自动翻走 */
   view.addEventListener('mouseenter',()=>{periodAutoHover=true});
@@ -875,7 +889,7 @@ function bindPeriodNav(){
     if(wAcc<PERIOD_WHEEL_STEP) return;                   /* 位移不满一张：只拦不翻 */
     /* R80：节流没通过时不清零 —— 滚动量攒着，下一帧接着翻（快滚不丢位移、也不鬼畜） */
     const fromIdx=periodIdx, wrapped=(dir>0&&fromIdx===n-1)||(dir<0&&fromIdx===0);
-    if(periodGo(fromIdx+dir)===false) return;
+    if(periodGo(fromIdx+dir,{gate:true})===false) return;
     wAcc-=PERIOD_WHEEL_STEP;
     if(wAcc<0) wAcc=0;
     periodAutoHoldFor();
@@ -904,15 +918,15 @@ function bindPeriodNav(){
     periodAutoHoldFor();
     const n=view.querySelectorAll('.period-card').length,dir=dy<0?1:-1;
     if((dir>0&&periodIdx===n-1)||(dir<0&&periodIdx===0)) periodTouchPassUntil=Date.now()+PERIOD_TOUCH_PASS_MS;
-    periodGo(periodIdx+dir,{force:true});
+    periodGo(periodIdx+dir);
   },{passive:true});
   view.addEventListener('keydown',e=>{
     const n=view.querySelectorAll('.period-card').length;
     if(/^(ArrowDown|ArrowUp|PageDown|PageUp|Home|End)$/.test(e.key)) periodAutoHoldFor();
-    if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();periodGo(periodIdx+1,{force:true})}
-    else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();periodGo(periodIdx-1,{force:true})}
-    else if(e.key==='Home'){e.preventDefault();periodGo(0,{force:true})}
-    else if(e.key==='End'){e.preventDefault();periodGo(n-1,{force:true})}
+    if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();periodGo(periodIdx+1)}
+    else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();periodGo(periodIdx-1)}
+    else if(e.key==='Home'){e.preventDefault();periodGo(0)}
+    else if(e.key==='End'){e.preventDefault();periodGo(n-1)}
   });
   window.addEventListener('resize',()=>{
     if(!view.querySelector('.period-card')) return;

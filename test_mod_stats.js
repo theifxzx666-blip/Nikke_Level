@@ -318,7 +318,10 @@ t("⑬ 周期统计容器结构：period-view 视口 + period-dots 圆点，旧�
   assert.ok(/\.period-view\{[^}]*overflow:hidden/.test(html), ".period-view 需要 overflow:hidden");
   assert.ok(/\.period-view\{[^}]*contain:inline-size/.test(html), ".period-view 需要 contain:inline-size");
   assert.ok(/\.period-card\{[^}]*position:absolute/.test(html), ".period-card 必须是绝对定位（叠在同一格里）");
-  assert.ok(/\.period-dots button\.on\{/.test(html), ".period-dots 需要选中态样式");
+  /* R81：选中态改画在 ::after 上（按钮本体是热区），两种写法都认 */
+  assert.ok(/\.period-dots button\.on(::after)?\{/.test(html), ".period-dots 需要选中态样式");
+  /* R81：圆点视觉 6px 但热区必须 ≥16×20，否则「从第 1 点直接点第 5」会点空 */
+  assert.ok(/\.period-dots button\{[^}]*width:1[6-9]px[^}]*height:2[0-9]px/.test(html), ".period-dots 按钮热区太小");
   /* 旧的五列网格与「顶条胶囊 / 右侧竖条」都不许回来 */
   assert.ok(!/\.period-grid\{display:grid/.test(html), "旧的 5 列网格样式残留");
   assert.ok(html.indexOf('class="period-grid"') === -1, "旧的 period-grid 容器残留");
@@ -353,7 +356,9 @@ t("⑬c R74：周期统计不再有面板外框与标题行，只留卡片本体
 
 t("⑬b 排序与翻页逻辑：最近完成的排最上、到边界放行、数据刷新不跳页", function () {
   var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
-  assert.ok(/PERIOD_TARGETS=\[30,60,90,180,365\]/.test(html), "目标天数数组应为 30/60/90/180/365");
+  /* R81：90 天抽成 SAMPLE_DAYS（「建议样本」tag 挂在同一天），数组内容不变 */
+  assert.ok(/SAMPLE_DAYS=90/.test(html), "建议样本天数应为 90");
+  assert.ok(/PERIOD_TARGETS=\[30,60,(90|SAMPLE_DAYS),180,365\]/.test(html), "目标天数数组应为 30/60/90/180/365");
   /* 已完成按天数倒序（最近完成的在最上），未完成按天数正序排在后面 */
   assert.ok(/a\.done\?b\.target-a\.target:a\.target-b\.target/.test(html), "排序规则不是「已完成倒序 + 未完成正序」");
   assert.ok(/periodFocus/.test(html), "缺少 periodFocus（数据刷新后按天数复位，而不是按序号）");
