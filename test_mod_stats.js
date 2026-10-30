@@ -358,8 +358,8 @@ t("⑬b 排序与翻页逻辑：最近完成的排最上、到边界放行、数
   assert.ok(/a\.done\?b\.target-a\.target:a\.target-b\.target/.test(html), "排序规则不是「已完成倒序 + 未完成正序」");
   assert.ok(/periodFocus/.test(html), "缺少 periodFocus（数据刷新后按天数复位，而不是按序号）");
   assert.ok(/function layoutPeriods\(\)/.test(html) && /c\.style\.height=maxH\+'px'/.test(html), "缺少统一卡高的 layoutPeriods");
-  /* 滚轮到边界必须放行，否则页面滚不动 */
-  assert.ok(/down&&periodIdx>=n-1\)\|\|\(!down&&periodIdx<=0\)\) return;/.test(html), "滚轮在边界没有放行");
+  /* R77：不再在边界停住，改环形无限循环；但环绕过一次后必须把滚动让回页面，否则整页锁死 */
+  assert.ok(/periodWheelDir===dir&&now-periodWheelAt<PERIOD_WHEEL_PASS_MS\) return;/.test(html), "滚轮环绕后没有把滚动让回页面");
   assert.ok(/addEventListener\('wheel'/.test(html) && /addEventListener\('touchstart'/.test(html), "缺少滚轮 / 触摸翻页");
 });
 
@@ -395,7 +395,7 @@ t("⑮ R75：同步器与掉落说明并进 label，输入框下方那行已删�
 });
 
 /* ---------- ⑯ R75：A 版轻堆叠 + 自动轮播 ---------- */
-t("⑯ R75：周期卡改 A 版轻堆叠（2 层露边）+ 自动轮播 2~3 秒", function () {
+t("⑯ R75：周期卡改 A 版轻堆叠（2 层露边）+ 自动轮播（R77 起 4.6 秒）", function () {
   var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
   assert.ok(/const PERIOD_PEEK=12, PERIOD_PEEK_SCALE=0\.035, PERIOD_PEEK_MAX=2;/.test(html), "露边常量应为 12px / 3.5% / 2 层");
   assert.ok(/view\.style\.height=\(maxH\+topPad\)\+'px'/.test(html), "视口高度应为卡高 + 露边");
@@ -405,13 +405,34 @@ t("⑯ R75：周期卡改 A 版轻堆叠（2 层露边）+ 自动轮播 2~3 秒"
   var m = html.match(/const PERIOD_AUTO_MS=(\d+)/);
   assert.ok(m, "缺少自动轮播间隔常量");
   var ms = Number(m[1]);
-  assert.ok(ms >= 2000 && ms <= 3000, "轮播间隔应在 2~3 秒，实际 " + ms);
+  assert.ok(ms === 4600, "轮播间隔应为 2600 + 2000 = 4600ms，实际 " + ms);
   assert.ok(/function periodAutoStep\(\)/.test(html) && /setInterval\(periodAutoStep/.test(html), "缺少轮播定时器");
-  assert.ok(/\(periodIdx\+1\)%n/.test(html), "轮播到末张应回卷首张");
+  assert.ok(/periodGo\(periodIdx\+1\);/.test(html), "轮播应环形步进（末张之后回首张）");
   assert.ok(/document\.hidden\|\|periodAutoHover/.test(html), "后台 / 悬停时需要暂停");
   assert.ok(/prefers-reduced-motion: reduce/.test(html), "系统减弱动效时应停播");
   assert.ok(/periodAutoHoldFor\(\)/.test(html), "手动交互后应暂停一段时间");
-  assert.ok(/\.period-view\.period-no-anim \.period-card\{transition:none/.test(html), "回卷瞬切需要 no-anim 类");
+  assert.ok(html.indexOf('period-no-anim') === -1, "环形后不再需要 no-anim 瞬切类");
+});
+
+/* ---------- ⑰ R77：环形无限循环 ---------- */
+t("⑰ R77：堆叠卡环形无限循环（末→首、首→末）+ 环绕后页面让位", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  /* 1. 步进取模，不再夹在 0..n-1 */
+  assert.ok(/const next=\(\(i%n\)\+n\)%n;/.test(html), "periodGo 需要环形取模 next=((i%n)+n)%n");
+  assert.ok(html.indexOf("Math.min(n-1,periodIdx+1)") === -1 && html.indexOf("Math.max(0,periodIdx-1)") === -1,
+    "键盘翻页还夹在边界，没有环形");
+  /* 2. 摆放用环形偏移：前进 0..n-1 / 后退 -(n-1)..0 */
+  assert.ok(/function periodOffset\(i,n\)\{/.test(html), "缺少 periodOffset 环形偏移函数");
+  assert.ok(/if\(periodDir>=0\) return \(i-periodIdx\+n\)%n;/.test(html), "前进方向偏移应为 (i-focus+n)%n");
+  assert.ok(/return -\(\(periodIdx-i\+n\)%n\);/.test(html), "后退方向偏移应为负值环");
+  assert.ok(/const off=periodOffset\(i,n\);/.test(html), "layoutPeriods 必须改用 periodOffset");
+  /* 3. 方向判定：跨过一半圈数当反向，动画才不会横扫整圈 */
+  assert.ok(/periodDir=\(\(\(next-periodIdx\+n\)%n\)>n\/2\)\?-1:1;/.test(html), "缺少前进/后退方向判定");
+  /* 4. 环绕后的页面让位：滚轮 0.9s 窗口 + 触摸下一手势 */
+  assert.ok(/const PERIOD_WHEEL_PASS_MS=900;/.test(html), "缺少滚轮让位窗口常量");
+  assert.ok(/periodTouchPass=true;/.test(html) && /skip=periodTouchPass; periodTouchPass=false;/.test(html),
+    "触摸环绕后没有把下一次手势让给页面滚动");
+  assert.ok(/if\(!active\|\|skip\|\|e\.touches\.length!==1\) return;/.test(html), "让位手势不应再拦截 touchmove");
 });
 
 console.log("\n===== test_mod_stats: PASS=" + pass + "  FAIL=" + fail + " =====");
