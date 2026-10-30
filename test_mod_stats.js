@@ -284,5 +284,26 @@ t("⑪ 页头图标使用 assets/nav_modstats.webp，不再用 ⚙ 字符", func
   assert.ok(/\.brand-mark img\{/.test(html), "缺少 .brand-mark img 样式");
 });
 
+/* ---------- ⑫ R71b：五属性配色锁（电=紫、铁甲=黄，两者不可互换） ---------- */
+t("⑫ 属性配色：火红/水蓝/电紫/风绿/铁甲黄，四层（徽章/参数行/下拉色条/图例）一致", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  var HEX = { fire: "#bf3b26", water: "#1b6cb8", elec: "#6c3bb8", wind: "#1c8352", iron: "#7f5c06" };
+  var BAR = { fire: "#cc402d", water: "#2074cd", elec: "#7c46c4", wind: "#218c56", iron: "#b2850c" };
+  Object.keys(HEX).forEach(function (k) {
+    var re = new RegExp("\\.badge\\.boss\\.elem-" + k + "\\{[^}]*color:" + HEX[k]);
+    assert.ok(re.test(html), k + " 徽章文字色应为 " + HEX[k]);
+    assert.ok(new RegExp("\\.boss-param\\.elem-" + k + "\\{color:" + HEX[k] + "\\}").test(html), k + " 参数行色应为 " + HEX[k]);
+    assert.ok(new RegExp('select\\[data-elem="' + k + '"\\]\\{box-shadow:inset 3px 0 0 0 ' + BAR[k] + "\\}").test(html), k + " 下拉色条应为 " + BAR[k]);
+  });
+  /* 电与铁甲不能同色系（历史上曾把铁甲写成紫） */
+  assert.notStrictEqual(HEX.elec, HEX.iron, "电与铁甲配色不可相同");
+  assert.ok(html.indexOf("#a1770a") === -1, "电属性残留旧琥珀色 #a1770a");
+  assert.ok(html.indexOf("#6a4ab4") === -1, "铁甲残留旧紫 #6a4ab4");
+  /* 图例五色齐全 */
+  ["fire", "water", "elec", "wind", "iron"].forEach(function (k) {
+    assert.ok(html.indexOf("badge boss elem-" + k + "\">") !== -1, "使用说明缺少 " + k + " 图例");
+  });
+});
+
 console.log("\n===== test_mod_stats: PASS=" + pass + "  FAIL=" + fail + " =====");
 process.exit(fail ? 1 : 0);
