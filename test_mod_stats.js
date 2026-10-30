@@ -331,6 +331,11 @@ t("⑬ 周期统计容器结构：period-view 视口 + period-dots 圆点，旧�
   assert.ok(/id="periodDots"/.test(html), "缺少 id=periodDots");
   /* 每张卡带 data-target，才可以按天数而不是 DOM 序号记忆当前页 */
   assert.ok(/class="period-card" data-target="\$\{target\}"/.test(html), "周期卡需要 data-target");
+  /* R81b：「建议样本」双挂点 —— 宽屏在「全部周期」清单 90 天行，窄屏在 90 天卡标题行 */
+  assert.ok(/o\.target===SAMPLE_DAYS\?`<em class="sample-tag" title=/.test(html), "清单 90 天行缺少建议样本 tag");
+  assert.ok(/target===SAMPLE_DAYS\?'<em class="sample-tag p-sample">建议样本<\/em>'/.test(html), "周期卡缺少 p-sample tag");
+  assert.ok(/\.p-sample\{display:none\}/.test(html), "卡内 p-sample 宽屏应隐藏（避免与清单重复）");
+  assert.ok(html.indexOf(".p-sample{display:inline-block") > html.indexOf("@media(max-width:1080px)"), "窄屏媒体查询需显示卡内 p-sample");
 });
 
 t("⑬c R74：周期统计不再有面板外框与标题行，只留卡片本体 + 底部圆点", function () {
