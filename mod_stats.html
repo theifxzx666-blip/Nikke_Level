@@ -33,8 +33,8 @@ button:focus-visible,.date-trigger:focus-visible,.del-btn:focus-visible{outline:
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:var(--bg3)}::-webkit-scrollbar-thumb{background:#b8cbc2;border-radius:99px}::-webkit-scrollbar-thumb:hover{background:#93b3a6}
 .app{width:min(1480px,100%);margin:auto}
 .header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)}
-.brand{display:flex;gap:14px;align-items:center}.brand-mark{width:48px;height:48px;border:1px solid #b9d3c6;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#e3efe9,#d2e6da);box-shadow:inset 0 1px 0 #fff,var(--shadow-sm)}
-.brand-mark span{font-size:23px;filter:drop-shadow(0 2px 6px rgba(29,158,117,.25))}
+.brand{display:flex;gap:14px;align-items:center}.brand-mark{width:48px;height:48px;flex:0 0 auto;border:1px solid #b9d3c6;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#e3efe9,#d2e6da);box-shadow:inset 0 1px 0 #fff,var(--shadow-sm);overflow:hidden}
+.brand-mark img{width:100%;height:100%;object-fit:contain;display:block;padding:5px;box-sizing:border-box;filter:drop-shadow(0 2px 6px rgba(29,158,117,.22))}
 .brand h1{font-size:25px;font-weight:700;line-height:1.25;letter-spacing:.2px;color:var(--text)}.brand small{display:block;color:var(--text2);font-size:13px;font-weight:400;margin-top:5px}
 .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.header-actions button,.server-btn{border:1px solid var(--border);background:linear-gradient(180deg,var(--bg3),var(--bg2));color:var(--text3);padding:0 14px;height:38px;border-radius:10px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:border-color .18s,background .18s,color .18s,transform .12s}.header-actions button:hover{border-color:#8fb8a6;background:var(--bg4);color:var(--text)}.header-actions button:active{transform:translateY(1px)}.danger:hover{border-color:var(--red)!important;color:var(--red)!important;background:rgba(214,57,75,.06)!important}
 .server-switch{display:flex;gap:4px;padding:4px;border:1px solid var(--border);background:#e4eeea;border-radius:12px;box-shadow:inset 0 1px 3px rgba(24,60,45,.08)}.server-btn{border:0;background:transparent;padding:0 13px;font-size:13px;height:32px;box-shadow:none;white-space:nowrap}.srv-suffix{display:none}.server-btn:hover{color:var(--text);background:rgba(29,158,117,.06)}.header-actions .server-btn.active{background:linear-gradient(180deg,var(--primary),var(--primary-dark));color:#fff;font-weight:600;box-shadow:0 4px 12px rgba(29,158,117,.22),inset 0 1px 0 rgba(255,255,255,.15)}
@@ -63,6 +63,17 @@ summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-c
 .drop-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:580px}.drop-input{height:42px!important;text-align:center;font-size:16px!important;font-weight:600;padding:0 4px!important;min-width:0}.drop-wrap{position:relative}.drop-sum{display:flex;gap:8px 18px;flex-wrap:wrap;font-size:12px;color:var(--text2);margin-top:6px}.hint{font-size:12px;color:var(--text2);margin-top:6px}.form-actions{display:flex;gap:8px;flex:0 0 auto}.btn-primary,.btn-secondary{height:42px;padding:0 18px;border-radius:10px;font-weight:600;transition:filter .18s,background .18s,border-color .18s,transform .12s;display:inline-flex;align-items:center;justify-content:center;gap:6px}.btn-primary{border:1px solid var(--primary-dark);background:linear-gradient(180deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 8px 18px rgba(29,158,117,.18)}.btn-primary:hover{filter:brightness(1.08)}.btn-primary:active,.btn-secondary:active{transform:translateY(1px)}.btn-secondary{border:1px solid var(--border);background:var(--bg3);color:var(--text3);font-weight:500}.btn-secondary:hover{border-color:#8fb8a6;background:var(--bg4);color:var(--text)}
 .table-scroll{overflow:auto;max-height:620px;scrollbar-gutter:stable}.table-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}.table-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:12px;font-weight:500;border-radius:99px;padding:4px 10px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);white-space:nowrap}.badge.double{background:rgba(184,134,11,.09);color:var(--gold);border-color:rgba(184,134,11,.28)}.badge.boss{background:rgba(14,143,156,.08);color:var(--cyan);border-color:rgba(14,143,156,.26)}.badge.extra{background:rgba(29,158,117,.09);color:var(--green);border-color:rgba(29,158,117,.28)}
+/* R71 Boss 属性配色（按游戏内五属性：火/水/电/风/铁甲）—— 浅底深字，保证白底可读 */
+.badge.boss.elem-fire{background:rgba(204,64,45,.10);color:#bf3b26;border-color:rgba(204,64,45,.30)}
+.badge.boss.elem-water{background:rgba(32,116,205,.10);color:#1b6cb8;border-color:rgba(32,116,205,.30)}
+.badge.boss.elem-elec{background:rgba(198,146,8,.13);color:#a1770a;border-color:rgba(198,146,8,.34)}
+.badge.boss.elem-wind{background:rgba(33,140,86,.10);color:#1c8352;border-color:rgba(33,140,86,.30)}
+.badge.boss.elem-iron{background:rgba(122,90,196,.11);color:#6a4ab4;border-color:rgba(122,90,196,.32)}
+/* 参数行里的 Boss 名同样按属性着色 */
+.param.boss-param{font-weight:600}
+.param.boss-param.elem-fire{color:#bf3b26}.param.boss-param.elem-water{color:#1b6cb8}.param.boss-param.elem-elec{color:#a1770a}.param.boss-param.elem-wind{color:#1c8352}.param.boss-param.elem-iron{color:#6a4ab4}
+/* Boss 下拉框左侧色条（inset 阴影不占布局） */
+select[data-elem="fire"]{box-shadow:inset 3px 0 0 0 #cc402d}select[data-elem="water"]{box-shadow:inset 3px 0 0 0 #2074cd}select[data-elem="elec"]{box-shadow:inset 3px 0 0 0 #c69208}select[data-elem="wind"]{box-shadow:inset 3px 0 0 0 #218c56}select[data-elem="iron"]{box-shadow:inset 3px 0 0 0 #7a5ac4}
 table{width:100%;border-collapse:separate;border-spacing:0;min-width:1140px;font-size:14px}
 thead th{position:sticky;top:0;z-index:3;background:#e7efeb;color:var(--text3);text-align:left;font-size:13px;font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
 thead tr.group th{position:static;left:auto;background:#eef4f1;color:var(--text2);font-size:12px;font-weight:500;letter-spacing:.4px;padding:7px 12px;border-bottom:1px solid rgba(213,222,217,.6)}
@@ -110,7 +121,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 <body>
 <div class="app">
 <header class="header">
-  <div class="brand"><div class="brand-mark"><span>⚙</span></div><div><h1>定制模组统计</h1><small>NIKKE · 五 Boss 长期掉落统计与概率偏差分析</small></div><a class="author-chip" href="https://space.bilibili.com/76579052?spm_id_from=333.337.0.0" target="_blank" rel="noopener" title="本工具（定制模组统计）由 sa_yuki 制作维护，点击查看 B站主页"><img class="author-avatar" src="assets/author_sa_yuki.webp?v=20261016c" alt="作者 sa_yuki"><span class="author-chip-txt"><b>作者 · sa_yuki</b><em>B站主页 ↗</em></span></a></div>
+  <div class="brand"><div class="brand-mark"><img src="assets/nav_modstats.webp?v=20261030a" alt="定制模组统计图标" width="48" height="48"></div><div><h1>定制模组统计</h1><small>NIKKE · 五 Boss 长期掉落统计与概率偏差分析</small></div><a class="author-chip" href="https://space.bilibili.com/76579052?spm_id_from=333.337.0.0" target="_blank" rel="noopener" title="本工具（定制模组统计）由 sa_yuki 制作维护，点击查看 B站主页"><img class="author-avatar" src="assets/author_sa_yuki.webp?v=20261016c" alt="作者 sa_yuki"><span class="author-chip-txt"><b>作者 · sa_yuki</b><em>B站主页 ↗</em></span></a></div>
   <div class="header-actions">
     <div class="server-switch" aria-label="服务器切换">
       <button class="server-btn active" id="serverCN" onclick="switchServer('cn')">🇨🇳 国服<span class="srv-suffix"> · 对应国际服 3.5 周年前</span></button>
@@ -230,12 +241,14 @@ function openParentSync(){
  *      浏览器里若还挂着旧页面（只认 d1/d2/d3），读新数据不会显示成一排 0。
  *   ③ 写盘失败要报错：saveAll 返回 false，调用方必须中止并提示，禁止静默当成功。
  * ========================================================================== */
+/* R71 新增 elem（属性键 / 用于 badge 配色）与 element（中文属性名）—— 只是展示用字段，
+   不参与任何计算，也不进 localStorage，所以对存档 / 云同步 / 分享码完全无影响 */
 const BOSS_CONFIG = {
-  kraken: {name:'克拉肯', short:'克拉肯', gear:'定制模组 + 碎片', shard:true},
-  indivilia: {name:'茵迪维利亚', short:'茵迪维利亚', gear:'身体', shard:false},
-  harvester: {name:'死神', short:'死神', gear:'脚', shard:false},
-  mirror: {name:'镜像容器', short:'镜像容器', gear:'手', shard:false},
-  ultra: {name:'过激派', short:'过激派', gear:'头', shard:false}
+  kraken: {name:'克拉肯', short:'克拉肯', gear:'定制模组 + 碎片', shard:true, elem:'iron', element:'铁甲'},
+  indivilia: {name:'茵迪维利亚', short:'茵迪维利亚', gear:'身体', shard:false, elem:'wind', element:'风'},
+  harvester: {name:'死神', short:'死神', gear:'脚', shard:false, elem:'fire', element:'火'},
+  mirror: {name:'镜像容器', short:'镜像容器', gear:'手', shard:false, elem:'water', element:'水'},
+  ultra: {name:'过激派', short:'过激派', gear:'头', shard:false, elem:'elec', element:'电'}
 };
 const BOSS_ORDER=['kraken','indivilia','harvester','mirror','ultra'];
 
@@ -325,6 +338,9 @@ function normalizeRecord(r){
   };
 }
 function bossCfg(boss){ return BOSS_CONFIG[boss]||BOSS_CONFIG.kraken; }
+/* R71：Boss 属性配色 class（fire/water/elec/wind/iron），未知 boss 走 kraken 兜底 */
+function bossElem(boss){ return 'elem-'+(bossCfg(boss).elem||'iron'); }
+function bossElemName(boss){ return bossCfg(boss).element||''; }
 function bossTriggerExpectation(boss){ return cfg().trigger * (1*PROB_1 + 2*PROB_2 + 3*PROB_3); }
 function bossRunExpectation(boss){ return bossTriggerExpectation(boss)+(bossCfg(boss).shard?cfg().fragmentPerRun/FRAGMENTS_PER_MODULE:0); }
 function bossDayExpectation(boss,runs,isDouble){ return bossRunExpectation(boss)*runs*(isDouble?2:1); }
@@ -368,7 +384,7 @@ function updateServerSummary(){
   const c=cfg(), boss=selectedBoss(), b=bossCfg(boss), runs=currentRuns();
   const triggerExp=bossTriggerExpectation(boss), day=bossDayExpectation(boss,runs,false), dbl=bossDayExpectation(boss,runs,true);
   document.getElementById('serverInfo').innerHTML=
-    `<strong>${c.flag} 当前服务器：${c.name}</strong><span class="param">Boss ${b.name}</span>`+
+    `<strong>${c.flag} 当前服务器：${c.name}</strong><span class="param boss-param ${bossElem(boss)}">Boss ${b.name} · ${b.element}属性</span>`+
     `<span class="param">触发率 ${triggerPercent()}%</span>`+
     `<span class="param">1 / 2 / 3 个：${(PROB_1*100).toFixed(4)}% / ${(PROB_2*100).toFixed(4)}% / ${(PROB_3*100).toFixed(2)}%</span>`+
     (b.shard?`<span class="param">碎片 ${c.fragmentPerRun} / 次</span>`:'<span class="param">该 Boss 无碎片</span>')+
@@ -389,8 +405,15 @@ function updateServerSummary(){
     <li>碎片只属于<strong>克拉肯</strong>：${c.fragmentPerRun} × 每日 ${runs} 次；100 碎片折算 1 个定制模组，余数完整保留。</li>
     <li><strong>周期统计</strong>卡片主数是到第 N 天为止的<strong>累计值</strong>；下方「本段」只统计该区间的<strong>增量</strong>（如第 31–60 天），不含之前的累计。</li>
     <li>建议至少连续记录 <strong>90 天</strong>，更适合判断长期偏欧 / 偏非。</li>
+    <li><strong>Boss 标签配色按游戏内属性：</strong><span class="badge boss elem-fire">死神 · 火</span> <span class="badge boss elem-water">镜像容器 · 水</span> <span class="badge boss elem-elec">过激派 · 电</span> <span class="badge boss elem-wind">茵迪维利亚 · 风</span> <span class="badge boss elem-iron">克拉肯 · 铁甲</span></li>
     <li>数据保存在浏览器 <strong>localStorage</strong>；导出 JSON 可备份两套服务器的数据，登录账号后也可用「☁️ 账号同步」上传云端。</li>`;
-  document.getElementById('dropRangeBadge').textContent=`${b.name} · 每日 ${runs} 次 · 每次 0 ~ 3 / 双倍 0 ~ 6`;
+  const drBadge=document.getElementById('dropRangeBadge');
+  if(drBadge){
+    drBadge.textContent=`${b.name} · ${b.element}属性 · 每日 ${runs} 次 · 每次 0 ~ 3 / 双倍 0 ~ 6`;
+    drBadge.className='badge boss '+bossElem(boss);
+  }
+  const bossSel=document.getElementById('inputBoss');
+  if(bossSel) bossSel.dataset.elem=b.elem;
   document.getElementById('statTheorySub').textContent=`普通日 ${day.toFixed(2)} · 双倍日 ${dbl.toFixed(2)}`;
 }
 function renderServerInfo(){
@@ -426,7 +449,7 @@ function render(stats){
       const pct2=r.devPct*100,cb=cmpBand(pct2,1); const cls=cb>0?'good':cb<0?'bad':'muted'; const today=r.date===todayStr()?'today':'';
       const runTitle=r.runs===MAX_RUNS?'同步器 600+ · 每日 5 次':r.runs===4?'同步器 400~599 · 每日 4 次':'每日 3 次 · 同步器 < 400 / 国服';
       return `<tr class="${today}">
-        <td class="date-col">${r.date}${today?' · 今天':''}</td><td><span class="badge boss">${bossCfg(r.boss).name}</span></td>
+        <td class="date-col">${r.date}${today?' · 今天':''}</td><td><span class="badge boss ${bossElem(r.boss)}" title="${bossElemName(r.boss)}属性">${bossCfg(r.boss).name}</span></td>
         <td><span class="badge ${r.runs>BASE_RUNS?'extra':''}" title="${runTitle}">${r.runs} 次</span></td><td><span class="badge ${r.double?'double':''}">${r.double?'双倍':'普通'}</span></td>
         <td class="num drop-seq" title="每次直接掉落">${r.drops.join(' / ')}</td><td class="num">${r.direct}</td>
         <td class="num">${r.dayFragments}</td><td class="num">${r.cumFragments}</td><td class="num">${r.fragmentEquivalent.toFixed(2)}</td>

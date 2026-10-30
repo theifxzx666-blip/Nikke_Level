@@ -30,7 +30,7 @@ function near(a, b, eps) { return Math.abs(a - b) <= (eps || 1e-9); }
 function makeEl(id) {
   return {
     id: id, value: "", textContent: "", innerHTML: "", disabled: false,
-    max: "", min: "", type: "", options: [],
+    max: "", min: "", type: "", options: [], dataset: {},
     style: { setProperty: function () {}, removeProperty: function () {} },
     classList: { add: function () {}, remove: function () {}, toggle: function () {}, contains: function () { return false; } },
     addEventListener: function () {}, removeEventListener: function () {},
@@ -86,6 +86,7 @@ function buildHarness(seed) {
     "loadAll:loadAll, saveAll:saveAll, loadRecords:loadRecords, saveRecords:saveRecords," +
     "exportData:exportData, setDate:setDate, resetForm:resetForm," +
     "BASE_RUNS:BASE_RUNS, MAX_RUNS:MAX_RUNS, RUN_CHOICES:RUN_CHOICES," +
+    "BOSS_CONFIG:BOSS_CONFIG, BOSS_ORDER:BOSS_ORDER, bossElem:bossElem, bossElemName:bossElemName," +
     "setServer:function(s){currentServer=s;}, getServer:function(){return currentServer;}," +
     "getSyncTier:function(){return syncTier;}" +
     "};";
@@ -258,6 +259,29 @@ t("⑨ 本机没有 nikke_sync_tier 时，用最近一条记录的 runs 兜底",
 t("⑨b 本机有合法偏好时以偏好为准", function () {
   var h3 = buildHarness({ "nikke_sync_tier": "4", "nikke_current_server": "global" });
   assert.strictEqual(h3.T.getSyncTier(), 4);
+});
+
+/* ---------- ⑩ R71：Boss 属性配色映射 ---------- */
+t("⑩ 五 Boss 属性映射齐全（火/水/电/风/铁甲）", function () {
+  var MAP = { harvester: "fire", mirror: "water", ultra: "elec", indivilia: "wind", kraken: "iron" };
+  Object.keys(MAP).forEach(function (k) {
+    var b = T.BOSS_CONFIG[k];
+    assert.ok(b, k + " 不在 BOSS_CONFIG");
+    assert.strictEqual(b.elem, MAP[k], k + " 属性应为 " + MAP[k] + "，实际 " + b.elem);
+    assert.ok(b.element && b.element.length <= 2, k + " 属性中文名异常：" + b.element);
+    assert.strictEqual(T.bossElem(k), "elem-" + MAP[k]);
+  });
+  assert.deepStrictEqual(Array.from(T.BOSS_ORDER).slice().sort(), Object.keys(MAP).sort(), "BOSS_ORDER 与配置不一致");
+  /* 未知 boss 走克拉肯兜底，不会产出空 class */
+  assert.strictEqual(T.bossElem("nope"), "elem-iron");
+});
+
+/* ---------- ⑪ R71：品牌图标换成 nav_modstats.webp ---------- */
+t("⑪ 页头图标使用 assets/nav_modstats.webp，不再用 ⚙ 字符", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  assert.ok(/class="brand-mark"><img[^>]+assets\/nav_modstats\.webp/.test(html), "brand-mark 里没换成本地图标");
+  assert.ok(html.indexOf('<span>⚙</span>') === -1, "还残留 ⚙ 字符图标");
+  assert.ok(/\.brand-mark img\{/.test(html), "缺少 .brand-mark img 样式");
 });
 
 console.log("\n===== test_mod_stats: PASS=" + pass + "  FAIL=" + fail + " =====");
