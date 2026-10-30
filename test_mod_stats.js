@@ -423,8 +423,9 @@ t("⑰ R77：堆叠卡环形无限循环（末→首、首→末）+ 环绕后�
     "键盘翻页还夹在边界，没有环形");
   /* 2. 摆放用环形偏移：前进 0..n-1 / 后退 -(n-1)..0 */
   assert.ok(/function periodOffset\(i,n\)\{/.test(html), "缺少 periodOffset 环形偏移函数");
-  assert.ok(/if\(periodDir>=0\) return \(i-periodIdx\+n\)%n;/.test(html), "前进方向偏移应为 (i-focus+n)%n");
-  assert.ok(/return -\(\(periodIdx-i\+n\)%n\);/.test(html), "后退方向偏移应为负值环");
+  assert.ok(/const d=\(i-periodIdx\+n\)%n;/.test(html), "偏移应先算环形前进距离 (i-focus+n)%n");
+  assert.ok(/if\(d<=PERIOD_PEEK_MAX\) return d;/.test(html), "主卡与露边卡恒排在下方，反向翻也不能丢堆叠感");
+  assert.ok(/return periodDir>=0\?d:d-n;/.test(html), "更远的隐藏卡应按方向放上/下，新卡才从正确方向滑入");
   assert.ok(/const off=periodOffset\(i,n\);/.test(html), "layoutPeriods 必须改用 periodOffset");
   /* 3. 方向判定：跨过一半圈数当反向，动画才不会横扫整圈 */
   assert.ok(/periodDir=\(\(\(next-periodIdx\+n\)%n\)>n\/2\)\?-1:1;/.test(html), "缺少前进/后退方向判定");

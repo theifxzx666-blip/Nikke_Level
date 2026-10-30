@@ -582,10 +582,12 @@ function renderPeriods(stats){
 const PERIOD_PEEK=12, PERIOD_PEEK_SCALE=0.035, PERIOD_PEEK_MAX=2;
 let periodDir=1; /* R77：+1 前进（新卡从下往上顶）-1 后退（新卡从上方落下），只决定动画方向感 */
 function periodOffset(i,n){
-  /* R77 环形取模：前进时偏移恒为 0..n-1（其余卡在下方排队），后退时折成 -(n-1)..0（全在上方排队）
-     —— 末张之后是首张、首张之前是末张，永远翻不到头 */
-  if(periodDir>=0) return (i-periodIdx+n)%n;
-  return -((periodIdx-i+n)%n);
+  /* R77 环形取模：d = 沿前进方向到主卡的距离 0..n-1，末张之后是首张、首张之前是末张，永远翻不到头。
+     0..2 → 主卡 + 两层露边（永远排在下方，堆叠感不会因为反向翻而消失）；
+     更远的隐藏卡按当前方向摆放：前进放视图下方、后退放上方，这样「新卡」才从正确的方向滑进来 */
+  const d=(i-periodIdx+n)%n;
+  if(d<=PERIOD_PEEK_MAX) return d;
+  return periodDir>=0?d:d-n;
 }
 function layoutPeriods(){
   const view=document.getElementById('periodGrid');
