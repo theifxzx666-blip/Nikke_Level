@@ -129,6 +129,76 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .author-chip-txt{display:flex;flex-direction:column;line-height:1.25;white-space:nowrap}
 .author-chip-txt b{font-size:13px;color:var(--text)}
 .author-chip-txt em{font-style:normal;font-size:11px;color:var(--primary)}
+/* ===================== R76 手机竖屏紧凑化 =====================
+   全部限定在 ≤720 / ≤560，桌面与平板布局零影响。
+   核心：手机上 .entry-row 变成 flex-direction:column 后，子项的 flex-basis
+   会从「宽度基准」变成「高度基准」→ drop-wrap 250px / note-wrap 140px
+   凭空撑出 ~220px 空白。这里统一改回 flex:0 0 auto 由内容决定高度。 */
+@media(max-width:720px){
+  .entry-row .drop-wrap,.entry-row .note-wrap{flex:0 0 auto}
+  .entry-row .form-actions{flex:0 0 auto}
+  .entry-row{padding-bottom:0;gap:14px}
+  #periodPanel{margin-bottom:24px}
+  .period-wrap{margin-bottom:0}   /* 与 #periodPanel 的 24px 重复计数会变 48px（需带 id 前缀才压得住第 119 行） */
+  .entry-period>#periodPanel .period-wrap{margin-bottom:0}
+  .entry-period>.panel{margin-bottom:24px}
+}
+@media(max-width:560px){
+  /* ① 顶部动作：四个按钮一行，别让「清空当前服」独占整行 */
+  .header-actions{gap:6px}
+  .header-actions button{flex:1 1 0;min-width:0;height:36px;font-size:12px;padding:0 5px;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .header-actions button svg,.header-actions button img{flex:0 0 auto}
+  .server-switch{gap:6px}
+  .server-btn{font-size:12px;padding:0 8px;height:36px}
+  .srv-suffix{display:none}          /* 服务器副说明在手机上挪进 title，省一行 */
+  /* ② KPI 卡去掉 min-height，压紧内边距 */
+  .stats-grid{gap:10px}
+  .overview{margin-bottom:18px}
+  .stat-card{min-height:0;padding:11px 12px}
+  .stat-card .label{font-size:12px}
+  .stat-card .value{font-size:23px;margin:1px 0}
+  .stat-card .sub{font-size:11px;margin-top:2px}
+  /* ③ 样本条压成一行：只留数字与单位 */
+  .sample-bar{padding:10px 2px 0;gap:2px 14px;font-size:12px}
+  .sample-item{width:auto;gap:3px 6px}
+  .sample-value{font-size:15px}
+  .sample-hint{font-size:11px;color:var(--text2)}
+  #statDoubleSub{display:none}    /* 保留「还需 N 天」这类有信息量的提示，只砍纯装饰注释 */
+  .sample-bar .progress{width:56px}
+  /* ④ 表单两列：日期 | Boss、次数 | 双倍 → 省约 130px 纵深
+     ⚠ 必须带 .entry-period 前缀：第 122 行 `.entry-period .form-grid{grid-template-columns:1fr}`
+       特异性 (0,2,0) 会盖掉裸 .form-grid，导致手机上仍是单列 */
+  .form-grid,.entry-period .form-grid{grid-template-columns:minmax(0,139px) minmax(0,1fr);gap:12px 10px;align-items:end}
+  .form-body{padding:14px}
+  .field label{font-size:12.5px;line-height:1.35}
+  .field input,.field select,.date-trigger{font-size:12.5px;height:40px;padding:0 8px}
+  #inputRuns{font-size:11.5px}  /* 「3 次（同步器 <400）」是表单里最长的一条，留 ~6px 余量防不同中文字体偏差 */
+  /* 原生下拉箭头占 ~20px 且无法压缩 → 手机端自绘细箭头，把宽度还给文字 */
+  .field select{appearance:none;-webkit-appearance:none;padding-left:5px;padding-right:16px;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' fill='none' stroke='%2366756e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 6px center;background-size:9px 6px}
+  .field select:disabled{background-color:var(--bg3)}
+  .drop-input{height:40px!important;font-size:15px!important}
+  .lbl-note{display:block;font-size:11px;line-height:1.4;margin-top:1px}
+  .drop-fields{gap:8px}
+  .entry-row{gap:12px;padding-top:12px;margin-top:12px}
+  /* ⑤ 面板头：标题与徽章同行，别整体竖成三行 */
+  .panel-head{flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px 14px;gap:6px 10px}
+  .panel-head>div:first-child{min-width:0}
+  .panel-title{font-size:15px}
+  .panel-sub{font-size:12px;line-height:1.5}
+  .panel-head .table-tools{width:100%;flex-wrap:wrap;gap:6px}
+  .badge{font-size:11px;padding:3px 7px}
+  /* ⑥ 历史记录：行高压紧、首列吸附，横滑时日期不丢 */
+  .table-scroll{max-height:440px}   /* 禁 vh：mod_stats 会被 index.html 以 iframe 嵌入，vh=iframe 自身高度会造成高度正反馈 */
+  #historyPanel table{font-size:12px}
+  #historyPanel thead th{padding:6px 8px}
+  #historyPanel tbody td{padding:7px 8px}
+  .table-scroll td.date-col{position:sticky;left:0;z-index:2;background:#fff;box-shadow:6px 0 6px -6px rgba(24,60,45,.14)}
+  /* ⑦ 周期卡在窄屏再收一点 */
+  .period-card{padding:12px}
+  .p-main{font-size:26px}
+}
 </style>
 </head>
 <body>

@@ -41,7 +41,7 @@
       "name": "定制模组统计",
       "icon": "assets/nav_modstats.webp",
       "type": "web",
-      "entry": "mod_stats.html?v=20261030g",
+      "entry": "mod_stats.html?v=20261030h",
       "viewId": "appModStats",
       "frameId": "modStatsFrame",
       "version": "1.0.0",
