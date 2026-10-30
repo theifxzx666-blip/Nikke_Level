@@ -63,10 +63,16 @@ function buildHarness(seed) {
   };
   var ctx = {
     document: doc, localStorage: localStorage,
-    window: { addEventListener: function () {}, parent: null, innerWidth: 1400, innerHeight: 900, scrollY: 0, scrollTo: function () {} },
+    window: {
+      addEventListener: function () {}, parent: null, innerWidth: 1400, innerHeight: 900, scrollY: 0, scrollTo: function () {},
+      /* R75：自动轮播会查 prefers-reduced-motion */
+      matchMedia: function () { return { matches: false, addEventListener: function () {}, removeEventListener: function () {} }; }
+    },
     console: console, Date: Date, Math: Math, JSON: JSON, Number: Number, String: String,
     Array: Array, Object: Object, isNaN: isNaN, parseInt: parseInt, parseFloat: parseFloat,
     setTimeout: function () {}, clearTimeout: function () {}, confirm: function () { return true; },
+    /* 桩里不真起定时器，只保证调用不炸 */
+    setInterval: function () { return 0; }, clearInterval: function () {},
     Blob: function (parts) { ctx.__lastBlob = parts.join(""); },
     URL: { createObjectURL: function () { return "blob:x"; }, revokeObjectURL: function () {} },
     FileReader: function () {}
@@ -355,6 +361,57 @@ t("⑬b 排序与翻页逻辑：最近完成的排最上、到边界放行、数
   /* 滚轮到边界必须放行，否则页面滚不动 */
   assert.ok(/down&&periodIdx>=n-1\)\|\|\(!down&&periodIdx<=0\)\) return;/.test(html), "滚轮在边界没有放行");
   assert.ok(/addEventListener\('wheel'/.test(html) && /addEventListener\('touchstart'/.test(html), "缺少滚轮 / 触摸翻页");
+});
+
+/* ---------- ⑭ R75：添加每日记录与周期统计并排一行 + 文案改动 ---------- */
+t("⑭ R75：entry-period 并排容器、底部三块压成一行、旧的分行容器已移除", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  assert.ok(/\.entry-period\{display:grid;grid-template-columns:minmax\(0,1\.62fr\) minmax\(0,1fr\)/.test(html), "缺少 .entry-period 左右两列");
+  assert.ok(/@media\(max-width:1080px\)\{\.entry-period\{grid-template-columns:minmax\(0,1fr\)\}/.test(html), "1080 以下需要回落单列");
+  /* 两个面板必须挂在同一个 .entry-period 里 */
+  var a = html.indexOf('<div class="entry-period">');
+  assert.ok(a !== -1, "缺少 entry-period 容器");
+  var seg = html.slice(a, html.indexOf('<section class="panel" id="historyPanel"'));
+  assert.ok(seg.indexOf('id="entryPanel"') !== -1 && seg.indexOf('id="periodPanel"') !== -1, "两个面板没有放进同一容器");
+  /* 底部三块：entry-row 三分支（掉落 / 备注 / 按钮），旧容器一律不许回来 */
+  assert.ok(/\.entry-row\{display:flex/.test(html), "缺少 .entry-row 一行容器");
+  assert.ok(html.indexOf('class="entry-bottom"') === -1, "旧的 entry-bottom 残留");
+  assert.ok(html.indexOf('class="form-footer"') === -1, "旧的 form-footer 残留");
+  assert.ok(html.indexOf('class="form-note"') === -1, "旧的 form-note 提示行残留");
+  var row = html.slice(html.indexOf('<div class="entry-row">'), html.indexOf("</form>"));
+  assert.ok(row.indexOf('drop-wrap') !== -1 && row.indexOf('note-wrap') !== -1 && row.indexOf('form-actions') !== -1, "entry-row 里应同时有掉落 / 备注 / 按钮");
+  /* 掉落汇总行改成绝对定位，避免把这一格撑高导致三块底边对不齐 */
+  assert.ok(/\.entry-row \.drop-sum\{position:absolute/.test(html), "drop-sum 需要绝对定位才能对齐");
+});
+
+t("⑮ R75：同步器与掉落说明并进 label，输入框下方那行已删除", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  assert.ok(/id="runsLabelNote"[^>]*>（国服按每日 3 次计算）</.test(html), "同步器 label 需要带（国服按每日 3 次计算）");
+  assert.ok(html.indexOf('id="runsHint"') === -1, "旧的 runsHint 节点残留");
+  assert.ok(/id="dropFieldsLabel">每次直接掉落<span class="lbl-note">（双倍日也填写实际数量，不要自行乘以 2）/.test(html), "掉落 label 文案不对");
+  assert.ok(/\.lbl-note\{font-size:12px/.test(html), "缺少 .lbl-note 小字样式");
+  /* 国际服仍要有分级说明的落点（写进同一个 note 的 title） */
+  assert.ok(/note\.textContent='（400\+ 4 次 · 600\+ 5 次）'/.test(html), "国际服说明没接上 label");
+});
+
+/* ---------- ⑯ R75：A 版轻堆叠 + 自动轮播 ---------- */
+t("⑯ R75：周期卡改 A 版轻堆叠（2 层露边）+ 自动轮播 2~3 秒", function () {
+  var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
+  assert.ok(/const PERIOD_PEEK=12, PERIOD_PEEK_SCALE=0\.035, PERIOD_PEEK_MAX=2;/.test(html), "露边常量应为 12px / 3.5% / 2 层");
+  assert.ok(/view\.style\.height=\(maxH\+topPad\)\+'px'/.test(html), "视口高度应为卡高 + 露边");
+  assert.ok(/translate3d\(0,\$\{topPad-off\*PERIOD_PEEK\}px,0\) scale\(\$\{1-off\*PERIOD_PEEK_SCALE\}\)/.test(html), "露边卡需要上移 + 缩放");
+  assert.ok(/\.period-card\{[^}]*transform-origin:50% 100%/.test(html), "卡片需要从底边缩放");
+  /* 自动轮播：2~3 秒一张、末张回卷、悬停/手动/后台/减弱动效都停 */
+  var m = html.match(/const PERIOD_AUTO_MS=(\d+)/);
+  assert.ok(m, "缺少自动轮播间隔常量");
+  var ms = Number(m[1]);
+  assert.ok(ms >= 2000 && ms <= 3000, "轮播间隔应在 2~3 秒，实际 " + ms);
+  assert.ok(/function periodAutoStep\(\)/.test(html) && /setInterval\(periodAutoStep/.test(html), "缺少轮播定时器");
+  assert.ok(/\(periodIdx\+1\)%n/.test(html), "轮播到末张应回卷首张");
+  assert.ok(/document\.hidden\|\|periodAutoHover/.test(html), "后台 / 悬停时需要暂停");
+  assert.ok(/prefers-reduced-motion: reduce/.test(html), "系统减弱动效时应停播");
+  assert.ok(/periodAutoHoldFor\(\)/.test(html), "手动交互后应暂停一段时间");
+  assert.ok(/\.period-view\.period-no-anim \.period-card\{transition:none/.test(html), "回卷瞬切需要 no-anim 类");
 });
 
 console.log("\n===== test_mod_stats: PASS=" + pass + "  FAIL=" + fail + " =====");

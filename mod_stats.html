@@ -52,7 +52,20 @@ summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-c
 .panel-title{font-size:17px;font-weight:600;letter-spacing:.2px}.panel-sub{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.6}
 .form-body{padding:20px}
 .form-grid{display:grid;grid-template-columns:minmax(140px,.85fr) minmax(220px,1.4fr) minmax(190px,1.15fr) minmax(140px,.85fr);gap:16px;align-items:start}
-.entry-bottom{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;margin-top:18px;padding-top:18px;border-top:1px solid var(--border)}.form-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px}.form-note{color:var(--text2);font-size:12px}
+/* R75：添加每日记录与周期统计并排一行（左表单 / 右周期卡）；窄屏回落单列 */
+.entry-period{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(0,1fr);gap:18px;align-items:start;margin-bottom:24px}
+.entry-period>.panel{margin-bottom:0}
+.entry-period>#periodPanel .period-wrap{margin-bottom:0}
+/* 表单只占左列时，原来 4 列会被挤成 145px 一格 → 固定 2 列 */
+.entry-period .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* 掉落 / 备注 / 按钮压成一行；真的放不下才换行，不硬裁文字 */
+.entry-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-top:18px;padding-top:18px;padding-bottom:28px;border-top:1px solid var(--border)}
+/* 「当天直接模组 / 每次 0~3」不占格内高度，绝对挂到行底部预留区 —— 这样三个格子都以输入框收尾，底边才对得齐 */
+.entry-row .drop-sum{position:absolute;left:0;top:calc(100% + 6px);margin:0}
+.entry-row .drop-wrap{flex:1 1 250px;min-width:0}
+.entry-row .note-wrap{flex:1 1 140px;min-width:0}
+.entry-row .form-actions{margin-left:auto}
+.lbl-note{font-size:12px;font-weight:400;color:var(--text2);margin-left:2px;white-space:nowrap}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}.field label{font-size:14px;color:var(--text3);font-weight:500}
 .field input,.field select,.date-trigger{width:100%;height:42px;font-size:15px;line-height:1.4;border-radius:10px;border:1px solid #c8d8d0;background:#ffffff;color:var(--text);padding:0 12px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s}
 .field input::placeholder{color:var(--text2);opacity:1}
@@ -94,7 +107,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .del-btn{border:0;background:transparent;color:var(--text2);padding:6px;border-radius:8px;transition:color .15s,background .15s}.del-btn:hover{color:var(--red);background:rgba(214,57,75,.08)}
 .note{max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .empty{padding:54px 20px;text-align:center;color:var(--text2)}.empty-icon{font-size:38px;display:block;margin-bottom:8px}
-.period-wrap{padding:0;margin-bottom:24px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-card{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff,#f7fcf9);box-shadow:0 1px 3px rgba(24,60,45,.05);border-radius:12px;padding:14px;transition:border-color .2s,box-shadow .2s,transform .38s cubic-bezier(.22,.7,.24,1),opacity .3s;will-change:transform}.period-card:hover{border-color:#93c4b0;box-shadow:0 6px 16px rgba(24,60,45,.09)}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:12px}.period-dots button{width:6px;height:6px;border:0;padding:0;border-radius:99px;background:#cfdcd5;cursor:pointer;transition:width .22s,background .22s}.period-dots button:hover{background:#a9c7ba}.period-dots button.on{width:18px;background:var(--primary)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;flex-wrap:wrap;margin-top:6px}.p-left{min-width:0}.p-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.p-main{font-size:28px;font-weight:700;margin:0 0 2px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:flex-start;gap:14px;margin-top:0}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
+.period-wrap{padding:0;margin-bottom:24px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-view.period-no-anim .period-card{transition:none!important}.period-card{position:absolute;left:0;right:0;top:0;transform-origin:50% 100%;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff,#f7fcf9);box-shadow:0 1px 3px rgba(24,60,45,.05);border-radius:12px;padding:14px;transition:border-color .2s,box-shadow .2s,transform .45s cubic-bezier(.22,.7,.24,1),opacity .3s;will-change:transform}.period-card:hover{border-color:#93c4b0;box-shadow:0 6px 16px rgba(24,60,45,.09)}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:12px}.period-dots button{width:6px;height:6px;border:0;padding:0;border-radius:99px;background:#cfdcd5;cursor:pointer;transition:width .22s,background .22s}.period-dots button:hover{background:#a9c7ba}.period-dots button.on{width:18px;background:var(--primary)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;flex-wrap:wrap;margin-top:6px}.p-left{min-width:0}.p-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.p-main{font-size:28px;font-weight:700;margin:0 0 2px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:flex-start;gap:14px;margin-top:0}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
 .help-body{padding:16px 18px 18px;color:var(--text2);font-size:14px;line-height:1.85}.help-body ul{padding-left:18px}.help-body li+li{margin-top:3px}.help-body strong{color:var(--text)}.help-body code{padding:2px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text3)}
 .progress{height:7px;background:#e2ece7;border-radius:999px;overflow:hidden;margin-top:10px}.progress>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--cyan));width:0}
 .toast{position:fixed;right:24px;bottom:24px;z-index:1000;padding:12px 15px;border:1px solid var(--border);background:#ffffff;border-radius:11px;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);pointer-events:none;transition:.22s;max-width:min(420px,calc(100vw - 30px));font-size:14px;color:var(--text)}.toast.show{opacity:1;transform:translateY(0)}.toast.success{border-left:4px solid var(--green)}.toast.error{border-left:4px solid var(--red)}.toast.info{border-left:4px solid var(--accent)}
@@ -103,9 +116,10 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .calendar-pop{position:fixed;z-index:2000;width:330px;max-height:calc(100dvh - 24px);overflow-y:auto;background:#ffffff;border:1px solid #c8d8d0;border-radius:16px;box-shadow:0 24px 60px rgba(24,60,45,.18);padding:14px;display:none}.calendar-pop.show{display:block}.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.cal-title{font-size:15px;font-weight:600}.cal-nav{display:flex;gap:5px}.cal-nav button{width:32px;height:30px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);border-radius:8px}.cal-nav button:hover{border-color:#8fb8a6}.cal-week,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal-week div{text-align:center;font-size:12px;color:var(--text2);padding:4px 0}.cal-day{height:34px;font-size:14px;font-weight:500;border:1px solid transparent;background:transparent;color:var(--text3);border-radius:8px}.cal-day:hover:not(:disabled){background:var(--bg3);border-color:#8fb8a6}.cal-day.muted{color:var(--text2)}.cal-day.today{border-color:var(--accent)}.cal-day.selected,.cal-day.selected:hover:not(:disabled){background:var(--accent);color:#fff;font-weight:600}.cal-day:disabled{opacity:.28;cursor:not-allowed}.cal-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}.cal-foot span{font-size:12px;color:var(--text2)}.cal-today{border:1px solid var(--border);background:var(--bg3);color:var(--text3);border-radius:8px;padding:6px 9px;font-size:12px;font-weight:500}
 .panel-head>.badge{white-space:normal}.help-panel:not([open]) .panel-head{border-bottom:0}
 @media(max-width:1200px){thead tr.group{display:none}}
+@media(max-width:1080px){.entry-period{grid-template-columns:minmax(0,1fr)}.entry-period>.panel{margin-bottom:24px}.entry-period>#periodPanel .period-wrap{margin-bottom:24px}}
 @media(max-width:1000px){.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:720px){body{padding:14px}.header{align-items:flex-start}.brand{flex-wrap:wrap}.brand h1{font-size:21px}.header-actions{width:100%}/* 我方多一个「☁️ 账号同步」，等分四格会把「清空当前服」挤成两行 → 按内容宽度、放不下就换行 */.header-actions button{flex:1 1 auto;white-space:nowrap}.server-switch{width:100%}.server-btn{flex:1}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.entry-bottom{grid-template-columns:1fr;gap:18px}.sample-bar{justify-content:flex-start}.sample-item{width:100%}.calendar-pop{width:min(330px,calc(100vw - 24px))}}
-@media(max-width:560px){body{padding:12px}.form-grid{grid-template-columns:1fr;gap:16px}.form-body{padding:16px}.form-footer{align-items:stretch;flex-direction:column}.form-actions .btn-primary,.form-actions .btn-secondary{flex:1}.server-switch .server-btn{font-size:13px;padding:0 10px}.stat-card{padding:16px}.stat-card::before{left:16px;right:16px}}
+@media(max-width:720px){body{padding:14px}.header{align-items:flex-start}.brand{flex-wrap:wrap}.brand h1{font-size:21px}.header-actions{width:100%}/* 我方多一个「☁️ 账号同步」，等分四格会把「清空当前服」挤成两行 → 按内容宽度、放不下就换行 */.header-actions button{flex:1 1 auto;white-space:nowrap}.server-switch{width:100%}.server-btn{flex:1}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.entry-row{flex-direction:column;align-items:stretch;gap:18px;padding-bottom:0;padding-top:16px}.entry-row .drop-sum{position:static;margin-top:6px}.sample-bar{justify-content:flex-start}.sample-item{width:100%}.calendar-pop{width:min(330px,calc(100vw - 24px))}}
+@media(max-width:560px){body{padding:12px}.form-grid{grid-template-columns:1fr;gap:16px}.form-body{padding:16px}.entry-period .form-grid{grid-template-columns:1fr}.entry-row .form-actions{margin-left:0}.form-actions .btn-primary,.form-actions .btn-secondary{flex:1}.server-switch .server-btn{font-size:13px;padding:0 10px}.stat-card{padding:16px}.stat-card::before{left:16px;right:16px}}
 @media(max-width:480px){.value{font-size:26px}.panel-head{align-items:flex-start;flex-direction:column}.server-info{line-height:1.7}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
 /* 作者名牌（标题旁） */
@@ -164,6 +178,8 @@ function openParentSync(){
   </div>
 </section>
 
+<!-- R75：添加每日记录 + 周期统计并排一行（左表单 / 右周期卡）；≤1080px 回落上下单列 -->
+<div class="entry-period">
 <section class="panel" id="entryPanel" aria-labelledby="entryTitle">
   <div class="panel-head"><div><h2 class="panel-title" id="entryTitle">📝 添加每日记录</h2><div class="panel-sub">先选择当天设置，再按顺序填写实际掉落；克拉肯碎片自动累计</div></div><div class="badge" id="dropRangeBadge">普通日 0 ~ 3</div></div>
   <div class="form-body">
@@ -171,15 +187,12 @@ function openParentSync(){
       <div class="form-grid">
         <div class="field"><label for="dateTrigger">日期</label><button type="button" class="date-trigger" id="dateTrigger" onclick="openCalendar()"><span id="dateValue" class="date-value placeholder">选择日期</span><span>▾</span></button><input type="hidden" id="inputDate"></div>
         <div class="field"><label for="inputBoss">异常拦截 Boss</label><select id="inputBoss" onchange="renderBossInfo();updateDirectPreview()"></select></div>
-        <div class="field"><label for="inputRuns">同步器 · 每日次数</label><select id="inputRuns" aria-describedby="runsHint" onchange="onRunsChange()"><option value="3">3 次（同步器 &lt;400）</option><option value="4">4 次（400~599）</option><option value="5">5 次（600+）</option></select><div class="hint" id="runsHint"></div></div>
+        <div class="field"><label for="inputRuns">同步器 · 每日次数<span class="lbl-note" id="runsLabelNote">（国服按每日 3 次计算）</span></label><select id="inputRuns" onchange="onRunsChange()"><option value="3">3 次（同步器 &lt;400）</option><option value="4">4 次（400~599）</option><option value="5">5 次（600+）</option></select></div>
         <div class="field"><label for="inputDouble">活动双倍</label><select id="inputDouble" onchange="updateDropLimits()"><option value="false">否 · 普通日</option><option value="true">是 · 双倍日</option></select></div>
       </div>
-      <div class="entry-bottom">
-        <div class="field drop-wrap"><label id="dropFieldsLabel">每次直接掉落 · 按拦截顺序填写</label><div class="drop-fields" id="dropFields" role="group" aria-labelledby="dropFieldsLabel"></div><div class="drop-sum"><span>当天直接模组：<strong id="directPreview">0</strong></span><span id="dropHint">每次 0 ~ 3</span></div></div>
-        <div class="field"><label for="inputNote">备注（可选）</label><input type="text" id="inputNote" maxlength="60" placeholder="例如：漏记一天 / 活动第一天"></div>
-      </div>
-      <div class="form-footer">
-        <span class="form-note">双倍日也填写实际数量，不要自行乘以 2。</span>
+      <div class="entry-row">
+        <div class="field drop-wrap"><label id="dropFieldsLabel">每次直接掉落<span class="lbl-note">（双倍日也填写实际数量，不要自行乘以 2）</span></label><div class="drop-fields" id="dropFields" role="group" aria-labelledby="dropFieldsLabel"></div><div class="drop-sum"><span>当天直接模组：<strong id="directPreview">0</strong></span><span id="dropHint">每次 0 ~ 3</span></div></div>
+        <div class="field note-wrap"><label for="inputNote">备注（可选）</label><input type="text" id="inputNote" maxlength="60" placeholder="例如：漏记一天"></div>
         <div class="form-actions"><button class="btn-primary" type="submit">➕ 保存记录</button><button class="btn-secondary" type="button" onclick="resetForm()">重置</button></div>
       </div>
     </form>
@@ -194,6 +207,7 @@ function openParentSync(){
     <div class="period-dots" id="periodDots" aria-label="周期页数"></div>
   </div>
 </section>
+</div>
 
 <section class="panel" id="historyPanel" aria-labelledby="historyTitle">
   <div class="panel-head"><div><h2 class="panel-title" id="historyTitle">📋 历史记录</h2><div class="panel-sub" id="recordCount">当前服务器共 0 条</div></div><div class="table-tools"><span class="badge" id="fragmentSummary">碎片累计：0</span><span class="badge" id="completeFragmentSummary">可兑换：0 + 0 碎片</span></div></div>
@@ -406,7 +420,7 @@ function updateServerSummary(){
     <li>活动双倍日选择“是”，系统会将当天<strong>直接掉落</strong>和克拉肯<strong>碎片</strong>按双倍规则计算；录入实际直接掉落数量时<strong>不要自己乘双倍</strong>。</li>
     <li>${c.note}</li>
     <li>碎片只属于<strong>克拉肯</strong>：${c.fragmentPerRun} × 每日 ${runs} 次；100 碎片折算 1 个定制模组，余数完整保留。</li>
-    <li><strong>周期统计</strong>一屏一张卡：<strong>最近完成的周期排在最上</strong>，滚轮 / 上下滑动 / 点底部圆点切换；卡片主数是到第 N 天为止的<strong>累计值</strong>，下方「本段」只统计该区间的<strong>增量</strong>（如第 31–60 天），不含之前的累计。</li>
+    <li><strong>周期统计</strong>一屏一张卡、<strong>最近完成的周期排在最上</strong>（后面两张卡只露出顶边）：默认每 2.6 秒自动往后轮播一张，鼠标停在卡片上或手动翻页后 9 秒内会暂停；滚轮 / 上下滑动 / 点底部圆点 / 方向键都能手动切。卡片主数是到第 N 天为止的<strong>累计值</strong>，下方「本段」只统计该区间的<strong>增量</strong>（如第 31–60 天），不含之前的累计。</li>
     <li>建议至少连续记录 <strong>90 天</strong>，更适合判断长期偏欧 / 偏非。</li>
     <li><strong>Boss 标签配色按游戏内属性：</strong><span class="badge boss elem-fire">死神 · 火</span> <span class="badge boss elem-water">镜像容器 · 水</span> <span class="badge boss elem-elec">过激派 · 电</span> <span class="badge boss elem-wind">茵迪维利亚 · 风</span> <span class="badge boss elem-iron">克拉肯 · 铁甲</span></li>
     <li>数据保存在浏览器 <strong>localStorage</strong>；导出 JSON 可备份两套服务器的数据，登录账号后也可用「☁️ 账号同步」上传云端。</li>`;
@@ -491,8 +505,11 @@ function renderPeriods(stats){
   dots.innerHTML=order.map((o,i)=>`<button type="button" data-i="${i}" class="${i===periodIdx?'on':''}" aria-label="第 ${i+1} 张，共 ${order.length} 张：${o.target} 天${o.done?'':'（未完成）'}"></button>`).join('');
   bindPeriodNav();
   layoutPeriods();
+  periodAutoStart();
 }
-/* 统一卡高并摆放：只有当前卡在视口内，其余按 ±(卡高+10) 平移出视口 */
+/* R75：A 版轻堆叠 —— 主卡铺满视口底部，后面两张各上移 12px 并从底边缩 3.5%，只露出顶部一条边；
+   视口高度 = 卡高 + 两层露边，不多占高度。露边的卡不接收点击（aria-hidden 已由 CSS 禁掉 pointer-events） */
+const PERIOD_PEEK=12, PERIOD_PEEK_SCALE=0.035, PERIOD_PEEK_MAX=2;
 function layoutPeriods(){
   const view=document.getElementById('periodGrid');
   if(!view) return;
@@ -502,15 +519,29 @@ function layoutPeriods(){
   cards.forEach(c=>{c.style.height='auto'});
   cards.forEach(c=>{maxH=Math.max(maxH,c.offsetHeight)});
   cards.forEach(c=>{c.style.height=maxH+'px'});
-  view.style.height=maxH+'px';
+  const topPad=PERIOD_PEEK*PERIOD_PEEK_MAX;
+  view.style.height=(maxH+topPad)+'px';
   cards.forEach((c,i)=>{
     const off=i-periodIdx;
-    c.style.transform=`translate3d(0,${off*(maxH+10)}px,0)`;
-    c.style.opacity=Math.abs(off)>1?'0':'1';
+    if(off<0){
+      /* 已翻过去的卡：整张挪到视口上方（含底部余量，别露一条边出来） */
+      c.style.transform=`translate3d(0,${off*(maxH+topPad+10)}px,0)`;
+      c.style.opacity='0'; c.style.zIndex='1';
+    }else if(off>PERIOD_PEEK_MAX){
+      /* 后面更远的卡：挪到视口下方并透明 */
+      c.style.transform=`translate3d(0,${topPad+off*(maxH+10)}px,0)`;
+      c.style.opacity='0'; c.style.zIndex='1';
+    }else if(off===0){
+      c.style.transform=`translate3d(0,${topPad}px,0)`;
+      c.style.opacity='1'; c.style.zIndex='100';
+    }else{
+      c.style.transform=`translate3d(0,${topPad-off*PERIOD_PEEK}px,0) scale(${1-off*PERIOD_PEEK_SCALE})`;
+      c.style.opacity='1'; c.style.zIndex=String(100-off);
+    }
     c.setAttribute('aria-hidden',off===0?'false':'true');
   });
 }
-function periodGo(i){
+function periodGo(i,opts){
   const view=document.getElementById('periodGrid');
   if(!view) return;
   const n=view.querySelectorAll('.period-card').length;
@@ -519,8 +550,38 @@ function periodGo(i){
   periodIdx=next;
   const cur=view.querySelectorAll('.period-card')[periodIdx];
   periodFocus=cur?Number(cur.dataset.target):null;
+  /* 自动轮播从末张回首张时，别倒着滑过 5 格 —— 禁一次过渡瞬切复位 */
+  const wrap=!!(opts&&opts.wrap);
+  if(wrap) view.classList.add('period-no-anim');
   layoutPeriods();
+  if(wrap) setTimeout(()=>view.classList.remove('period-no-anim'),80);
   document.querySelectorAll('#periodDots button').forEach((d,j)=>d.classList.toggle('on',j===periodIdx));
+}
+/* R75：自动轮播 —— 每 2.6s 前进一张（末张后瞬切回首张）。
+   以下情况自动暂停：鼠标悬停在卡片上 / 手动翻页后 9s 内 / 页面切到后台 / 系统开启「减弱动效」 */
+const PERIOD_AUTO_MS=2600, PERIOD_HOLD_MS=9000;
+let periodAutoNext=0, periodAutoHold=0, periodAutoHover=false, periodAutoTimer=null;
+function periodAutoDelay(){ periodAutoNext=Date.now()+PERIOD_AUTO_MS; }
+function periodAutoHoldFor(){ periodAutoHold=Date.now()+PERIOD_HOLD_MS; periodAutoDelay(); }
+function periodAutoAllowed(){
+  if(document.hidden||periodAutoHover) return false;
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  return Date.now()>=periodAutoHold;
+}
+function periodAutoStep(){
+  const view=document.getElementById('periodGrid');
+  if(!view||!periodAutoAllowed()) return;
+  const n=view.querySelectorAll('.period-card').length;
+  if(n<2||Date.now()<periodAutoNext) return;
+  periodAutoDelay();
+  const next=(periodIdx+1)%n;
+  periodGo(next,{wrap:next===0});
+}
+function periodAutoStart(){
+  if(periodAutoTimer) return;
+  periodAutoDelay();
+  periodAutoTimer=setInterval(periodAutoStep,400);
+  document.addEventListener('visibilitychange',periodAutoDelay);
 }
 let periodNavBound=false;
 function bindPeriodNav(){
@@ -529,8 +590,11 @@ function bindPeriodNav(){
   periodNavBound=true;
   dots.addEventListener('click',e=>{
     const b=e.target.closest('button');
-    if(b) periodGo(Number(b.dataset.i));
+    if(b){ periodAutoHoldFor(); periodGo(Number(b.dataset.i)); }
   });
+  /* 鼠标停在卡片上时不要自动翻走 */
+  view.addEventListener('mouseenter',()=>{periodAutoHover=true});
+  view.addEventListener('mouseleave',()=>{periodAutoHover=false;periodAutoDelay()});
   /* 鼠标滚轮：到边界就放行，让页面继续滚动，不锁死 */
   let lock=0;
   view.addEventListener('wheel',e=>{
@@ -541,6 +605,7 @@ function bindPeriodNav(){
     const now=Date.now();
     if(now-lock<380) return;
     lock=now;
+    periodAutoHoldFor();
     periodGo(periodIdx+(down?1:-1));
   },{passive:false});
   /* 触摸：竖向手势翻页，到边界同样放行 */
@@ -562,10 +627,12 @@ function bindPeriodNav(){
     active=false;
     const t=e.changedTouches[0],dy=t.clientY-sy,dx=t.clientX-sx;
     if(Math.abs(dy)<40||Math.abs(dy)<=Math.abs(dx)) return;
+    periodAutoHoldFor();
     periodGo(periodIdx+(dy<0?1:-1));
   },{passive:true});
   view.addEventListener('keydown',e=>{
     const n=view.querySelectorAll('.period-card').length;
+    if(/^(ArrowDown|ArrowUp|PageDown|PageUp|Home|End)$/.test(e.key)) periodAutoHoldFor();
     if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();periodGo(Math.min(n-1,periodIdx+1))}
     else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();periodGo(Math.max(0,periodIdx-1))}
     else if(e.key==='Home'){e.preventDefault();periodGo(0)}
@@ -594,13 +661,16 @@ function refreshRunControls(){
   const date=document.getElementById('inputDate').value, eligible=extraRunsAvailable(date);
   sel.disabled=!eligible;
   sel.value=String(eligible?syncTier:BASE_RUNS);
-  const hint=document.getElementById('runsHint');
-  /* 文案压成一行：这一格与右侧并排，多一行会把整行拉得参差不齐 */
-  if(eligible) hint.textContent=`${extraRunsFrom().slice(5)} 起：400+ 4 次 · 600+ 5 次`;
-  else if(!extraRunsFrom()) hint.textContent='国服按每日 3 次计算';
-  else if(!date) hint.textContent='选择日期后按规则启用';
-  else hint.textContent=`${extraRunsFrom().slice(5)} 前每日 3 次`;
-  hint.title=(extraRunsFrom()?`${extraRunsFrom()} 起：400 级以上每日 4 次 · 600 级以上每日 5 次`:'国服按每日 3 次计算');
+  /* R75：说明文字并进 label 的括号里（原来输入框下方那行已删），细节放进 title */
+  const note=document.getElementById('runsLabelNote');
+  if(note){
+    const from=extraRunsFrom();
+    if(!from) note.textContent='（国服按每日 3 次计算）';
+    else note.textContent='（400+ 4 次 · 600+ 5 次）';
+    note.title = !from ? '国服按每日 3 次计算'
+      : (eligible ? `${from.slice(5)} 起生效：400 级以上每日 4 次 · 600 级以上每日 5 次`
+                  : `${from.slice(5)} 起开放：400 级以上每日 4 次 · 600 级以上每日 5 次；当前每日 3 次`);
+  }
   renderDropInputs(currentRuns());
   updateServerSummary();
 }
