@@ -468,6 +468,13 @@ t("⑱ R78：桌面右列补「全部周期」清单 + 滚轮改累计位移分�
   assert.ok(/wAcc\+=Math\.abs\(raw\);/.test(html) && /if\(wAcc<PERIOD_WHEEL_STEP\) return;/.test(html), "滚轮应按累计位移满一张才翻页");
   assert.ok(/if\(now-wLast>PERIOD_WHEEL_GESTURE_MS\)/.test(html), "需要手势间隔判定，慢滚才不会误让位");
   assert.ok(/e\.deltaMode===1\?e\.deltaY\*16:e\.deltaY/.test(html), "行模式滚轮要归一化 deltaY");
+  /* R83：右列（堆叠卡 + 全部周期）总高必须跟着左「添加每日记录」走 ——
+     清单行靠 flex 分配（min-height 必须够小才行），#periodPanel 靠 align-self:stretch 撑到行高，
+     两者缺一右列就会被自己的 min-content 顶高、比左面板多出一截 */
+  assert.ok(/\.period-all-row\{[^}]*min-height:2[0-6]px[^}]*max-height:56px/.test(html),
+    "清单行 min-height 必须 ≤26px，否则 5 行最小高度会把右列顶出左面板高度");
+  assert.ok(/\.period-all\{[^}]*flex:1 1 auto[^}]*\}/.test(html), "清单要 flex:1 1 auto 吃掉剩余高度");
+  assert.ok(/\.period-all-list\{[^}]*flex:1 1 auto[^}]*gap:[34]px/.test(html), "清单列表要 flex:1 1 auto 且行距 3~4px");
 });
 
 console.log("\n===== test_mod_stats: PASS=" + pass + "  FAIL=" + fail + " =====");

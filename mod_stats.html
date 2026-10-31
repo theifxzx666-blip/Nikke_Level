@@ -116,11 +116,11 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .del-btn{border:0;background:transparent;color:var(--text2);padding:6px;border-radius:8px;transition:color .15s,background .15s}.del-btn:hover{color:var(--red);background:rgba(214,57,75,.08)}
 .note{max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .empty{padding:54px 20px;text-align:center;color:var(--text2)}.empty-icon{font-size:38px;display:block;margin-bottom:8px}
-.period-wrap{padding:0;margin-bottom:24px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-card{position:absolute;left:0;right:0;top:0;transform-origin:50% 100%;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff,#f7fcf9);box-shadow:0 1px 3px rgba(24,60,45,.05);border-radius:12px;padding:12px;transition:border-color .2s,box-shadow .2s,transform .42s cubic-bezier(.22,.72,.2,1),opacity .26s;will-change:transform}.period-card:hover{border-color:#93c4b0;box-shadow:0 6px 16px rgba(24,60,45,.09)}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:1px;justify-content:center;align-items:center;margin-top:6px}
+.period-wrap{padding:0;margin-bottom:24px}.period-view{position:relative;overflow:hidden;contain:inline-size;outline:none;touch-action:pan-y}.period-view:focus-visible{border-radius:12px;box-shadow:0 0 0 2px rgba(29,158,117,.45)}.period-card{position:absolute;left:0;right:0;top:0;transform-origin:50% 100%;display:flex;flex-direction:column;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff,#f7fcf9);box-shadow:0 1px 3px rgba(24,60,45,.05);border-radius:12px;padding:12px;transition:border-color .2s,box-shadow .2s,transform .42s cubic-bezier(.22,.72,.2,1),opacity .26s;will-change:transform}.period-card:hover{border-color:#93c4b0;box-shadow:0 6px 16px rgba(24,60,45,.09)}.period-card[aria-hidden="true"]{pointer-events:none}.period-card .progress{margin-top:auto}.period-dots{display:flex;gap:1px;justify-content:center;align-items:center;margin-top:5px}
 /* R81：视觉点仍是 6px，但热区给到 18×24 —— 之前热区就等于 6px 的点本身，鼠标/手指点第 5 个点
    很容易落空，表现成「点了没反应 / 只能按顺序点」。点由 ::after 画，容器宽度恒定，
    高亮拉长时也不会挤动相邻点 */
-.period-dots button{display:flex;align-items:center;justify-content:center;width:18px;height:24px;border:0;padding:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.period-dots button{display:flex;align-items:center;justify-content:center;width:18px;height:20px;border:0;padding:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .period-dots button::after{content:'';display:block;width:6px;height:6px;border-radius:99px;background:#cfdcd5;transition:width .22s,background .22s}
 .period-dots button:hover::after{background:#a9c7ba}
 .period-dots button.on::after{width:16px;background:var(--primary)}.p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.p-label{font-size:14px;font-weight:600}.p-stage{font-size:12px;color:var(--text2)}.p-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;flex-wrap:wrap;margin-top:6px}.p-left{min-width:0}.p-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.p-main{font-size:26px;font-weight:700;margin:0 0 2px;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.p-theory{font-size:13px;color:var(--text2)}.p-row{display:flex;justify-content:flex-start;gap:14px;margin-top:0}.p-seg{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.65;color:var(--text2)}.p-seg .p-dev{font-size:13px}.p-dev{font-weight:600;font-size:14px}.p-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text2)}.p-status.lucky{color:var(--green);background:rgba(29,158,117,.11)}.p-status.unlucky{color:var(--red);background:rgba(214,57,75,.11)}.p-status.normal{color:var(--gold);background:rgba(184,134,11,.1)}
@@ -184,11 +184,11 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 @media(min-width:1081px){
   #periodPanel{align-self:stretch;display:flex;flex-direction:column;min-width:0}
   #periodPanel .period-wrap{flex:0 0 auto}
-  .period-all{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin-top:12px}
-  .period-all-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 3px 7px;font-size:11.5px;color:var(--text2)}
-  .period-all-head b{font-size:12.5px;font-weight:600;color:var(--text3);letter-spacing:.2px}
-  .period-all-list{flex:1 1 auto;display:flex;flex-direction:column;gap:5px;min-height:0}
-  .period-all-row{position:relative;flex:1 1 0;min-height:32px;max-height:56px;overflow:hidden;display:grid;
+  .period-all{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin-top:8px}
+  .period-all-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 3px 3px;font-size:11px;color:var(--text2)}
+  .period-all-head b{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:.2px}
+  .period-all-list{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;min-height:0}
+  .period-all-row{position:relative;flex:1 1 0;min-height:22px;max-height:56px;overflow:hidden;display:grid;
     grid-template-columns:minmax(0,52px) minmax(0,1fr) 62px 14px;align-items:center;gap:10px;padding:0 11px;
     border:1px solid var(--border);border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(24,60,45,.04);
     font:inherit;font-size:12.5px;color:var(--text3);text-align:left;cursor:pointer;
