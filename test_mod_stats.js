@@ -475,6 +475,13 @@ t("⑱ R78：桌面右列补「全部周期」清单 + 滚轮改累计位移分�
     "清单行 min-height 必须 ≤26px，否则 5 行最小高度会把右列顶出左面板高度");
   assert.ok(/\.period-all\{[^}]*flex:1 1 auto[^}]*\}/.test(html), "清单要 flex:1 1 auto 吃掉剩余高度");
   assert.ok(/\.period-all-list\{[^}]*flex:1 1 auto[^}]*gap:[34]px/.test(html), "清单列表要 flex:1 1 auto 且行距 3~4px");
+  /* R84：行高从 24 提到 29 靠的是「把上方留白收掉」，不是放宽 min-height ——
+     一旦有人把桌面卡片的压缩覆盖删掉，5 行就会被 flex 重新压回 24px 以下 */
+  assert.ok(/#periodPanel \.period-card\{padding:10px\}/.test(html), "桌面右列的卡片压缩覆盖不能删（否则清单行会被压回 24px）");
+  assert.ok(/#periodPanel \.p-main\{font-size:24px\}/.test(html) && /#periodPanel \.p-seg\{[^}]*line-height:1\.45/.test(html),
+    "桌面右列的主数字与 p-seg 行高压缩覆盖缺失，卡片会把清单空间吃回去");
+  assert.ok(/\.period-all-row\{[^}]*font-size:13px/.test(html), "清单行字号 13px（R83 的 12.5 偏小）");
+  assert.ok(/#periodPanel \.period-dots button\{height:18px\}/.test(html), "桌面圆点热区收到 18px，省下的高度让给清单");
 });
 
 console.log("\n===== test_mod_stats: PASS=" + pass + "  FAIL=" + fail + " =====");

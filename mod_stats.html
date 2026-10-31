@@ -181,24 +181,35 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
    卡下方会空出 200px 左右。清单用 flex:1 吃掉这段空白，行高 32~56 自适应。
    ≤1080px 单列时右列跟着表单走，不存在并排空白 → display:none，手机/平板零影响。 */
 .period-all{display:none}
+/* R84：R83 为了「右列不溢出」把清单行压到 24px，读起来太憋。这里把省出来的空间从上方两块
+   的「留白」里挪 —— 卡片 padding 12→10、p-mid 上距 6→3、p-seg 上距 8→6 且行高 1.65→1.45、
+   主数字 26→24、圆点热区 20→18。卡片骨架和视觉层级不变，只是不再松垮；省下的 ~22px 全给
+   清单，行高回到 29px、字号 12.5→13。**全部只在 >1080px 两列布局内生效**，手机/平板单列
+   时的卡高与行距不受任何影响。 */
 @media(min-width:1081px){
   #periodPanel{align-self:stretch;display:flex;flex-direction:column;min-width:0}
   #periodPanel .period-wrap{flex:0 0 auto}
-  .period-all{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin-top:8px}
-  .period-all-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 3px 3px;font-size:11px;color:var(--text2)}
-  .period-all-head b{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:.2px}
+  #periodPanel .period-card{padding:10px}
+  #periodPanel .p-mid{margin-top:3px}
+  #periodPanel .p-main{font-size:24px}
+  #periodPanel .p-seg{padding-top:6px;line-height:1.45}
+  #periodPanel .period-dots{margin-top:3px}
+  #periodPanel .period-dots button{height:18px}
+  .period-all{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin-top:5px}
+  .period-all-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 3px 3px;font-size:11.5px;color:var(--text2)}
+  .period-all-head b{font-size:12.5px;font-weight:600;color:var(--text3);letter-spacing:.2px}
   .period-all-list{flex:1 1 auto;display:flex;flex-direction:column;gap:4px;min-height:0}
-  .period-all-row{position:relative;flex:1 1 0;min-height:22px;max-height:56px;overflow:hidden;display:grid;
+  .period-all-row{position:relative;flex:1 1 0;min-height:24px;max-height:56px;overflow:hidden;display:grid;
     grid-template-columns:minmax(0,52px) minmax(0,1fr) 62px 14px;align-items:center;gap:10px;padding:0 11px;
     border:1px solid var(--border);border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(24,60,45,.04);
-    font:inherit;font-size:12.5px;color:var(--text3);text-align:left;cursor:pointer;
+    font:inherit;font-size:13px;color:var(--text3);text-align:left;cursor:pointer;
     transition:border-color .18s,background .18s,box-shadow .18s}
   .period-all-row:hover{border-color:#93c4b0;background:#fbfefd}
   .period-all-row.on{border-color:var(--primary);background:linear-gradient(180deg,#f3fbf7,#eaf7f1);box-shadow:0 2px 8px rgba(29,158,117,.14)}
   .period-all-row.pending{background:#fbfcfc;color:var(--text2)}
   .period-all-row .pa-day{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
   .period-all-row .pa-main{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-  .period-all-row .pa-main em{font-style:normal;font-size:11.5px;font-weight:400;color:var(--text2)}
+  .period-all-row .pa-main em{font-style:normal;font-size:12px;font-weight:400;color:var(--text2)}
   .period-all-row.pending .pa-main{font-weight:500}
   .period-all-row .pa-dev{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .period-all-row .pa-dot{width:8px;height:8px;border-radius:99px;background:#cfdcd5}
