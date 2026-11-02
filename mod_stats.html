@@ -300,7 +300,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     <button onclick="exportData()">📤 导出</button>
     <button onclick="document.getElementById('importInput').click()">📥 导入</button>
     <button onclick="openParentSync()" title="登录后云端同步「定制模组统计」数据">☁️ 账号同步</button>
-    <button onclick="openBindPanel()" title="和 QQ 机器人绑定，群里报的数自动进这里">🔗 绑定 QQ</button>
+    <button onclick="openBindPanel()" title="登录账号：换设备填绑定码就接回来，群里报的数也会自动同步到这里">👤 账号</button>
     <input id="importInput" type="file" accept=".json" hidden onchange="importData(event)">
     <button class="danger" onclick="clearAll()">🗑 清空当前服</button>
   </div>
@@ -324,6 +324,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .bind-btn.primary{background:#185FA5;border-color:#185FA5;color:#fff}
 .bind-btn:disabled{opacity:.6;cursor:default}
 .bind-foot{color:#888780;font-size:12px;border-top:1px solid rgba(0,0,0,.08);padding-top:10px;margin-top:6px}
+.bind-or{color:#888780;font-size:12px;text-align:center;margin:14px 0 8px}
 .bind-acct{background:#F7F6F2;border-radius:10px;padding:10px 12px;margin-bottom:12px}
 .bind-acct-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#5F5E5A}
 .bind-acct-row code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;letter-spacing:2px;color:#0C447C;background:#E6F1FB;border-radius:6px;padding:4px 8px}
@@ -336,44 +337,47 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 </style>
 
 <div id="bindMask" onclick="if(event.target===this)closeBindPanel()">
-  <div id="bindCard" role="dialog" aria-modal="true" aria-label="绑定 QQ 机器人">
+  <div id="bindCard" role="dialog" aria-modal="true" aria-label="登录 / 绑定账号">
     <div class="bind-head">
-      <span class="bind-title">绑定 QQ 机器人</span>
+      <span class="bind-title">登录 / 绑定账号</span>
       <button class="bind-x" onclick="closeBindPanel()" aria-label="关闭">×</button>
     </div>
     <div class="bind-state" id="bindState"></div>
-    <!-- R92：账号码。账号属于这个码，不属于这台浏览器；换设备输入这串就接回。 -->
-    <div class="bind-acct" id="bindAcctBox">
-      <div class="bind-acct-row" id="bindAcctRows" style="display:none">
-        <span>你的账号</span>
+
+    <!-- 已登录：只显示账号（绑定码）和两个维护动作 -->
+    <div id="bindOn" style="display:none">
+      <div class="bind-acct-row">
+        <span>账号</span>
         <code id="bindAcctCode">—</code>
-        <button class="bind-mini" onclick="copyAcctCode()">复制</button>
+        <button class="bind-mini" onclick="copyCode()">复制</button>
       </div>
-      <div class="bind-acct-hint" id="bindAcctHint" style="display:none">这串就是账号本身。换电脑、换浏览器、清了缓存，填它就能登回来。</div>
-      <div class="bind-login" id="bindLoginRow">
-        <input id="bindInput" placeholder="已有账号码？填这里" maxlength="12" autocomplete="off" onkeydown="if(event.key==='Enter')qqLoginByCode()">
-        <button class="bind-btn" onclick="qqLoginByCode()">登录</button>
-      </div>
-    </div>
-    <div id="bindTokenRow" style="display:none">
-      <div class="bind-token" id="bindTokenText"></div>
-      <div class="bind-hint" id="bindTokenHint"></div>
+      <div class="bind-acct-hint">换电脑、换浏览器、清了缓存，填这串就能登回来，数据一条不丢。</div>
       <div class="bind-actions">
-        <button class="bind-btn primary" id="bindCopyBtn" onclick="copyBindCommand()">复制指令</button>
+        <button class="bind-btn" id="bindOffBtn" onclick="offHere()">断开 QQ 同步</button>
+        <button class="bind-btn" id="bindLogoutBtn" onclick="logoutHere()">退出登录</button>
       </div>
     </div>
-    <div id="bindBoundRow" style="display:none">
-      <div class="bind-hint">绑上之后<b>自动双向同步</b>：群里报完这边自己更新，这页改了也会自己传上去（每 15 秒对一次，没冲突就不打扰你）。<br>下面两个按钮只在「两边同一天数不一样」时用。</div>
-      <div class="bind-actions">
-        <button class="bind-btn primary" id="bindPullBtn" onclick="pullFromCloud()">从云端下载</button>
-        <button class="bind-btn" id="bindSyncBtn" onclick="pushHere()">上传本页</button>
-        <button class="bind-btn" id="bindUnbindBtn" onclick="unbindHere()">解除绑定</button>
+
+    <!-- 未登录：输码登录，或者先绑 QQ 拿码 -->
+    <div id="bindOff">
+      <div class="bind-login">
+        <input id="bindInput" placeholder="绑定码，例如 AB3D-K9MX" maxlength="12" autocomplete="off" onkeydown="if(event.key==='Enter')loginByCode()">
+        <button class="bind-btn primary" onclick="loginByCode()">登录</button>
+      </div>
+      <div id="bindGenWrap">
+        <div class="bind-or">还没有账号</div>
+        <div class="bind-actions"><button class="bind-btn" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button></div>
+      </div>
+      <div id="bindTokenRow" style="display:none">
+        <div class="bind-token" id="bindTokenText"></div>
+        <div class="bind-hint" id="bindTokenHint"></div>
+        <div class="bind-actions">
+          <button class="bind-btn primary" id="bindCopyBtn" onclick="copyBindCommand()">复制指令</button>
+        </div>
       </div>
     </div>
-    <div id="bindGenWrap">
-      <div class="bind-actions"><button class="bind-btn primary" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button></div>
-    </div>
-    <div class="bind-foot">账号就是上面那串码，数据挂在账号下，跟浏览器无关。绑 QQ 只是让群里报的数自动同步过来，不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R92</span></div>
+
+    <div class="bind-foot">数据在这个绑定码对应的云端账号里，跟浏览器无关；一台设备登录一次就够了。绑 QQ 只是让群里报的数也写进同一个账号，不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R93</span></div>
   </div>
 </div>
 
@@ -592,35 +596,52 @@ function saveAll(data){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(dat
 function loadRecords(){ return (loadAll()[currentServer]||[]).filter(r=>r&&typeof r.date==='string'); }
 function saveRecords(records){ const all=loadAll(); all[currentServer]=records; return saveAll(all); }
 
-/* ===== QQ 机器人绑定 / 同步 =====================================
-   本页是纯静态站点，没有登录体系。身份就用浏览器本地一个随机 uuid
-   （localStorage 里躺着，不注册、不要邮箱、不上传任何个人信息）。
+/* ===== 账号同步（R93）=============================================
+   只有一个账号，放在云端。这里和机器人都是同一套写法：
 
-   链路：网页写一行 sync_data(feature=mod_link_<口令>, uid=本地uuid)
-        → 用户在群里发 /石头 绑定 <口令>
-        → 机器人删掉那行并取走 uid，之后它报的数写进 (本地uuid, mod_stats_qq)
-        → 本页轮询这一行，出现就是绑好了，然后**把本页数据传上去当基准**
+       读云端  →  改自己那一天  →  整份写回云端
 
-   谁说了算：本页。绑定那一刻起，同一天里以本页的数字为准，机器人只补本页
-   没有的日期；网页删掉的日期它也不会自作主张加回来（除非本页也没有）。
+   所以不存在「两本账」、也不存在「谁说了算」：谁改哪天就只动哪天，
+   另一头刚报的其它日期一条都不会被动到。
 
-   方向不能反：如果让机器人生成指向用户的链接，谁看见链接谁就能把自己的
-   uuid 钉到别人的 openid 上，数据会流到别人那边去。现在这个方向，
-   最坏情况是有人抢先用掉口令、把自己的报数灌进你的页面，他拿不到你的数据。 */
+   设备上只记一件事：绑定码（XXXX-XXXX）。
+     · 第一次：生成 6 位口令 → 群里发 /石头 绑定 → 机器人把绑定码带回网页
+     · 换设备：填这串码登录，数据自动下来
+   账号属于这串码，不属于这台浏览器；清了缓存也能登回来。
+
+   方向不能反：如果让机器人生成指向用户的链接，谁看见链接谁就能把自己的账号
+   钉到别人的 openid 上。现在这个方向，最坏情况是有人抢先用掉口令、把自己的
+   报数灌进这个账号，他拿不到你的数据。 */
 const SUPA_URL='https://oologpjskkpjkvcpddhf.supabase.co';
 const SUPA_KEY='sb_publishable_6FzpENHzylm1M-NSvX6RBQ__Xlpv7Oc';
-const QQ_UID_KEY='nikke_mod_qq_uid';
-const QQ_TOK_KEY='nikke_mod_qq_token';
-const QQ_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const QQ_TTL_MS=5*60*1000;
-const QQ_FEATURE='mod_stats_qq';
-/* R87：绑定状态行。群里发 /石头 解绑 时机器人写一行 {bound:false}，
-   页面靠它把「已绑定」撤掉——光看记录行是撤不掉的，解绑不会删记录。 */
-const QQ_STATE_FEATURE='mod_link_state';
-const QQ_BASE_KEY='nikke_mod_qq_baseline';   // 记录「这个 uid 已经把本页设为基准了」
-let qqPollTimer=null;
+const ACCT_CODE_KEY='nikke_mod_acct_code';       // 登录态：记得的绑定码
+const ACCT_OLD_CODE='nikke_mod_qq_code';         // R92 的旧键，读一次迁过来
+const ACCT_UID_KEY='nikke_mod_acct_uid';         // 绑定码对应的账号（缓存）
+const ACCT_OPS_KEY='nikke_mod_acct_ops';         // 还没写进云端的变更
+const ACCT_ALIGN_KEY='nikke_mod_acct_aligned';   // 已经和云端对齐过的账号
+const ACCT_BACKUP_KEY='nikke_mod_qq_backup';     // 覆盖本地前的快照
+const ACCT_TOK_KEY='nikke_mod_acct_token';       // 刚生成、还没被认领的口令
 
-function uuid4(){
+const ACCT_FEATURE='mod_stats_qq';
+const ACCT_STATE='mod_link_state';
+const ACCT_CODE_PREFIX='mod_link_code_';
+const ACCT_LINK_PREFIX='mod_link_';
+const ACCT_DONE_PREFIX='mod_link_done_';
+const ACCT_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const ACCT_TTL_MS=5*60*1000;
+const ACCT_TICK_MS=15000;
+const ACCT_SAVE_DELAY=1200;
+
+let acctTimer=null, acctBusy=false, acctPollTimer=null, acctSaveTimer=null, acctLastSync=0;
+
+function randomToken(n){
+  const b=new Uint8Array(n||6);
+  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
+  else for(let i=0;i<b.length;i++) b[i]=Math.floor(Math.random()*256);
+  let s=''; for(let i=0;i<b.length;i++) s+=ACCT_ALPHABET[b[i]%ACCT_ALPHABET.length];
+  return s;
+}
+function newUid(){
   if(window.crypto&&crypto.randomUUID) return crypto.randomUUID();
   const b=new Uint8Array(16);
   if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
@@ -628,20 +649,6 @@ function uuid4(){
   b[6]=(b[6]&0x0f)|0x40; b[8]=(b[8]&0x3f)|0x80;
   const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');
   return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
-}
-function qqUid(){
-  let u=localStorage.getItem(QQ_UID_KEY);
-  if(!u||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u)){
-    u=uuid4(); localStorage.setItem(QQ_UID_KEY,u);
-  }
-  return u;
-}
-function randomToken(n){
-  const b=new Uint8Array(n||6);
-  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
-  else for(let i=0;i<b.length;i++) b[i]=Math.floor(Math.random()*256);
-  let s=''; for(let i=0;i<b.length;i++) s+=QQ_ALPHABET[b[i]%QQ_ALPHABET.length];
-  return s;
 }
 async function supaFetch(path,opt){
   opt=opt||{};
@@ -657,393 +664,321 @@ async function supaFetch(path,opt){
   if(txt){ try{ data=JSON.parse(txt) }catch(e){ data=txt } }
   return {ok:res.ok,status:res.status,data};
 }
+function netErr(r,what){
+  if(!r) return '网络没通';
+  if(r.net) return '连不上云端，检查下网络';
+  if(r.status===401||r.status===403) return '云端没放开这张表的读写权限';
+  return (what||'云端')+' 返回 '+r.status;
+}
 
-/* 读机器人写的那两行：记录行（mod_stats_qq）+ 状态行（mod_link_state）。
-   有记录行 = 绑上了；状态行 bound:false = 群里解过绑，这个优先。
-   一次请求查两行（PostgREST 的 in.()），省一趟往返。 */
-async function qqPull(){
-  const r=await supaFetch(`sync_data?select=feature,data_json,updated_at&uid=eq.${qqUid()}&feature=in.(${QQ_FEATURE},${QQ_STATE_FEATURE})`);
-  if(r.net) return {err:'连不上云端，检查下网络'};
-  if(!r.ok){
-    if(r.status===401||r.status===403) return {err:'云端没放开这张表的读写权限'};
-    return {err:'云端返回 '+r.status};
+/* ---------- 登录态：就一串码 ---------- */
+function normCode(raw){ return String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'') }
+function fmtCode(c){ return (c&&c.length===8)?c.slice(0,4)+'-'+c.slice(4):(c||'') }
+function myCode(){
+  let c=localStorage.getItem(ACCT_CODE_KEY)||'';
+  if(!c){
+    const old=normCode(localStorage.getItem(ACCT_OLD_CODE)||'');
+    if(old.length===8){ c=old; localStorage.setItem(ACCT_CODE_KEY,old) }
   }
+  return normCode(c);
+}
+function setCode(c){ c?localStorage.setItem(ACCT_CODE_KEY,c):localStorage.removeItem(ACCT_CODE_KEY) }
+function getUid(){ return localStorage.getItem(ACCT_UID_KEY)||'' }
+function setUid(u){ u?localStorage.setItem(ACCT_UID_KEY,u):localStorage.removeItem(ACCT_UID_KEY) }
+function aligned(uid){ return !!uid&&localStorage.getItem(ACCT_ALIGN_KEY)===uid }
+function markAligned(uid){ if(uid) localStorage.setItem(ACCT_ALIGN_KEY,uid) }
+
+/* ---------- 云端读写 ---------- */
+async function uidOfCode(code){
+  if(!code) return '';
+  if(getUid()&&myCode()===code) return getUid();
+  const r=await supaFetch(`sync_data?select=uid&feature=eq.${ACCT_CODE_PREFIX}${code}&limit=1`);
+  if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return '';
+  const uid=String(r.data[0].uid||'');
+  if(uid) setUid(uid);
+  return uid;
+}
+async function cloudRow(uid){
+  const r=await supaFetch(`sync_data?select=feature,data_json,updated_at&uid=eq.${uid}&feature=in.(${ACCT_FEATURE},${ACCT_STATE})`);
+  if(!r||!r.ok) return {err:netErr(r,'云端读取')};
   const out={};
   for(const row of (Array.isArray(r.data)?r.data:[])){
     if(!row) continue;
-    if(row.feature===QQ_STATE_FEATURE) out.state=row;
-    else if(row.feature===QQ_FEATURE) out.row=row;
+    if(row.feature===ACCT_STATE) out.state=row;
+    else if(row.feature===ACCT_FEATURE) out.row=row;
   }
   return out;
 }
-/* 机器人那边明确说过「解绑了」。老账号没有这一行，按已绑定处理（向后兼容）。 */
-function qqUnlinked(res){
-  return !!(res&&res.state&&res.state.data_json&&res.state.data_json.bound===false);
-}
-
-
-async function qqCreateToken(){
-  const tok=randomToken(6), uid=qqUid();
+async function cloudWrite(uid,records,keepCode){
+  const now=new Date().toISOString();
+  const doc={v:1,updated:now,src:'web',records};
+  if(keepCode) doc.code=keepCode;
   const r=await supaFetch('sync_data?on_conflict=uid,feature',{
     method:'POST',
     headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify([{uid,feature:`mod_link_${tok}`,data_json:{v:1,src:'web'},updated_at:new Date().toISOString()}])
+    body:JSON.stringify([{uid,feature:ACCT_FEATURE,data_json:doc,updated_at:now}])
   });
-  if(!r.ok){
-    if(r.status===401||r.status===403) throw new Error('云端不允许网页写入（表策略没放开）');
-    throw new Error('生成失败（HTTP '+r.status+'）');
-  }
-  localStorage.setItem(QQ_TOK_KEY,JSON.stringify({token:tok,ts:Date.now()}));
-  return tok;
-}
-function currentToken(){
-  try{
-    const o=JSON.parse(localStorage.getItem(QQ_TOK_KEY)||'null');
-    if(!o||!o.token) return null;
-    if(Date.now()-o.ts>QQ_TTL_MS) return null;
-    return o;
-  }catch(e){ return null }
-}
-
-/* ==================== R90：静默双向自动同步 ====================
-   R89 是「云端变了只提示、点按钮才动」，实际用起来还是要开面板点一下，
-   群里录完到计算器上看到得走五步。现在改成：没冲突就自己同步，有冲突才问人。
-
-   每次 tick（页面打开 / 切回标签页 / 每 15 秒，只在页面可见时）：
-     ① 云端没变、本页没变       → 什么都不做
-     ② 云端变了、本页没动过     → 直接吸收：新日期补进来，同一天改成云端的数
-     ③ 云端没变、本页改过       → 自动上传（本页总天数比云端少就先拦下，防误删清空云端）
-     ④ 两边都变了               → 只补本页没有的日期；同日期不一样的一律不动，只提示
-   任何时候都不让云端数据凭空消失；冲突永远不自动盖。 */
-
-const QQ_SEEN_KEY='nikke_mod_qq_seen';   // {uid, cloud:'fp', local:'fp'} 上次对齐时两边的指纹
-const QQ_TICK_MS=15000;
-let qqTimer=null, qqBusy=false, qqConflict=0, qqLastCloudFp='', qqMiss=0, qqVisHooked=false;
-
-/* 内容指纹只看「日期 + 每次掉落」，不看 updated/at/src 这些过程字段。
-   用它比对，比时间戳稳——不受服务器时钟和时区影响。 */
-function qqFp(records){
-  const recs=records||{};
-  const out=[];
-  for(const k of ['cn','global']){
-    const arr=(Array.isArray(recs[k])?recs[k]:[]).filter(r=>r&&typeof r.date==='string')
-      .slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-    out.push(k+':'+arr.map(r=>r.date+'|'+normalizeRecord(r).drops.join(',')).join(';'));
-  }
-  return out.join('//');
-}
-function qqCount(records){
-  const r=records||{};
-  return (Array.isArray(r.cn)?r.cn.length:0)+(Array.isArray(r.global)?r.global.length:0);
-}
-function qqLocalFp(){ const a=loadAll(); return qqFp({cn:a.cn,global:a.global}) }
-/* 读「上次对齐」时两边的指纹。老格式 {uid,fp} 同时当两边。 */
-function qqSeen(){
-  try{
-    const o=JSON.parse(localStorage.getItem(QQ_SEEN_KEY)||'null');
-    if(!o||o.uid!==qqUid()) return null;
-    const cloud=String(o.cloud||o.fp||''), local=String(o.local||o.fp||'');
-    return (cloud||local)?{cloud,local}:null;
-  }catch(e){ return null }
-}
-function qqSeenFp(){ const o=qqSeen(); return o?o.cloud:'' }
-function qqMarkSeen(cloudFp){
-  const cloud=cloudFp===undefined?qqLocalFp():String(cloudFp||'');
-  localStorage.setItem(QQ_SEEN_KEY,JSON.stringify({uid:qqUid(),cloud,local:qqLocalFp()}));
-  localStorage.setItem(QQ_BASE_KEY,qqUid());
-}
-/* 云端这批记录跟本页比：多出几天、有几天两边不一样 */
-function qqDiff(recs){
-  const all=loadAll();
-  let added=0,conflicts=0;
-  const dates=[];
-  for(const k of ['cn','global']){
-    const mine=new Map();
-    (Array.isArray(all[k])?all[k]:[]).forEach(r=>{ if(r&&typeof r.date==='string') mine.set(r.date,r) });
-    for(const r of (Array.isArray(recs[k])?recs[k]:[])){
-      if(!r||typeof r.date!=='string') continue;
-      const old=mine.get(r.date);
-      if(!old){ added++; continue }
-      if(normalizeRecord(old).drops.join(',')!==normalizeRecord(r).drops.join(',')){
-        conflicts++; if(dates.length<5) dates.push(r.date);
-      }
-    }
-  }
-  return {added,conflicts,dates};
-}
-
-/* 只补本页缺的日期，不动已有的数 */
-function qqAddMissing(row){
-  const recs=(row&&row.data_json&&row.data_json.records)||{};
-  const all=loadAll();
-  let added=0;
-  for(const k of ['cn','global']){
-    const cur=Array.isArray(all[k])?all[k]:[];
-    const have=new Set(cur.filter(r=>r&&typeof r.date==='string').map(r=>r.date));
-    for(const r of (Array.isArray(recs[k])?recs[k]:[])){
-      if(!r||typeof r.date!=='string'||have.has(r.date)) continue;
-      cur.push(normalizeRecord(r)); have.add(r.date); added++;
-    }
-    cur.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-    all[k]=cur;
-  }
-  if(added) saveAll(all);
-  return {added};
-}
-
-/* 云端为准：同一天换成云端的数，本页独有的日期原样留下 */
-function qqApplyCloud(row){
-  const recs=(row&&row.data_json&&row.data_json.records)||{};
-  const all=loadAll();
-  // 覆盖前在本机留一份，万一不合适还能捞回来
-  try{ localStorage.setItem('nikke_mod_qq_backup',JSON.stringify({at:Date.now(),data:all})) }catch(e){}
-  let added=0,replaced=0,keptOnly=0;
-  for(const k of ['cn','global']){
-    const mine=Array.isArray(all[k])?all[k]:[];
-    const byDate=new Map();
-    mine.forEach(r=>{ if(r&&typeof r.date==='string') byDate.set(r.date,r) });
-    const out=[],seen=new Set();
-    for(const r of (Array.isArray(recs[k])?recs[k]:[])){
-      if(!r||typeof r.date!=='string'||seen.has(r.date)) continue;
-      seen.add(r.date);
-      const nr=normalizeRecord(r);
-      if(r.src) nr.src=r.src;
-      if(r.at) nr.at=r.at;
-      const old=byDate.get(r.date);
-      if(!old) added++;
-      else if(normalizeRecord(old).drops.join(',')!==nr.drops.join(',')) replaced++;
-      out.push(nr);
-    }
-    for(const r of mine){
-      if(!r||typeof r.date!=='string'||seen.has(r.date)) continue;
-      out.push(r); seen.add(r.date); keptOnly++;
-    }
-    out.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-    all[k]=out;
-  }
-  saveAll(all);
-  return {added,replaced,keptOnly,total:qqCount(all)};
-}
-
-/* 整份覆盖上传：本页现在是什么样，云端就什么样 */
-async function qqUpload(code){
-  const all=loadAll();
-  const doc={v:1,code:code||'',updated:new Date().toISOString(),src:'web',
-    records:{cn:Array.isArray(all.cn)?all.cn:[],global:Array.isArray(all.global)?all.global:[]}};
-  const r=await supaFetch('sync_data?on_conflict=uid,feature',{
-    method:'POST',
-    headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify([{uid:qqUid(),feature:QQ_FEATURE,data_json:doc,updated_at:new Date().toISOString()}])
-  });
-  if(r.net) return {err:'连不上云端，检查下网络'};
-  if(!r.ok){
-    if(r.status===401||r.status===403) return {err:'云端不允许网页写入（表策略没放开）'};
-    return {err:'上传失败（HTTP '+r.status+'）'};
-  }
+  if(!r||!r.ok) return {err:netErr(r,'云端写入')};
   return {};
 }
 
-/* 自动上传：本页改过、云端没动过时才走这里。
-   本页总天数比云端少 → 拦下来只提示，防止「浏览器数据不全 → 把云端清空」。 */
-async function qqAutoUpload(row,recs){
-  const localN=qqCount(loadAll()), cloudN=qqCount(recs);
-  if(localN<cloudN){
-    if(typeof showToast==='function')
-      showToast(`本页 ${localN} 天比云端 ${cloudN} 天少，没自动上传。真要以此为准，点「绑定 QQ」→「上传本页」`,'warn');
-    return {ok:false,why:'shrink'};
-  }
-  const code=(row&&row.data_json&&row.data_json.code)||'';
-  const up=await qqUpload(code);
-  if(up.err){
-    if(typeof showToast==='function') showToast('自动上传没成功：'+up.err+'（下次会再试）','warn');
-    return {ok:false,why:up.err};
-  }
-  return {ok:true};
+/* ---------- 本地工具 ---------- */
+function countRecs(recs){ recs=recs||{}; return ((recs.cn||[]).length)+((recs.global||[]).length) }
+function byDate(rows){ const m={}; for(const r of (rows||[])) if(r&&typeof r.date==='string') m[r.date]=r; return m }
+function sortRecs(rows){ return (rows||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))) }
+function localFp(){
+  const a=loadAll();
+  const f=k=>(a[k]||[]).map(r=>String(r&&r.date)+'|'+normalizeRecord(r).drops.join(',')).sort().join(';');
+  return 'cn['+f('cn')+']gl['+f('global')+']';
 }
 
-/* 从云端下载：云端为准，本页独有的日期保留并补上云端 */
-async function qqDownload(){
-  const res=await qqPull();
-  if(res.err) return {err:res.err};
-  if(qqUnlinked(res)) return {err:'已经解绑了，先重新绑定'};
-  if(!res.row){
-    // 云端还没有这一行：没东西可下，就以本页为起点建一份
-    const up=await qqUpload('');
-    if(up.err) return {err:up.err};
-    qqLastCloudFp=qqLocalFp(); qqMarkSeen(qqLastCloudFp); qqConflict=0;
-    return {added:0,replaced:0,keptOnly:0,created:true,total:qqCount(loadAll())};
+/* ---------- 变更队列：改完先排队，马上写云端 ---------- */
+function acctOps(){ try{ const a=JSON.parse(localStorage.getItem(ACCT_OPS_KEY)||'[]'); return Array.isArray(a)?a:[] }catch(e){ return [] } }
+function acctOpsSet(a){ try{ localStorage.setItem(ACCT_OPS_KEY,JSON.stringify(a.slice(-200))) }catch(e){} }
+function queueOp(op){
+  const a=acctOps(); a.push(op); acctOpsSet(a);
+  if(acctSaveTimer) clearTimeout(acctSaveTimer);
+  acctSaveTimer=setTimeout(async()=>{
+    const r=await flushOps();
+    if(r&&!r.ok&&!r.noop&&typeof showToast==='function')
+      showToast('还没存进账号：'+r.why+'（有网了会自动补）','warn');
+  },ACCT_SAVE_DELAY);
+}
+/* 把队列里的变更逐条叠到云端最新那份上，再整份写回。
+   只动被点名的日期 —— 这是「两边同时改不同的天也不会互相覆盖」的全部原因。 */
+async function flushOps(){
+  const q=acctOps();
+  if(!q.length) return {ok:true,noop:true};
+  const code=myCode();
+  if(!code) return {ok:false,why:'还没登录账号'};
+  const uid=await uidOfCode(code);
+  if(!uid) return {ok:false,why:'绑定码失效了，重新登录一次'};
+  const got=await cloudRow(uid);
+  if(got.err) return {ok:false,why:got.err};
+  const base=(got.row&&got.row.data_json&&got.row.data_json.records)||{};
+  const recs={cn:[...(base.cn||[])],global:[...(base.global||[])]};
+  for(const op of q){
+    if(!op||!op.s) continue;
+    let arr=Array.isArray(recs[op.s])?recs[op.s]:[];
+    if(op.t==='put'&&op.rec&&op.rec.date){
+      const i=arr.findIndex(r=>r&&r.date===op.rec.date);
+      if(i>=0) arr[i]=op.rec; else arr.push(op.rec);
+    }else if(op.t==='del'&&op.d){
+      arr=arr.filter(r=>r&&r.date!==op.d);
+    }else if(op.t==='clear'){
+      arr=[];
+    }else if(op.t==='full'){
+      /* 整份替换（导入备份时用）：这个服以本地这份为准 */
+      arr=Array.isArray(op.rows)?op.rows.slice():[];
+    }
+    recs[op.s]=arr;
   }
-  const m=qqApplyCloud(res.row);
-  const code=(res.row.data_json&&res.row.data_json.code)||'';
-  qqLastCloudFp=qqFp(res.row.data_json&&res.row.data_json.records);
-  if(m.keptOnly){
-    const up=await qqUpload(code);
-    if(up.err){ qqConflict=0; qqMarkSeen(qqLocalFp()); return Object.assign({},m,{warn:up.err}) }
-    qqLastCloudFp=qqLocalFp();
-  }
-  qqMarkSeen(qqLastCloudFp);
-  qqConflict=0;
-  render(computeStats(loadRecords()));
-  return m;
+  recs.cn=sortRecs(recs.cn); recs.global=sortRecs(recs.global);
+  const w=await cloudWrite(uid,recs,(got.row&&got.row.data_json||{}).code);
+  if(w.err) return {ok:false,why:w.err};      // 队列留着，下次再试
+  acctOpsSet([]);
+  acctLastSync=Date.now();
+  markAligned(uid);
+  return {ok:true,saved:q.length,total:countRecs(recs)};
 }
 
-/* 手动上传本页：整份覆盖云端（用户明确点的，不问） */
-async function qqUploadNow(){
-  const res=await qqPull();
-  if(res.err) return {err:res.err};
-  const code=(res.row&&res.row.data_json&&res.row.data_json.code)||'';
-  const up=await qqUpload(code);
-  if(up.err) return {err:up.err};
-  qqLastCloudFp=qqLocalFp(); qqMarkSeen(qqLastCloudFp); qqConflict=0;
-  return {total:qqCount(loadAll())};
+/* ---------- 拉云端：云端是唯一真相 ---------- */
+function applyCloud(recs){
+  const all=loadAll();
+  try{ localStorage.setItem(ACCT_BACKUP_KEY,JSON.stringify({at:Date.now(),data:all})) }catch(e){}
+  all.cn=sortRecs((recs.cn||[]).filter(r=>r&&typeof r.date==='string').map(normalizeRecord));
+  all.global=sortRecs((recs.global||[]).filter(r=>r&&typeof r.date==='string').map(normalizeRecord));
+  saveAll(all);
+}
+async function pullAccount(){
+  const code=myCode();
+  if(!code) return {none:true};
+  const uid=await uidOfCode(code);
+  if(!uid) return {err:'绑定码失效了，重新登录一次'};
+  if(acctOps().length){
+    const f=await flushOps();
+    if(!f.ok) return {err:f.why};           // 有没写上去的改动，绝不拿云端盖掉本地
+  }
+  const got=await cloudRow(uid);
+  if(got.err) return {err:got.err};
+  if(!got.row) return {empty:true};
+  if(got.state&&got.state.data_json&&got.state.data_json.bound===false) return {unlinked:true,state:got.state};
+  const recs=(got.row.data_json&&got.row.data_json.records)||{cn:[],global:[]};
+  const before=localFp();
+  applyCloud(recs);
+  acctLastSync=Date.now();
+  markAligned(uid);
+  return {ok:true,changed:localFp()!==before,total:countRecs(recs)};
 }
 
-/* ---------- 主循环：一次 tick 决定这一轮干什么 ---------- */
-async function qqSyncTick(){
-  if(qqBusy) return null;
-  if(!localStorage.getItem(QQ_UID_KEY)) return null;                    // 从没开过绑定面板
-  if(typeof document!=='undefined'&&document.visibilityState==='hidden') return null;   // 后台不跑
-  qqBusy=true;
+/* ---------- 首次对齐：登录 / 绑定成功那一刻 ---------- */
+async function firstAlign(uid){
+  const got=await cloudRow(uid);
+  if(got.err) return {err:got.err};
+  const all=loadAll();
+  const mine={cn:Array.isArray(all.cn)?all.cn:[],global:Array.isArray(all.global)?all.global:[]};
+  const cloudRecs=(got.row&&got.row.data_json&&got.row.data_json.records)||{cn:[],global:[]};
+  const cloudN=countRecs(cloudRecs), mineN=countRecs(mine);
+
+  if(!cloudN&&mineN){
+    /* 云端空、本机有 —— 本机这些天就是账号的全部家当，推上去。这是「数据不丢」的关键一条。 */
+    const w=await cloudWrite(uid,mine);
+    if(w.err) return {err:w.err};
+    markAligned(uid); acctLastSync=Date.now();
+    return {uploaded:mineN,total:mineN};
+  }
+  if(!cloudN){ markAligned(uid); acctLastSync=Date.now(); return {uploaded:0,total:0} }
+
+  /* 云端有：以云端为准；本机独有的日期一条不删，一并推上去 */
+  const merged={cn:[],global:[]}, extra=[];
+  for(const k of ['cn','global']){
+    const c=byDate(cloudRecs[k]), m=byDate(mine[k]), buf=Object.assign({},c);
+    for(const d of Object.keys(m)) if(!c[d]){ buf[d]=m[d]; extra.push(k+':'+d) }
+    merged[k]=sortRecs(Object.values(buf));
+  }
+  try{ localStorage.setItem(ACCT_BACKUP_KEY,JSON.stringify({at:Date.now(),data:all})) }catch(e){}
+  all.cn=merged.cn; all.global=merged.global; saveAll(all);
+  markAligned(uid); acctLastSync=Date.now();
+  if(extra.length){
+    const w=await cloudWrite(uid,merged);
+    if(w.err) return {pulled:cloudN,kept:extra.length,warn:w.err};
+    return {pulled:cloudN,kept:extra.length,total:countRecs(merged)};
+  }
+  return {pulled:cloudN,total:cloudN};
+}
+
+/* ---------- 定时同步 ---------- */
+async function acctTick(quiet){
+  if(acctBusy) return null;
+  if(typeof document!=='undefined'&&document.visibilityState==='hidden') return null;
+  if(!myCode()) return null;
+  acctBusy=true;
   try{
-    const res=await qqPull();
-    if(!res||res.err) return null;
-    if(qqUnlinked(res)){ qqConflict=0; qqPauseAuto(); return null }     // 解绑了就别再空转
-    if(!res.row){ qqBumpMiss(); return null }                          // 还没绑上 / 云端还没有行
-    const recs=(res.row.data_json&&res.row.data_json.records)||{};
-    const cloudFp=qqFp(recs);
-    const localFp=qqLocalFp();
-    const seen=qqSeen();
-
-    /* 没对齐过 = 第一次绑定，交给 showBound 走「以云端为准」的下载 */
-    if(!seen){ qqBumpMiss(); return null }
-    qqMiss=0;
-
-    const cloudMoved=cloudFp!==seen.cloud;
-    const localMoved=localFp!==seen.local;
-    if(!cloudMoved&&!localMoved){ qqConflict=0; return {kind:'none'} }
-
-    /* ② 只有云端变了：吸收 */
-    if(cloudMoved&&!localMoved){
-      const d=qqDiff(recs);
-      const m=qqApplyCloud({data_json:{records:recs}});
-      qqLastCloudFp=cloudFp; qqMarkSeen(cloudFp); qqConflict=0;
+    const r=await pullAccount();
+    if(!r||r.err||r.none) return r||null;
+    if(r.unlinked){ acctStop(); return r }
+    if(r.changed){
       render(computeStats(loadRecords()));
-      if(d.added||d.replaced||m.replaced){
-        const bits=[];
-        if(d.added) bits.push(`群里新报 ${d.added} 天`);
-        if(m.replaced) bits.push(`${m.replaced} 天改成群里的数`);
-        if(typeof showToast==='function') showToast('已同步：'+bits.join('、'),'success');
-      }
-      return {kind:'absorb',added:d.added,replaced:m.replaced};
+      if(!quiet&&typeof showToast==='function') showToast('已跟账号同步：'+r.total+' 天','success');
     }
-
-    /* ③ 只有本页改了：自动上传 */
-    if(!cloudMoved&&localMoved){
-      const up=await qqAutoUpload(res.row,recs);
-      if(up.ok){ qqLastCloudFp=qqLocalFp(); qqMarkSeen(qqLastCloudFp); qqConflict=0 }
-      return {kind:up.ok?'upload':'upload-blocked',why:up.why};
-    }
-
-    /* ④ 两边都动了：只补缺，冲突留给人 */
-    const d=qqDiff(recs);
-    if(d.added){
-      qqAddMissing({data_json:{records:recs}});
-      render(computeStats(loadRecords()));
-    }
-    qqConflict=d.conflicts;
-    qqLastCloudFp=cloudFp; qqMarkSeen(cloudFp);
-    if(d.added||d.conflicts){
-      const bits=[];
-      if(d.added) bits.push(`补进 ${d.added} 天`);
-      if(d.conflicts) bits.push(`${d.conflicts} 天两边不一样（${d.dates.join('、')}），没动，点「绑定 QQ」看`);
-      if(typeof showToast==='function') showToast(bits.join('，'),d.conflicts?'warn':'success');
-    }
-    return {kind:'merge',added:d.added,conflicts:d.conflicts};
+    if(typeof paintAcctStatus==='function') paintAcctStatus();
+    return r;
   }catch(e){
     return null;
   }finally{
-    qqBusy=false;
+    acctBusy=false;
   }
 }
-/* 连着几次都没东西可同步（没绑上 / 还没对齐）就先停下，别一直空转打云端 */
-function qqBumpMiss(){
-  qqMiss++;
-  if(qqMiss>=4) qqPauseAuto();
-}
-function qqPauseAuto(){ if(qqTimer){ clearInterval(qqTimer); qqTimer=null } }
-/* 打开页面就跑一轮；之后每 15 秒一次，切回标签页立刻补一轮 */
-function qqStartAuto(){
-  if(qqTimer) return;
-  qqTimer=setInterval(()=>{ qqSyncTick() },QQ_TICK_MS);
-  if(document&&document.addEventListener&&!qqVisHooked){
-    qqVisHooked=true;
+function acctStart(){
+  if(acctTimer) return;
+  acctTimer=setInterval(()=>{ acctTick() },ACCT_TICK_MS);
+  if(document&&document.addEventListener&&!acctStart.hooked){
+    acctStart.hooked=true;
     document.addEventListener('visibilitychange',()=>{
-      if(document.visibilityState!=='visible') return;
-      qqMiss=0; qqStartAuto(); qqSyncTick();
+      if(document.visibilityState==='visible') acctTick();
     });
   }
 }
+function acctStop(){ if(acctTimer){ clearInterval(acctTimer); acctTimer=null } }
 
-function qqStopPoll(){ if(qqPollTimer){ clearInterval(qqPollTimer); qqPollTimer=null } }
-function qqBindState(status,detail){
+/* ---------- 面板 ---------- */
+function acctState(status,detail){
   const el=document.getElementById('bindState');
   if(!el) return;
   el.className='bind-state '+(status||'');
   el.innerHTML=detail||'';
 }
-
+function acctPanelOpen(){
+  const m=document.getElementById('bindMask');
+  return !!(m&&m.classList.contains('show'));
+}
+function ago(ts){
+  if(!ts) return '还没同步过';
+  const s=Math.round((Date.now()-ts)/1000);
+  if(s<15) return '刚刚同步';
+  if(s<60) return s+' 秒前同步';
+  const m=Math.round(s/60);
+  if(m<60) return m+' 分钟前同步';
+  return Math.round(m/60)+' 小时前同步';
+}
+async function paintAcctStatus(){
+  const code=myCode();
+  const on=document.getElementById('bindOn'), off=document.getElementById('bindOff');
+  if(!on||!off) return;
+  on.style.display=code?'':'none';
+  off.style.display=code?'none':'';
+  if(code){
+    document.getElementById('bindAcctCode').textContent=fmtCode(code);
+    const uid=await uidOfCode(code);
+    let n=0;
+    if(uid){
+      const got=await cloudRow(uid);
+      if(got&&got.row){
+        n=countRecs((got.row.data_json||{}).records);
+        if(got.updated_at) acctLastSync=Date.parse(got.updated_at)||acctLastSync;
+      }
+    }
+    acctState('ok',`已登录 · 云端 ${n} 天 · ${ago(acctLastSync)}<br><span style="color:#5F5E5A">群里报完这边会自己更新，这页改的也会自己存进去，不用点。</span>`);
+    return;
+  }
+  acctState('',`还没有账号。第一次点「生成绑定口令」，发到群里就行；<br>已经有账号就填绑定码登录。`);
+}
 async function openBindPanel(){
   const mask=document.getElementById('bindMask');
+  if(!mask) return;
   mask.classList.add('show');
   document.getElementById('bindTokenRow').style.display='none';
-  document.getElementById('bindBoundRow').style.display='none';
-  document.getElementById('bindGenWrap').style.display='';
-  document.getElementById('bindGenBtn').classList.toggle('primary',!currentToken());
-  qqBindState('','正在检查…');
-  const res=await qqPull();
-  if(res.err){ qqBindState('warn',res.err); paintAcctCode(localStorage.getItem(QQ_CODE_KEY)||''); return }
-  if(qqUnlinked(res)){ showUnlinked(res.state); return }
-  if(res.row){ showBound(res.row); return }
-  if(await qqCheckPendingLink()) return;      // 刚在群里发完口令就刷新 → 机器人已经把老账号迁回来了
-  qqBindState('',`当前浏览器身份：<code>${qqUid().slice(0,8)}…</code>　还没绑定。`);
-  /* 也可能这个浏览器以前绑过、解绑了，或者码还在云端：先把码摆出来，能带走 */
-  paintAcctCode(localStorage.getItem(QQ_CODE_KEY)||'');
-  qqFindCode(qqUid()).then(c=>{ if(c) paintAcctCode(c) }).catch(()=>{});
+  acctState('','正在检查…');
+  await paintAcctStatus();
   const t=currentToken();
-  if(t){
+  if(t&&!myCode()){
     document.getElementById('bindTokenRow').style.display='';
     paintToken(t.token,true);
-    startPolling();
+    startReceiptPoll(t.token);
   }
 }
 function closeBindPanel(){
-  document.getElementById('bindMask').classList.remove('show');
-  qqStopPoll();
+  const mask=document.getElementById('bindMask');
+  if(mask) mask.classList.remove('show');
+  if(acctPollTimer){ clearInterval(acctPollTimer); acctPollTimer=null }
 }
+
+/* ---------- 绑定：生成口令 ---------- */
 async function genBindToken(){
   const btn=document.getElementById('bindGenBtn');
-  btn.disabled=true; btn.textContent='生成中…';
+  if(btn){ btn.disabled=true; btn.textContent='生成中…' }
   try{
-    const tok=await qqCreateToken();
+    const tok=randomToken(6), uid=newUid();
+    const now=new Date().toISOString();
+    const r=await supaFetch('sync_data?on_conflict=uid,feature',{
+      method:'POST',
+      headers:{Prefer:'resolution=merge-duplicates,return:minimal'},
+      body:JSON.stringify([{uid,feature:ACCT_LINK_PREFIX+tok,data_json:{v:1,src:'web'},updated_at:now}])
+    });
+    if(!r.ok) throw new Error(netErr(r,'生成'));
+    localStorage.setItem(ACCT_TOK_KEY,JSON.stringify({token:tok,ts:Date.now(),uid}));
     document.getElementById('bindTokenRow').style.display='';
     paintToken(tok,true);
-    qqBindState('',`把下面这条指令发到机器人所在的群里：5 分钟内有效，用一次就作废。`);
-    startPolling();
+    acctState('',`把下面这条指令发到机器人所在的群里：5 分钟内有效，用一次就作废。<br>认领成功后这页会自动变成已登录，绑定码也会一起带回来。`);
+    startReceiptPoll(tok);
   }catch(e){
-    qqBindState('warn',e.message);
+    acctState('warn',e.message||'生成失败');
   }finally{
-    btn.disabled=false;
-    btn.textContent=currentToken()?'重新生成':'生成绑定口令';
-    // 已经有口令时，「重新生成」降成次要：主按钮应该是「复制指令」
-    btn.classList.toggle('primary',!currentToken());
+    if(btn){ btn.disabled=false; btn.textContent='生成绑定口令' }
   }
+}
+function currentToken(){
+  try{
+    const o=JSON.parse(localStorage.getItem(ACCT_TOK_KEY)||'null');
+    if(!o||!o.token) return null;
+    if(Date.now()-o.ts>ACCT_TTL_MS) return null;
+    return o;
+  }catch(e){ return null }
 }
 function paintToken(tok,fresh){
   document.getElementById('bindTokenText').textContent=tok;
   const btn=document.getElementById('bindCopyBtn');
-  btn.textContent='复制指令';
-  btn.dataset.copied='';
-  btn.dataset.token=tok;
+  btn.textContent='复制指令'; btn.dataset.copied=''; btn.dataset.token=tok;
   if(fresh) document.getElementById('bindTokenHint').textContent='群发：/石头 绑定 '+tok;
 }
 function copyBindCommand(){
@@ -1061,259 +996,134 @@ function fallbackCopy(text){
   try{ document.execCommand('copy') }catch(e){}
   document.body.removeChild(ta);
 }
-/* ==================== R92：账号码 ====================
-   以前「账号」是 localStorage 里一个谁也看不见的 uuid，带不走，所以换台设备就等于
-   换了个空账号。现在给账号配一个 8 位码当名字（同时也是凭据）：数据仍挂在 uid 上，
-   码只是 uid 的入口。换设备填码 → 查到 uid → 换成那个身份 → 数据全下来。
-   码存云端 sync_data(feature='mod_link_code_<码>')，落 mod_link_% 策略内，不用改 SQL。 */
-const QQ_CODE_KEY='nikke_mod_qq_code';
-const QQ_CODE_FEATURE='mod_link_code_';
-function qqNormCode(raw){ return String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'') }
-function qqFmtCode(c){ return (c&&c.length===8) ? c.slice(0,4)+'-'+c.slice(4) : (c||'') }
-/* 这个账号有没有码。只查 feature，不带 data_json，省流量。 */
-async function qqFindCode(uid){
-  if(!uid) return '';
-  const r=await supaFetch(`sync_data?select=feature&uid=eq.${uid}&feature=like.${QQ_CODE_FEATURE}*&limit=1`);
-  if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return '';
-  return String(r.data[0].feature||'').slice(QQ_CODE_FEATURE.length);
-}
-/* 拿账号码：本机记着就用本机的，否则看云端有没有，都没有才造一个。 */
-async function qqEnsureCode(uid){
-  if(!uid) return '';
-  const cached=localStorage.getItem(QQ_CODE_KEY)||'';
-  if(cached.length===8 && cached===qqNormCode(cached)) return cached;
-  const found=await qqFindCode(uid);
-  if(found){ localStorage.setItem(QQ_CODE_KEY,found); return found }
-  const code=randomToken(8), now=new Date().toISOString();
-  const w=await supaFetch('sync_data?on_conflict=uid,feature',{
-    method:'POST',
-    headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify([{uid,feature:QQ_CODE_FEATURE+code,data_json:{v:1,code,at:now},updated_at:now}])
-  });
-  if(!w||!w.ok) return '';
-  localStorage.setItem(QQ_CODE_KEY,code);
-  return code;
-}
-/* code 为空 = 这台设备还没账号 → 只露登录框 */
-function paintAcctCode(code){
-  const rows=document.getElementById('bindAcctRows'), hint=document.getElementById('bindAcctHint');
-  const login=document.getElementById('bindLoginRow'), el=document.getElementById('bindAcctCode');
-  if(!rows||!hint||!login||!el) return;
-  if(code){
-    el.textContent=qqFmtCode(code);
-    rows.style.display=''; hint.style.display=''; login.style.display='none';
-  }else{
-    rows.style.display='none'; hint.style.display='none'; login.style.display='';
-  }
-}
-function copyAcctCode(){
-  const txt=document.getElementById('bindAcctCode').textContent||'';
-  const done=()=>{ if(typeof showToast==='function') showToast('账号码已复制，存到备忘录里就行','info') };
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(()=>{ fallbackCopy(txt); done() });
-  else { fallbackCopy(txt); done() }
-}
-/* 用账号码登录：码 → uid → 换成那个身份（跟换设备接回是同一条路） */
-async function qqLoginByCode(){
-  const inp=document.getElementById('bindInput');
-  const code=qqNormCode(inp&&inp.value);
-  if(code.length!==8){ qqBindState('warn','账号码是 8 位字母数字，例如 AB3D-K9MX，横线可以不带。'); return }
-  const r=await supaFetch(`sync_data?select=uid&feature=eq.${QQ_CODE_FEATURE}${code}&limit=1`);
-  if(!r||!r.ok){ qqBindState('warn','查不到（'+(r&&r.status?('HTTP '+r.status):'网络不通')+'），过一会儿再试。'); return }
-  if(!Array.isArray(r.data)||!r.data.length){ qqBindState('warn','没有这个账号码。检查有没有抄错。'); return }
-  const uid=String(r.data[0].uid||'');
-  if(!uid){ qqBindState('warn','这行没记账号，回原来那台设备打开一次面板再试。'); return }
-  if(inp) inp.value='';
-  if(uid===qqUid()){ await openBindPanel(); return }
-  await qqAdoptIdentity(uid,'码');
-}
-
-/* R91：换设备。账号身份是本机 localStorage 里一个 uuid，换台电脑就是个空账号。
-   做法不是让你抄编号，而是靠机器人：认领口令时它发现这个 QQ 以前绑过别的 uid，
-   就把老账号迁回来，并留一张回执 mod_link_done_<口令> 告诉我们「你现在是谁」。 */
-const QQ_DONE_PREFIX='mod_link_done_';
-async function qqPullResult(tok){
+async function fetchReceipt(tok){
   if(!tok) return null;
-  const r=await supaFetch(`sync_data?select=uid,data_json,updated_at&feature=eq.${QQ_DONE_PREFIX}${tok}&limit=1`);
+  const r=await supaFetch(`sync_data?select=uid,data_json,updated_at&feature=eq.${ACCT_DONE_PREFIX}${tok}&limit=1`);
   if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return null;
   const row=r.data[0]||{}, dj=row.data_json||{};
   const uid=String(dj.uid||row.uid||'');
   if(!uid) return null;
-  return {uid,moved:!!dj.moved,at:dj.at||row.updated_at||''};
+  let code=normCode(dj.code||'');
+  if(!code) code=await codeOfUid(uid);          // 老版机器人没带码，补查一次
+  return {uid,code,moved:!!dj.moved};
 }
-/* 回执上的 uid 和本机的不一样 = 机器人把老账号迁回来了。换身份，按云端重来一遍。
-   本页在换设备后新录的那几天不会丢：showBound → qqDownload 会把本页独有的日期带上。 */
-async function qqAdoptIdentity(uid,via){
-  const old=qqUid();
-  if(!uid||uid===old) return false;
-  localStorage.setItem(QQ_UID_KEY,uid);
-  localStorage.removeItem(QQ_BASE_KEY);
-  localStorage.removeItem(QQ_SEEN_KEY);      // 换身份 = 初次绑定，以云端为准
-  localStorage.removeItem(QQ_TOK_KEY);       // 口令已经用掉了
-  localStorage.removeItem(QQ_CODE_KEY);      // 本机缓存的码是上一个账号的，重查
-  qqStopPoll(); qqConflict=0; qqMiss=0;
-  const a=await qqPull();
-  if(a&&a.row){
-    await showBound(a.row);
-  }else{
-    qqBindState('warn','账号已经接回来了，但云端还没读到数据。过一会儿再打开这个面板。');
-  }
-  const n=(a&&a.row&&a.row.data_json&&a.row.data_json.records)
-    ? qqCount({cn:a.row.data_json.records.cn||[],global:a.row.data_json.records.global||[]}) : 0;
-  if(typeof showToast==='function'){
-    showToast(via==='码'
-      ? `已登录这个账号${n?`（${n} 天）`:''}`
-      : `已接回上次那台设备的账号${n?`（${n} 天）`:''}，不用重新绑定`,'success');
-  }
-  return true;
+async function codeOfUid(uid){
+  if(!uid) return '';
+  const r=await supaFetch(`sync_data?select=feature&uid=eq.${uid}&feature=like.${ACCT_CODE_PREFIX}*&limit=1`);
+  if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return '';
+  return normCode(String(r.data[0].feature||'').slice(ACCT_CODE_PREFIX.length));
 }
-/* 口令刚在群里发完，人可能直接刷了页面 —— 打开时补查一次回执。 */
-async function qqCheckPendingLink(){
-  const t=currentToken();
-  if(!t) return false;
-  const res=await qqPullResult(t.token);
-  if(res&&res.uid&&res.uid!==qqUid()) return await qqAdoptIdentity(res.uid);
-  return false;
-}
-
-function startPolling(){
-  qqStopPoll();
+function startReceiptPoll(tok){
+  if(acctPollTimer){ clearInterval(acctPollTimer); acctPollTimer=null }
   let n=0;
-  qqPollTimer=setInterval(async()=>{
+  acctPollTimer=setInterval(async()=>{
     n++;
-    if(n>60){ qqStopPoll(); return }
-    if(!document.getElementById('bindMask').classList.contains('show')){ qqStopPoll(); return }
-    // 先看回执：换设备时机器人绑的是老 uid，用本机 uid 什么都查不到
-    const tok=document.getElementById('bindCopyBtn').dataset.token||'';
-    if(tok){
-      let r2=null;
-      try{ r2=await qqPullResult(tok) }catch(e){}
-      if(r2&&r2.uid&&r2.uid!==qqUid()){ qqStopPoll(); await qqAdoptIdentity(r2.uid); return }
-    }
-    let res;
-    try{ res=await qqPull() }catch(e){ return }
-    if(!res) return;
-    // 面板正显示「已绑定」的当口在群里发了 /石头 解绑 —— 状态跟着翻过来
-    if(qqUnlinked(res)){
-      if(document.getElementById('bindBoundRow').style.display!=='none'){ qqStopPoll(); showUnlinked(res.state) }
-      return;
-    }
-    if(res.row){ qqStopPoll(); showBound(res.row) }
+    if(n>60||!acctPanelOpen()){ clearInterval(acctPollTimer); acctPollTimer=null; return }
+    if(myCode()){ clearInterval(acctPollTimer); acctPollTimer=null; return }
+    const r=await fetchReceipt(tok).catch(()=>null);
+    if(!r||!r.code) return;
+    clearInterval(acctPollTimer); acctPollTimer=null;
+    await adoptReceipt(r);
   },3000);
 }
-/* R87：从网页这头解绑。写一行 mod_link_state{bound:false}，机器人下次推送/查询
-   读到它就停手（会自己把账号关系断掉）。本页记录一条不动，只是不再同步。 */
-async function unbindHere(){
-  const btn=document.getElementById('bindUnbindBtn');
-  btn.disabled=true; btn.textContent='解绑中…';
+async function adoptReceipt(r){
+  setCode(r.code);
+  setUid(r.uid);
+  localStorage.removeItem(ACCT_TOK_KEY);
+  localStorage.removeItem(ACCT_ALIGN_KEY);
+  const m=await firstAlign(r.uid);
+  if(m.err){ acctState('warn','绑上了，但没能从云端取到数据：'+m.err); return }
+  acctStart();
+  await paintAcctStatus();
+  const bits=[];
+  if(m.uploaded) bits.push(`本机 ${m.uploaded} 天已传进账号`);
+  if(m.pulled) bits.push(`账号里 ${m.pulled} 天已取回`);
+  if(m.kept) bits.push(`本机独有的 ${m.kept} 天也留着了`);
+  if(m.warn) bits.push('有几天没传上去：'+m.warn);
+  if(typeof showToast==='function') showToast(`绑定成功 · 账号 ${fmtCode(r.code)}${bits.length?'（'+bits.join('、')+'）':''}`,'success');
+}
+async function checkReceiptOnce(){
+  const t=currentToken();
+  if(!t||myCode()) return false;
+  const r=await fetchReceipt(t.token).catch(()=>null);
+  if(!r||!r.code) return false;
+  await adoptReceipt(r);
+  return true;
+}
+
+/* ---------- 登录（换设备就这一步） ---------- */
+async function loginByCode(){
+  const inp=document.getElementById('bindInput');
+  const code=normCode(inp&&inp.value);
+  if(code.length!==8){ acctState('warn','绑定码是 8 位字母数字，例如 AB3D-K9MX，横线可以不带。'); return }
+  acctState('','正在登录…');
+  const uid=await uidOfCode(code);
+  if(!uid){ acctState('warn','没有这个绑定码。检查有没有抄错，或者在原来那台设备上 /石头 我的码 查一下。'); return }
+  if(inp) inp.value='';
+  setCode(code); setUid(uid);
+  const m=await firstAlign(uid);
+  if(m.err){ acctState('warn','登录了，但没取到数据：'+m.err); return }
+  acctStart();
+  await paintAcctStatus();
+  const bits=[];
+  if(m.pulled) bits.push(`账号里 ${m.pulled} 天已取回`);
+  if(m.uploaded) bits.push(`本机 ${m.uploaded} 天已传进账号`);
+  if(m.kept) bits.push(`本机独有的 ${m.kept} 天也留着了`);
+  if(m.warn) bits.push('有几天没传上去：'+m.warn);
+  render(computeStats(loadRecords()));
+  if(typeof showToast==='function') showToast(`已登录 ${fmtCode(code)}${bits.length?'（'+bits.join('、')+'）':''}`,'success');
+}
+function copyCode(){
+  const txt=document.getElementById('bindAcctCode').textContent||'';
+  const done=()=>{ if(typeof showToast==='function') showToast('绑定码已复制，存到备忘录里','info') };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(()=>{ fallbackCopy(txt); done() });
+  else { fallbackCopy(txt); done() }
+}
+
+/* ---------- 断开 QQ 同步 / 退出登录 ---------- */
+async function offHere(){
+  const btn=document.getElementById('bindOffBtn');
+  if(btn){ btn.disabled=true; btn.textContent='断开中…' }
   try{
+    const uid=await uidOfCode(myCode());
+    if(!uid){ acctState('warn','绑定码无效，先重新登录一次。'); return }
     const now=new Date().toISOString();
     const r=await supaFetch('sync_data?on_conflict=uid,feature',{
       method:'POST',
-      headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify([{uid:qqUid(),feature:QQ_STATE_FEATURE,data_json:{v:1,bound:false,at:now},updated_at:now}])
+      headers:{Prefer:'resolution=merge-duplicates,return:minimal'},
+      body:JSON.stringify([{uid,feature:ACCT_STATE,data_json:{v:1,bound:false,at:now},updated_at:now}])
     });
-    if(!r.ok){
-      qqBindState('warn','解绑没写进云端（HTTP '+r.status+'），机器人那边还会继续往这页同步。回头再试一次。');
-      return;
-    }
-    showUnlinked({updated_at:now});
-    if(typeof showToast==='function') showToast('已解除绑定，本页记录都还在','info');
+    if(!r.ok){ acctState('warn','没写进云端（'+netErr(r,'断开')+'），机器人那边还会继续同步。回头再试一次。'); return }
+    acctState('ok','已断开 QQ 同步。群里报的数不会再进这个账号；账号和绑定码都还在，随时能重新绑。');
+    if(typeof showToast==='function') showToast('已断开 QQ 同步，账号和数据都还在','info');
   }catch(e){
-    qqBindState('warn','解绑失败：'+(e&&e.message||'网络错误'));
+    acctState('warn','断开失败：'+(e&&e.message||'网络错误'));
   }finally{
-    btn.disabled=false; btn.textContent='解除绑定';
+    if(btn){ btn.disabled=false; btn.textContent='断开 QQ 同步' }
   }
+}
+async function logoutHere(){
+  const q=acctOps();
+  if(q.length){
+    const f=await flushOps();
+    if(!f.ok){ acctState('warn','还有改动没写进账号（'+f.why+'），先别退。等网络好了会自动补。'); return }
+  }
+  if(!confirm('退出登录？本机数据留着，绑定码记得存好，回来还能登。')) return;
+  setCode(''); setUid('');
+  localStorage.removeItem(ACCT_ALIGN_KEY);
+  acctStop();
+  await paintAcctStatus();
+  if(typeof showToast==='function') showToast('已退出登录','info');
 }
 
-/* QQ 那边解绑了（或本页刚点了「解除绑定」）。记录一条不动，只是不再同步。 */
-function showUnlinked(state){
-  document.getElementById('bindTokenRow').style.display='none';
-  document.getElementById('bindBoundRow').style.display='none';
-  document.getElementById('bindGenWrap').style.display='';
-  document.getElementById('bindGenBtn').classList.add('primary');
-  localStorage.removeItem(QQ_BASE_KEY);
-  localStorage.removeItem(QQ_SEEN_KEY);   // 重绑时要重新走一次「初次以云端为准」
-  qqPauseAuto(); qqConflict=0;            // 解绑了就别再轮询
-  /* 解绑只断 QQ 同步，账号本身还在——码继续有效，换设备照样能登回来 */
-  paintAcctCode(localStorage.getItem(QQ_CODE_KEY)||'');
-  qqFindCode(qqUid()).then(c=>{ if(c) paintAcctCode(c) }).catch(()=>{});
-  const when=(state&&state.updated_at)?String(state.updated_at).replace('T',' ').slice(0,16):'';
-  qqBindState('warn',
-    `QQ 那边已经解绑了${when?`（${when}）`:''}。本页记录一条没动，机器人也不会再往里补日期。<br>`+
-    '要重新接上：点下面「生成绑定口令」，把那条指令发到群里。');
-}
-async function showBound(row){
-  document.getElementById('bindTokenRow').style.display='none';
-  document.getElementById('bindGenWrap').style.display='none';
-  document.getElementById('bindBoundRow').style.display='';
-  localStorage.removeItem(QQ_TOK_KEY);
-  paintAcctCode(await qqEnsureCode(qqUid()));   // R92：绑定了就一定有账号码，摆出来让人带走
-  const when=row.updated_at?String(row.updated_at).replace('T',' ').slice(0,16):'';
-
-  /* 第一次发现绑上：以云端为准。本页独有的日期不会删，下载完还会补上云端。 */
-  if(!qqSeen()){
-    qqBindState('ok','已绑定。正在按云端同步（初次以云端为准）…');
-    const m=await qqDownload();
-    if(m.err){ qqBindState('warn','已绑定，但没能从云端取到数据：'+m.err+'　可以点「上传本页」把本页推上去。'); return }
-    const bits=[];
-    if(m.added) bits.push(`从云端补进 ${m.added} 天`);
-    if(m.replaced) bits.push(`${m.replaced} 天按云端算`);
-    if(m.keptOnly) bits.push(`本页独有的 ${m.keptOnly} 天已补上云端`);
-    qqMiss=0; qqStartAuto();
-    qqBindState('ok',`已绑定 · 已按云端同步：${m.total} 天${bits.length?'（'+bits.join('、')+'）':''}`);
-    if(typeof showToast==='function') showToast(bits.length?bits.join('、'):`已按云端同步 ${m.total} 天`,'success');
-    return;
-  }
-  /* 已经绑好的：顺手跑一轮自动同步，再看结果 */
-  qqMiss=0; qqStartAuto(); await qqSyncTick();
-  if(qqConflict){
-    qqBindState('warn',
-      `有 ${qqConflict} 天云端和本页不一样，自动同步不会盖，等你定。<br>`+
-      '要云端的数点「从云端下载」；要这页的数点「上传本页」。');
-    return;
-  }
-  qqBindState('ok',
-    `已绑定 · 自动同步中${when?`（云端最近写入 ${when}）`:''}　`+
-    '<span style="color:#5F5E5A">群里报完这边会自己更新，不用点。</span>');
-}
-
-/* 上传本页：用这页的数盖云端（云端独有的日期会被删，所以是手动动作） */
-async function pushHere(){
-  const btn=document.getElementById('bindSyncBtn');
-  btn.disabled=true; btn.textContent='上传中…';
-  try{
-    const r=await qqUploadNow();
-    if(r.err){ qqBindState('warn',r.err); return }
-    render(computeStats(loadRecords()));
-    qqBindState('ok',`已上传：本页 ${r.total} 天现在就是云端那份`);
-    if(typeof showToast==='function') showToast(`本页 ${r.total} 天已上传，云端跟这页一致`,'success');
-  }catch(e){
-    qqBindState('warn','上传失败：'+(e&&e.message||'未知错误'));
-  }finally{
-    btn.disabled=false; btn.textContent='上传本页';
-  }
-}
-/* 从云端下载：按云端刷新本页（本页独有的日期保留） */
-async function pullFromCloud(){
-  const btn=document.getElementById('bindPullBtn');
-  btn.disabled=true; btn.textContent='下载中…';
-  try{
-    const m=await qqDownload();
-    if(m.err){ qqBindState('warn',m.err); return }
-    const bits=[];
-    if(m.created) bits.push(`云端还没有记录，已用本页 ${m.total} 天建了一份`);
-    else{
-      if(m.added) bits.push(`补进 ${m.added} 天`);
-      if(m.replaced) bits.push(`${m.replaced} 天按云端算`);
-      if(m.keptOnly) bits.push(`本页独有的 ${m.keptOnly} 天已补上云端`);
-    }
-    if(m.warn) qqBindState('warn',`已按云端刷新 ${m.total} 天，但本页独有的日期没传上去：${m.warn}`);
-    else qqBindState('ok',`已按云端刷新：${m.total} 天${bits.length?'（'+bits.join('、')+'）':''}`);
-    if(typeof showToast==='function') showToast(bits.length?bits.join('、'):'云端和本页一样，没有变化','success');
-  }catch(e){
-    qqBindState('warn','下载失败：'+(e&&e.message||'未知错误'));
-  }finally{
-    btn.disabled=false; btn.textContent='从云端下载';
+/* ---------- 开机 ---------- */
+async function acctBoot(){
+  if(myCode()){
+    acctStart();
+    const r=await acctTick(true);
+    if(r&&(r.changed||r.empty)) render(computeStats(loadRecords()));
+  }else{
+    await checkReceiptOnce();
   }
 }
 
@@ -1797,10 +1607,11 @@ function addRecord(e){
   const rec=normalizeRecord({date,boss:selectedBoss(),double:isDouble,runs,drops,note:document.getElementById('inputNote').value.trim()});
   let rows=loadRecords();const idx=rows.findIndex(r=>r.date===date);if(idx>=0&&!confirm(`${cfg().name} ${date} 已有记录，是否覆盖？`))return;if(idx>=0)rows.splice(idx,1);rows.push(rec);
   if(!saveRecords(rows)){showToast('本机存储空间不足（或处于隐私模式），这条记录没有保存','error');return}
+  queueOp({t:'put',s:currentServer,rec:rec});
   render(computeStats(rows));resetForm();showToast(`✅ ${date} 已保存`,'success');
 }
-function deleteRecord(date){if(!confirm(`确定删除 ${cfg().name} 的 ${date} 记录吗？`))return;const left=loadRecords().filter(r=>r.date!==date);if(!saveRecords(left)){showToast('本机存储空间不足，删除没有生效','error');return}render(computeStats(loadRecords()));showToast(`已删除 ${date}`,'info')}
-function clearAll(){const rows=loadRecords();if(!rows.length){showToast('当前服务器没有数据','info');return}if(!confirm(`确定清除 ${cfg().name} 的全部 ${rows.length} 条记录吗？`))return;if(!confirm('再次确认：此操作不可撤销。'))return;if(!saveRecords([])){showToast('本机存储空间不足，清空没有生效','error');return}render(computeStats([]));showToast('已清空当前服务器数据','info')}
+function deleteRecord(date){if(!confirm(`确定删除 ${cfg().name} 的 ${date} 记录吗？`))return;const left=loadRecords().filter(r=>r.date!==date);if(!saveRecords(left)){showToast('本机存储空间不足，删除没有生效','error');return}queueOp({t:'del',s:currentServer,d:date});render(computeStats(loadRecords()));showToast(`已删除 ${date}`,'info')}
+function clearAll(){const rows=loadRecords();if(!rows.length){showToast('当前服务器没有数据','info');return}if(!confirm(`确定清除 ${cfg().name} 的全部 ${rows.length} 条记录吗？`))return;if(!confirm('再次确认：此操作不可撤销。'))return;if(!saveRecords([])){showToast('本机存储空间不足，清空没有生效','error');return}queueOp({t:'clear',s:currentServer});render(computeStats([]));showToast('已清空当前服务器数据','info')}
 function exportData(){
   const all=loadAll();
   const payload={version:4,exportedAt:new Date().toISOString(),servers:{cn:(all.cn||[]).map(normalizeRecord),global:(all.global||[]).map(normalizeRecord)}};
@@ -1823,6 +1634,9 @@ function importData(event){
       /* 旧页导出的 v3 记录只有 d1/d2/d3，normalizeRecord 会自动补成 drops，两边都能读 */
       const payload={cn:incoming.cn.map(normalizeRecord),global:incoming.global.map(normalizeRecord)};
       if(!saveAll(payload)){showToast('本机存储空间不足，导入失败（原数据未改动）','error');return}
+      /* 导入是整份替换，按服各排一条「以本机为准」的变更，账号那边跟着换掉 */
+      queueOp({t:'full',s:'cn',rows:payload.cn});
+      queueOp({t:'full',s:'global',rows:payload.global});
       render(computeStats(loadRecords()));
       showToast(`✅ 导入成功（国服 ${payload.cn.length} 条 · 国际服 ${payload.global.length} 条）`,'success');
     }catch(err){showToast('❌ 导入失败：'+err.message,'error')}
@@ -1949,9 +1763,8 @@ function init(){
   initBossSelector();resetForm();render(computeStats(loadRecords()));
   /* R80：网络字体到位后文字行高会变，卡高缓存要失效（GH Pages 上字体常最后到） */
   if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ periodMaxH=0; markPeriodDirty(); layoutPeriods(); });
-  /* R90：打开页面先对一轮账，之后每 15 秒自动同步（群里录完这边会自己更新） */
-  setTimeout(()=>{ try{ qqCheckPendingLink() }catch(e){} },400);
-  setTimeout(()=>{ try{ qqStartAuto(); qqSyncTick() }catch(e){} },600);
+  /* R93：一开机就跟账号对一次；没登录但刚发过口令的，补查一次认领回执 */
+  setTimeout(()=>{ try{ acctBoot() }catch(e){} },600);
 }
 init();
 </script>
