@@ -299,7 +299,8 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     </div>
     <button onclick="exportData()">📤 导出</button>
     <button onclick="document.getElementById('importInput').click()">📥 导入</button>
-    <button onclick="openBindPanel()" title="绑定码登录：换设备填码就能接回来，群里报的数也会自动同步到这里">☁️ 账号同步</button>
+    <button onclick="openAccount()" title="邮箱账号登录，云端同步本页数据（跟其它标签页是同一个账号）">☁️ 账号同步</button>
+    <button onclick="openBindPanel()" title="把 QQ 群的报数连到这个账号；连一次就行，换设备不用再连">🤖 群绑定</button>
     <input id="importInput" type="file" accept=".json" hidden onchange="importData(event)">
     <button class="danger" onclick="clearAll()">🗑 清空当前服</button>
   </div>
@@ -326,7 +327,8 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .bind-or{color:#888780;font-size:12px;text-align:center;margin:14px 0 8px}
 .bind-acct{background:#F7F6F2;border-radius:10px;padding:10px 12px;margin-bottom:12px}
 .bind-acct-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#5F5E5A}
-.bind-acct-row code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;letter-spacing:2px;color:#0C447C;background:#E6F1FB;border-radius:6px;padding:4px 8px}
+.bind-acct-row code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;letter-spacing:0;color:#0C447C;background:#E6F1FB;border-radius:6px;padding:4px 8px;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bind-acct-row .bind-mini{flex:0 0 auto;white-space:nowrap}
 .bind-acct-hint{color:#888780;font-size:12px;margin-top:6px;line-height:1.5}
 .bind-mini{border:1px solid rgba(0,0,0,.15);background:#fff;color:#2c2c2a;border-radius:8px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit}
 .bind-login{display:flex;gap:8px;align-items:center}
@@ -336,36 +338,23 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 </style>
 
 <div id="bindMask" onclick="if(event.target===this)closeBindPanel()">
-  <div id="bindCard" role="dialog" aria-modal="true" aria-label="账号同步">
+  <div id="bindCard" role="dialog" aria-modal="true" aria-label="群绑定">
     <div class="bind-head">
-      <span class="bind-title">☁️ 账号同步</span>
+      <span class="bind-title">🤖 群绑定</span>
       <button class="bind-x" onclick="closeBindPanel()" aria-label="关闭">×</button>
     </div>
     <div class="bind-state" id="bindState"></div>
 
-    <!-- 已登录：只显示账号（绑定码）和两个维护动作 -->
     <div id="bindOn" style="display:none">
       <div class="bind-acct-row">
         <span>账号</span>
         <code id="bindAcctCode">—</code>
-        <button class="bind-mini" onclick="copyCode()">复制</button>
+        <button class="bind-mini" onclick="copyEmail()">复制邮箱</button>
       </div>
-      <div class="bind-acct-hint">换电脑、换浏览器、清了缓存，填这串就能登回来，数据一条不丢。</div>
+      <div class="bind-acct-hint">群里的机器人写的就是这个账号。换电脑、换浏览器、清了缓存，用同一个邮箱登录就全都在，不用再连一次。</div>
       <div class="bind-actions">
-        <button class="bind-btn" id="bindOffBtn" onclick="offHere()" title="群里的机器人不再往这个账号写数；账号和绑定码都还在">断开群同步</button>
-        <button class="bind-btn" id="bindLogoutBtn" onclick="logoutHere()">退出登录</button>
-      </div>
-    </div>
-
-    <!-- 未登录：输码登录，或者先生成口令去群里领一个码 -->
-    <div id="bindOff">
-      <div class="bind-login">
-        <input id="bindInput" placeholder="绑定码，例如 AB3D-K9MX" maxlength="12" autocomplete="off" onkeydown="if(event.key==='Enter')loginByCode()">
-        <button class="bind-btn primary" onclick="loginByCode()">登录</button>
-      </div>
-      <div id="bindGenWrap">
-        <div class="bind-or">还没有账号</div>
-        <div class="bind-actions"><button class="bind-btn" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button></div>
+        <button class="bind-btn" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button>
+        <button class="bind-btn" id="bindOffBtn" onclick="offHere()" title="机器人不再往这个账号写数；账号和记录都还在">断开群同步</button>
       </div>
       <div id="bindTokenRow" style="display:none">
         <div class="bind-token" id="bindTokenText"></div>
@@ -376,7 +365,12 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       </div>
     </div>
 
-    <div class="bind-foot">数据在这个绑定码对应的云端账号里，跟浏览器无关；一台设备登录一次就够了。跟机器人绑定只是让群里报的数也写进同一个账号，不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R94</span></div>
+    <div id="bindOff">
+      <div class="bind-hint">账号只有一套：就是主页那个「账号同步」（邮箱登录）。先登录，回来这里就能把群连上；换设备用同一个邮箱登录即可，不用重复绑。</div>
+      <div class="bind-actions"><button class="bind-btn primary" onclick="openAccount()">去登录账号</button></div>
+    </div>
+
+    <div class="bind-foot">绑定码只是「这个群 ↔ 这个账号」的连接凭证，不是账号本身；不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R95</span></div>
   </div>
 </div>
 
@@ -486,6 +480,8 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   <div class="cal-foot"><span>未来日期不可选择</span><button class="cal-today" type="button" onclick="selectToday()">今天</button></div>
 </div>
 
+<script src="assets/js/supabase.min.js?v=20260920e"></script>
+<script src="js/sync.js?v=20261102a"></script>
 <script>
 /* ============================================================================
  * R69（2026-10-30）跟随作者新版 UI：4 卡总览 + 样本条 + 周期「本段」增量 +
@@ -581,507 +577,364 @@ function loadAll(){
    让调用方能中止流程并对玩家明说「没保存」，而不是假装成功 */
 function saveAll(data){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); return true; }catch(e){ return false; } }
 function loadRecords(){ return (loadAll()[currentServer]||[]).filter(r=>r&&typeof r.date==='string'); }
-function saveRecords(records){ const all=loadAll(); all[currentServer]=records; return saveAll(all); }
+/* ===== 账号同步（R95）=============================================
+   账号只有一套 —— 主页那个「账号同步」（Supabase 邮箱账号）。
+   身份 = auth 用户的 id，Bearer token 由 supabase-js 自己带，
+   本页不碰 key、不造 uuid、不自己发号。
 
-/* ===== 账号同步（R93）=============================================
-   只有一个账号，放在云端。这里和机器人都是同一套写法：
+   数据落在 feature='mod_stats'，结构和 localStorage 里的 nikke_mod_stats_v3
+   一模一样（{cn:[],global:[]}）。所以主页那面板点「上传本地 / 用云端覆盖」
+   与本页的自动同步，操作的是同一行同一份东西，不会两边各记一本账。
 
-       读云端  →  改自己那一天  →  整份写回云端
+   群里报数 = 机器人用 service key 写同一行。本页 15 秒拉一次，只补本机
+   缺的日期；本页改的日期 1.2 秒后 read-modify-write 推回去，只叠自己动过
+   的那几天 —— 于是两边同时改不同天，永不相撞。
 
-   所以不存在「两本账」、也不存在「谁说了算」：谁改哪天就只动哪天，
-   另一头刚报的其它日期一条都不会被动到。
+   换设备：邮箱登录一次就够了（同一个登录态），数据自然跟过来。
+   绑定码不是账号，只是「这个群 ↔ 这个账号」的连接凭证。 */
 
-   设备上只记一件事：绑定码（XXXX-XXXX）。
-     · 第一次：生成 6 位口令 → 群里发 /石头 绑定 → 机器人把绑定码带回网页
-     · 换设备：填这串码登录，数据自动下来
-   账号属于这串码，不属于这台浏览器；清了缓存也能登回来。
-
-   方向不能反：如果让机器人生成指向用户的链接，谁看见链接谁就能把自己的账号
-   钉到别人的 openid 上。现在这个方向，最坏情况是有人抢先用掉口令、把自己的
-   报数灌进这个账号，他拿不到你的数据。 */
+const SYNC_FEATURE='mod_stats';
+const SYNC_TICK_MS=15000;
+const SYNC_SAVE_DELAY=1200;
+const SYNC_OLD_FEATURE='mod_stats_qq';           // R93/R94 那套自造账号存的旧行
+const SYNC_OLD_CODE_KEY='nikke_mod_acct_code';   // 旧绑定码，迁移用一次
+const SYNC_MERGED_KEY='nikke_mod_merged_r95';    // 已经并过哪本账号
+const SYNC_TOKEN_KEY='nikke_mod_bind_token';     // 刚生成、还没被认领的口令
+const SYNC_CODE_KEY='nikke_mod_bind_code';       // 群里认领后拿到的绑定码
+const SYNC_CODE_PREFIX='mod_link_code_';
+const SYNC_DONE_PREFIX='mod_link_done_';
+const SYNC_PENDING_PREFIX='mod_link_';   // 机器人认的就是这个前缀 + 6 位口令
 const SUPA_URL='https://oologpjskkpjkvcpddhf.supabase.co';
 const SUPA_KEY='sb_publishable_6FzpENHzylm1M-NSvX6RBQ__Xlpv7Oc';
-const ACCT_CODE_KEY='nikke_mod_acct_code';       // 登录态：记得的绑定码
-const ACCT_OLD_CODE='nikke_mod_qq_code';         // R92 的旧键，读一次迁过来
-const ACCT_UID_KEY='nikke_mod_acct_uid';         // 绑定码对应的账号（缓存）
-const ACCT_OPS_KEY='nikke_mod_acct_ops';         // 还没写进云端的变更
-const ACCT_ALIGN_KEY='nikke_mod_acct_aligned';   // 已经和云端对齐过的账号
-const ACCT_BACKUP_KEY='nikke_mod_qq_backup';     // 覆盖本地前的快照
-const ACCT_TOK_KEY='nikke_mod_acct_token';       // 刚生成、还没被认领的口令
+const SYNC_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-const ACCT_FEATURE='mod_stats_qq';
-const ACCT_STATE='mod_link_state';
-const ACCT_CODE_PREFIX='mod_link_code_';
-const ACCT_LINK_PREFIX='mod_link_';
-const ACCT_DONE_PREFIX='mod_link_done_';
-const ACCT_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ACCT_TTL_MS=5*60*1000;
-const ACCT_TICK_MS=15000;
-const ACCT_SAVE_DELAY=1200;
 
-let acctTimer=null, acctBusy=false, acctPollTimer=null, acctSaveTimer=null, acctLastSync=0;
-
-function randomToken(n){
-  const b=new Uint8Array(n||6);
-  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
-  else for(let i=0;i<b.length;i++) b[i]=Math.floor(Math.random()*256);
-  let s=''; for(let i=0;i<b.length;i++) s+=ACCT_ALPHABET[b[i]%ACCT_ALPHABET.length];
-  return s;
-}
-function newUid(){
-  if(window.crypto&&crypto.randomUUID) return crypto.randomUUID();
-  const b=new Uint8Array(16);
-  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
-  else for(let i=0;i<16;i++) b[i]=Math.floor(Math.random()*256);
-  b[6]=(b[6]&0x0f)|0x40; b[8]=(b[8]&0x3f)|0x80;
-  const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');
-  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
-}
-async function supaFetch(path,opt){
-  opt=opt||{};
-  const headers=Object.assign({apikey:SUPA_KEY,Authorization:`Bearer ${SUPA_KEY}`,'Content-Type':'application/json'},opt.headers||{});
-  let res;
-  try{
-    res=await fetch(`${SUPA_URL}/rest/v1/${path}`,Object.assign({},opt,{headers}));
-  }catch(e){
-    return {ok:false,status:0,data:null,net:true};
+/* 写盘 + 记账：本机哪几天变了就记下来，1.2 秒后只把这几天推上云端 */
+function saveRecords(records){
+  const all=loadAll();
+  const before=all[currentServer]||[];
+  all[currentServer]=records;
+  const ok=saveAll(all);
+  if(ok){
+    const bm=new Map(before.map(r=>[r.date,JSON.stringify(r)]));
+    const am=new Map(records.map(r=>[r.date,JSON.stringify(r)]));
+    am.forEach((v,k)=>{ if(bm.get(k)!==v) markDirty(currentServer,k) });
+    bm.forEach((v,k)=>{ if(!am.has(k)) markDirty(currentServer,k) });
   }
-  const txt=await res.text();
-  let data=null;
-  if(txt){ try{ data=JSON.parse(txt) }catch(e){ data=txt } }
-  return {ok:res.ok,status:res.status,data};
-}
-function netErr(r,what){
-  if(!r) return '网络没通';
-  if(r.net) return '连不上云端，检查下网络';
-  if(r.status===401||r.status===403) return '云端没放开这张表的读写权限';
-  return (what||'云端')+' 返回 '+r.status;
+  return ok;
 }
 
-/* ---------- 登录态：就一串码 ---------- */
-function normCode(raw){ return String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'') }
-function fmtCode(c){ return (c&&c.length===8)?c.slice(0,4)+'-'+c.slice(4):(c||'') }
-function myCode(){
-  let c=localStorage.getItem(ACCT_CODE_KEY)||'';
-  if(!c){
-    const old=normCode(localStorage.getItem(ACCT_OLD_CODE)||'');
-    if(old.length===8){ c=old; localStorage.setItem(ACCT_CODE_KEY,old) }
-  }
-  return normCode(c);
-}
-function setCode(c){ c?localStorage.setItem(ACCT_CODE_KEY,c):localStorage.removeItem(ACCT_CODE_KEY) }
-function getUid(){ return localStorage.getItem(ACCT_UID_KEY)||'' }
-function setUid(u){ u?localStorage.setItem(ACCT_UID_KEY,u):localStorage.removeItem(ACCT_UID_KEY) }
-function aligned(uid){ return !!uid&&localStorage.getItem(ACCT_ALIGN_KEY)===uid }
-function markAligned(uid){ if(uid) localStorage.setItem(ACCT_ALIGN_KEY,uid) }
+let cloudTimer=null, cloudBusy=false, cloudFlushTimer=null, cloudLastSync=0;
+const pendDays=new Set();
 
-/* ---------- 云端读写 ---------- */
-async function uidOfCode(code){
-  if(!code) return '';
-  if(getUid()&&myCode()===code) return getUid();
-  const r=await supaFetch(`sync_data?select=uid&feature=eq.${ACCT_CODE_PREFIX}${code}&limit=1`);
-  if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return '';
-  const uid=String(r.data[0].uid||'');
-  if(uid) setUid(uid);
-  return uid;
+function syncApi(){ return window.__nikkeSync||null }
+/* 顶栏「账号同步」：直接用主页那套面板，本页不重复实现登录 */
+function openAccount(){
+  const a=syncApi();
+  if(a&&a.open){ a.open('mod_stats'); return }
+  if(typeof showToast==='function') showToast('账号模块没加载出来，刷新一下页面再试','warn');
 }
-async function cloudRow(uid){
-  const r=await supaFetch(`sync_data?select=feature,data_json,updated_at&uid=eq.${uid}&feature=in.(${ACCT_FEATURE},${ACCT_STATE})`);
-  if(!r||!r.ok) return {err:netErr(r,'云端读取')};
-  const out={};
-  for(const row of (Array.isArray(r.data)?r.data:[])){
-    if(!row) continue;
-    if(row.feature===ACCT_STATE) out.state=row;
-    else if(row.feature===ACCT_FEATURE) out.row=row;
-  }
-  return out;
-}
-async function cloudWrite(uid,records,keepCode){
-  const now=new Date().toISOString();
-  const doc={v:1,updated:now,src:'web',records};
-  if(keepCode) doc.code=keepCode;
-  const r=await supaFetch('sync_data?on_conflict=uid,feature',{
-    method:'POST',
-    headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify([{uid,feature:ACCT_FEATURE,data_json:doc,updated_at:now}])
-  });
-  if(!r||!r.ok) return {err:netErr(r,'云端写入')};
-  return {};
-}
-
-/* ---------- 本地工具 ---------- */
+function myUid(){ const a=syncApi(),u=a&&a.user?a.user():null; return (u&&u.id)||'' }
+function myEmail(){ const a=syncApi(),u=a&&a.user?a.user():null; return (u&&u.email)||'' }
 function countRecs(recs){ recs=recs||{}; return ((recs.cn||[]).length)+((recs.global||[]).length) }
-function byDate(rows){ const m={}; for(const r of (rows||[])) if(r&&typeof r.date==='string') m[r.date]=r; return m }
-function sortRecs(rows){ return (rows||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))) }
-function localFp(){
-  const a=loadAll();
-  const f=k=>(a[k]||[]).map(r=>String(r&&r.date)+'|'+normalizeRecord(r).drops.join(',')).sort().join(';');
-  return 'cn['+f('cn')+']gl['+f('global')+']';
+function fmtCode(c){ return (c&&c.length===8)?c.slice(0,4)+'-'+c.slice(4):(c||'') }
+function ago(ts){
+  if(!ts) return '刚刚';
+  const s=Math.max(0,(Date.now()-ts)/1000);
+  if(s<60) return '刚刚同步';
+  const m=Math.round(s/60);
+  if(m<60) return m+' 分钟前同步';
+  return Math.round(m/60)+' 小时前同步';
 }
 
-/* ---------- 变更队列：改完先排队，马上写云端 ---------- */
-function acctOps(){ try{ const a=JSON.parse(localStorage.getItem(ACCT_OPS_KEY)||'[]'); return Array.isArray(a)?a:[] }catch(e){ return [] } }
-function acctOpsSet(a){ try{ localStorage.setItem(ACCT_OPS_KEY,JSON.stringify(a.slice(-200))) }catch(e){} }
-function queueOp(op){
-  const a=acctOps(); a.push(op); acctOpsSet(a);
-  if(acctSaveTimer) clearTimeout(acctSaveTimer);
-  acctSaveTimer=setTimeout(async()=>{
-    const r=await flushOps();
-    if(r&&!r.ok&&!r.noop&&typeof showToast==='function')
-      showToast('还没存进账号：'+r.why+'（有网了会自动补）','warn');
-  },ACCT_SAVE_DELAY);
-}
-/* 把队列里的变更逐条叠到云端最新那份上，再整份写回。
-   只动被点名的日期 —— 这是「两边同时改不同的天也不会互相覆盖」的全部原因。 */
-async function flushOps(){
-  const q=acctOps();
-  if(!q.length) return {ok:true,noop:true};
-  const code=myCode();
-  if(!code) return {ok:false,why:'还没登录账号'};
-  const uid=await uidOfCode(code);
-  if(!uid) return {ok:false,why:'绑定码失效了，重新登录一次'};
-  const got=await cloudRow(uid);
-  if(got.err) return {ok:false,why:got.err};
-  const base=(got.row&&got.row.data_json&&got.row.data_json.records)||{};
-  const recs={cn:[...(base.cn||[])],global:[...(base.global||[])]};
-  for(const op of q){
-    if(!op||!op.s) continue;
-    let arr=Array.isArray(recs[op.s])?recs[op.s]:[];
-    if(op.t==='put'&&op.rec&&op.rec.date){
-      const i=arr.findIndex(r=>r&&r.date===op.rec.date);
-      if(i>=0) arr[i]=op.rec; else arr.push(op.rec);
-    }else if(op.t==='del'&&op.d){
-      arr=arr.filter(r=>r&&r.date!==op.d);
-    }else if(op.t==='clear'){
-      arr=[];
-    }else if(op.t==='full'){
-      /* 整份替换（导入备份时用）：这个服以本地这份为准 */
-      arr=Array.isArray(op.rows)?op.rows.slice():[];
-    }
-    recs[op.s]=arr;
-  }
-  recs.cn=sortRecs(recs.cn); recs.global=sortRecs(recs.global);
-  const w=await cloudWrite(uid,recs,(got.row&&got.row.data_json||{}).code);
-  if(w.err) return {ok:false,why:w.err};      // 队列留着，下次再试
-  acctOpsSet([]);
-  acctLastSync=Date.now();
-  markAligned(uid);
-  return {ok:true,saved:q.length,total:countRecs(recs)};
+/* 只读兜底：旧数据迁移、认领回执都要读别人 uid 的行 —— sync_data 的 select 是公开的，
+   写入才是「只能写自己」。所以这里用匿名 key 读，写入一律走账号。 */
+async function supaGet(path){
+  const res=await fetch(`${SUPA_URL}/rest/v1/${path}`,{headers:{apikey:SUPA_KEY,Authorization:`Bearer ${SUPA_KEY}`}});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return res.json();
 }
 
-/* ---------- 拉云端：云端是唯一真相 ---------- */
-function applyCloud(recs){
-  const all=loadAll();
-  try{ localStorage.setItem(ACCT_BACKUP_KEY,JSON.stringify({at:Date.now(),data:all})) }catch(e){}
-  all.cn=sortRecs((recs.cn||[]).filter(r=>r&&typeof r.date==='string').map(normalizeRecord));
-  all.global=sortRecs((recs.global||[]).filter(r=>r&&typeof r.date==='string').map(normalizeRecord));
-  saveAll(all);
+/* ---------- 云端读写（走公用账号，token 由 SDK 带） ---------- */
+async function cloudGet(){
+  const a=syncApi(); if(!a||!myUid()) return null;
+  try{ return await a.pull(SYNC_FEATURE) }catch(e){ return null }
 }
-async function pullAccount(){
-  const code=myCode();
-  if(!code) return {none:true};
-  const uid=await uidOfCode(code);
-  if(!uid) return {err:'绑定码失效了，重新登录一次'};
-  if(acctOps().length){
-    const f=await flushOps();
-    if(!f.ok) return {err:f.why};           // 有没写上去的改动，绝不拿云端盖掉本地
-  }
-  const got=await cloudRow(uid);
-  if(got.err) return {err:got.err};
-  if(!got.row) return {empty:true};
-  if(got.state&&got.state.data_json&&got.state.data_json.bound===false) return {unlinked:true,state:got.state};
-  const recs=(got.row.data_json&&got.row.data_json.records)||{cn:[],global:[]};
-  const before=localFp();
-  applyCloud(recs);
-  acctLastSync=Date.now();
-  markAligned(uid);
-  return {ok:true,changed:localFp()!==before,total:countRecs(recs)};
+async function cloudPut(obj){
+  const a=syncApi(); if(!a||!myUid()) return {ok:false,why:'未登录账号'};
+  try{ return await a.push(SYNC_FEATURE,obj) }catch(e){ return {ok:false,why:e.message} }
 }
 
-/* ---------- 首次对齐：登录 / 绑定成功那一刻 ---------- */
-async function firstAlign(uid){
-  const got=await cloudRow(uid);
-  if(got.err) return {err:got.err};
-  const all=loadAll();
-  const mine={cn:Array.isArray(all.cn)?all.cn:[],global:Array.isArray(all.global)?all.global:[]};
-  const cloudRecs=(got.row&&got.row.data_json&&got.row.data_json.records)||{cn:[],global:[]};
-  const cloudN=countRecs(cloudRecs), mineN=countRecs(mine);
-
-  if(!cloudN&&mineN){
-    /* 云端空、本机有 —— 本机这些天就是账号的全部家当，推上去。这是「数据不丢」的关键一条。 */
-    const w=await cloudWrite(uid,mine);
-    if(w.err) return {err:w.err};
-    markAligned(uid); acctLastSync=Date.now();
-    return {uploaded:mineN,total:mineN};
-  }
-  if(!cloudN){ markAligned(uid); acctLastSync=Date.now(); return {uploaded:0,total:0} }
-
-  /* 云端有：以云端为准；本机独有的日期一条不删，一并推上去 */
-  const merged={cn:[],global:[]}, extra=[];
-  for(const k of ['cn','global']){
-    const c=byDate(cloudRecs[k]), m=byDate(mine[k]), buf=Object.assign({},c);
-    for(const d of Object.keys(m)) if(!c[d]){ buf[d]=m[d]; extra.push(k+':'+d) }
-    merged[k]=sortRecs(Object.values(buf));
-  }
-  try{ localStorage.setItem(ACCT_BACKUP_KEY,JSON.stringify({at:Date.now(),data:all})) }catch(e){}
-  all.cn=merged.cn; all.global=merged.global; saveAll(all);
-  markAligned(uid); acctLastSync=Date.now();
-  if(extra.length){
-    const w=await cloudWrite(uid,merged);
-    if(w.err) return {pulled:cloudN,kept:extra.length,warn:w.err};
-    return {pulled:cloudN,kept:extra.length,total:countRecs(merged)};
-  }
-  return {pulled:cloudN,total:cloudN};
-}
-
-/* ---------- 定时同步 ---------- */
-async function acctTick(quiet){
-  if(acctBusy) return null;
-  if(typeof document!=='undefined'&&document.visibilityState==='hidden') return null;
-  if(!myCode()) return null;
-  acctBusy=true;
-  try{
-    const r=await pullAccount();
-    if(!r||r.err||r.none) return r||null;
-    if(r.unlinked){ acctStop(); return r }
-    if(r.changed){
-      render(computeStats(loadRecords()));
-      if(!quiet&&typeof showToast==='function') showToast('已跟账号同步：'+r.total+' 天','success');
-    }
-    if(typeof paintAcctStatus==='function') paintAcctStatus();
-    return r;
-  }catch(e){
-    return null;
-  }finally{
-    acctBusy=false;
-  }
-}
-function acctStart(){
-  if(acctTimer) return;
-  acctTimer=setInterval(()=>{ acctTick() },ACCT_TICK_MS);
-  if(document&&document.addEventListener&&!acctStart.hooked){
-    acctStart.hooked=true;
-    document.addEventListener('visibilitychange',()=>{
-      if(document.visibilityState==='visible') acctTick();
+/* 云端补进本机：只补本机没有的日期，不拿云端旧值盖掉本机正在编辑的那天 */
+function adoptCloud(cloud){
+  const cur=loadAll();
+  let changed=0;
+  ['cn','global'].forEach(s=>{
+    const mine=cur[s]||[], theirs=(cloud&&cloud[s])||[];
+    const byDate=new Map(mine.map(r=>[r.date,r]));
+    theirs.forEach(r=>{
+      if(!r||typeof r.date!=='string') return;
+      if(!byDate.has(r.date)){ byDate.set(r.date,r); changed++ }
     });
+    cur[s]=[...byDate.values()];
+  });
+  if(changed) saveAll(cur);
+  return {changed};
+}
+
+/* ---------- 本机改了哪几天就推哪几天 ---------- */
+function markDirty(srv,date){ pendDays.add(srv+'|'+date); queueFlush() }
+function markAllDirty(){
+  const all=loadAll();
+  ['cn','global'].forEach(s=>{ (all[s]||[]).forEach(r=>{ pendDays.add(s+'|'+r.date) }) });
+  queueFlush();
+}
+function queueFlush(){
+  if(!myUid()) return;                       // 没登录：数据只在本机，不上云
+  clearTimeout(cloudFlushTimer);
+  cloudFlushTimer=setTimeout(()=>{ cloudFlush().catch(()=>{}) },SYNC_SAVE_DELAY);
+}
+async function cloudFlush(){
+  if(!myUid()||!pendDays.size) return {ok:true};
+  const keys=[...pendDays]; pendDays.clear();
+  const got=await cloudGet();
+  const cloud=got&&got.data_json?JSON.parse(JSON.stringify(got.data_json)):{cn:[],global:[]};
+  const local=loadAll();
+  ['cn','global'].forEach(s=>{
+    cloud[s]=cloud[s]||[];
+    keys.filter(k=>k.startsWith(s+'|')).forEach(k=>{
+      const d=k.slice(s.length+1);
+      const rec=(local[s]||[]).find(x=>x.date===d);
+      const i=cloud[s].findIndex(x=>x.date===d);
+      if(rec){ if(i>=0) cloud[s][i]=rec; else cloud[s].push(rec) }
+      else if(i>=0) cloud[s].splice(i,1);
+    });
+  });
+  const r=await cloudPut(cloud);
+  if(!r.ok){ keys.forEach(k=>pendDays.add(k)); return r }   // 失败留着，下次一起补
+  cloudLastSync=Date.now();
+  return r;
+}
+
+async function cloudTick(quiet){
+  if(cloudBusy||!myUid()) return null;
+  cloudBusy=true;
+  try{
+    const got=await cloudGet();
+    if(!got) return null;
+    cloudLastSync=Date.now();
+    const m=adoptCloud(got.data_json||{});
+    if(m.changed){
+      render(computeStats(loadRecords()));
+      if(!quiet&&typeof showToast==='function') showToast('群里有新的一天，已经并进来','success');
+    }
+    return m;
+  }catch(e){ return null }
+  finally{ cloudBusy=false }
+}
+function cloudStart(){
+  if(cloudTimer||!myUid()) return;
+  cloudTimer=setInterval(()=>{ cloudTick() },SYNC_TICK_MS);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) cloudTick(true) });
+}
+function cloudStop(){ clearInterval(cloudTimer); cloudTimer=null }
+
+/* ---------- 登录后第一次：云端空的把本机推上去，云端有的补进来 ---------- */
+async function cloudAlign(){
+  if(!myUid()) return {skip:true};
+  const got=await cloudGet();
+  const cloud=got&&got.data_json?got.data_json:null;
+  if(!cloud||!countRecs(cloud)){
+    const local=loadAll();
+    if(countRecs(local)) await cloudPut(local);
+    return {pushed:countRecs(local)};
+  }
+  const before=countRecs(loadAll());
+  const m=adoptCloud(cloud);
+  /* 本机独有的日期也推上去：云端不是唯一来源，本机也是他记的 */
+  const local=loadAll();
+  ['cn','global'].forEach(s=>{
+    (local[s]||[]).forEach(r=>{ pendDays.add(s+'|'+r.date) });
+  });
+  /* 只把云端没有的那些真推一次，避免无谓写 */
+  pendDays.clear();
+  ['cn','global'].forEach(s=>{
+    const has=new Set(((cloud&&cloud[s])||[]).map(r=>r.date));
+    (local[s]||[]).forEach(r=>{ if(!has.has(r.date)) pendDays.add(s+'|'+r.date) });
+  });
+  if(pendDays.size) await cloudFlush();
+  if(m.changed) render(computeStats(loadRecords()));
+  return {pulled:m.changed,total:countRecs(loadAll()),before};
+}
+
+/* ---------- 旧账号（R93 自造 uuid）那份数据并进来，一条不丢 ---------- */
+async function migrateOldOnce(){
+  const uid=myUid();
+  if(!uid||localStorage.getItem(SYNC_MERGED_KEY)===uid) return {done:true};
+  const code=(localStorage.getItem(SYNC_OLD_CODE_KEY)||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(code.length!==8){ localStorage.setItem(SYNC_MERGED_KEY,uid); return {done:true,skip:true} }
+  try{
+    const link=await supaGet(`sync_data?select=uid&feature=eq.${SYNC_CODE_PREFIX}${code}&limit=1`);
+    const old=(link&&link[0]&&link[0].uid)||'';
+    if(!old){ localStorage.setItem(SYNC_MERGED_KEY,uid); return {done:true,skip:true} }
+    const rows=await supaGet(`sync_data?select=data_json&uid=eq.${old}&feature=eq.${SYNC_OLD_FEATURE}&limit=1`);
+    const oldData=(rows&&rows[0]&&rows[0].data_json)||null;
+    const recs=(oldData&&(oldData.records||oldData))||null;
+    if(recs&&countRecs(recs)){
+      adoptCloud(recs);
+      const local=loadAll();
+      ['cn','global'].forEach(s=>{ (local[s]||[]).forEach(r=>{ pendDays.add(s+'|'+r.date) }) });
+      await cloudFlush();
+      render(computeStats(loadRecords()));
+      if(typeof showToast==='function') showToast(`旧记录 ${countRecs(recs)} 天已并进这个账号`,'success');
+    }
+    localStorage.setItem(SYNC_MERGED_KEY,uid);   // 只并一次
+    return {done:true,moved:countRecs(recs||{})};
+  }catch(e){
+    return {done:false,why:e.message};           // 网络不通就下次再并，不写标记
   }
 }
-function acctStop(){ if(acctTimer){ clearInterval(acctTimer); acctTimer=null } }
+
+/* ---------- 开机 ---------- */
+async function cloudBoot(){
+  const a=syncApi();
+  if(!a){ paintAcctStatus(); return }
+  try{ await a.ready() }catch(e){}
+  await migrateOldOnce();
+  const uid=myUid();
+  if(uid&&localStorage.getItem(SYNC_MERGED_KEY)!==uid){
+    const m=await cloudAlign();
+    localStorage.setItem(SYNC_MERGED_KEY,uid);
+    if(m&&m.pulled) render(computeStats(loadRecords()));
+  }else if(uid){
+    await cloudTick(true);
+  }
+  cloudStart();
+  paintAcctStatus();
+  if(a.onAuth) a.onAuth(()=>{ paintAcctStatus(); if(myUid()){ cloudStart(); cloudAlign() } else { cloudStop() } });
+}
 
 /* ---------- 面板 ---------- */
 function acctState(status,detail){
   const el=document.getElementById('bindState');
   if(!el) return;
-  el.className='bind-state '+(status||'');
+  el.className='bind-state'+(status?' '+status:'');
   el.innerHTML=detail||'';
 }
-function acctPanelOpen(){
-  const m=document.getElementById('bindMask');
-  return !!(m&&m.classList.contains('show'));
-}
-function ago(ts){
-  if(!ts) return '还没同步过';
-  const s=Math.round((Date.now()-ts)/1000);
-  if(s<15) return '刚刚同步';
-  if(s<60) return s+' 秒前同步';
-  const m=Math.round(s/60);
-  if(m<60) return m+' 分钟前同步';
-  return Math.round(m/60)+' 小时前同步';
-}
 async function paintAcctStatus(){
-  const code=myCode();
   const on=document.getElementById('bindOn'), off=document.getElementById('bindOff');
   if(!on||!off) return;
-  on.style.display=code?'':'none';
-  off.style.display=code?'none':'';
-  if(code){
-    document.getElementById('bindAcctCode').textContent=fmtCode(code);
-    const uid=await uidOfCode(code);
-    let n=0;
-    if(uid){
-      const got=await cloudRow(uid);
-      if(got&&got.row){
-        n=countRecs((got.row.data_json||{}).records);
-        if(got.updated_at) acctLastSync=Date.parse(got.updated_at)||acctLastSync;
-      }
-    }
-    acctState('ok',`已登录 · 云端 ${n} 天 · ${ago(acctLastSync)}<br><span style="color:#5F5E5A">群里报完这边会自己更新，这页改的也会自己存进去，不用点。</span>`);
+  const uid=myUid();
+  on.style.display=uid?'':'none';
+  off.style.display=uid?'none':'';
+  if(!uid){
+    acctState('','还没登录账号。点下面的「去登录账号」用邮箱登一次 —— 和主页那个「账号同步」是同一个账号，不是另一套。');
     return;
   }
-  acctState('',`还没有账号。第一次点「生成绑定口令」，发到群里就行；<br>已经有账号就填绑定码登录。`);
+  document.getElementById('bindAcctCode').textContent=myEmail()||uid.slice(0,8);
+  let code=localStorage.getItem(SYNC_CODE_KEY)||'';
+  let n=0;
+  const got=await cloudGet();
+  if(got&&got.data_json) n=countRecs(got.data_json);
+  if(got&&got.updated_at) cloudLastSync=Date.parse(got.updated_at)||cloudLastSync;
+  acctState('ok',`云端 ${n} 天 · ${ago(cloudLastSync)}<br>
+    <span style="color:#5F5E5A">群里报完这边会自己更新，这页改的也会自己存进去，不用点。</span>`+
+    (code?`<br>已连群 · 绑定码 <code>${fmtCode(code)}</code>`:`<br>还没连 QQ 群：点「生成绑定口令」发一次给机器人，换设备不用再绑。`));
 }
 async function openBindPanel(){
   const mask=document.getElementById('bindMask');
   if(!mask) return;
   mask.classList.add('show');
-  document.getElementById('bindTokenRow').style.display='none';
+  const row=document.getElementById('bindTokenRow');
+  if(row) row.style.display='none';
   acctState('','正在检查…');
   await paintAcctStatus();
-  const t=currentToken();
-  if(t&&!myCode()){
-    document.getElementById('bindTokenRow').style.display='';
-    paintToken(t.token,true);
-    startReceiptPoll(t.token);
-  }
+  const t=localStorage.getItem(SYNC_TOKEN_KEY);
+  if(t&&myUid()) checkReceipt(t).then(c=>{ if(c) showTokenDone(c) });
 }
-function closeBindPanel(){
-  const mask=document.getElementById('bindMask');
-  if(mask) mask.classList.remove('show');
-  if(acctPollTimer){ clearInterval(acctPollTimer); acctPollTimer=null }
-}
+function closeBindPanel(){ const m=document.getElementById('bindMask'); if(m) m.classList.remove('show') }
 
-/* ---------- 绑定：生成口令 ---------- */
+function randomToken(n){
+  const b=new Uint8Array(n||6);
+  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
+  else for(let i=0;i<b.length;i++) b[i]=Math.floor(Math.random()*256);
+  let s=''; for(let i=0;i<b.length;i++) s+=SYNC_ALPHABET[b[i]%SYNC_ALPHABET.length];
+  return s;
+}
 async function genBindToken(){
+  if(!myUid()){ acctState('warn','先用邮箱登录账号，再生成口令。账号只有一套，就是主页那套。'); return }
   const btn=document.getElementById('bindGenBtn');
   if(btn){ btn.disabled=true; btn.textContent='生成中…' }
   try{
-    const tok=randomToken(6), uid=newUid();
-    const now=new Date().toISOString();
-    const r=await supaFetch('sync_data?on_conflict=uid,feature',{
-      method:'POST',
-      headers:{Prefer:'resolution=merge-duplicates,return:minimal'},
-      body:JSON.stringify([{uid,feature:ACCT_LINK_PREFIX+tok,data_json:{v:1,src:'web'},updated_at:now}])
-    });
-    if(!r.ok) throw new Error(netErr(r,'生成'));
-    localStorage.setItem(ACCT_TOK_KEY,JSON.stringify({token:tok,ts:Date.now(),uid}));
+    const tok=randomToken(6);
+    const a=syncApi();
+    const r=await a.push(SYNC_PENDING_PREFIX+tok,{v:1,uid:myUid(),email:myEmail(),at:new Date().toISOString()});
+    if(!r||!r.ok){ acctState('warn','没写进云端（'+((r&&r.error)||'网络错误')+'），回头再试一次。'); return }
+    localStorage.setItem(SYNC_TOKEN_KEY,tok);
+    document.getElementById('bindTokenText').textContent=tok;
+    document.getElementById('bindTokenHint').innerHTML='把下面这条发到机器人所在的群里：5 分钟内有效，用一次就作废。<br>认领成功后这页会自动变成已连群。';
+    document.getElementById('bindCopyBtn').dataset.cmd='/石头 绑定 '+tok;
     document.getElementById('bindTokenRow').style.display='';
-    paintToken(tok,true);
-    acctState('',`把下面这条指令发到机器人所在的群里：5 分钟内有效，用一次就作废。<br>认领成功后这页会自动变成已登录，绑定码也会一起带回来。`);
-    startReceiptPoll(tok);
+    pollReceipt(tok);
   }catch(e){
-    acctState('warn',e.message||'生成失败');
+    acctState('warn','生成失败：'+(e&&e.message||'网络错误'));
   }finally{
     if(btn){ btn.disabled=false; btn.textContent='生成绑定口令' }
   }
 }
-function currentToken(){
+async function checkReceipt(tok){
   try{
-    const o=JSON.parse(localStorage.getItem(ACCT_TOK_KEY)||'null');
-    if(!o||!o.token) return null;
-    if(Date.now()-o.ts>ACCT_TTL_MS) return null;
-    return o;
+    const rows=await supaGet(`sync_data?select=data_json&feature=eq.${SYNC_DONE_PREFIX}${tok}&limit=1`);
+    const d=rows&&rows[0]&&rows[0].data_json;
+    if(!d||!d.done) return null;
+    return d;
   }catch(e){ return null }
 }
-function paintToken(tok,fresh){
-  document.getElementById('bindTokenText').textContent=tok;
-  const btn=document.getElementById('bindCopyBtn');
-  btn.textContent='复制指令'; btn.dataset.copied=''; btn.dataset.token=tok;
-  if(fresh) document.getElementById('bindTokenHint').textContent='群发：/石头 绑定 '+tok;
+let receiptTimer=null;
+function pollReceipt(tok){
+  clearInterval(receiptTimer);
+  let n=0;
+  receiptTimer=setInterval(async()=>{
+    n++;
+    const d=await checkReceipt(tok);
+    if(d){ clearInterval(receiptTimer); showTokenDone(d); return }
+    if(n>=20){ clearInterval(receiptTimer); }
+  },15000);
+}
+async function showTokenDone(d){
+  const code=d.code||'';
+  if(code) localStorage.setItem(SYNC_CODE_KEY,code);
+  localStorage.removeItem(SYNC_TOKEN_KEY);
+  document.getElementById('bindTokenRow').style.display='none';
+  await paintAcctStatus();
+  if(typeof showToast==='function') showToast(`已连群 · 绑定码 ${fmtCode(code)}`,'success');
 }
 function copyBindCommand(){
-  const btn=document.getElementById('bindCopyBtn');
-  const cmd='/石头 绑定 '+(btn.dataset.token||'');
-  const done=()=>{ btn.textContent='已复制，去群里粘贴'; btn.dataset.copied='1' };
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(cmd).then(done).catch(()=>{ fallbackCopy(cmd); done() });
-  }else{ fallbackCopy(cmd); done() }
+  const cmd=document.getElementById('bindCopyBtn').dataset.cmd||'';
+  if(!cmd) return;
+  navigator.clipboard.writeText(cmd).then(
+    ()=>{ if(typeof showToast==='function') showToast('指令已复制，去群里发一下','info') },
+    ()=>{ if(typeof showToast==='function') showToast('复制失败，手动选中那串字母发到群里','warn') }
+  );
 }
-function fallbackCopy(text){
-  const ta=document.createElement('textarea');
-  ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
-  document.body.appendChild(ta); ta.select();
-  try{ document.execCommand('copy') }catch(e){}
-  document.body.removeChild(ta);
+function copyEmail(){
+  const mail=myEmail();
+  if(!mail) return;
+  navigator.clipboard.writeText(mail).then(
+    ()=>{ if(typeof showToast==='function') showToast('邮箱已复制','info') },
+    ()=>{ if(typeof showToast==='function') showToast('复制失败，手动记一下这个邮箱','warn') }
+  );
 }
-async function fetchReceipt(tok){
-  if(!tok) return null;
-  const r=await supaFetch(`sync_data?select=uid,data_json,updated_at&feature=eq.${ACCT_DONE_PREFIX}${tok}&limit=1`);
-  if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return null;
-  const row=r.data[0]||{}, dj=row.data_json||{};
-  const uid=String(dj.uid||row.uid||'');
-  if(!uid) return null;
-  let code=normCode(dj.code||'');
-  if(!code) code=await codeOfUid(uid);          // 老版机器人没带码，补查一次
-  return {uid,code,moved:!!dj.moved};
-}
-async function codeOfUid(uid){
-  if(!uid) return '';
-  const r=await supaFetch(`sync_data?select=feature&uid=eq.${uid}&feature=like.${ACCT_CODE_PREFIX}*&limit=1`);
-  if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return '';
-  return normCode(String(r.data[0].feature||'').slice(ACCT_CODE_PREFIX.length));
-}
-function startReceiptPoll(tok){
-  if(acctPollTimer){ clearInterval(acctPollTimer); acctPollTimer=null }
-  let n=0;
-  acctPollTimer=setInterval(async()=>{
-    n++;
-    if(n>60||!acctPanelOpen()){ clearInterval(acctPollTimer); acctPollTimer=null; return }
-    if(myCode()){ clearInterval(acctPollTimer); acctPollTimer=null; return }
-    const r=await fetchReceipt(tok).catch(()=>null);
-    if(!r||!r.code) return;
-    clearInterval(acctPollTimer); acctPollTimer=null;
-    await adoptReceipt(r);
-  },3000);
-}
-async function adoptReceipt(r){
-  setCode(r.code);
-  setUid(r.uid);
-  localStorage.removeItem(ACCT_TOK_KEY);
-  localStorage.removeItem(ACCT_ALIGN_KEY);
-  const m=await firstAlign(r.uid);
-  if(m.err){ acctState('warn','绑上了，但没能从云端取到数据：'+m.err); return }
-  acctStart();
-  await paintAcctStatus();
-  const bits=[];
-  if(m.uploaded) bits.push(`本机 ${m.uploaded} 天已传进账号`);
-  if(m.pulled) bits.push(`账号里 ${m.pulled} 天已取回`);
-  if(m.kept) bits.push(`本机独有的 ${m.kept} 天也留着了`);
-  if(m.warn) bits.push('有几天没传上去：'+m.warn);
-  if(typeof showToast==='function') showToast(`绑定成功 · 账号 ${fmtCode(r.code)}${bits.length?'（'+bits.join('、')+'）':''}`,'success');
-}
-async function checkReceiptOnce(){
-  const t=currentToken();
-  if(!t||myCode()) return false;
-  const r=await fetchReceipt(t.token).catch(()=>null);
-  if(!r||!r.code) return false;
-  await adoptReceipt(r);
-  return true;
-}
-
-/* ---------- 登录（换设备就这一步） ---------- */
-async function loginByCode(){
-  const inp=document.getElementById('bindInput');
-  const code=normCode(inp&&inp.value);
-  if(code.length!==8){ acctState('warn','绑定码是 8 位字母数字，例如 AB3D-K9MX，横线可以不带。'); return }
-  acctState('','正在登录…');
-  const uid=await uidOfCode(code);
-  if(!uid){ acctState('warn','没有这个绑定码。检查有没有抄错，或者在原来那台设备上 /石头 我的码 查一下。'); return }
-  if(inp) inp.value='';
-  setCode(code); setUid(uid);
-  const m=await firstAlign(uid);
-  if(m.err){ acctState('warn','登录了，但没取到数据：'+m.err); return }
-  acctStart();
-  await paintAcctStatus();
-  const bits=[];
-  if(m.pulled) bits.push(`账号里 ${m.pulled} 天已取回`);
-  if(m.uploaded) bits.push(`本机 ${m.uploaded} 天已传进账号`);
-  if(m.kept) bits.push(`本机独有的 ${m.kept} 天也留着了`);
-  if(m.warn) bits.push('有几天没传上去：'+m.warn);
-  render(computeStats(loadRecords()));
-  if(typeof showToast==='function') showToast(`已登录 ${fmtCode(code)}${bits.length?'（'+bits.join('、')+'）':''}`,'success');
-}
-function copyCode(){
-  const txt=document.getElementById('bindAcctCode').textContent||'';
-  const done=()=>{ if(typeof showToast==='function') showToast('绑定码已复制，存到备忘录里','info') };
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(()=>{ fallbackCopy(txt); done() });
-  else { fallbackCopy(txt); done() }
-}
-
-/* ---------- 断开群同步 / 退出登录 ---------- */
 async function offHere(){
   const btn=document.getElementById('bindOffBtn');
   if(btn){ btn.disabled=true; btn.textContent='断开中…' }
   try{
-    const uid=await uidOfCode(myCode());
-    if(!uid){ acctState('warn','绑定码无效，先重新登录一次。'); return }
-    const now=new Date().toISOString();
-    const r=await supaFetch('sync_data?on_conflict=uid,feature',{
-      method:'POST',
-      headers:{Prefer:'resolution=merge-duplicates,return:minimal'},
-      body:JSON.stringify([{uid,feature:ACCT_STATE,data_json:{v:1,bound:false,at:now},updated_at:now}])
-    });
-    if(!r.ok){ acctState('warn','没写进云端（'+netErr(r,'断开')+'），机器人那边还会继续同步。回头再试一次。'); return }
-    acctState('ok','已断开群同步。群里的机器人不会再往这个账号写数，账号和绑定码都还在，随时能重新连。');
+    if(!myUid()){ acctState('warn','先登录账号。'); return }
+    const a=syncApi();
+    const r=await a.push('mod_link_state',{v:1,bound:false,at:new Date().toISOString()});
+    if(!r||!r.ok){ acctState('warn','没写进云端（'+((r&&r.error)||'网络错误')+'），机器人那边还会继续同步。回头再试一次。'); return }
+    localStorage.removeItem(SYNC_CODE_KEY);
+    acctState('ok','已断开群同步。机器人不会再往这个账号写数；账号和记录都还在，随时能重新连。');
     if(typeof showToast==='function') showToast('已断开群同步，账号和数据都还在','info');
   }catch(e){
     acctState('warn','断开失败：'+(e&&e.message||'网络错误'));
@@ -1089,35 +942,7 @@ async function offHere(){
     if(btn){ btn.disabled=false; btn.textContent='断开群同步' }
   }
 }
-async function logoutHere(){
-  const q=acctOps();
-  if(q.length){
-    const f=await flushOps();
-    if(!f.ok){ acctState('warn','还有改动没写进账号（'+f.why+'），先别退。等网络好了会自动补。'); return }
-  }
-  if(!confirm('退出登录？本机数据留着，绑定码记得存好，回来还能登。')) return;
-  setCode(''); setUid('');
-  localStorage.removeItem(ACCT_ALIGN_KEY);
-  acctStop();
-  await paintAcctStatus();
-  if(typeof showToast==='function') showToast('已退出登录','info');
-}
 
-/* ---------- 开机 ---------- */
-async function acctBoot(){
-  const code=myCode();
-  if(!code){ await checkReceiptOnce(); return }
-  const uid=await uidOfCode(code);
-  /* 这台设备还没跟这个账号对齐过（老版本升级上来、或者清了缓存但码还在）：
-     先走一次合并，云端为准、本机独有的日期也推上去——不能直接整份覆盖。 */
-  if(uid&&!aligned(uid)){
-    const m=await firstAlign(uid);
-    if(!m.err) render(computeStats(loadRecords()));
-  }
-  acctStart();
-  const r=await acctTick(true);
-  if(r&&(r.changed||r.empty)) render(computeStats(loadRecords()));
-}
 
 /* 归一化：新格式直接读 runs/drops；老格式（只有 d1/d2/d3）自动转数组。
    输出**同时**带 d1/d2/d3（= drops 前三次），供旧页面 / 旧导出互通。 */
@@ -1599,11 +1424,10 @@ function addRecord(e){
   const rec=normalizeRecord({date,boss:selectedBoss(),double:isDouble,runs,drops,note:document.getElementById('inputNote').value.trim()});
   let rows=loadRecords();const idx=rows.findIndex(r=>r.date===date);if(idx>=0&&!confirm(`${cfg().name} ${date} 已有记录，是否覆盖？`))return;if(idx>=0)rows.splice(idx,1);rows.push(rec);
   if(!saveRecords(rows)){showToast('本机存储空间不足（或处于隐私模式），这条记录没有保存','error');return}
-  queueOp({t:'put',s:currentServer,rec:rec});
   render(computeStats(rows));resetForm();showToast(`✅ ${date} 已保存`,'success');
 }
-function deleteRecord(date){if(!confirm(`确定删除 ${cfg().name} 的 ${date} 记录吗？`))return;const left=loadRecords().filter(r=>r.date!==date);if(!saveRecords(left)){showToast('本机存储空间不足，删除没有生效','error');return}queueOp({t:'del',s:currentServer,d:date});render(computeStats(loadRecords()));showToast(`已删除 ${date}`,'info')}
-function clearAll(){const rows=loadRecords();if(!rows.length){showToast('当前服务器没有数据','info');return}if(!confirm(`确定清除 ${cfg().name} 的全部 ${rows.length} 条记录吗？`))return;if(!confirm('再次确认：此操作不可撤销。'))return;if(!saveRecords([])){showToast('本机存储空间不足，清空没有生效','error');return}queueOp({t:'clear',s:currentServer});render(computeStats([]));showToast('已清空当前服务器数据','info')}
+function deleteRecord(date){if(!confirm(`确定删除 ${cfg().name} 的 ${date} 记录吗？`))return;const left=loadRecords().filter(r=>r.date!==date);if(!saveRecords(left)){showToast('本机存储空间不足，删除没有生效','error');return}render(computeStats(loadRecords()));showToast(`已删除 ${date}`,'info')}
+function clearAll(){const rows=loadRecords();if(!rows.length){showToast('当前服务器没有数据','info');return}if(!confirm(`确定清除 ${cfg().name} 的全部 ${rows.length} 条记录吗？`))return;if(!confirm('再次确认：此操作不可撤销。'))return;if(!saveRecords([])){showToast('本机存储空间不足，清空没有生效','error');return}render(computeStats([]));showToast('已清空当前服务器数据','info')}
 function exportData(){
   const all=loadAll();
   const payload={version:4,exportedAt:new Date().toISOString(),servers:{cn:(all.cn||[]).map(normalizeRecord),global:(all.global||[]).map(normalizeRecord)}};
@@ -1627,8 +1451,7 @@ function importData(event){
       const payload={cn:incoming.cn.map(normalizeRecord),global:incoming.global.map(normalizeRecord)};
       if(!saveAll(payload)){showToast('本机存储空间不足，导入失败（原数据未改动）','error');return}
       /* 导入是整份替换，按服各排一条「以本机为准」的变更，账号那边跟着换掉 */
-      queueOp({t:'full',s:'cn',rows:payload.cn});
-      queueOp({t:'full',s:'global',rows:payload.global});
+      markAllDirty();        // 整份替换：两服全部天数都推一次（saveAll 已写盘）
       render(computeStats(loadRecords()));
       showToast(`✅ 导入成功（国服 ${payload.cn.length} 条 · 国际服 ${payload.global.length} 条）`,'success');
     }catch(err){showToast('❌ 导入失败：'+err.message,'error')}
@@ -1755,8 +1578,8 @@ function init(){
   initBossSelector();resetForm();render(computeStats(loadRecords()));
   /* R80：网络字体到位后文字行高会变，卡高缓存要失效（GH Pages 上字体常最后到） */
   if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ periodMaxH=0; markPeriodDirty(); layoutPeriods(); });
-  /* R93：一开机就跟账号对一次；没登录但刚发过口令的，补查一次认领回执 */
-  setTimeout(()=>{ try{ acctBoot() }catch(e){} },600);
+  /* R95：一开机就跟随公用账号（邮箱）对一次；没登录就只在本机 */
+  setTimeout(()=>{ try{ cloudBoot() }catch(e){} },600);
 }
 init();
 </script>

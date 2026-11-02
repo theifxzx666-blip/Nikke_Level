@@ -120,6 +120,7 @@
   var sdk = window.supabase;
   var supabase = null;
   var curUser = null;
+  var authSubs = [];        // R95：登录态变化的订阅者（各 tab 页面自己挂）
 
   /* ---------- 网络可靠性（R54） ----------
      现场反馈：网页能打开、一点账号就提示「没能连上云端」，玩家也没开代理。
@@ -951,10 +952,48 @@
         supabase.auth.getSession().then(function (r) { if (r && r.data) curUser = r.data.session ? r.data.session.user : null; });
         supabase.auth.onAuthStateChange(function (e, s) {
           curUser = s ? s.user : null;
+          for (var i = 0; i < authSubs.length; i++) {
+            try { authSubs[i](curUser); } catch (err) { /* 订阅者自己的问题不许拖垮同步器 */ }
+          }
         });
       } catch (e) { supabase = null; }
       addSaveSync();
     }
+  }
+
+  /* ============ R95：给同源页面（各个 tab）复用的账号 API ============
+     为什么加这一层：定制模组统计页原先自己造了一套 uuid + 8 位绑定码当"账号"，
+     结果同一份数据在云端分成 mod_stats / mod_stats_qq 两行，换台设备还得再绑一次；
+     更要紧的是页面拿匿名 key 去写 —— sync_data 的 RLS 只放行「登录用户写自己 uid」，
+     匿名写一律 403，所以那套自动上传在线上从来没有真正成功过。
+     现在统一成：账号就是这里的邮箱账号，uid = auth 用户 id，Bearer token 由 SDK 自动带。
+     tab 页面只调 pull / push，不再自己管身份，也不用知道 key。 */
+  function ready() {
+    return new Promise(function (res) {
+      if (!configured() || !supabase) return res(null);
+      supabase.auth.getSession().then(function (r) {
+        curUser = r && r.data && r.data.session ? r.data.session.user : null;
+        res(curUser);
+      }).catch(function () { res(null); });
+    });
+  }
+  function pullFeature(fid) {
+    if (!supabase || !curUser) return Promise.resolve(null);
+    return supabase.from("sync_data")
+      .select("data_json,updated_at")
+      .eq("uid", curUser.id).eq("feature", fid).limit(1)
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return (r.data && r.data[0]) || null;
+      });
+  }
+  function pushFeature(fid, obj) {
+    if (!supabase || !curUser) return Promise.resolve({ ok: false, error: "未登录" });
+    return supabase.from("sync_data").upsert({
+      uid: curUser.id, feature: fid, data_json: obj, updated_at: new Date().toISOString()
+    }, { onConflict: "uid,feature" }).then(function (r) {
+      return r.error ? { ok: false, error: r.error.message } : { ok: true };
+    });
   }
 
   /* 暴露给同源 iframe 复用账号同步能力（定制模组统计页 / 战力计算Beta 等）；
@@ -966,7 +1005,22 @@
     quickUpload: quickUpload,
     features: function () {
       return FEATURES.map(function (f) { return { id: f.id, name: f.name, ls: f.ls }; });
-    }
+    },
+    /* --- R95 新增：账号身份与单功能读写 --- */
+    ready: ready,
+    user: function () {
+      return curUser ? { id: curUser.id, email: curUser.email || "" } : null;
+    },
+    onAuth: function (cb) {
+      if (typeof cb !== "function") return function () {};
+      authSubs.push(cb);
+      return function () {
+        var i = authSubs.indexOf(cb);
+        if (i >= 0) authSubs.splice(i, 1);
+      };
+    },
+    pull: pullFeature,
+    push: pushFeature
   };
 
   init();
