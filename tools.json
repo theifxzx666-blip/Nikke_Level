@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-13",
+  "updatedAt": "2026-11-02",
   "_note": "viewId 必须与 css/style.css 中各工具容器选择器一致（#appPlanner / #appModStats / #appAvatarFrame / #appRerollStats / #appCombatPowerBeta）。外壳默认按 app_<id> 生成容器 id，与 CSS 不符会导致容器拿不到样式——典型症状是头像预览的全屏 flex 布局失效、iframe 退回默认 150px 高。",
   "tools": [
     {
@@ -41,7 +41,7 @@
       "name": "定制模组统计",
       "icon": "assets/nav_modstats.webp",
       "type": "web",
-      "entry": "mod_stats.html?v=20261031h",
+      "entry": "mod_stats.html?v=20261102r98",
       "viewId": "appModStats",
       "frameId": "modStatsFrame",
       "version": "1.0.0",
