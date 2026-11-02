@@ -582,7 +582,7 @@ function loadRecords(){ return (loadAll()[currentServer]||[]).filter(r=>r&&typeo
    身份 = auth 用户的 id，Bearer token 由 supabase-js 自己带，
    本页不碰 key、不造 uuid、不自己发号。
 
-   数据落在 feature='mod_stats'，结构和 localStorage 里的 nikke_mod_stats_v3
+   数据落在 feature='mod_stats_qq'，结构和 localStorage 里的 nikke_mod_stats_v3
    一模一样（{cn:[],global:[]}）。所以主页那面板点「上传本地 / 用云端覆盖」
    与本页的自动同步，操作的是同一行同一份东西，不会两边各记一本账。
 
@@ -593,10 +593,10 @@ function loadRecords(){ return (loadAll()[currentServer]||[]).filter(r=>r&&typeo
    换设备：邮箱登录一次就够了（同一个登录态），数据自然跟过来。
    绑定码不是账号，只是「这个群 ↔ 这个账号」的连接凭证。 */
 
-const SYNC_FEATURE='mod_stats';
+const SYNC_FEATURE='mod_stats_qq';   // Supabase 只给这一行开了匿名写策略（机器人要写），换名就 401
 const SYNC_TICK_MS=15000;
 const SYNC_SAVE_DELAY=1200;
-const SYNC_OLD_FEATURE='mod_stats_qq';           // R93/R94 那套自造账号存的旧行
+const SYNC_OLD_FEATURE='mod_stats_qq';           // R93/R94 那台设备存的旧行（uid 不同，迁移还用它）
 const SYNC_OLD_CODE_KEY='nikke_mod_acct_code';   // 旧绑定码，迁移用一次
 const SYNC_MERGED_KEY='nikke_mod_merged_r95';    // 已经并过哪本账号
 const SYNC_TOKEN_KEY='nikke_mod_bind_token';     // 刚生成、还没被认领的口令
@@ -631,7 +631,7 @@ function syncApi(){ return window.__nikkeSync||null }
 /* 顶栏「账号同步」：直接用主页那套面板，本页不重复实现登录 */
 function openAccount(){
   const a=syncApi();
-  if(a&&a.open){ a.open('mod_stats'); return }
+  if(a&&a.open){ a.open('mod_stats_qq'); return }
   if(typeof showToast==='function') showToast('账号模块没加载出来，刷新一下页面再试','warn');
 }
 function myUid(){ const a=syncApi(),u=a&&a.user?a.user():null; return (u&&u.id)||'' }

@@ -42,7 +42,7 @@
      因此主页面直接读写即可；下载后整页 reload 会让 iframe 一并重载生效。 */
   var FEATURES = [
     { id: "planner",   name: "资源规划计算器", ls: "nikke_planner_form_v1" },
-    { id: "mod_stats", name: "定制模组统计",   ls: "nikke_mod_stats_v3" },
+    { id: "mod_stats_qq", name: "定制模组统计", ls: "nikke_mod_stats_v3" },
     { id: "combat_power_beta", name: "战力计算Beta（角色练度 + 装备词条套装）", ls: "nikke_power_calc_v2" }
   ];
 
@@ -97,7 +97,7 @@
     if (srvText) parts.push(srvText);
     if (isPlanner(f)) parts.push("存档版本 v" + (Number(obj._schema) || 1));
     /* R65：模组统计没有版本号，只有"攒了多少天战绩"，条数就是它的体量 */
-    if (f.id === "mod_stats") {
+    if (f.id === "mod_stats_qq") {
       var rc = recCounts(obj);
       parts.push("国服 " + rc.cn + " 条 / 国际服 " + rc.global + " 条");
     }
@@ -685,7 +685,7 @@
             if (!obj) { tip("本地无有效数据，无法上传"); return; }
             /* R65：定制模组统计是整份搬运（没有版本号可比），只能用"条数"判断体量。
                本地比云端少 = 很可能是在另一台设备上还没同步完，直接上传会删掉云端多出来的记录。 */
-            if (f.id === "mod_stats" && cloud && cloud.data_json) {
+            if (f.id === "mod_stats_qq" && cloud && cloud.data_json) {
               var lc = recCounts(obj), cc = recCounts(cloud.data_json);
               if (cc.total > lc.total) {
                 var goUpRec = window.confirm(
