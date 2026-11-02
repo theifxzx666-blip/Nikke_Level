@@ -344,6 +344,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       <div class="bind-hint">同一天以本页为准：机器人只补本页没有的日期，不会覆盖这里手记的数。</div>
       <div class="bind-actions">
         <button class="bind-btn primary" id="bindSyncBtn" onclick="syncFromQq()">立即同步</button>
+        <button class="bind-btn" id="bindUnbindBtn" onclick="unbindHere()">解除绑定</button>
       </div>
     </div>
     <div id="bindGenWrap">
@@ -590,6 +591,9 @@ const QQ_TOK_KEY='nikke_mod_qq_token';
 const QQ_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const QQ_TTL_MS=5*60*1000;
 const QQ_FEATURE='mod_stats_qq';
+/* R87：绑定状态行。群里发 /石头 解绑 时机器人写一行 {bound:false}，
+   页面靠它把「已绑定」撤掉——光看记录行是撤不掉的，解绑不会删记录。 */
+const QQ_STATE_FEATURE='mod_link_state';
 const QQ_BASE_KEY='nikke_mod_qq_baseline';   // 记录「这个 uid 已经把本页设为基准了」
 let qqPollTimer=null;
 
@@ -631,17 +635,29 @@ async function supaFetch(path,opt){
   return {ok:res.ok,status:res.status,data};
 }
 
-/* 读机器人写的那一行。有 = 已经绑上了（机器人绑完会立刻推一次） */
+/* 读机器人写的那两行：记录行（mod_stats_qq）+ 状态行（mod_link_state）。
+   有记录行 = 绑上了；状态行 bound:false = 群里解过绑，这个优先。
+   一次请求查两行（PostgREST 的 in.()），省一趟往返。 */
 async function qqPull(){
-  const r=await supaFetch(`sync_data?select=data_json,updated_at&uid=eq.${qqUid()}&feature=eq.${QQ_FEATURE}&limit=1`);
+  const r=await supaFetch(`sync_data?select=feature,data_json,updated_at&uid=eq.${qqUid()}&feature=in.(${QQ_FEATURE},${QQ_STATE_FEATURE})`);
   if(r.net) return {err:'连不上云端，检查下网络'};
   if(!r.ok){
     if(r.status===401||r.status===403) return {err:'云端没放开这张表的读写权限'};
     return {err:'云端返回 '+r.status};
   }
-  if(Array.isArray(r.data)&&r.data.length) return {row:r.data[0]};
-  return {};
+  const out={};
+  for(const row of (Array.isArray(r.data)?r.data:[])){
+    if(!row) continue;
+    if(row.feature===QQ_STATE_FEATURE) out.state=row;
+    else if(row.feature===QQ_FEATURE) out.row=row;
+  }
+  return out;
 }
+/* 机器人那边明确说过「解绑了」。老账号没有这一行，按已绑定处理（向后兼容）。 */
+function qqUnlinked(res){
+  return !!(res&&res.state&&res.state.data_json&&res.state.data_json.bound===false);
+}
+
 
 async function qqCreateToken(){
   const tok=randomToken(6), uid=qqUid();
@@ -732,6 +748,7 @@ async function openBindPanel(){
   qqBindState('','正在检查…');
   const res=await qqPull();
   if(res.err){ qqBindState('warn',res.err); return }
+  if(qqUnlinked(res)){ showUnlinked(res.state); return }
   if(res.row){ showBound(res.row); return }
   qqBindState('',`当前浏览器身份：<code>${qqUid().slice(0,8)}…</code>　还没绑定。`);
   const t=currentToken();
@@ -795,8 +812,51 @@ function startPolling(){
     if(!document.getElementById('bindMask').classList.contains('show')){ qqStopPoll(); return }
     let res;
     try{ res=await qqPull() }catch(e){ return }
-    if(res&&res.row){ qqStopPoll(); showBound(res.row) }
+    if(!res) return;
+    // 面板正显示「已绑定」的当口在群里发了 /石头 解绑 —— 状态跟着翻过来
+    if(qqUnlinked(res)){
+      if(document.getElementById('bindBoundRow').style.display!=='none'){ qqStopPoll(); showUnlinked(res.state) }
+      return;
+    }
+    if(res.row){ qqStopPoll(); showBound(res.row) }
   },3000);
+}
+/* R87：从网页这头解绑。写一行 mod_link_state{bound:false}，机器人下次推送/查询
+   读到它就停手（会自己把账号关系断掉）。本页记录一条不动，只是不再同步。 */
+async function unbindHere(){
+  const btn=document.getElementById('bindUnbindBtn');
+  btn.disabled=true; btn.textContent='解绑中…';
+  try{
+    const now=new Date().toISOString();
+    const r=await supaFetch('sync_data?on_conflict=uid,feature',{
+      method:'POST',
+      headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify([{uid:qqUid(),feature:QQ_STATE_FEATURE,data_json:{v:1,bound:false,at:now},updated_at:now}])
+    });
+    if(!r.ok){
+      qqBindState('warn','解绑没写进云端（HTTP '+r.status+'），机器人那边还会继续往这页同步。回头再试一次。');
+      return;
+    }
+    showUnlinked({updated_at:now});
+    if(typeof showToast==='function') showToast('已解除绑定，本页记录都还在','info');
+  }catch(e){
+    qqBindState('warn','解绑失败：'+(e&&e.message||'网络错误'));
+  }finally{
+    btn.disabled=false; btn.textContent='解除绑定';
+  }
+}
+
+/* QQ 那边解绑了（或本页刚点了「解除绑定」）。记录一条不动，只是不再同步。 */
+function showUnlinked(state){
+  document.getElementById('bindTokenRow').style.display='none';
+  document.getElementById('bindBoundRow').style.display='none';
+  document.getElementById('bindGenWrap').style.display='';
+  document.getElementById('bindGenBtn').classList.add('primary');
+  localStorage.removeItem(QQ_BASE_KEY);
+  const when=(state&&state.updated_at)?String(state.updated_at).replace('T',' ').slice(0,16):'';
+  qqBindState('warn',
+    `QQ 那边已经解绑了${when?`（${when}）`:''}。本页记录一条没动，机器人也不会再往里补日期。<br>`+
+    '要重新接上：点下面「生成绑定口令」，把那条指令发到群里。');
 }
 async function showBound(row){
   document.getElementById('bindTokenRow').style.display='none';
