@@ -324,6 +324,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .bind-btn.primary{background:#185FA5;border-color:#185FA5;color:#fff}
 .bind-btn:disabled{opacity:.6;cursor:default}
 .bind-foot{color:#888780;font-size:12px;border-top:1px solid rgba(0,0,0,.08);padding-top:10px;margin-top:6px}
+.bind-ver{float:right;opacity:.75;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 </style>
 
 <div id="bindMask" onclick="if(event.target===this)closeBindPanel()">
@@ -350,7 +351,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     <div id="bindGenWrap">
       <div class="bind-actions"><button class="bind-btn primary" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button></div>
     </div>
-    <div class="bind-foot">绑定只用来把群里报的数搬进这一页。身份是浏览器本地的一串随机编号，不涉及 QQ 号、邮箱或密码。</div>
+    <div class="bind-foot">绑定只用来把群里报的数搬进这一页。身份是浏览器本地的一串随机编号，不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R88b</span></div>
   </div>
 </div>
 
