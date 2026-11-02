@@ -341,6 +341,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       </div>
     </div>
     <div id="bindBoundRow" style="display:none">
+      <div class="bind-hint">同一天以本页为准：机器人只补本页没有的日期，不会覆盖这里手记的数。</div>
       <div class="bind-actions">
         <button class="bind-btn primary" id="bindSyncBtn" onclick="syncFromQq()">立即同步</button>
       </div>
@@ -574,7 +575,10 @@ function saveRecords(records){ const all=loadAll(); all[currentServer]=records; 
    链路：网页写一行 sync_data(feature=mod_link_<口令>, uid=本地uuid)
         → 用户在群里发 /石头 绑定 <口令>
         → 机器人删掉那行并取走 uid，之后它报的数写进 (本地uuid, mod_stats_qq)
-        → 本页轮询这一行，出现就是绑好了，点同步把记录合进来。
+        → 本页轮询这一行，出现就是绑好了，然后**把本页数据传上去当基准**
+
+   谁说了算：本页。绑定那一刻起，同一天里以本页的数字为准，机器人只补本页
+   没有的日期；网页删掉的日期它也不会自作主张加回来（除非本页也没有）。
 
    方向不能反：如果让机器人生成指向用户的链接，谁看见链接谁就能把自己的
    uuid 钉到别人的 openid 上，数据会流到别人那边去。现在这个方向，
@@ -586,6 +590,7 @@ const QQ_TOK_KEY='nikke_mod_qq_token';
 const QQ_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const QQ_TTL_MS=5*60*1000;
 const QQ_FEATURE='mod_stats_qq';
+const QQ_BASE_KEY='nikke_mod_qq_baseline';   // 记录「这个 uid 已经把本页设为基准了」
 let qqPollTimer=null;
 
 function uuid4(){
@@ -681,6 +686,34 @@ function qqMerge(row){
   return {added,kept};
 }
 
+/* 以本页为准上传：先合一次（只把 QQ 上本页没有的日期补进来），再把整份推上去。
+   计算器是主账本——绑定之前网页上的数都是手维护出来的，机器人那几条零散记录
+   不该反过来把它盖掉。之后群里报的新日期再由机器人补进云端，本页下次同步吸收。 */
+async function qqPushBaseline(){
+  const pulled=await qqPull();
+  if(pulled&&pulled.err) return {err:pulled.err};
+  let added=0,kept=0,keepCode='';
+  if(pulled&&pulled.row){
+    const m=qqMerge(pulled.row); added=m.added; kept=m.kept;
+    const dj=pulled.row.data_json;
+    if(dj&&typeof dj.code==='string') keepCode=dj.code;
+  }
+  const all=loadAll();
+  const records={cn:Array.isArray(all.cn)?all.cn:[],global:Array.isArray(all.global)?all.global:[]};
+  const doc={v:1,code:keepCode,updated:new Date().toISOString(),src:'web',records};
+  const r=await supaFetch('sync_data?on_conflict=uid,feature',{
+    method:'POST',
+    headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify([{uid:qqUid(),feature:QQ_FEATURE,data_json:doc,updated_at:new Date().toISOString()}])
+  });
+  if(r.net) return {err:'连不上云端，检查下网络'};
+  if(!r.ok){
+    if(r.status===401||r.status===403) return {err:'云端不允许网页写入（表策略没放开）'};
+    return {err:'上传失败（HTTP '+r.status+'）'};
+  }
+  return {added,kept,total:records.cn.length+records.global.length};
+}
+
 function qqStopPoll(){ if(qqPollTimer){ clearInterval(qqPollTimer); qqPollTimer=null } }
 function qqBindState(status,detail){
   const el=document.getElementById('bindState');
@@ -765,26 +798,36 @@ function startPolling(){
     if(res&&res.row){ qqStopPoll(); showBound(res.row) }
   },3000);
 }
-function showBound(row){
+async function showBound(row){
   document.getElementById('bindTokenRow').style.display='none';
   document.getElementById('bindGenWrap').style.display='none';
   document.getElementById('bindBoundRow').style.display='';
-  const when=row.updated_at?String(row.updated_at).replace('T',' ').slice(0,16):'';
-  qqBindState('ok',`已绑定。机器人那边的记录最近一次更新：${when||'—'}`);
   localStorage.removeItem(QQ_TOK_KEY);
+  const when=row.updated_at?String(row.updated_at).replace('T',' ').slice(0,16):'';
+  if(localStorage.getItem(QQ_BASE_KEY)===qqUid()){
+    qqBindState('ok',`已绑定 · 以本页为准。机器人那边最近更新：${when||'—'}`);
+    return;
+  }
+  // 第一次发现绑上：立刻把本页设成基准，否则云端还是机器人绑定前那份
+  qqBindState('ok','已绑定。正在把本页记录设成基准…');
+  const r=await qqPushBaseline();
+  if(r.err){ qqBindState('warn','已绑定，但基准没传上去：'+r.err+'　点「立即同步」重试。'); return }
+  localStorage.setItem(QQ_BASE_KEY,qqUid());
+  render(computeStats(loadRecords()));
+  qqBindState('ok',`已绑定 · 以本页为准：${r.total} 天已上传${r.added?`，另从 QQ 补进 ${r.added} 天`:''}`);
 }
 async function syncFromQq(){
   const btn=document.getElementById('bindSyncBtn');
   btn.disabled=true; btn.textContent='同步中…';
   try{
-    const res=await qqPull();
-    if(res.err){ qqBindState('warn',res.err); return }
-    if(!res.row){ qqBindState('warn','还没绑定，或者机器人还没推过数据。'); return }
-    const {added,kept}=qqMerge(res.row);
+    // 同步是双向的：先把 QQ 上本页没有的日期补进来，再把整份按「本页为准」传回去
+    const r=await qqPushBaseline();
+    if(r.err){ qqBindState('warn',r.err); return }
+    localStorage.setItem(QQ_BASE_KEY,qqUid());
     render(computeStats(loadRecords()));
-    if(added) showToast(`从 QQ 合进 ${added} 天${kept?`，${kept} 天本页已有未覆盖`:''}`,'success');
-    else showToast(kept?`本页已有这 ${kept} 天，没有新增`:'QQ 那边还没有记录','info');
-    qqBindState('ok',`已同步：新增 ${added} 天${kept?`，跳过 ${kept} 天（本页已有）`:''}`);
+    if(r.added) showToast(`从 QQ 补进 ${r.added} 天，本页 ${r.total} 天已上传`,'success');
+    else showToast(`本页 ${r.total} 天已上传，没有新日期`,'info');
+    qqBindState('ok',`已同步 · 以本页为准：${r.total} 天${r.added?`（从 QQ 补进 ${r.added} 天）`:''}`);
   }catch(e){
     qqBindState('warn','同步失败：'+(e&&e.message||'未知错误'));
   }finally{
