@@ -324,6 +324,14 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .bind-btn.primary{background:#185FA5;border-color:#185FA5;color:#fff}
 .bind-btn:disabled{opacity:.6;cursor:default}
 .bind-foot{color:#888780;font-size:12px;border-top:1px solid rgba(0,0,0,.08);padding-top:10px;margin-top:6px}
+.bind-acct{background:#F7F6F2;border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.bind-acct-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#5F5E5A}
+.bind-acct-row code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;letter-spacing:2px;color:#0C447C;background:#E6F1FB;border-radius:6px;padding:4px 8px}
+.bind-acct-hint{color:#888780;font-size:12px;margin-top:6px;line-height:1.5}
+.bind-mini{border:1px solid rgba(0,0,0,.15);background:#fff;color:#2c2c2a;border-radius:8px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+.bind-login{display:flex;gap:8px;align-items:center}
+.bind-login input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.15);border-radius:8px;padding:8px 10px;font-size:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px;text-transform:uppercase;color:#2c2c2a;background:#fff}
+.bind-login input::placeholder{letter-spacing:0;text-transform:none;color:#a8a69f}
 .bind-ver{float:right;opacity:.75;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 </style>
 
@@ -334,6 +342,19 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       <button class="bind-x" onclick="closeBindPanel()" aria-label="关闭">×</button>
     </div>
     <div class="bind-state" id="bindState"></div>
+    <!-- R92：账号码。账号属于这个码，不属于这台浏览器；换设备输入这串就接回。 -->
+    <div class="bind-acct" id="bindAcctBox">
+      <div class="bind-acct-row" id="bindAcctRows" style="display:none">
+        <span>你的账号</span>
+        <code id="bindAcctCode">—</code>
+        <button class="bind-mini" onclick="copyAcctCode()">复制</button>
+      </div>
+      <div class="bind-acct-hint" id="bindAcctHint" style="display:none">这串就是账号本身。换电脑、换浏览器、清了缓存，填它就能登回来。</div>
+      <div class="bind-login" id="bindLoginRow">
+        <input id="bindInput" placeholder="已有账号码？填这里" maxlength="12" autocomplete="off" onkeydown="if(event.key==='Enter')qqLoginByCode()">
+        <button class="bind-btn" onclick="qqLoginByCode()">登录</button>
+      </div>
+    </div>
     <div id="bindTokenRow" style="display:none">
       <div class="bind-token" id="bindTokenText"></div>
       <div class="bind-hint" id="bindTokenHint"></div>
@@ -352,7 +373,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     <div id="bindGenWrap">
       <div class="bind-actions"><button class="bind-btn primary" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button></div>
     </div>
-    <div class="bind-foot">绑定只用来把群里报的数搬进这一页。身份是浏览器本地的一串随机编号，不涉及 QQ 号、邮箱或密码。<br><b>换设备不用重录</b>：新设备照样点「生成绑定口令」发到群里，机器人认得你这个 QQ，会把老账号整个接回来。<span class="bind-ver">页面版本 R91</span></div>
+    <div class="bind-foot">账号就是上面那串码，数据挂在账号下，跟浏览器无关。绑 QQ 只是让群里报的数自动同步过来，不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R92</span></div>
   </div>
 </div>
 
@@ -980,11 +1001,14 @@ async function openBindPanel(){
   document.getElementById('bindGenBtn').classList.toggle('primary',!currentToken());
   qqBindState('','正在检查…');
   const res=await qqPull();
-  if(res.err){ qqBindState('warn',res.err); return }
+  if(res.err){ qqBindState('warn',res.err); paintAcctCode(localStorage.getItem(QQ_CODE_KEY)||''); return }
   if(qqUnlinked(res)){ showUnlinked(res.state); return }
   if(res.row){ showBound(res.row); return }
   if(await qqCheckPendingLink()) return;      // 刚在群里发完口令就刷新 → 机器人已经把老账号迁回来了
   qqBindState('',`当前浏览器身份：<code>${qqUid().slice(0,8)}…</code>　还没绑定。`);
+  /* 也可能这个浏览器以前绑过、解绑了，或者码还在云端：先把码摆出来，能带走 */
+  paintAcctCode(localStorage.getItem(QQ_CODE_KEY)||'');
+  qqFindCode(qqUid()).then(c=>{ if(c) paintAcctCode(c) }).catch(()=>{});
   const t=currentToken();
   if(t){
     document.getElementById('bindTokenRow').style.display='';
@@ -1037,6 +1061,72 @@ function fallbackCopy(text){
   try{ document.execCommand('copy') }catch(e){}
   document.body.removeChild(ta);
 }
+/* ==================== R92：账号码 ====================
+   以前「账号」是 localStorage 里一个谁也看不见的 uuid，带不走，所以换台设备就等于
+   换了个空账号。现在给账号配一个 8 位码当名字（同时也是凭据）：数据仍挂在 uid 上，
+   码只是 uid 的入口。换设备填码 → 查到 uid → 换成那个身份 → 数据全下来。
+   码存云端 sync_data(feature='mod_link_code_<码>')，落 mod_link_% 策略内，不用改 SQL。 */
+const QQ_CODE_KEY='nikke_mod_qq_code';
+const QQ_CODE_FEATURE='mod_link_code_';
+function qqNormCode(raw){ return String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'') }
+function qqFmtCode(c){ return (c&&c.length===8) ? c.slice(0,4)+'-'+c.slice(4) : (c||'') }
+/* 这个账号有没有码。只查 feature，不带 data_json，省流量。 */
+async function qqFindCode(uid){
+  if(!uid) return '';
+  const r=await supaFetch(`sync_data?select=feature&uid=eq.${uid}&feature=like.${QQ_CODE_FEATURE}*&limit=1`);
+  if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return '';
+  return String(r.data[0].feature||'').slice(QQ_CODE_FEATURE.length);
+}
+/* 拿账号码：本机记着就用本机的，否则看云端有没有，都没有才造一个。 */
+async function qqEnsureCode(uid){
+  if(!uid) return '';
+  const cached=localStorage.getItem(QQ_CODE_KEY)||'';
+  if(cached.length===8 && cached===qqNormCode(cached)) return cached;
+  const found=await qqFindCode(uid);
+  if(found){ localStorage.setItem(QQ_CODE_KEY,found); return found }
+  const code=randomToken(8), now=new Date().toISOString();
+  const w=await supaFetch('sync_data?on_conflict=uid,feature',{
+    method:'POST',
+    headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify([{uid,feature:QQ_CODE_FEATURE+code,data_json:{v:1,code,at:now},updated_at:now}])
+  });
+  if(!w||!w.ok) return '';
+  localStorage.setItem(QQ_CODE_KEY,code);
+  return code;
+}
+/* code 为空 = 这台设备还没账号 → 只露登录框 */
+function paintAcctCode(code){
+  const rows=document.getElementById('bindAcctRows'), hint=document.getElementById('bindAcctHint');
+  const login=document.getElementById('bindLoginRow'), el=document.getElementById('bindAcctCode');
+  if(!rows||!hint||!login||!el) return;
+  if(code){
+    el.textContent=qqFmtCode(code);
+    rows.style.display=''; hint.style.display=''; login.style.display='none';
+  }else{
+    rows.style.display='none'; hint.style.display='none'; login.style.display='';
+  }
+}
+function copyAcctCode(){
+  const txt=document.getElementById('bindAcctCode').textContent||'';
+  const done=()=>{ if(typeof showToast==='function') showToast('账号码已复制，存到备忘录里就行','info') };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(()=>{ fallbackCopy(txt); done() });
+  else { fallbackCopy(txt); done() }
+}
+/* 用账号码登录：码 → uid → 换成那个身份（跟换设备接回是同一条路） */
+async function qqLoginByCode(){
+  const inp=document.getElementById('bindInput');
+  const code=qqNormCode(inp&&inp.value);
+  if(code.length!==8){ qqBindState('warn','账号码是 8 位字母数字，例如 AB3D-K9MX，横线可以不带。'); return }
+  const r=await supaFetch(`sync_data?select=uid&feature=eq.${QQ_CODE_FEATURE}${code}&limit=1`);
+  if(!r||!r.ok){ qqBindState('warn','查不到（'+(r&&r.status?('HTTP '+r.status):'网络不通')+'），过一会儿再试。'); return }
+  if(!Array.isArray(r.data)||!r.data.length){ qqBindState('warn','没有这个账号码。检查有没有抄错。'); return }
+  const uid=String(r.data[0].uid||'');
+  if(!uid){ qqBindState('warn','这行没记账号，回原来那台设备打开一次面板再试。'); return }
+  if(inp) inp.value='';
+  if(uid===qqUid()){ await openBindPanel(); return }
+  await qqAdoptIdentity(uid,'码');
+}
+
 /* R91：换设备。账号身份是本机 localStorage 里一个 uuid，换台电脑就是个空账号。
    做法不是让你抄编号，而是靠机器人：认领口令时它发现这个 QQ 以前绑过别的 uid，
    就把老账号迁回来，并留一张回执 mod_link_done_<口令> 告诉我们「你现在是谁」。 */
@@ -1052,13 +1142,14 @@ async function qqPullResult(tok){
 }
 /* 回执上的 uid 和本机的不一样 = 机器人把老账号迁回来了。换身份，按云端重来一遍。
    本页在换设备后新录的那几天不会丢：showBound → qqDownload 会把本页独有的日期带上。 */
-async function qqAdoptIdentity(uid){
+async function qqAdoptIdentity(uid,via){
   const old=qqUid();
   if(!uid||uid===old) return false;
   localStorage.setItem(QQ_UID_KEY,uid);
   localStorage.removeItem(QQ_BASE_KEY);
   localStorage.removeItem(QQ_SEEN_KEY);      // 换身份 = 初次绑定，以云端为准
   localStorage.removeItem(QQ_TOK_KEY);       // 口令已经用掉了
+  localStorage.removeItem(QQ_CODE_KEY);      // 本机缓存的码是上一个账号的，重查
   qqStopPoll(); qqConflict=0; qqMiss=0;
   const a=await qqPull();
   if(a&&a.row){
@@ -1069,7 +1160,9 @@ async function qqAdoptIdentity(uid){
   const n=(a&&a.row&&a.row.data_json&&a.row.data_json.records)
     ? qqCount({cn:a.row.data_json.records.cn||[],global:a.row.data_json.records.global||[]}) : 0;
   if(typeof showToast==='function'){
-    showToast(`已接回上次那台设备的账号${n?`（${n} 天）`:''}，不用重新绑定`,'success');
+    showToast(via==='码'
+      ? `已登录这个账号${n?`（${n} 天）`:''}`
+      : `已接回上次那台设备的账号${n?`（${n} 天）`:''}，不用重新绑定`,'success');
   }
   return true;
 }
@@ -1141,6 +1234,9 @@ function showUnlinked(state){
   localStorage.removeItem(QQ_BASE_KEY);
   localStorage.removeItem(QQ_SEEN_KEY);   // 重绑时要重新走一次「初次以云端为准」
   qqPauseAuto(); qqConflict=0;            // 解绑了就别再轮询
+  /* 解绑只断 QQ 同步，账号本身还在——码继续有效，换设备照样能登回来 */
+  paintAcctCode(localStorage.getItem(QQ_CODE_KEY)||'');
+  qqFindCode(qqUid()).then(c=>{ if(c) paintAcctCode(c) }).catch(()=>{});
   const when=(state&&state.updated_at)?String(state.updated_at).replace('T',' ').slice(0,16):'';
   qqBindState('warn',
     `QQ 那边已经解绑了${when?`（${when}）`:''}。本页记录一条没动，机器人也不会再往里补日期。<br>`+
@@ -1151,6 +1247,7 @@ async function showBound(row){
   document.getElementById('bindGenWrap').style.display='none';
   document.getElementById('bindBoundRow').style.display='';
   localStorage.removeItem(QQ_TOK_KEY);
+  paintAcctCode(await qqEnsureCode(qqUid()));   // R92：绑定了就一定有账号码，摆出来让人带走
   const when=row.updated_at?String(row.updated_at).replace('T',' ').slice(0,16):'';
 
   /* 第一次发现绑上：以云端为准。本页独有的日期不会删，下载完还会补上云端。 */
