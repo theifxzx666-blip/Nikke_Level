@@ -341,7 +341,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       </div>
     </div>
     <div id="bindBoundRow" style="display:none">
-      <div class="bind-hint">同一天以本页为准：机器人只补本页没有的日期，不会覆盖这里手记的数。</div>
+      <div class="bind-hint">同一天默认以本页为准：机器人只补本页没有的日期。例外是群里 3 天内刚报过的那几天——那几天以群里为准，同步时会把本页改成群里的数。</div>
       <div class="bind-actions">
         <button class="bind-btn primary" id="bindSyncBtn" onclick="syncFromQq()">立即同步</button>
         <button class="bind-btn" id="bindUnbindBtn" onclick="unbindHere()">解除绑定</button>
@@ -682,25 +682,50 @@ function currentToken(){
   }catch(e){ return null }
 }
 
-/* 把机器人那边的记录合进来：只补本页没有的日期，不覆盖你手记的 */
+/* 群里报过的记录带 src:'qq' + at 时间戳（机器人 add_record 写的）。
+   3 天内的算「刚在群里改过」——这些日期反过来盖本页，其余仍以本页为准。
+   R88：以前一律「本页为准」，于是在群里改了同一天的数字，网页同步时又原样推回去，
+   群里那次修改等于白做。 */
+const QQ_FRESH_MS=72*3600*1000;
+function qqFreshDay(r){
+  if(!r||r.src!=='qq'||!r.at) return false;
+  const t=Date.parse(r.at);
+  if(!isFinite(t)) return false;
+  const age=Date.now()-t;
+  return age>=-5*60*1000&&age<=QQ_FRESH_MS;   // 留 5 分钟容差给设备间时钟差
+}
+/* 把机器人那边的记录合进来：缺的补上；群里 3 天内改过的日期盖掉本页；其余以本页为准 */
 function qqMerge(row){
   const recs=(row&&row.data_json&&row.data_json.records)||{};
   const all=loadAll();
-  let added=0,kept=0;
+  let added=0,kept=0,updated=0;
   for(const key of ['cn','global']){
     const cur=Array.isArray(all[key])?all[key]:[];
-    const have=new Set(cur.filter(r=>r&&r.date).map(r=>r.date));
+    const at=new Map();
+    cur.forEach((r,i)=>{ if(r&&typeof r.date==='string') at.set(r.date,i) });
     for(const r of (recs[key]||[])){
       if(!r||typeof r.date!=='string') continue;
-      if(have.has(r.date)){ kept++; continue }
-      cur.push(normalizeRecord(r)); have.add(r.date); added++;
+      const i=at.get(r.date);
+      if(i===undefined){ cur.push(normalizeRecord(r)); at.set(r.date,cur.length-1); added++; continue }
+      if(qqFreshDay(r)){
+        const before=JSON.stringify(cur[i]);
+        const nr=normalizeRecord(r);
+        // src/at 要跟着走，否则这一页推回去之后，下一个 3 天窗口就认不出它是群里报的
+        if(r.src) nr.src=r.src;
+        if(r.at) nr.at=r.at;
+        cur[i]=nr;
+        if(JSON.stringify(nr)!==before) updated++; else kept++;
+      }else{
+        kept++;
+      }
     }
     cur.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     all[key]=cur;
   }
-  if(added) saveAll(all);
-  return {added,kept};
+  if(added||updated) saveAll(all);
+  return {added,kept,updated};
 }
+
 
 /* 以本页为准上传：先合一次（只把 QQ 上本页没有的日期补进来），再把整份推上去。
    计算器是主账本——绑定之前网页上的数都是手维护出来的，机器人那几条零散记录
@@ -708,9 +733,9 @@ function qqMerge(row){
 async function qqPushBaseline(){
   const pulled=await qqPull();
   if(pulled&&pulled.err) return {err:pulled.err};
-  let added=0,kept=0,keepCode='';
+  let added=0,kept=0,updated=0,keepCode='';
   if(pulled&&pulled.row){
-    const m=qqMerge(pulled.row); added=m.added; kept=m.kept;
+    const m=qqMerge(pulled.row); added=m.added; kept=m.kept; updated=m.updated;
     const dj=pulled.row.data_json;
     if(dj&&typeof dj.code==='string') keepCode=dj.code;
   }
@@ -727,7 +752,7 @@ async function qqPushBaseline(){
     if(r.status===401||r.status===403) return {err:'云端不允许网页写入（表策略没放开）'};
     return {err:'上传失败（HTTP '+r.status+'）'};
   }
-  return {added,kept,total:records.cn.length+records.global.length};
+  return {added,kept,updated,total:records.cn.length+records.global.length};
 }
 
 function qqStopPoll(){ if(qqPollTimer){ clearInterval(qqPollTimer); qqPollTimer=null } }
@@ -821,6 +846,25 @@ function startPolling(){
     if(res.row){ qqStopPoll(); showBound(res.row) }
   },3000);
 }
+/* R88：静默对一次账——补缺 + 采纳群里 3 天内的改动，绝不往云端推。
+   返回 {added,updated,kept}，没绑 / 断网 / 已解绑都返回 null。 */
+async function qqSilentSync(){
+  if(!localStorage.getItem(QQ_UID_KEY)) return null;   // 从没开过绑定面板，不用打扰云端
+  const res=await qqPull();
+  if(!res||res.err||qqUnlinked(res)||!res.row) return null;
+  const m=qqMerge(res.row);
+  if(m.added||m.updated) render(computeStats(loadRecords()));
+  return m;
+}
+/* 页面打开时自动调一次，群里刚报的那几天不用手动点同步就能看到 */
+async function qqAutoPull(){
+  const m=await qqSilentSync();
+  if(!m||(!m.added&&!m.updated)) return;
+  const bits=[];
+  if(m.added) bits.push(`补进 ${m.added} 天`);
+  if(m.updated) bits.push(`${m.updated} 天按群里刚报的改`);
+  if(typeof showToast==='function') showToast(`群里的新数据：${bits.join('、')}`,'success');
+}
 /* R87：从网页这头解绑。写一行 mod_link_state{bound:false}，机器人下次推送/查询
    读到它就停手（会自己把账号关系断掉）。本页记录一条不动，只是不再同步。 */
 async function unbindHere(){
@@ -866,6 +910,14 @@ async function showBound(row){
   const when=row.updated_at?String(row.updated_at).replace('T',' ').slice(0,16):'';
   if(localStorage.getItem(QQ_BASE_KEY)===qqUid()){
     qqBindState('ok',`已绑定 · 以本页为准。机器人那边最近更新：${when||'—'}`);
+    // R88：打开面板也顺手对一次账，否则「已绑定」状态下群里新报的数要等用户点同步才进来
+    const m=await qqSilentSync();
+    if(m&&(m.added||m.updated)){
+      const bits=[];
+      if(m.added) bits.push(`补进 ${m.added} 天`);
+      if(m.updated) bits.push(`${m.updated} 天按群里刚报的改`);
+      qqBindState('ok',`已绑定 · 以本页为准。机器人那边最近更新：${when||'—'}<br>群里新数据：${bits.join('、')}`);
+    }
     return;
   }
   // 第一次发现绑上：立刻把本页设成基准，否则云端还是机器人绑定前那份
@@ -874,7 +926,7 @@ async function showBound(row){
   if(r.err){ qqBindState('warn','已绑定，但基准没传上去：'+r.err+'　点「立即同步」重试。'); return }
   localStorage.setItem(QQ_BASE_KEY,qqUid());
   render(computeStats(loadRecords()));
-  qqBindState('ok',`已绑定 · 以本页为准：${r.total} 天已上传${r.added?`，另从 QQ 补进 ${r.added} 天`:''}`);
+  qqBindState('ok',`已绑定 · 以本页为准：${r.total} 天已上传${r.added?`，另从 QQ 补进 ${r.added} 天`:''}${r.updated?`，群里刚改过 ${r.updated} 天已按群里算`:''}`);
 }
 async function syncFromQq(){
   const btn=document.getElementById('bindSyncBtn');
@@ -885,9 +937,14 @@ async function syncFromQq(){
     if(r.err){ qqBindState('warn',r.err); return }
     localStorage.setItem(QQ_BASE_KEY,qqUid());
     render(computeStats(loadRecords()));
-    if(r.added) showToast(`从 QQ 补进 ${r.added} 天，本页 ${r.total} 天已上传`,'success');
+    if(r.added||r.updated){
+      const bits=[];
+      if(r.added) bits.push(`从 QQ 补进 ${r.added} 天`);
+      if(r.updated) bits.push(`${r.updated} 天按群里刚报的改`);
+      showToast(bits.join('、')+`，本页 ${r.total} 天已上传`,'success');
+    }
     else showToast(`本页 ${r.total} 天已上传，没有新日期`,'info');
-    qqBindState('ok',`已同步 · 以本页为准：${r.total} 天${r.added?`（从 QQ 补进 ${r.added} 天）`:''}`);
+    qqBindState('ok',`已同步 · 以本页为准：${r.total} 天${r.added?`（从 QQ 补进 ${r.added} 天）`:''}${r.updated?`（${r.updated} 天按群里刚报的改）`:''}`);
   }catch(e){
     qqBindState('warn','同步失败：'+(e&&e.message||'未知错误'));
   }finally{
@@ -1528,6 +1585,8 @@ function init(){
   initBossSelector();resetForm();render(computeStats(loadRecords()));
   /* R80：网络字体到位后文字行高会变，卡高缓存要失效（GH Pages 上字体常最后到） */
   if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ periodMaxH=0; markPeriodDirty(); layoutPeriods(); });
+  /* R88：打开页面先悄悄对一次账，群里刚报的那几天不用手动点同步就能看到 */
+  setTimeout(()=>{ try{ qqAutoPull() }catch(e){} },400);
 }
 init();
 </script>
