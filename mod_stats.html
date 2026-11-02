@@ -352,7 +352,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     <div id="bindGenWrap">
       <div class="bind-actions"><button class="bind-btn primary" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button></div>
     </div>
-    <div class="bind-foot">绑定只用来把群里报的数搬进这一页。身份是浏览器本地的一串随机编号，不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R90</span></div>
+    <div class="bind-foot">绑定只用来把群里报的数搬进这一页。身份是浏览器本地的一串随机编号，不涉及 QQ 号、邮箱或密码。<br><b>换设备不用重录</b>：新设备照样点「生成绑定口令」发到群里，机器人认得你这个 QQ，会把老账号整个接回来。<span class="bind-ver">页面版本 R91</span></div>
   </div>
 </div>
 
@@ -983,6 +983,7 @@ async function openBindPanel(){
   if(res.err){ qqBindState('warn',res.err); return }
   if(qqUnlinked(res)){ showUnlinked(res.state); return }
   if(res.row){ showBound(res.row); return }
+  if(await qqCheckPendingLink()) return;      // 刚在群里发完口令就刷新 → 机器人已经把老账号迁回来了
   qqBindState('',`当前浏览器身份：<code>${qqUid().slice(0,8)}…</code>　还没绑定。`);
   const t=currentToken();
   if(t){
@@ -1036,6 +1037,51 @@ function fallbackCopy(text){
   try{ document.execCommand('copy') }catch(e){}
   document.body.removeChild(ta);
 }
+/* R91：换设备。账号身份是本机 localStorage 里一个 uuid，换台电脑就是个空账号。
+   做法不是让你抄编号，而是靠机器人：认领口令时它发现这个 QQ 以前绑过别的 uid，
+   就把老账号迁回来，并留一张回执 mod_link_done_<口令> 告诉我们「你现在是谁」。 */
+const QQ_DONE_PREFIX='mod_link_done_';
+async function qqPullResult(tok){
+  if(!tok) return null;
+  const r=await supaFetch(`sync_data?select=uid,data_json,updated_at&feature=eq.${QQ_DONE_PREFIX}${tok}&limit=1`);
+  if(!r||!r.ok||!Array.isArray(r.data)||!r.data.length) return null;
+  const row=r.data[0]||{}, dj=row.data_json||{};
+  const uid=String(dj.uid||row.uid||'');
+  if(!uid) return null;
+  return {uid,moved:!!dj.moved,at:dj.at||row.updated_at||''};
+}
+/* 回执上的 uid 和本机的不一样 = 机器人把老账号迁回来了。换身份，按云端重来一遍。
+   本页在换设备后新录的那几天不会丢：showBound → qqDownload 会把本页独有的日期带上。 */
+async function qqAdoptIdentity(uid){
+  const old=qqUid();
+  if(!uid||uid===old) return false;
+  localStorage.setItem(QQ_UID_KEY,uid);
+  localStorage.removeItem(QQ_BASE_KEY);
+  localStorage.removeItem(QQ_SEEN_KEY);      // 换身份 = 初次绑定，以云端为准
+  localStorage.removeItem(QQ_TOK_KEY);       // 口令已经用掉了
+  qqStopPoll(); qqConflict=0; qqMiss=0;
+  const a=await qqPull();
+  if(a&&a.row){
+    await showBound(a.row);
+  }else{
+    qqBindState('warn','账号已经接回来了，但云端还没读到数据。过一会儿再打开这个面板。');
+  }
+  const n=(a&&a.row&&a.row.data_json&&a.row.data_json.records)
+    ? qqCount({cn:a.row.data_json.records.cn||[],global:a.row.data_json.records.global||[]}) : 0;
+  if(typeof showToast==='function'){
+    showToast(`已接回上次那台设备的账号${n?`（${n} 天）`:''}，不用重新绑定`,'success');
+  }
+  return true;
+}
+/* 口令刚在群里发完，人可能直接刷了页面 —— 打开时补查一次回执。 */
+async function qqCheckPendingLink(){
+  const t=currentToken();
+  if(!t) return false;
+  const res=await qqPullResult(t.token);
+  if(res&&res.uid&&res.uid!==qqUid()) return await qqAdoptIdentity(res.uid);
+  return false;
+}
+
 function startPolling(){
   qqStopPoll();
   let n=0;
@@ -1043,6 +1089,13 @@ function startPolling(){
     n++;
     if(n>60){ qqStopPoll(); return }
     if(!document.getElementById('bindMask').classList.contains('show')){ qqStopPoll(); return }
+    // 先看回执：换设备时机器人绑的是老 uid，用本机 uid 什么都查不到
+    const tok=document.getElementById('bindCopyBtn').dataset.token||'';
+    if(tok){
+      let r2=null;
+      try{ r2=await qqPullResult(tok) }catch(e){}
+      if(r2&&r2.uid&&r2.uid!==qqUid()){ qqStopPoll(); await qqAdoptIdentity(r2.uid); return }
+    }
     let res;
     try{ res=await qqPull() }catch(e){ return }
     if(!res) return;
@@ -1800,6 +1853,7 @@ function init(){
   /* R80：网络字体到位后文字行高会变，卡高缓存要失效（GH Pages 上字体常最后到） */
   if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ periodMaxH=0; markPeriodDirty(); layoutPeriods(); });
   /* R90：打开页面先对一轮账，之后每 15 秒自动同步（群里录完这边会自己更新） */
+  setTimeout(()=>{ try{ qqCheckPendingLink() }catch(e){} },400);
   setTimeout(()=>{ try{ qqStartAuto(); qqSyncTick() }catch(e){} },600);
 }
 init();
