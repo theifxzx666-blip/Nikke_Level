@@ -1118,13 +1118,18 @@ async function logoutHere(){
 
 /* ---------- 开机 ---------- */
 async function acctBoot(){
-  if(myCode()){
-    acctStart();
-    const r=await acctTick(true);
-    if(r&&(r.changed||r.empty)) render(computeStats(loadRecords()));
-  }else{
-    await checkReceiptOnce();
+  const code=myCode();
+  if(!code){ await checkReceiptOnce(); return }
+  const uid=await uidOfCode(code);
+  /* 这台设备还没跟这个账号对齐过（老版本升级上来、或者清了缓存但码还在）：
+     先走一次合并，云端为准、本机独有的日期也推上去——不能直接整份覆盖。 */
+  if(uid&&!aligned(uid)){
+    const m=await firstAlign(uid);
+    if(!m.err) render(computeStats(loadRecords()));
   }
+  acctStart();
+  const r=await acctTick(true);
+  if(r&&(r.changed||r.empty)) render(computeStats(loadRecords()));
 }
 
 /* 归一化：新格式直接读 runs/drops；老格式（只有 d1/d2/d3）自动转数组。
