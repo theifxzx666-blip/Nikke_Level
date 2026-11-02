@@ -300,10 +300,58 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     <button onclick="exportData()">📤 导出</button>
     <button onclick="document.getElementById('importInput').click()">📥 导入</button>
     <button onclick="openParentSync()" title="登录后云端同步「定制模组统计」数据">☁️ 账号同步</button>
+    <button onclick="openBindPanel()" title="和 QQ 机器人绑定，群里报的数自动进这里">🔗 绑定 QQ</button>
     <input id="importInput" type="file" accept=".json" hidden onchange="importData(event)">
     <button class="danger" onclick="clearAll()">🗑 清空当前服</button>
   </div>
 </header>
+
+<style>
+#bindMask{position:fixed;inset:0;background:rgba(20,20,24,.5);display:none;align-items:center;justify-content:center;z-index:9990;padding:16px}
+#bindMask.show{display:flex}
+#bindCard{background:#fff;color:#2c2c2a;border-radius:16px;padding:20px 22px 16px;width:min(440px,100%);box-shadow:0 18px 50px rgba(0,0,0,.28);font-size:13px;line-height:1.6;max-height:calc(100vh - 32px);overflow:auto}
+.bind-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.bind-title{font-size:15px;font-weight:500}
+.bind-x{border:0;background:transparent;font-size:20px;line-height:1;color:#888780;cursor:pointer;padding:2px 6px}
+.bind-state{background:#F1EFE8;border-radius:10px;padding:10px 12px;color:#444441;margin-bottom:12px}
+.bind-state.ok{background:#EAF3DE;color:#27500A}
+.bind-state.warn{background:#FAEEDA;color:#633806}
+.bind-state code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.bind-token{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:28px;letter-spacing:6px;text-align:center;font-weight:500;background:#E6F1FB;color:#0C447C;border-radius:12px;padding:14px 6px 14px 12px;margin-bottom:8px}
+.bind-hint{text-align:center;color:#5F5E5A;margin-bottom:12px}
+.bind-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+.bind-btn{border:1px solid rgba(0,0,0,.15);background:#fff;color:#2c2c2a;border-radius:10px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit}
+.bind-btn.primary{background:#185FA5;border-color:#185FA5;color:#fff}
+.bind-btn:disabled{opacity:.6;cursor:default}
+.bind-foot{color:#888780;font-size:12px;border-top:1px solid rgba(0,0,0,.08);padding-top:10px;margin-top:6px}
+</style>
+
+<div id="bindMask" onclick="if(event.target===this)closeBindPanel()">
+  <div id="bindCard" role="dialog" aria-modal="true" aria-label="绑定 QQ 机器人">
+    <div class="bind-head">
+      <span class="bind-title">绑定 QQ 机器人</span>
+      <button class="bind-x" onclick="closeBindPanel()" aria-label="关闭">×</button>
+    </div>
+    <div class="bind-state" id="bindState"></div>
+    <div id="bindTokenRow" style="display:none">
+      <div class="bind-token" id="bindTokenText"></div>
+      <div class="bind-hint" id="bindTokenHint"></div>
+      <div class="bind-actions">
+        <button class="bind-btn primary" id="bindCopyBtn" onclick="copyBindCommand()">复制指令</button>
+      </div>
+    </div>
+    <div id="bindBoundRow" style="display:none">
+      <div class="bind-actions">
+        <button class="bind-btn primary" id="bindSyncBtn" onclick="syncFromQq()">立即同步</button>
+      </div>
+    </div>
+    <div id="bindGenWrap">
+      <div class="bind-actions"><button class="bind-btn primary" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button></div>
+    </div>
+    <div class="bind-foot">绑定只用来把群里报的数搬进这一页。身份是浏览器本地的一串随机编号，不涉及 QQ 号、邮箱或密码。</div>
+  </div>
+</div>
+
 
 <script>
 // 账号同步：模组统计页通常以 iframe 嵌入主页，复用父页面的账号同步面板（同源）
@@ -518,6 +566,232 @@ function loadAll(){
 function saveAll(data){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); return true; }catch(e){ return false; } }
 function loadRecords(){ return (loadAll()[currentServer]||[]).filter(r=>r&&typeof r.date==='string'); }
 function saveRecords(records){ const all=loadAll(); all[currentServer]=records; return saveAll(all); }
+
+/* ===== QQ 机器人绑定 / 同步 =====================================
+   本页是纯静态站点，没有登录体系。身份就用浏览器本地一个随机 uuid
+   （localStorage 里躺着，不注册、不要邮箱、不上传任何个人信息）。
+
+   链路：网页写一行 sync_data(feature=mod_link_<口令>, uid=本地uuid)
+        → 用户在群里发 /石头 绑定 <口令>
+        → 机器人删掉那行并取走 uid，之后它报的数写进 (本地uuid, mod_stats_qq)
+        → 本页轮询这一行，出现就是绑好了，点同步把记录合进来。
+
+   方向不能反：如果让机器人生成指向用户的链接，谁看见链接谁就能把自己的
+   uuid 钉到别人的 openid 上，数据会流到别人那边去。现在这个方向，
+   最坏情况是有人抢先用掉口令、把自己的报数灌进你的页面，他拿不到你的数据。 */
+const SUPA_URL='https://oologpjskkpjkvcpddhf.supabase.co';
+const SUPA_KEY='sb_publishable_6FzpENHzylm1M-NSvX6RBQ__Xlpv7Oc';
+const QQ_UID_KEY='nikke_mod_qq_uid';
+const QQ_TOK_KEY='nikke_mod_qq_token';
+const QQ_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const QQ_TTL_MS=5*60*1000;
+const QQ_FEATURE='mod_stats_qq';
+let qqPollTimer=null;
+
+function uuid4(){
+  if(window.crypto&&crypto.randomUUID) return crypto.randomUUID();
+  const b=new Uint8Array(16);
+  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
+  else for(let i=0;i<16;i++) b[i]=Math.floor(Math.random()*256);
+  b[6]=(b[6]&0x0f)|0x40; b[8]=(b[8]&0x3f)|0x80;
+  const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');
+  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+}
+function qqUid(){
+  let u=localStorage.getItem(QQ_UID_KEY);
+  if(!u||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u)){
+    u=uuid4(); localStorage.setItem(QQ_UID_KEY,u);
+  }
+  return u;
+}
+function randomToken(n){
+  const b=new Uint8Array(n||6);
+  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(b);
+  else for(let i=0;i<b.length;i++) b[i]=Math.floor(Math.random()*256);
+  let s=''; for(let i=0;i<b.length;i++) s+=QQ_ALPHABET[b[i]%QQ_ALPHABET.length];
+  return s;
+}
+async function supaFetch(path,opt){
+  opt=opt||{};
+  const headers=Object.assign({apikey:SUPA_KEY,Authorization:`Bearer ${SUPA_KEY}`,'Content-Type':'application/json'},opt.headers||{});
+  let res;
+  try{
+    res=await fetch(`${SUPA_URL}/rest/v1/${path}`,Object.assign({},opt,{headers}));
+  }catch(e){
+    return {ok:false,status:0,data:null,net:true};
+  }
+  const txt=await res.text();
+  let data=null;
+  if(txt){ try{ data=JSON.parse(txt) }catch(e){ data=txt } }
+  return {ok:res.ok,status:res.status,data};
+}
+
+/* 读机器人写的那一行。有 = 已经绑上了（机器人绑完会立刻推一次） */
+async function qqPull(){
+  const r=await supaFetch(`sync_data?select=data_json,updated_at&uid=eq.${qqUid()}&feature=eq.${QQ_FEATURE}&limit=1`);
+  if(r.net) return {err:'连不上云端，检查下网络'};
+  if(!r.ok){
+    if(r.status===401||r.status===403) return {err:'云端没放开这张表的读写权限'};
+    return {err:'云端返回 '+r.status};
+  }
+  if(Array.isArray(r.data)&&r.data.length) return {row:r.data[0]};
+  return {};
+}
+
+async function qqCreateToken(){
+  const tok=randomToken(6), uid=qqUid();
+  const r=await supaFetch('sync_data?on_conflict=uid,feature',{
+    method:'POST',
+    headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify([{uid,feature:`mod_link_${tok}`,data_json:{v:1,src:'web'},updated_at:new Date().toISOString()}])
+  });
+  if(!r.ok){
+    if(r.status===401||r.status===403) throw new Error('云端不允许网页写入（表策略没放开）');
+    throw new Error('生成失败（HTTP '+r.status+'）');
+  }
+  localStorage.setItem(QQ_TOK_KEY,JSON.stringify({token:tok,ts:Date.now()}));
+  return tok;
+}
+function currentToken(){
+  try{
+    const o=JSON.parse(localStorage.getItem(QQ_TOK_KEY)||'null');
+    if(!o||!o.token) return null;
+    if(Date.now()-o.ts>QQ_TTL_MS) return null;
+    return o;
+  }catch(e){ return null }
+}
+
+/* 把机器人那边的记录合进来：只补本页没有的日期，不覆盖你手记的 */
+function qqMerge(row){
+  const recs=(row&&row.data_json&&row.data_json.records)||{};
+  const all=loadAll();
+  let added=0,kept=0;
+  for(const key of ['cn','global']){
+    const cur=Array.isArray(all[key])?all[key]:[];
+    const have=new Set(cur.filter(r=>r&&r.date).map(r=>r.date));
+    for(const r of (recs[key]||[])){
+      if(!r||typeof r.date!=='string') continue;
+      if(have.has(r.date)){ kept++; continue }
+      cur.push(normalizeRecord(r)); have.add(r.date); added++;
+    }
+    cur.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    all[key]=cur;
+  }
+  if(added) saveAll(all);
+  return {added,kept};
+}
+
+function qqStopPoll(){ if(qqPollTimer){ clearInterval(qqPollTimer); qqPollTimer=null } }
+function qqBindState(status,detail){
+  const el=document.getElementById('bindState');
+  if(!el) return;
+  el.className='bind-state '+(status||'');
+  el.innerHTML=detail||'';
+}
+
+async function openBindPanel(){
+  const mask=document.getElementById('bindMask');
+  mask.classList.add('show');
+  document.getElementById('bindTokenRow').style.display='none';
+  document.getElementById('bindBoundRow').style.display='none';
+  document.getElementById('bindGenWrap').style.display='';
+  document.getElementById('bindGenBtn').classList.toggle('primary',!currentToken());
+  qqBindState('','正在检查…');
+  const res=await qqPull();
+  if(res.err){ qqBindState('warn',res.err); return }
+  if(res.row){ showBound(res.row); return }
+  qqBindState('',`当前浏览器身份：<code>${qqUid().slice(0,8)}…</code>　还没绑定。`);
+  const t=currentToken();
+  if(t){
+    document.getElementById('bindTokenRow').style.display='';
+    paintToken(t.token,true);
+    startPolling();
+  }
+}
+function closeBindPanel(){
+  document.getElementById('bindMask').classList.remove('show');
+  qqStopPoll();
+}
+async function genBindToken(){
+  const btn=document.getElementById('bindGenBtn');
+  btn.disabled=true; btn.textContent='生成中…';
+  try{
+    const tok=await qqCreateToken();
+    document.getElementById('bindTokenRow').style.display='';
+    paintToken(tok,true);
+    qqBindState('',`把下面这条指令发到机器人所在的群里：5 分钟内有效，用一次就作废。`);
+    startPolling();
+  }catch(e){
+    qqBindState('warn',e.message);
+  }finally{
+    btn.disabled=false;
+    btn.textContent=currentToken()?'重新生成':'生成绑定口令';
+    // 已经有口令时，「重新生成」降成次要：主按钮应该是「复制指令」
+    btn.classList.toggle('primary',!currentToken());
+  }
+}
+function paintToken(tok,fresh){
+  document.getElementById('bindTokenText').textContent=tok;
+  const btn=document.getElementById('bindCopyBtn');
+  btn.textContent='复制指令';
+  btn.dataset.copied='';
+  btn.dataset.token=tok;
+  if(fresh) document.getElementById('bindTokenHint').textContent='群发：/石头 绑定 '+tok;
+}
+function copyBindCommand(){
+  const btn=document.getElementById('bindCopyBtn');
+  const cmd='/石头 绑定 '+(btn.dataset.token||'');
+  const done=()=>{ btn.textContent='已复制，去群里粘贴'; btn.dataset.copied='1' };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(cmd).then(done).catch(()=>{ fallbackCopy(cmd); done() });
+  }else{ fallbackCopy(cmd); done() }
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');
+  ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy') }catch(e){}
+  document.body.removeChild(ta);
+}
+function startPolling(){
+  qqStopPoll();
+  let n=0;
+  qqPollTimer=setInterval(async()=>{
+    n++;
+    if(n>60){ qqStopPoll(); return }
+    if(!document.getElementById('bindMask').classList.contains('show')){ qqStopPoll(); return }
+    let res;
+    try{ res=await qqPull() }catch(e){ return }
+    if(res&&res.row){ qqStopPoll(); showBound(res.row) }
+  },3000);
+}
+function showBound(row){
+  document.getElementById('bindTokenRow').style.display='none';
+  document.getElementById('bindGenWrap').style.display='none';
+  document.getElementById('bindBoundRow').style.display='';
+  const when=row.updated_at?String(row.updated_at).replace('T',' ').slice(0,16):'';
+  qqBindState('ok',`已绑定。机器人那边的记录最近一次更新：${when||'—'}`);
+  localStorage.removeItem(QQ_TOK_KEY);
+}
+async function syncFromQq(){
+  const btn=document.getElementById('bindSyncBtn');
+  btn.disabled=true; btn.textContent='同步中…';
+  try{
+    const res=await qqPull();
+    if(res.err){ qqBindState('warn',res.err); return }
+    if(!res.row){ qqBindState('warn','还没绑定，或者机器人还没推过数据。'); return }
+    const {added,kept}=qqMerge(res.row);
+    render(computeStats(loadRecords()));
+    if(added) showToast(`从 QQ 合进 ${added} 天${kept?`，${kept} 天本页已有未覆盖`:''}`,'success');
+    else showToast(kept?`本页已有这 ${kept} 天，没有新增`:'QQ 那边还没有记录','info');
+    qqBindState('ok',`已同步：新增 ${added} 天${kept?`，跳过 ${kept} 天（本页已有）`:''}`);
+  }catch(e){
+    qqBindState('warn','同步失败：'+(e&&e.message||'未知错误'));
+  }finally{
+    btn.disabled=false; btn.textContent='立即同步';
+  }
+}
+
 
 /* 归一化：新格式直接读 runs/drops；老格式（只有 d1/d2/d3）自动转数组。
    输出**同时**带 d1/d2/d3（= drops 前三次），供旧页面 / 旧导出互通。 */
