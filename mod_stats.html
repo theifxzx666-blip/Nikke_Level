@@ -299,8 +299,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     </div>
     <button onclick="exportData()">📤 导出</button>
     <button onclick="document.getElementById('importInput').click()">📥 导入</button>
-    <button onclick="openParentSync()" title="登录后云端同步「定制模组统计」数据">☁️ 账号同步</button>
-    <button onclick="openBindPanel()" title="登录账号：换设备填绑定码就接回来，群里报的数也会自动同步到这里">👤 账号</button>
+    <button onclick="openBindPanel()" title="绑定码登录：换设备填码就能接回来，群里报的数也会自动同步到这里">☁️ 账号同步</button>
     <input id="importInput" type="file" accept=".json" hidden onchange="importData(event)">
     <button class="danger" onclick="clearAll()">🗑 清空当前服</button>
   </div>
@@ -337,9 +336,9 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 </style>
 
 <div id="bindMask" onclick="if(event.target===this)closeBindPanel()">
-  <div id="bindCard" role="dialog" aria-modal="true" aria-label="登录 / 绑定账号">
+  <div id="bindCard" role="dialog" aria-modal="true" aria-label="账号同步">
     <div class="bind-head">
-      <span class="bind-title">登录 / 绑定账号</span>
+      <span class="bind-title">☁️ 账号同步</span>
       <button class="bind-x" onclick="closeBindPanel()" aria-label="关闭">×</button>
     </div>
     <div class="bind-state" id="bindState"></div>
@@ -353,12 +352,12 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       </div>
       <div class="bind-acct-hint">换电脑、换浏览器、清了缓存，填这串就能登回来，数据一条不丢。</div>
       <div class="bind-actions">
-        <button class="bind-btn" id="bindOffBtn" onclick="offHere()">断开 QQ 同步</button>
+        <button class="bind-btn" id="bindOffBtn" onclick="offHere()" title="群里的机器人不再往这个账号写数；账号和绑定码都还在">断开群同步</button>
         <button class="bind-btn" id="bindLogoutBtn" onclick="logoutHere()">退出登录</button>
       </div>
     </div>
 
-    <!-- 未登录：输码登录，或者先绑 QQ 拿码 -->
+    <!-- 未登录：输码登录，或者先生成口令去群里领一个码 -->
     <div id="bindOff">
       <div class="bind-login">
         <input id="bindInput" placeholder="绑定码，例如 AB3D-K9MX" maxlength="12" autocomplete="off" onkeydown="if(event.key==='Enter')loginByCode()">
@@ -377,22 +376,10 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       </div>
     </div>
 
-    <div class="bind-foot">数据在这个绑定码对应的云端账号里，跟浏览器无关；一台设备登录一次就够了。绑 QQ 只是让群里报的数也写进同一个账号，不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R93</span></div>
+    <div class="bind-foot">数据在这个绑定码对应的云端账号里，跟浏览器无关；一台设备登录一次就够了。跟机器人绑定只是让群里报的数也写进同一个账号，不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R94</span></div>
   </div>
 </div>
 
-
-<script>
-// 账号同步：模组统计页通常以 iframe 嵌入主页，复用父页面的账号同步面板（同源）
-function openParentSync(){
-  try{
-    var p=window.parent;
-    if(p && p!==window && p.__nikkeSync && p.__nikkeSync.open){ p.__nikkeSync.open('mod_stats'); return; }
-  }catch(e){}
-  var msg='账号同步请回到主页，点顶栏「👤 账号同步」使用。';
-  if(typeof showToast==='function'){ showToast(msg,'info'); } else { alert(msg); }
-}
-</script>
 
 <section class="overview" aria-label="统计总览">
   <div class="stats-grid">
@@ -1080,7 +1067,7 @@ function copyCode(){
   else { fallbackCopy(txt); done() }
 }
 
-/* ---------- 断开 QQ 同步 / 退出登录 ---------- */
+/* ---------- 断开群同步 / 退出登录 ---------- */
 async function offHere(){
   const btn=document.getElementById('bindOffBtn');
   if(btn){ btn.disabled=true; btn.textContent='断开中…' }
@@ -1094,12 +1081,12 @@ async function offHere(){
       body:JSON.stringify([{uid,feature:ACCT_STATE,data_json:{v:1,bound:false,at:now},updated_at:now}])
     });
     if(!r.ok){ acctState('warn','没写进云端（'+netErr(r,'断开')+'），机器人那边还会继续同步。回头再试一次。'); return }
-    acctState('ok','已断开 QQ 同步。群里报的数不会再进这个账号；账号和绑定码都还在，随时能重新绑。');
-    if(typeof showToast==='function') showToast('已断开 QQ 同步，账号和数据都还在','info');
+    acctState('ok','已断开群同步。群里的机器人不会再往这个账号写数，账号和绑定码都还在，随时能重新连。');
+    if(typeof showToast==='function') showToast('已断开群同步，账号和数据都还在','info');
   }catch(e){
     acctState('warn','断开失败：'+(e&&e.message||'网络错误'));
   }finally{
-    if(btn){ btn.disabled=false; btn.textContent='断开 QQ 同步' }
+    if(btn){ btn.disabled=false; btn.textContent='断开群同步' }
   }
 }
 async function logoutHere(){
