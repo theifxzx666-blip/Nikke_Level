@@ -300,7 +300,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     <button onclick="exportData()">📤 导出</button>
     <button onclick="document.getElementById('importInput').click()">📥 导入</button>
     <button onclick="openAccount()" title="邮箱账号登录，云端同步本页数据（跟其它标签页是同一个账号）">☁️ 账号同步</button>
-    <button onclick="openBindPanel()" title="把 QQ 群的报数连到这个账号；连一次就行，换设备不用再连">🤖 群绑定</button>
+    <button onclick="openBindPanel(this)" title="把 QQ 群的报数连到这个账号；连一次就行，换设备不用再连">🤖 群绑定</button>
     <input id="importInput" type="file" accept=".json" hidden onchange="importData(event)">
     <button class="danger" onclick="clearAll()">🗑 清空当前服</button>
   </div>
@@ -370,7 +370,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       <div class="bind-actions"><button class="bind-btn primary" onclick="openAccount()">去登录账号</button></div>
     </div>
 
-    <div class="bind-foot">绑定码只是「这个群 ↔ 这个账号」的连接凭证，不是账号本身；不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R97</span></div>
+    <div class="bind-foot">绑定码只是「这个群 ↔ 这个账号」的连接凭证，不是账号本身；不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R98</span></div>
   </div>
 </div>
 
@@ -841,9 +841,10 @@ async function paintAcctStatus(){
     <span style="color:#5F5E5A">群里报完这边会自己更新，这页改的也会自己存进去，不用点。</span>`+
     (code?`<br>已连群 · 绑定码 <code>${fmtCode(code)}</code>`:`<br>还没连 QQ 群：点「生成绑定口令」发一次给机器人，换设备不用再绑。`));
 }
-async function openBindPanel(){
+async function openBindPanel(fromBtn){
   const mask=document.getElementById('bindMask');
   if(!mask) return;
+  toastAnchor=fromBtn||null;          // 面板里的提示都贴着这个按钮弹
   mask.classList.add('show');
   const row=document.getElementById('bindTokenRow');
   if(row) row.style.display='none';
@@ -852,7 +853,7 @@ async function openBindPanel(){
   const t=localStorage.getItem(SYNC_TOKEN_KEY);
   if(t&&myUid()) checkReceipt(t).then(c=>{ if(c) showTokenDone(c) });
 }
-function closeBindPanel(){ const m=document.getElementById('bindMask'); if(m) m.classList.remove('show') }
+function closeBindPanel(){ const m=document.getElementById('bindMask'); if(m) m.classList.remove('show'); toastAnchor=null }
 
 function randomToken(n){
   const b=new Uint8Array(n||6);
@@ -1460,7 +1461,30 @@ function importData(event){
   reader.readAsText(file);
 }
 function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;', '"':'&quot;'}[c]))}
-function showToast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3000)}
+/* 提示条默认贴在右下角；如果刚点了某个按钮（「🤖 群绑定」「生成绑定口令」这类），
+   就贴着那个按钮的左下方弹出来，不再跑到屏幕角落里，让人一眼看见「我刚点的那个东西」有反应。 */
+let toastAnchor=null;
+function placeToast(el){
+  const a=toastAnchor;
+  if(!a||!a.isConnected||!a.getBoundingClientRect().width){
+    el.style.left='';el.style.top='';el.style.right='';el.style.bottom='';
+    return;
+  }
+  const r=a.getBoundingClientRect();
+  el.style.right='auto';el.style.bottom='auto';
+  const w=el.offsetWidth,h=el.offsetHeight;
+  const left=Math.max(12,Math.min(r.right-w,window.innerWidth-w-12));
+  let top=r.bottom+10;
+  if(top+h>window.innerHeight-12) top=Math.max(12,r.top-h-10);
+  el.style.left=left+'px';el.style.top=top+'px';
+}
+function showToast(msg,type='info',anchor){
+  const el=document.getElementById('toast');
+  if(anchor) toastAnchor=anchor;
+  el.textContent=msg;el.className=`toast ${type} show`;
+  placeToast(el);
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3000)
+}
 
 /* 日期弹窗（R69：按可用空间自动上下翻转，弹窗过高时可内部滚动） */
 function openCalendar(){
