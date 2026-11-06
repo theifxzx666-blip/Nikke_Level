@@ -396,7 +396,7 @@
       state.tab = 'frame';
       Array.prototype.forEach.call(document.querySelectorAll('.tab'),
         x => x.classList.toggle('on', x.dataset.tab === 'frame'));
-      renderGrid();
+      renderChips(); renderGrid();
     }
     pickFrame(null);
   };
@@ -429,7 +429,7 @@
       a ? (a.中文名 || label(a.名称)) : 'nochar',
       f ? (f.zh || f.name) : 'noframe',
       p ? (p.zh || p.name) : null,
-    ].map(fname).join('_');
+    ].filter(Boolean).map(fname).join('_');
   }
 
   function download(blob, name) {
