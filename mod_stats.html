@@ -304,7 +304,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
     <button onclick="openBindPanel(this)" title="把 QQ 群的报数连到这个账号；连一次就行，换设备不用再连">🤖 群绑定</button>
     <input id="importInput" type="file" accept=".json" hidden onchange="importData(event)">
     <button class="danger" onclick="clearAll()">🗑 清空当前服</button>
-    <span class="page-ver" title="页面版本；改了却看不到效果时，先看这里有没有变">R98</span>
+    <span class="page-ver" title="页面版本；改了却看不到效果时，先看这里有没有变">R99</span>
   </div>
 </header>
 
@@ -321,6 +321,11 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .bind-state code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
 .bind-token{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:28px;letter-spacing:6px;text-align:center;font-weight:500;background:#E6F1FB;color:#0C447C;border-radius:12px;padding:14px 6px 14px 12px;margin-bottom:8px}
 .bind-hint{text-align:center;color:#5F5E5A;margin-bottom:12px}
+/* R124：口令有效期读条。5 分钟走完自动换新，用户不用记时间 */
+.bind-bar{height:4px;border-radius:99px;background:#DCE9F5;overflow:hidden;width:100%;max-width:280px;margin:0 auto 6px}
+.bind-bar i{display:block;height:100%;width:100%;background:#185FA5;transition:width .25s linear}
+.bind-bar.warn i{background:#B8860B}
+.bind-left{text-align:center;font-size:12px;color:#5F5E5A;margin-bottom:10px}
 .bind-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
 .bind-btn{border:1px solid rgba(0,0,0,.15);background:#fff;color:#2c2c2a;border-radius:10px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit}
 .bind-btn.primary{background:#185FA5;border-color:#185FA5;color:#fff}
@@ -355,11 +360,13 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       </div>
       <div class="bind-acct-hint">群里的机器人写的就是这个账号。换电脑、换浏览器、清了缓存，用同一个邮箱登录就全都在，不用再连一次。</div>
       <div class="bind-actions">
-        <button class="bind-btn" id="bindGenBtn" onclick="genBindToken()">生成绑定口令</button>
+        <button class="bind-btn" id="bindGenBtn" onclick="genBindToken()" title="口令 5 分钟自动换新，一般不用点">换一条</button>
         <button class="bind-btn" id="bindOffBtn" onclick="offHere()" title="机器人不再往这个账号写数；账号和记录都还在">断开群同步</button>
       </div>
       <div id="bindTokenRow" style="display:none">
         <div class="bind-token" id="bindTokenText"></div>
+        <div class="bind-bar" id="bindBar"><i id="bindBarFill"></i></div>
+        <div class="bind-left" id="bindLeft"></div>
         <div class="bind-hint" id="bindTokenHint"></div>
         <div class="bind-actions">
           <button class="bind-btn primary" id="bindCopyBtn" onclick="copyBindCommand()">复制指令</button>
@@ -372,7 +379,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       <div class="bind-actions"><button class="bind-btn primary" onclick="openAccount()">去登录账号</button></div>
     </div>
 
-    <div class="bind-foot">绑定码只是「这个群 ↔ 这个账号」的连接凭证，不是账号本身；不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R98</span></div>
+    <div class="bind-foot">绑定码只是「这个群 ↔ 这个账号」的连接凭证，不是账号本身；不涉及 QQ 号、邮箱或密码。<span class="bind-ver">页面版本 R99</span></div>
   </div>
 </div>
 
@@ -841,7 +848,7 @@ async function paintAcctStatus(){
   if(got&&got.updated_at) cloudLastSync=Date.parse(got.updated_at)||cloudLastSync;
   acctState('ok',`云端 ${n} 天 · ${ago(cloudLastSync)}<br>
     <span style="color:#5F5E5A">群里报完这边会自己更新，这页改的也会自己存进去，不用点。</span>`+
-    (code?`<br>已连群 · 绑定码 <code>${fmtCode(code)}</code>`:`<br>还没连 QQ 群：点「生成绑定口令」发一次给机器人，换设备不用再绑。`));
+    (code?`<br>已连群 · 绑定码 <code>${fmtCode(code)}</code>`:`<br>还没连 QQ 群：口令会自动出现在下面，复制发一次给机器人就成。`));
 }
 async function openBindPanel(fromBtn){
   const mask=document.getElementById('bindMask');
@@ -853,9 +860,15 @@ async function openBindPanel(fromBtn){
   acctState('','正在检查…');
   await paintAcctStatus();
   const t=localStorage.getItem(SYNC_TOKEN_KEY);
-  if(t&&myUid()) checkReceipt(t).then(c=>{ if(c) showTokenDone(c) });
+  if(t&&myUid()){
+    const c=await checkReceipt(t);
+    if(c){ showTokenDone(c); return }
+  }
+  /* R124：打开面板就给一串可复制的口令——用户不需要先点「生成」。
+     已连群的不再打扰（上面 paintAcctStatus 已显示绑定码）。 */
+  if(myUid() && !localStorage.getItem(SYNC_CODE_KEY)) await genBindToken(true);
 }
-function closeBindPanel(){ const m=document.getElementById('bindMask'); if(m) m.classList.remove('show'); toastAnchor=null }
+function closeBindPanel(){ const m=document.getElementById('bindMask'); if(m) m.classList.remove('show'); toastAnchor=null; stopTokenTimer() }
 
 function randomToken(n){
   const b=new Uint8Array(n||6);
@@ -864,10 +877,38 @@ function randomToken(n){
   let s=''; for(let i=0;i<b.length;i++) s+=SYNC_ALPHABET[b[i]%SYNC_ALPHABET.length];
   return s;
 }
-async function genBindToken(){
+/* R124：口令 5 分钟有效，过期自动换新。读条让用户知道现在这条还能用多久，
+   不用记时间、也不用猜「是不是过期了」。 */
+const TOKEN_TTL_MS=5*60*1000;
+let tokenTimer=null, tokenBorn=0;
+function stopTokenTimer(){ if(tokenTimer){ clearInterval(tokenTimer); tokenTimer=null } }
+function fmtLeft(ms){
+  const s=Math.max(0,Math.ceil(ms/1000));
+  return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+function startTokenTimer(){
+  stopTokenTimer();
+  tokenBorn=Date.now();
+  const fill=document.getElementById('bindBarFill');
+  const bar=document.getElementById('bindBar');
+  const left=document.getElementById('bindLeft');
+  const tick=()=>{
+    const ms=TOKEN_TTL_MS-(Date.now()-tokenBorn);
+    if(fill) fill.style.width=Math.max(0,ms/TOKEN_TTL_MS*100).toFixed(1)+'%';
+    if(bar) bar.classList.toggle('warn', ms<60*1000);
+    if(left) left.textContent = ms>0 ? ('剩余 '+fmtLeft(ms)+' 自动换新') : '已过期，正在换新…';
+    if(ms<=0){ stopTokenTimer(); genBindToken(true) }
+  };
+  tick();
+  tokenTimer=setInterval(tick,250);
+}
+
+async function genBindToken(auto){
   if(!myUid()){ acctState('warn','先用邮箱登录账号，再生成口令。账号只有一套，就是主页那套。'); return }
   const btn=document.getElementById('bindGenBtn');
-  if(btn){ btn.disabled=true; btn.textContent='生成中…' }
+  const row=document.getElementById('bindTokenRow');
+  if(btn){ btn.disabled=true; btn.textContent='换新中…' }
+  if(row && !auto) row.style.display='none';
   try{
     const tok=randomToken(6);
     const a=syncApi();
@@ -875,14 +916,15 @@ async function genBindToken(){
     if(!r||!r.ok){ acctState('warn','没写进云端（'+((r&&r.error)||'网络错误')+'），回头再试一次。'); return }
     localStorage.setItem(SYNC_TOKEN_KEY,tok);
     document.getElementById('bindTokenText').textContent=tok;
-    document.getElementById('bindTokenHint').innerHTML='把下面这条发到机器人所在的群里：5 分钟内有效，用一次就作废。<br>认领成功后这页会自动变成已连群。';
+    document.getElementById('bindTokenHint').innerHTML='点「复制指令」发到机器人所在的群里就行，用一次就作废。<br>认领成功后这页会自动变成已连群。';
     document.getElementById('bindCopyBtn').dataset.cmd='/石头 绑定 '+tok;
-    document.getElementById('bindTokenRow').style.display='';
+    if(row) row.style.display='';
+    startTokenTimer();
     pollReceipt(tok);
   }catch(e){
     acctState('warn','生成失败：'+(e&&e.message||'网络错误'));
   }finally{
-    if(btn){ btn.disabled=false; btn.textContent='生成绑定口令' }
+    if(btn){ btn.disabled=false; btn.textContent='换一条' }
   }
 }
 async function checkReceipt(tok){
@@ -905,6 +947,7 @@ function pollReceipt(tok){
   },15000);
 }
 async function showTokenDone(d){
+  stopTokenTimer();
   const code=d.code||'';
   if(code) localStorage.setItem(SYNC_CODE_KEY,code);
   localStorage.removeItem(SYNC_TOKEN_KEY);
