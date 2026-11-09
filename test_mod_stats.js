@@ -456,7 +456,8 @@ t("⑱ R78：桌面右列补「全部周期」清单 + 滚轮改累计位移分�
   var html = fs.readFileSync(path.join(__dirname, "mod_stats.html"), "utf8");
   /* 1. 清单只在桌面两列时出现，≤1080 必须隐藏（不影响手机） */
   assert.ok(/\.period-all\{display:none\}/.test(html), "清单默认应 display:none，手机端不占空间");
-  assert.ok(/@media\(min-width:1081px\)\{[\s\S]{0,400}\.period-all\{display:flex/.test(html), "清单应只在 >1080px 显示");
+  /* 窗口放到 900 字符：R84 在媒体查询开头插了 6 条桌面专属覆盖，400 字符窗口已经够不到（24→29px 那轮起红） */
+  assert.ok(/@media\(min-width:1081px\)\{[\s\S]{0,900}\.period-all\{display:flex/.test(html), "清单应只在 >1080px 显示");
   assert.ok(/#periodPanel\{align-self:stretch;display:flex;flex-direction:column;min-width:0\}/.test(html), "桌面下 #periodPanel 需撑满行高才能填空");
   /* 2. 清单与堆叠卡同源 */
   assert.ok(/allList.innerHTML=order.map\(\(o,i\)=>periodAllRow\(o,i,stats\)\)/.test(html), "清单必须与卡片共用同一份 order");

@@ -2,7 +2,7 @@
 
 ## 环境
 
-只需要 Node（跑测试）和一个静态服务器。Python 仅在需要用 `pinkuro_server.py` 做本地代理时才会用到。
+只需要 Node（跑测试）和一个静态服务器。阿卡导入已改官方接口直连（2026-11-09），不再需要 Python 代理。
 
 ```bash
 python -m http.server 8787      # 或 npx serve -l 8787 .
@@ -52,7 +52,7 @@ node test_golden.js             # 跑测试
 
 ## 不要提交的内容
 
-- `pinkuro_server.py`（本地代理）
+- `pinkuro_server.py`（旧版本地代理，2026-11-09 起已废弃）
 - `_cdp_*.js` 与各类 `*_out.txt`（调试产物）
 - `__pycache__/`、编辑器与系统临时文件
 

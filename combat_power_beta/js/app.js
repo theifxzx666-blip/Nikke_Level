@@ -9,19 +9,6 @@
   var KEY = "nikke_power_calc_v2";
   /* Pinkuro Key 单独一个 localStorage 键：**不放进 state**，因此不会出现在「导出 JSON」和云同步里 */
   var PKEY = "nikke_pinkuro_key";
-  /* 可选公网中转地址（同样不进 state）。留空则走下面的本机转发 */
-  var PRELAY = "nikke_pinkuro_relay";
-  /**
-   * 内置公网中转（项目自建）。
-   * 一旦在这里填上地址，页面就「只让用户填 Key」：
-   *   - 不再显示「中转地址」输入行，用户看不到也不需要理解这一层；
-   *   - 所有访问者默认走这个中转，手机 / 别的电脑 / 别人的电脑都直接可用；
-   *   - 站长（本机开发）仍可在地址后加 ?relay=http://127.0.0.1:8785 覆盖回本机通道。
-   * 留空 = 维持现状（默认本机转发，需自己部署）。
-   */
-  var PRELAY_DEFAULT = "https://nikke-lv-relay.netlify.app/api/relay";
-  /* 本机转发服务（仓库根目录 pinkuro_server.py）。远端接口无 CORS 头，浏览器不能直连 */
-  var PAGENT = "http://127.0.0.1:8785";
   var SLOT_LABEL = { head: "头部", body: "衣服", arms: "手部", legs: "鞋子" };
   /* 企业与职业枚举：取自 CharacterTable.Corporation / .Class（实测取值 1/2/3/4/7 与 1/2/3） */
   var CORP = { 1: "极乐净土", 2: "米西利斯", 3: "泰特拉", 4: "朝圣者", 5: "反常", 6: "反常", 7: "反常" };
@@ -1345,7 +1332,9 @@
     "tip-sync": {
       title: "导入阿卡数据",
       html: "Key 在<b>顶栏</b>填写，保存一次长期有效、不用每次重填。<br>"
-        + "导入回填：<b>词条明细 / 装备等级 / 突破 / 收藏 / 技能 / 魔方等级 / 企业·职业研究等级</b>。<br>"
+        + "走阿卡官方接口 <code>getUserInfo</code>，浏览器直连、不需要任何中转或本地服务。<br>"
+        + "导入回填：<b>词条明细 / 装备等级 / 突破 / 收藏 / 技能</b>，以及<b>同步器等级 + 企业·职业研究等级</b>。<br>"
+        + "接口<b>不返回好感度与魔方</b>，这两项保留你本地填的值。<br>"
         + "Key 只存<b>本机浏览器</b>，不写进导出文件、不进链接、不写日志。"
     },
     "tip-gear": {
@@ -1415,44 +1404,15 @@
     if (e.key === "Escape" || e.key === "Esc") closeInfoPanel();
   });
 
-  /* ---------------- 导入阿卡数据（数据源 pinkuro 服务端） ----------------
-   *  通路：页面 →（POST，本机）127.0.0.1:8785/api/pinkuro/import →（GET，带 X-API-KEY）pinkuro.top:9984
-   *  为什么不让浏览器直连：远端预检 OPTIONS 返回 204 且不带 Access-Control-Allow-Origin，
-   *  带自定义头 X-API-KEY 的跨域请求必被浏览器拦下（2026-10-28 实测）。
+  /* ---------------- 导入阿卡数据（官方接口，浏览器直连） ----------------
+   *  通路：页面 →（GET，带 X-API-KEY）pinkuro.top:9984/third/bot/nikke/v1/getUserInfo
+   *  2026-11-09 起改用官方文档接口：/third/bot/** 带 Access-Control-Allow-Origin: *，
+   *  预检也放行 X-API-KEY，所以浏览器可以直连 —— 原来那套「本机 8785 代理 / 公网中转」
+   *  双通道（旧 /api/nikke/public/combat/import 没有 CORS 头）整套撤掉。
    *  Key 存单独 localStorage 键，不进 state ⇒ 不进「导出 JSON」、不进云同步。
    */
   function pkGetKey() { try { return String(localStorage.getItem(PKEY) || ""); } catch (e) { return ""; } }
   function pkSetKey(v) { try { if (v) localStorage.setItem(PKEY, String(v)); else localStorage.removeItem(PKEY); } catch (e) { /* 隐私模式忽略 */ } }
-  /** 有效中转地址：?relay= 覆盖 > 用户保存值 > 内置默认（空则本机通道） */
-  function pkGetRelay() {
-    var q = "";
-    try { q = String(new URLSearchParams(location.search).get("relay") || "").trim(); } catch (e) { q = ""; }
-    if (q) return q.replace(/\/+$/, "");
-    var saved = "";
-    try { saved = String(localStorage.getItem(PRELAY) || "").trim(); } catch (e) { saved = ""; }
-    if (saved) return saved.replace(/\/+$/, "");
-    return String(PRELAY_DEFAULT || "").trim().replace(/\/+$/, "");
-  }
-  /** 走的是内置默认中转（而非用户自填）→ 中转地址行、通道名对用户都没有意义，一律不显示 */
-  function pkIsBuiltin() {
-    return !!PRELAY_DEFAULT && pkGetRelay() === String(PRELAY_DEFAULT).replace(/\/+$/, "");
-  }
-  function pkHideRelayRowIfBuiltin() {
-    var row = $("pk-relay") && $("pk-relay").closest(".key-row");
-    var btn = $("btn-relay-save");
-    var builtin = pkIsBuiltin();
-    if (row) row.style.display = builtin ? "none" : "";
-    if (btn) btn.style.display = builtin ? "none" : "";
-  }
-  function pkSetRelay(v) {
-    try { if (v) localStorage.setItem(PRELAY, String(v).trim().replace(/\/+$/, "")); else localStorage.removeItem(PRELAY); }
-    catch (e) { /* 隐私模式忽略 */ }
-  }
-  function pkChannelName() {
-    var r = pkGetRelay();
-    if (!r) return "本机转发";
-    try { return "公网中转 " + new URL(r).host; } catch (e) { return "公网中转"; }
-  }
   function pkStatus(t, k) {
     var el = $("pk-status");
     if (!el) return;
@@ -1461,14 +1421,11 @@
   }
   function pkMaskedKey(k) { return k ? ("已保存 Key · " + k.slice(0, 4) + "…" + k.slice(-3) + " · " + k.length + " 位") : "未保存 Key"; }
   function pkRefreshUI() {
-    var k = pkGetKey(), inp = $("pk-key"), tag = $("sync-tag"), rin = $("pk-relay"), r = pkGetRelay();
-    /* Key 输入框现在在顶栏（2026-10-28），宽度有限 → placeholder 只说要点，细节交给下方状态行 */
+    var k = pkGetKey(), inp = $("pk-key"), tag = $("sync-tag");
+    /* Key 输入框在顶栏（2026-10-28），宽度有限 → placeholder 只说要点，细节交给下方状态行 */
     if (inp) inp.placeholder = k ? "已保存 · 覆盖请输入" : "粘贴 Key";
-    if (rin) rin.placeholder = r ? r.replace(/^https?:\/\//, "") : "中转地址（留空=本机）";
-    if (tag) tag.textContent = state.account && state.account.enabled ? ("已导入 " + (state.account.qq || "")).trim() : "未导入";
-    pkHideRelayRowIfBuiltin();
-    pkStatus((k ? pkMaskedKey(k) : "未保存 Key · 每次打开都要重新填")
-      + (pkIsBuiltin() ? "" : " · 通道：" + pkChannelName()), k ? "ok" : "");
+    if (tag) tag.textContent = state.account && state.account.enabled ? "已导入" : "未导入";
+    pkStatus(k ? pkMaskedKey(k) : "未保存 Key · 每次打开都要重新填", k ? "ok" : "");
   }
   /** 清掉「没有归属」的可选键，避免脏数据把 state 撑大 */
   function pkApply(raw, from) {
@@ -1486,13 +1443,14 @@
       cls: ac.cls || {},
       syncedAt: Date.now()
     };
-    var applied = 0;
+    var applied = 0, noAttr = 0, noCube = 0;
     res.characters.forEach(function (c) {
       if (c.rid === null) return;                 // 站点角色表里没有 → 无法入库
       var k = String(c.rid), rec = state.byChar[k] || {};
       rec.bt = c.patch.bt;
-      rec.attr = c.patch.attr;
-      rec.cubeLv = c.patch.cubeLv;
+      /* 好感度 / 魔方：官方接口不返回就不覆盖，保留用户本地填的值 */
+      if (c.patch.attr === undefined) noAttr++; else rec.attr = c.patch.attr;
+      if (c.patch.cubeLv === undefined) noCube++; else rec.cubeLv = c.patch.cubeLv;
       rec.coll = c.patch.coll;
       rec.collLv = c.patch.collLv;
       rec.skills = { s1: c.patch.skill1, s2: c.patch.skill2, burst: c.patch.burst };
@@ -1513,53 +1471,44 @@
     setMode("loadout");
     save(true);
     pkRefreshUI();
-    var miss = res.report.missing || [];
-    var msg = from + "成功 · " + applied + " 个角色已回填（响应 " + res.report.total + " 条）";
-    if (miss.length) msg += " · 站点角色表缺 " + miss.join("、");
-    pkStatus(msg + " · 阶数自检 " + res.report.verifyOk + "/" + res.report.total, "ok");
+    var rep = res.report, miss = rep.missing || [];
+    var msg = from + "成功 · " + applied + "/" + rep.total + " 个角色已回填";
+    if (miss.length) msg += " · 角色表缺 " + miss.join("、");
+    var tail = " · 词条总阶数 " + rep.statTotalSum;
+    if (noAttr || noCube) tail += " · 好感度/魔方保留本地";
+    pkStatus(msg + tail, "ok");
     setNotice(msg + " · 同步器 Lv." + (ac.level || "-") + " · 企业/职业研究随角色自动取值", "ok");
   }
   function pkPull() {
     var key = ($("pk-key").value || "").trim() || pkGetKey();
     if (!key) { pkStatus("请先在顶栏填写阿卡 Key（填一次保存即可）", "error"); setNotice("请先填写阿卡 Key", "error"); return; }
+    if (!PK || !PK.API_URL) { pkStatus("映射模块 pinkuro.js 未加载", "error"); return; }
     var btn = $("btn-sync-pull");
     if (btn) btn.disabled = true;
-    var relay = pkGetRelay(), req;
-    if (relay) {
-      /* 通道 A：公网中转（GET + X-API-KEY；中继端已放行 CORS，手机/别的电脑也能用）
-         走内置中转时对用户不提「中转」二字，只当它是一次普通请求 */
-      pkStatus(pkIsBuiltin() ? "正在获取数据…（只发一次，不重试）" : "正在通过公网中转请求…（只发一次，不重试）", "");
-      req = fetch(relay, {
-        method: "GET",
-        headers: { "X-API-KEY": key, "Accept": "application/json" },
-        cache: "no-store"
-      });
-    } else {
-      /* 通道 B：本机转发（loopback，服务端补了 CORS） */
-      pkStatus("正在向本机转发服务请求…（只发一次，不重试）", "");
-      req = fetch(PAGENT + "/api/pinkuro/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: key })
-      });
-    }
-    req.then(function (r) {
+    pkStatus("正在读取阿卡数据…（只发一次，不重试）", "");
+    /* 官方接口自带 CORS（Access-Control-Allow-Origin: *），浏览器直连即可 */
+    fetch(PK.API_URL, {
+      method: "GET",
+      headers: { "X-API-KEY": key, "Accept": "application/json" },
+      cache: "no-store"
+    }).then(function (r) {
       if (r.status === 401 || r.status === 403) throw new Error("Key 无效或无权限（HTTP " + r.status + "）");
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     }).then(function (json) {
+      if (json && json.success === false) throw new Error(json.message || "接口返回失败");
+      var n = (json && json.data && Array.isArray(json.data.characterList)) ? json.data.characterList.length : 0;
+      if (!n) {
+        pkStatus("这个 Key 下还没有角色数据 —— 先在阿卡里同步一次练度，或确认 Key 是否属于国服账号", "error");
+        setNotice("阿卡返回空数据", "error");
+        return;
+      }
       pkSetKey(key);
-      pkApply(json, relay && !pkIsBuiltin() ? "中转导入" : "导入");
+      pkApply(json, "导入");
     }).catch(function (e) {
       var m = String((e && e.message) || e), hint;
       if (/Failed to fetch|NetworkError|load failed/i.test(m)) {
-        if (!relay) {
-          hint = "连不上本机转发（127.0.0.1:8785）—— 先双击 start-pinkuro-agent.bat，或在左侧「导入阿卡数据」里填一个公网中转地址";
-        } else if (PRELAY_DEFAULT && relay === String(PRELAY_DEFAULT).replace(/\/+$/, "")) {
-          hint = "同步服务暂时不可用，请稍后重试（也可用下方「粘贴 JSON 导入」）";
-        } else {
-          hint = "连不上中转 " + relay + " —— 地址是否写对 / 服务是否已部署？清空中转地址即可切回本机通道";
-        }
+        hint = "连不上阿卡接口（pinkuro.top:9984）—— 检查网络或代理后重试，也可用下方「粘贴 JSON 兜底」";
       } else {
         hint = "请求失败：" + m;
       }
@@ -1577,16 +1526,7 @@
   }
   function pkBind() {
     var btnSave = $("btn-key-save"), btnClear = $("btn-key-clear"), btnPull = $("btn-sync-pull"),
-      btnPaste = $("btn-sync-paste"), btnEye = $("btn-key-eye"), inp = $("pk-key"),
-      rin = $("pk-relay"), btnRelay = $("btn-relay-save");
-    if (btnRelay) btnRelay.addEventListener("click", function () {
-      var v = (rin.value || "").trim();
-      if (v && !/^https?:\/\//i.test(v)) { pkStatus("中转地址要以 http:// 或 https:// 开头", "error"); return; }
-      pkSetRelay(v);
-      rin.value = "";
-      pkRefreshUI();
-      setNotice(v ? ("已切换到公网中转：" + v) : "已清空中转地址，回到本机转发通道", "ok");
-    });
+      btnPaste = $("btn-sync-paste"), btnEye = $("btn-key-eye"), inp = $("pk-key");
     if (btnSave) btnSave.addEventListener("click", function () {
       var v = (inp.value || "").trim();
       if (!v) { pkStatus("输入框为空：要清除 Key 请点右侧「×」", "error"); return; }

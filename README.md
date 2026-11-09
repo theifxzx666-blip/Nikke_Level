@@ -22,7 +22,7 @@
 | 洗词条计算器 | `reroll_calculator.html` | 词条洗练概率与消耗，支持导入 Excel |
 | 战力计算 Beta | `combat_power_beta/index.html` | 战力构成核算 |
 
-另有半独立的 `combat_reroll.html`（洗练战力 / Pinkuro 导入），不挂在主站导航里，需要本地启动 `pinkuro_server.py` 作代理才能连第三方接口。
+另有半独立的 `combat_reroll.html`（洗练战力 / Pinkuro 导入），不挂在主站导航里；两个页面的阿卡导入都直连官方接口 `getUserInfo`（浏览器自带 CORS 放行），不需要中转或本地代理。
 
 移动版是独立入口 `mobile.html`，与桌面版共用 `js/app.js`，只换布局与样式；访问哪个由链接决定，不按 UA 自动跳转。
 

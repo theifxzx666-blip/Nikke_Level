@@ -85,18 +85,15 @@
           </div>
 
           <!-- 2026-10-28：Key 输入 / 保存 / 清除 / 导入按钮已上移到顶栏（与「账号同步」同排），
-               这里只留导入状态、自定义中转地址与粘贴兜底，避免同一件事在页面上出现两处入口。 -->
+               这里只留导入状态与粘贴兜底，避免同一件事在页面上出现两处入口。
+               2026-11-09：改官方接口后浏览器可直连，中转地址行整块撤掉。 -->
           <div class="grp" id="sync-box">
             <div class="grp-h"><b>导入阿卡数据<span class="tip-host"><button type="button" class="info-tip" data-tip="tip-sync" aria-label="查看说明" aria-expanded="false"></button></span></b><em id="sync-tag">未导入</em></div>
             <p class="hint tight" id="pk-status">未保存 Key</p>
-            <div class="key-row">
-              <input id="pk-relay" type="text" placeholder="中转地址（留空=本机）" autocomplete="off" spellcheck="false">
-              <button id="btn-relay-save" class="btn icon" type="button" title="保存中转地址">✓</button>
-            </div>
             <details class="fold-inline">
               <summary>导入失败？粘贴 JSON 兜底</summary>
-              <p class="hint tight">同步服务不可用时，把接口原始响应整段粘进来，同样能回填（纯本地解析，不联网）：</p>
-              <textarea id="pk-json" class="pk-json" rows="4" placeholder='{"success":true,"data":{"cnData":{…}}}' spellcheck="false"></textarea>
+              <p class="hint tight">接口连不上时，把 <code>/third/bot/nikke/v1/getUserInfo</code> 的原始响应整段粘进来，同样能回填（纯本地解析，不联网）：</p>
+              <textarea id="pk-json" class="pk-json" rows="4" placeholder='{"success":true,"data":{"characterList":[…],"synchronizerLevel":400}}' spellcheck="false"></textarea>
               <div class="gear-ops">
                 <button id="btn-sync-paste" class="btn" type="button">导入这段 JSON</button>
               </div>

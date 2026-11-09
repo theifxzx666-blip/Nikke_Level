@@ -1,6 +1,8 @@
 @echo off
 chcp 65001 >nul
-title NIKKE calculator - Pinkuro relay
+title NIKKE calculator - Pinkuro relay (LEGACY)
+rem 2026-11-09: 阿卡导入已改官方接口 getUserInfo 直连（服务端带 CORS 头），
+rem 本脚本依赖的 pinkuro_server.py 已废弃，仅在旧版本/离线调试时需要。
 cd /d "%~dp0"
 
 set PORT=8785

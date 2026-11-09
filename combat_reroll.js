@@ -181,15 +181,22 @@
 
   function parsePinkuroKey(raw) { var value = String(raw || "").trim(); try { if (/^https?:\/\//i.test(value)) return new URL(value).searchParams.get("k") || ""; } catch (_) {} return value; }
   function defined(value) { return value !== undefined && value !== null && value !== ""; }
+  var SLOT_BY_NO = { 0: "head", 1: "body", 2: "arms", 3: "legs" };
   function remoteCharacter(item) {
     var result = { character: item.characterName }, source = item.userCharacter || item;
     [["starLevel", "breakthroughLevel"], ["favoriteItem", "collectionRarity"], ["favoriteLevel", "collectionLv"], ["skill1Level", "skill1Lv"], ["skill2Level", "skill2Lv"], ["burstLevel", "ultiSkillLv"], ["affectionLevel", "attractiveLv"], ["cubeLevel", "cubeLv"]].forEach(function (pair) { if (defined(source[pair[1]])) result[pair[0]] = source[pair[1]]; });
     result.statTotalValue = defined(item.statTotalValue) ? item.statTotalValue : null; result.equipmentLevels = { before: {}, after: {} };
+    /* 官方接口：equipmentInfos[{ slotNo 0~3, lv }] */
+    (Array.isArray(item.equipmentInfos) ? item.equipmentInfos : []).forEach(function (equip) {
+      var slot = SLOT_BY_NO[Number(equip && equip.slotNo)];
+      if (slot && defined(equip.lv)) { result.equipmentLevels.before[slot] = equip.lv; result.equipmentLevels.after[slot] = equip.lv; }
+    });
     [["head", "headEquipmentLv"], ["body", "torsoEquipmentLv"], ["arms", "armEquipmentLv"], ["legs", "legEquipmentLv"]].forEach(function (pair) { if (defined(item[pair[1]])) { result.equipmentLevels.before[pair[0]] = item[pair[1]]; result.equipmentLevels.after[pair[0]] = item[pair[1]]; } });
     return result;
   }
   function normalisePinkuro(payload) {
-    var root = payload && payload.data && payload.data.cnData ? payload.data.cnData : (payload && payload.data ? payload.data : {}), info = root.userInfo || {}, items = Array.isArray(root.characters) ? root.characters : [];
+    /* 官方 getUserInfo：{ data:{ synchronizerLevel…, characterList } }；旧结构 data.cnData 仍兼容粘贴 */
+    var root = payload && payload.data && payload.data.cnData ? payload.data.cnData : (payload && payload.data ? payload.data : {}), info = root.userInfo || root, items = Array.isArray(root.characters) ? root.characters : (Array.isArray(root.characterList) ? root.characterList : []);
     var publicId = defined(info.userQQId) ? String(info.userQQId) : (defined(info.id) ? String(info.id) : null);
     var account = {
       synchronizerLevel: defined(info.synchronizerLevel) ? info.synchronizerLevel : null,
@@ -241,12 +248,13 @@
     var key = parsePinkuroKey($("pinkuroKey").value); if (!key) { setNotice("请填写 Pinkuro Key 或包含 k 参数的公开链接。", "error"); return; }
     try {
       setNotice("正在读取 Pinkuro；Key 只用于当前请求，不会保存或写入导出文件。", "");
-      var response = await fetch("/api/pinkuro/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: key }) });
+      /* 官方接口自带 CORS，浏览器直连，不再经本机 pinkuro_server.py 代理 */
+      var response = await fetch("https://pinkuro.top:9984/third/bot/nikke/v1/getUserInfo", { method: "GET", headers: { "X-API-KEY": key, "Accept": "application/json" }, cache: "no-store" });
       var payload = await response.json(); if (!response.ok || !payload.success) throw new Error(payload.message || "Pinkuro 导入失败");
-      state.pending = normalisePinkuro(payload); if (!state.pending.characters.length) throw new Error("Pinkuro 没有返回可用的妮姬数据");
+      state.pending = normalisePinkuro(payload); if (!state.pending.characters.length) throw new Error("Pinkuro 没有返回可用的妮姬数据（这个 Key 下还没有练度？）");
       renderRemoteSelector(); $("pinkuroPanel").hidden = false; var rows = remoteFields(selectedRemoteCharacter()), differences = rows.filter(function (row) { return row.status !== "相同"; });
       setNotice("Pinkuro 数据已读取，请在设置内确认同步项。", ""); if (differences.length) showToast("检测到 " + differences.length + " 项数据与 Pinkuro 不一致，请在设置中选择同步。", "");
-    } catch (error) { var message = error.message.indexOf("Failed to fetch") >= 0 ? "Pinkuro 读取失败：请使用项目提供的 pinkuro_server.py 启动本地代理。" : error.message; setNotice(message, "error"); showToast(message, "error"); }
+    } catch (error) { var message = error.message.indexOf("Failed to fetch") >= 0 ? "Pinkuro 读取失败：连不上 pinkuro.top:9984，检查网络或代理后重试。" : error.message; setNotice(message, "error"); showToast(message, "error"); }
   }
   function setPath(path, value) {
     if (path.indexOf("equipment.") === 0 || path.indexOf("equipmentLevels.before.") === 0) { var slot = path.indexOf("equipment.") === 0 ? path.split(".")[1] : path.split(".")[2], level = String(value); state.config.equipmentLevels.before[slot] = level; state.config.equipmentLevels.after[slot] = level; return; }
