@@ -181,5 +181,47 @@ t("⑪ 前端已改官方接口，不再残留旧通道", () => {
   assert.ok(/function pkPull/.test(app), "导入入口仍在");
 });
 
-console.log("\n===== test_pinkuro_map: PASS=" + pass + "  FAIL=" + fail + " =====");
-process.exit(fail ? 1 : 0);
+/* ---------- 补录角色（国服安卓客户端取数） ---------- */
+t("⑫ roster 已补录国服新角色：婴宁 8004 / 画皮 8005", () => {
+  const a = D.roster.find((r) => r.rid === 8004);
+  const b = D.roster.find((r) => r.rid === 8005);
+  assert.ok(a && b, "两条补录都要在 roster 里");
+  assert.strictEqual(a.name, "婴宁");
+  assert.strictEqual(a.enh, 5305, "婴宁 Stat_enhance_id 取自国服 CharacterTable");
+  assert.strictEqual(a.cls, 3, "辅助型");
+  assert.strictEqual(a.weapon, 2, "RL");
+  assert.strictEqual(b.name, "画皮");
+  assert.strictEqual(b.enh, 5101, "画皮 Stat_enhance_id 取自国服 CharacterTable");
+  assert.strictEqual(b.cls, 1, "火力型");
+  assert.strictEqual(b.weapon, 1, "AR");
+  /* 名字 / 拼音两条路径都要能命中，否则导入仍会被算成「角色表缺」 */
+  assert.strictEqual(PK.findRosterByName(D, "婴宁").rid, 8004);
+  assert.strictEqual(PK.findRosterByName(D, "画皮").rid, 8005);
+  assert.strictEqual(PK.findRosterByName(D, "yingning").rid, 8004);
+  assert.strictEqual(PK.findRosterByName(D, "huapi").rid, 8005);
+  /* 曲线与强化系数必须真的存在，否则面板推不出来 */
+  assert.ok(D.curves["5305"] && D.enhance["5305"], "婴宁的强化组要有曲线");
+  assert.ok(D.curves["5101"] && D.enhance["5101"], "画皮的强化组要有曲线");
+});
+
+t("⑬ 含新角色的响应能被完整映射（不再计入缺失）", () => {
+  const raw = {
+    success: true,
+    data: {
+      synchronizerLevel: 400,
+      characterList: [
+        { characterName: "婴宁", breakthroughLevel: 6, collectionRarity: "SR", collectionLv: 15, skill1Lv: 10, skill2Lv: 10, ultiSkillLv: 10,
+          equipmentInfos: [equip(0, 5, [stat(1, 3, 1, 15)])] },
+        { characterName: "画皮", breakthroughLevel: 0, skill1Lv: 1, skill2Lv: 1, ultiSkillLv: 1,
+          equipmentInfos: [equip(0, 0, [])] }
+      ]
+    }
+  };
+  const r = PK.mapBundle(raw, D);
+  assert.strictEqual(r.report.matched, 2);
+  assert.deepStrictEqual(r.report.missing, []);
+  assert.strictEqual(r.characters[0].rid, 8004);
+  assert.strictEqual(r.characters[1].rid, 8005);
+});
+
+console.log("\n===== test_pinkuro_map: PASS=" + pass + "  FAIL=" + fail + " =====");process.exit(fail ? 1 : 0);
