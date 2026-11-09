@@ -248,7 +248,7 @@
     var key = parsePinkuroKey($("pinkuroKey").value); if (!key) { setNotice("请填写 Pinkuro Key 或包含 k 参数的公开链接。", "error"); return; }
     try {
       setNotice("正在读取 Pinkuro；Key 只用于当前请求，不会保存或写入导出文件。", "");
-      /* 官方接口自带 CORS，浏览器直连，不再经本机 pinkuro_server.py 代理 */
+      /* 官方接口自带 CORS，浏览器直连（中转层与本机代理已于 2026-11-09 全部删除） */
       var response = await fetch("https://pinkuro.top:9984/third/bot/nikke/v1/getUserInfo", { method: "GET", headers: { "X-API-KEY": key, "Accept": "application/json" }, cache: "no-store" });
       var payload = await response.json(); if (!response.ok || !payload.success) throw new Error(payload.message || "Pinkuro 导入失败");
       state.pending = normalisePinkuro(payload); if (!state.pending.characters.length) throw new Error("Pinkuro 没有返回可用的妮姬数据（这个 Key 下还没有练度？）");

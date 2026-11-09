@@ -52,7 +52,6 @@ node test_golden.js             # 跑测试
 
 ## 不要提交的内容
 
-- `pinkuro_server.py`（旧版本地代理，2026-11-09 起已废弃）
 - `_cdp_*.js` 与各类 `*_out.txt`（调试产物）
 - `__pycache__/`、编辑器与系统临时文件
 
