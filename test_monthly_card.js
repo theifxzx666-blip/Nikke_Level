@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 
 global.fetch = function (url) {
-  const p = path.resolve(__dirname, String(url).split("?")[0]);   // 剥掉 ?v= 缓存参数
+  const p = path.resolve(__dirname, String(url));
   return Promise.resolve({ json: () => Promise.resolve(JSON.parse(fs.readFileSync(p, "utf8"))) });
 };
 

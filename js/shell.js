@@ -137,7 +137,6 @@
           window.__frameRO[id].disconnect();
           window.__frameRO[id] = null;
         }
-        if (window.__frameBody) window.__frameBody[id] = null;
         return;
       }
       var body = doc.body;
@@ -148,48 +147,20 @@
           (doc.documentElement && doc.documentElement.scrollHeight) || 0
         );
         if (h <= 0) h = (appEl && appEl.getBoundingClientRect().height) || 0;
-        if (h <= 0) return;
-        /* 收敛判定：iframe 内 documentElement.scrollHeight 的下限就是 iframe 自身的视口高度，
-           当内容比视口矮时它会返回视口高度，于是「+6 → 视口变高 → 又返回视口高度」每轮自举 +6px。
-           R70 实测：mod_stats 曾因 body{min-height:100vh} 把 100vh 取成 iframe 高度，
-           演变成无限增长（6 秒 492 → 3768px，页面滚动条跟着无限变长）。
-           目标高度与当前高度相差 ≤6px 即视为已收敛，不再改动。 */
-        var target = h + 6;
-        if (Math.abs(target - iframe.getBoundingClientRect().height) <= 6) return;
-        iframe.style.height = target + "px";
+        if (h > 0) iframe.style.height = (h + 6) + "px";
       }
       apply();
-      /* R79：ResizeObserver 必须绑在「当前这份文档的 body」上。iframe 刚 append 时里面还是
-         about:blank，此时若已建过 RO，观察的就是那份马上被丢弃的 body —— 真实文档换进来后
-         再没有观察者，高度永远停在默认 480px（GH Pages 首访实测必现，要等父页 resize 才撑开）。
-         这里用 __frameBody 记住上次观察的 body，换了就重建。 */
-      var roMap = window.__frameRO || (window.__frameRO = {});
-      var bodyMap = window.__frameBody || (window.__frameBody = {});
-      if (!roMap[id] || bodyMap[id] !== body) {
-        if (roMap[id] && roMap[id].disconnect) roMap[id].disconnect();
-        roMap[id] = null;
-        if ("ResizeObserver" in window && body) {
-          var ro = new ResizeObserver(function () { apply(); });
-          ro.observe(body);
-          if (appEl && appEl !== body) ro.observe(appEl);
-          roMap[id] = ro;
-        }
-        bodyMap[id] = body;
+      if (window.__frameRO && window.__frameRO[id] && window.__frameRO[id].disconnect) {
+        window.__frameRO[id].disconnect();
+      }
+      if ("ResizeObserver" in window) {
+        var ro = new ResizeObserver(function () { apply(); });
+        if (body) ro.observe(body);
+        if (appEl && appEl !== body) ro.observe(appEl);
+        window.__frameRO = window.__frameRO || {};
+        window.__frameRO[id] = ro;
       }
     } catch (e) { /* 跨域等异常静默 */ }
-  }
-
-  /* R79：iframe 的 load 事件可能因某个子资源迟迟不完成而延后，而 switchTo 里那次
-     fitFrame 又常在 about:blank 阶段（h=0，什么都没设）—— 于是两头落空。
-     这里做有限次重试（250ms×3 + 600ms×6，共约 4.4s）：已收敛时 fitFrame 内部直接 return，
-     不会反复改高度，也不碰 R70 那套「目标与当前差 ≤6px 即视为收敛」的正反馈防线。 */
-  function scheduleFit(id) {
-    var tries = 0;
-    (function step() {
-      fitFrame(id);
-      tries++;
-      if (tries < 10 && iframes[id]) setTimeout(step, tries < 4 ? 250 : 600);
-    })();
   }
 
   function findTool(id) {
@@ -237,7 +208,7 @@
       iframes[id] = iframe;
       document.getElementById(vid).appendChild(iframe);
     }
-    if (iframes[id]) scheduleFit(id);   /* R79：有限次重试，兜住 load 迟到 / about:blank 空跑 */
+    if (iframes[id]) fitFrame(id);
     try { history.replaceState(null, "", "#" + id); } catch (e) {}
   }
 

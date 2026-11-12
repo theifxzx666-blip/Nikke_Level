@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NIKKE 战力计算器</title>
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261028g">
+<link rel="stylesheet" href="css/style.css?v=20261015a">
 </head>
 <body>
 <main class="page">
@@ -17,30 +17,11 @@
     <div class="toolbar-actions">
       <!-- 手填面板已屏蔽（2026-10-13）：面板三围统一由练度参数推导，标定入口随之隐藏 -->
       <button id="btn-calibrate" class="btn" type="button" hidden>按游戏内战力标定</button>
-
-      <!-- 阿卡 Key：账号级凭据，2026-10-28 从左侧面板上移到「账号同步」这一排。
-           Key 只进 localStorage 独立键，不进 state ⇒ 不进「导出 JSON」、不进云同步。 -->
-      <div class="pk-bar" id="pk-bar" role="group" aria-label="导入阿卡数据">
-        <span class="pk-bar-label">阿卡Key</span>
-        <input id="pk-key" type="password" placeholder="粘贴 Key" autocomplete="off" spellcheck="false">
-        <button id="btn-key-eye" class="btn icon" type="button" title="显示 / 隐藏 Key">👁</button>
-        <button id="btn-key-save" class="btn icon" type="button" title="保存 Key 到本机浏览器">✓</button>
-        <button id="btn-key-clear" class="btn icon" type="button" title="清除本机保存的 Key">×</button>
-        <button id="btn-sync-pull" class="btn primary" type="button">⟳ 导入</button>
-      </div>
-
-      <span class="tb-sep" aria-hidden="true"></span>
-
       <button id="btn-save" class="btn" type="button">保存</button>
-      <!-- 云同步开关（2026-10-28）：原「☁ 同步到云端」按钮移除，改为与「保存」并成一件事 ——
-           开 = 点保存时顺手推云端，关 = 纯本地保存。交互与资源规划计算器同一套（圆形云图标 + hover 浮出文案）。
-           仅在「工具箱」内以同源 iframe 打开时显示（同源复用父页面账号），独立打开保持隐藏。 -->
-      <label class="cloud-tog" id="cloud-tog" data-on="1" hidden>
-        <input type="checkbox" id="chk-cloud-auto" checked aria-label="点保存时同步到云端">
-        <svg class="cloud-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/><path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>
-        <span class="cloud-tip">保存时同步到云端</span>
-      </label>
       <button id="btn-load" class="btn" type="button">读取</button>
+      <!-- 云同步入口：本页在「工具箱」里以内嵌 iframe 打开时由 app.js 显示（同源复用父页面账号），
+           独立打开该页面时保持隐藏。未登录点「同步到云端」会先弹出账号面板引导登录。 -->
+      <button id="btn-cloud-sync" class="btn cloud" type="button" data-state="out" hidden>☁ 同步到云端</button>
       <button id="btn-account" class="btn" type="button" hidden>👤 账号面板</button>
       <button id="btn-export" class="btn" type="button">导出 JSON</button>
       <button id="btn-import" class="btn" type="button">导入 JSON</button>
@@ -84,22 +65,6 @@
             <p id="char-meta" class="meta">未选择角色</p>
           </div>
 
-          <!-- 2026-10-28：Key 输入 / 保存 / 清除 / 导入按钮已上移到顶栏（与「账号同步」同排），
-               这里只留导入状态与粘贴兜底，避免同一件事在页面上出现两处入口。
-               2026-11-09：改官方接口后浏览器可直连，中转地址行整块撤掉。 -->
-          <div class="grp" id="sync-box">
-            <div class="grp-h"><b>导入阿卡数据<span class="tip-host"><button type="button" class="info-tip" data-tip="tip-sync" aria-label="查看说明" aria-expanded="false"></button></span></b><em id="sync-tag">未导入</em></div>
-            <p class="hint tight" id="pk-status">未保存 Key</p>
-            <details class="fold-inline">
-              <summary>导入失败？粘贴 JSON 兜底</summary>
-              <p class="hint tight">接口连不上时，把 <code>/third/bot/nikke/v1/getUserInfo</code> 的原始响应整段粘进来，同样能回填（纯本地解析，不联网）：</p>
-              <textarea id="pk-json" class="pk-json" rows="4" placeholder='{"success":true,"data":{"characterList":[…],"synchronizerLevel":400}}' spellcheck="false"></textarea>
-              <div class="gear-ops">
-                <button id="btn-sync-paste" class="btn" type="button">导入这段 JSON</button>
-              </div>
-            </details>
-          </div>
-
           <div class="grp">
             <div class="grp-h"><b>账号级参数</b><em>所有角色共用</em></div>
             <div class="grid2">
@@ -110,25 +75,23 @@
               <label class="cell"><span>职业研究 <i class="anchor" id="anchor-cls">—</i></span><input id="l-rc" type="number" min="0" step="1" value="100"></label>
               <label class="cell"><span>企业研究 <i class="anchor" id="anchor-corp">—</i></span><input id="l-rk" type="number" min="0" step="1" value="100"></label>
             </div>
-            <label class="check"><input id="l-recycle-auto" type="checkbox" checked><span>企业 / 职业研究随角色自动取值（来自同步的研究表）</span></label>
           </div>
 
           <div class="grp">
             <div class="grp-h"><b>角色级参数</b><em>仅当前角色</em></div>
-            <div class="grid3">
+            <div class="grid2">
               <label class="cell"><span>突破档</span><select id="l-bt"></select></label>
               <label class="cell"><span>好感度</span><input id="l-attr" type="number" min="0" max="40" step="1" value="40"></label>
+            </div>
+            <div class="grid2">
+              <label class="cell"><span>魔方</span><select id="l-cube"></select></label>
               <label class="cell"><span>魔方等级</span><input id="l-cubelv" type="number" min="0" max="15" step="1" value="15"></label>
             </div>
-            <!-- 魔方类型已彻底移除（2026-10-28）：静态表里 16 款魔方的 stats/bp 数组逐元素完全相同，
-                 类型不产生任何差异，只留等级。保留 hidden 的 #l-cube 作为状态载体（与 #char-input 同理）。 -->
-            <select id="l-cube" hidden></select>
             <div class="grid2">
               <label class="cell"><span>收藏品</span><select id="l-coll"></select></label>
               <label class="cell"><span>收藏等级</span><input id="l-colllv" type="number" min="0" max="15" step="1" value="15"></label>
             </div>
-            <!-- 「装备同厂加成 ×1.3」开关已移除（2026-10-28）：参考站不开、客户端逻辑未验证，
-                 留着只会让面板三围对不上游戏。装载逻辑仍在 panel.js，state 里固定 false。 -->
+            <label class="check"><input id="l-corpbonus" type="checkbox"><span>装备同厂加成 ×1.3（客户端逻辑，参考站未开）</span></label>
           </div>
 
           <div class="derive-row">
@@ -149,7 +112,8 @@
               <label class="cell locked"><span>暴击率 %</span><input id="p-critRate" type="number" step="0.01" min="0" readonly tabindex="-1"></label>
               <label class="cell locked"><span>暴击伤害 %</span><input id="p-critDamage" type="number" step="0.01" min="0" readonly tabindex="-1"></label>
               <label class="cell locked"><span>附加效果战力</span><input id="p-extraBP" type="number" step="1" readonly tabindex="-1"></label>
-            </div>            <p class="hint">暴击 15 / 150 为全部角色共用的静态表常量；附加效果战力 = 魔方技能 + 收藏品技能内部战力。</p>
+            </div>
+            <p class="hint">暴击 15 / 150 为全部角色共用的静态表常量；附加效果战力 = 魔方技能 + 收藏品技能内部战力。</p>
           </div>
 
           <div class="grp">
@@ -171,8 +135,11 @@
     <div class="center center-stack">
       <!-- ① 当前装备：选好角色后先录入并保存，它是洗练的基准 -->
       <section class="panel">
-        <div class="panel-head"><h2>① 当前装备（装备等级 + 词条）<span class="tip-host"><button type="button" class="info-tip" data-tip="tip-gear" aria-label="查看说明" aria-expanded="false"></button></span></h2><span class="tag" id="gear-save-tag">未录入</span></div>
+        <div class="panel-head"><h2>① 当前装备（装备等级 + 词条）</h2><span class="tag" id="gear-save-tag">未录入</span></div>
         <div class="panel-body">
+          <p class="gear-tip">先选好角色，再把该角色在游戏里的<b>整套装备</b>录入这里并<b>保存</b>：每个部位先填<b>装备等级</b>（强化 0 ~ 5，每级 +10% 装备基础属性），
+            再填 3 条<b>装备词条</b>（T12~14 蓝字、T15 黑底白字，与游戏内一致）。同一件装备<b>不会出现重复词条</b>，被本部位其它行选走的类型会自动置灰。
+            这份记录是下方「装备词条洗练」的<b>基准</b>，且<b>按角色分别记录</b>。</p>
           <div class="gear-ops">
             <button id="btn-save-gear" class="btn primary" type="button">保存当前装备</button>
             <button id="btn-clear-gear" class="btn" type="button">清空</button>
@@ -222,51 +189,48 @@
         </div>
       </section>
 
-      <!-- 洗练模拟（按部位）：选定一件装备 + 一组目标词条，算「洗一次会变成什么样」与「洗到目标要多少石头」。
-           概率模型对齐 ChrisLu7899/NIKKE-Workshop（见 js/reroll.js 头部注释）。 -->
+      <!-- 洗练模拟（按部位）：选定一件装备，模拟其词条重洗后的战力分布 + 定制模组消耗 -->
       <section class="panel">
-        <div class="panel-head"><h2>洗练模拟（按部位）<span class="tip-host"><button type="button" class="info-tip" data-tip="tip-sim" aria-label="查看说明" aria-expanded="false"></button></span></h2><span class="tag">概率模型</span></div>
+        <div class="panel-head"><h2>洗练模拟（按部位）</h2><span class="tag">蒙特卡洛</span></div>
         <div class="panel-body sim-body">
           <div class="grid2">
             <label class="cell"><span>部位</span><select id="m-slot"></select></label>
-            <label class="cell"><span>操作</span><select id="m-mode">
-              <option value="auto">自动：先洗词条→再洗数值</option>
-              <option value="change">只洗词条（变更效果）</option>
-              <option value="value">只洗数值（重置属性）</option>
+            <label class="cell"><span>操作类型</span><select id="m-mode">
+              <option value="change">换词条（种类+数值）</option>
+              <option value="value">只洗数值（种类不变）</option>
             </select></label>
           </div>
-          <div class="grid2">
-            <label class="cell"><span>服务器规则</span><select id="m-rule">
-              <option value="cn">国服 · 旧规则</option>
-              <option value="global">国际服 · 新规则</option>
-            </select></label>
-            <label class="cell"><span>模拟次数</span><input id="m-rolls" type="number" min="200" max="200000" step="100" value="4000"></label>
-          </div>
-          <p class="hint tight">给这个部位设 <b>1 ~ 3 条目标词条</b>（类型 + 最低档数）。已达标的那几条会自动锁住不动，
-            其余继续洗；洗出一条就锁一条是最省的打法。</p>
+          <p class="hint tight">每行 = 该部位的一条词条。勾选 = <b>参与重洗</b>，并设定<b>目标词条</b>与<b>目标阶数</b>（达成 = 类型命中且阶数 ≥ 目标）；
+            不勾选 = <b>锁定保留</b>现状。锁定要额外付费（见下）。</p>
           <div id="m-target" class="targets"></div>
+          <label class="cell"><span>模拟次数</span><input id="m-rolls" type="number" min="100" max="200000" step="100" value="5000"></label>
 
           <div class="card sim-out" style="margin-top:12px">
-            <div class="card-h">洗一次会变成什么样</div>
+            <div class="card-h">洗后战力分布</div>
             <div class="kv"><span>当前整套战力</span><b id="m-cur">--</b></div>
             <div class="kv"><span>该部位现状</span><b id="m-slotcur">--</b></div>
             <div class="kv"><span>洗后最低 / 最高</span><b id="m-minmax">--</b></div>
             <div class="kv"><span>洗后 P10 / P50 / P90</span><b id="m-pct">--</b></div>
             <div class="kv"><span>洗后平均战力</span><b id="m-mean">--</b></div>
-            <div class="kv delta"><span>平均变化</span><b id="m-vs">--</b></div>
-            <div class="kv delta"><span>变化 P10 / P50 / P90</span><b id="m-pctgain">--</b></div>
+            <div class="kv delta"><span>平均提升</span><b id="m-vs">--</b></div>
+            <div class="kv delta"><span>提升 P10 / P50 / P90</span><b id="m-pctgain">--</b></div>
             <div id="m-hist" class="hist"></div>
           </div>
 
           <div class="card cost">
-            <div class="card-h">洗到目标要多少石头</div>
-            <div class="kv"><span>目标 / 已达成</span><b id="c-goal">--</b></div>
-            <div class="kv"><span>每次重洗消耗</span><b id="c-per">--</b></div>
-            <div class="kv"><span>洗一次就命中的概率</span><b id="c-p">--</b></div>
-            <div class="kv"><span>路线拆分</span><b id="c-route">--</b></div>
+            <div class="card-h">定制模组消耗预估</div>
+            <div class="kv"><span>每次洗练消耗</span><b id="c-per">--</b></div>
+            <div class="kv"><span>上锁一次性成本</span><b id="c-lock">--</b></div>
+            <div class="kv"><span>达成概率</span><b id="c-p">--</b></div>
+            <div class="kv"><span>期望洗练次数</span><b id="c-rolls">--</b></div>
             <div class="kv big"><span>期望总消耗</span><b id="c-exp">--</b></div>
-            <p class="hint" id="c-note">…</p>
+            <p class="hint">游戏规则（nikke.gg 口径）：<b>重洗一次 = 锁定条数 + 1 颗</b>；<b>「点锁定」本身也要付</b>「锁到 N 条 = N+1 颗」，
+              且<b>解锁不退</b>。故总消耗 = <b>上锁一次性 + 每次重洗 × 期望次数</b>。
+              达成 = 参与重洗的词条行<b>全部</b>命中目标类型且阶数 ≥ 目标阶数。</p>
           </div>
+
+          <p class="hint">类型概率按实测权重（优越/攻击/暴伤/防御 10，其余 12）；阶数按「1~5 阶 60% / 6~10 阶 35% / 11~15 阶 5%」分段，<b>段内暂按平均</b>占位。
+            同一输入必得同一结果（确定性种子）。<b>概率为社区实测口径，非官方公布值</b>，用于比较相对高低与消耗量级。</p>
         </div>
       </section>
     </div>
@@ -288,11 +252,9 @@
   </footer>
 </main>
 
-<script src="data/data.bundle.js?v=20261028g"></script>
-<script src="js/core.js?v=20261028g"></script>
-<script src="js/panel.js?v=20261028g"></script>
-<script src="js/pinkuro.js?v=20261028g"></script>
-<script src="js/reroll.js?v=20261028g"></script>
-<script src="js/app.js?v=20261028g"></script>
+<script src="data/data.bundle.js?v=20261015a"></script>
+<script src="js/core.js?v=20261015a"></script>
+<script src="js/panel.js?v=20261015a"></script>
+<script src="js/app.js?v=20261015a"></script>
 </body>
 </html>

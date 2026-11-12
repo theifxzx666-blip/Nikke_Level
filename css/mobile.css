@@ -26,11 +26,9 @@ body.m-body {
   --hero-bg: url("../assets/m/hero.webp");
 }
 
-/* 内容区：单列居中 + 底部留白（吸底 dock 51px + 底部 Tab 56px + 安全区），保证最后一项不被遮挡。
-   R48 补到 148px：吸底 dock 顶边距视口底 174px，原来 132px 正好让最后一行提示贴住 dock 上沿
-   （实测 clearance=0），留 16px 余量防真机字体差异。 */
+/* 内容区：单列居中 + 底部留白（吸底按钮 58px + 底部 Tab 56px + 安全区），保证最后一项不被遮挡 */
 body.m-body .layout {
-  padding: 8px 12px calc(148px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 12px calc(132px + env(safe-area-inset-bottom, 0px));
   max-width: 720px;
 }
 /* 桌面在「有结果」时切右侧双列；移动版一律单列，结果排在表单下方 */
@@ -161,54 +159,44 @@ body.m-body .app-nav-icon {
   object-fit: cover;
 }
 
-/* ---------- 吸底「开始计算」抬到 Tab 之上 ----------
-   实测底部 Tab 栏高 115px（含 6px 上下内边距 + env(safe-area)），原来 bottom:70px
-   会被 Tab 栏压住 45px。改为「Tab 栏高 + 8px 间隙」，安全区随 Tab 栏一起增长。 */
+/* ---------- 吸底「开始计算」抬到 Tab 之上 ---------- */
 body.m-body #btnCalc { display: none; }
-/* 吸底 dock = 「开始计算」+ 快捷同步图标同一行（R48）：fixed 从按钮挪到 .calc-row，
-   按钮回归普通 flex 子项，图标才能真正和它并排（此前按钮自己 fixed，图标只能另起一行被压住）。 */
-body.m-body .calc-row {
+body.m-body .btn-calc-fab {
+  display: block;
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(123px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   z-index: 9000;
   width: min(92vw, 440px);
-  gap: 8px;
-  margin-top: 0;
-}
-body.m-body .btn-calc-fab {
-  display: block;
-  flex: 1 1 auto;
-  min-width: 0;
-  width: auto;
   padding: 14px;
   font-size: 16px;
   border-radius: 999px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
 }
 body.m-body .btn-calc-fab:active { background: var(--primary-dark); }
-/* 切到子工具视图时整行 dock 收起（子工具页无此按钮，避免叠在 Tab 上） */
-body.m-body.tool-mode .calc-row,
-body.m-body.avatar-full .calc-row { display: none; }
+/* 切到子工具视图时收起（子工具页无此按钮，避免叠在 Tab 上） */
+body.m-body.tool-mode .btn-calc-fab,
+body.m-body.avatar-full .btn-calc-fab { display: none; }
 
-/* （表单填写进度球 + 明细面板已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
-
-/* 快捷同步图标（R47 图标化 → R48 挪进吸底 dock 与「开始计算」同行）：移动端没有真实 hover，
-   靠 :focus-within 让浮出文案在点按后出现一下；点按本身还会走 app.js 的 toast 提示。
-   ⚠ R48 起不再需要给图标单独留底部净空 —— 它已在 dock 内，被按钮压住的问题从结构上消失了。 */
-body.m-body .as-tog {
-  width: 46px; height: 46px; margin: 0;
-  background: #f2f8f6; border-color: var(--border);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+/* 表单填写进度球：常驻顶栏右侧。
+   原先的右下角浮层（bottom:140px）在竖屏下正好压住输入框右侧，挪进顶栏后不再遮挡内容。 */
+body.m-body .m-top .progress-fab {
+  position: static;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
 }
-body.m-body .as-tog[data-on="1"] { background: #e3f4ec; }
-body.m-body .as-ico { width: 24px; height: 24px; }
-body.m-body .as-tip { font-size: 12px; padding: 7px 11px; }
-body.m-body .as-tip::after { right: 18px; }
-
-/* 计算中的顶部进度条：移动端顶栏是 sticky top:0，进度条压在它上缘即可（z-index 更高）。 */
-body.m-body .calc-bar { height: 3px; }
+body.m-body .m-top .progress-fab svg { width: 38px; height: 38px; }
+/* 进度明细面板：从顶栏下方弹出（不再从屏幕底部往上弹） */
+body.m-body .progress-panel {
+  right: 10px;
+  top: calc(64px + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  width: min(300px, 90vw);
+}
 
 /* 子工具视图隐藏计算器顶栏 —— 与桌面版「进入子工具即隐藏 hero 与工具栏」同一行为，
    当前所在工具由底部 Tab 的高亮直接体现；腾出的顶部空间改由容器自身补安全区。 */
@@ -218,25 +206,19 @@ body.m-body.avatar-full .m-top { display: none; }
 /* ---------- 子工具视图（iframe）底部留白 + 顶部安全区 ---------- */
 body.m-body #appModStats,
 body.m-body #appRerollStats,
-body.m-body #appAvatarFrame,
-body.m-body #appLedger {
+body.m-body #appAvatarFrame {
   padding: 8px 10px calc(72px + env(safe-area-inset-bottom, 0px));
   max-width: 720px;
 }
-/* 收益账单子页收尾是「合计行 + 一整段说明」，底部 Tab 是 4 列网格两行（实测 ~115px），
-   72px 会让最后一行压在 Tab 下面 → 该页单独留足空间 */
-body.m-body #appLedger { padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
 /* 子工具模式顶栏被隐藏，容器自己补顶部安全区（刘海 / 状态栏） */
 body.m-body.tool-mode #appModStats,
 body.m-body.tool-mode #appRerollStats,
-body.m-body.avatar-full #appAvatarFrame,
-body.m-body.tool-mode #appLedger {
+body.m-body.avatar-full #appAvatarFrame {
   padding-top: calc(8px + env(safe-area-inset-top, 0px));
 }
 body.m-body #modStatsFrame,
 body.m-body #rerollStatsFrame,
-body.m-body #avatarFrame,
-body.m-body #ledgerFrame {
+body.m-body #avatarFrame {
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
 }
@@ -268,22 +250,6 @@ body.m-body select {
   border-radius: 9px;
 }
 body.m-body .btn { min-height: 44px; }
-/* ---------- 「数据日期 + 今天」一体化后缀控件（style.css 的 .input-row）----------
-   本文件上面的 body.m-body input 是 id 级选择器（#formSection input，见文件末尾），
-   优先级高于 style.css 的 .input-row > input → 手机上输入框仍是四角 9px，
-   与按钮拼接处会露出圆角缺口（2026-10-16 实测 CDP：inp=9px/9px 应为 9px/0px）。
-   这里用同等强度（body.m-body .input-row > input）显式覆盖，圆角取移动端基准 9px。 */
-body.m-body .input-row { display: flex; align-items: stretch; gap: 0; }
-body.m-body .input-row > input {
-  flex: 1 1 auto; min-width: 0;
-  border-top-right-radius: 0; border-bottom-right-radius: 0;
-  border-top-left-radius: 9px; border-bottom-left-radius: 9px;
-}
-body.m-body .input-row > .suffix-btn {
-  flex: 0 0 auto; margin-left: -1px;
-  border-radius: 0 9px 9px 0;
-  min-height: 44px;   /* 与 m-body 的 input 等高 */
-}
 body.m-body .btn-big { padding: 14px; font-size: 16px; }
 body.m-body .tab { padding: 11px 10px; font-size: 13.5px; }
 body.m-body .app-nav-btn { min-height: 50px; }
@@ -464,27 +430,3 @@ body.m-body .modal-body { padding: 14px; }
   body.m-body .fixed-table th:first-child,
   body.m-body .fixed-table td:first-child { font-size: 10px; }
 }
-
-/* ============================================================
-   2026-10-16 界面优化批（移动端微调）
-   ============================================================ */
-/* 资源图标：竖屏下小一号，避免 label 文本被挤到换行 */
-body.m-body .res-icon { width: 16px; height: 16px; margin-right: 4px; vertical-align: -3px; }
-/* 信息窗面板：固定宽度但左右各留 17px，实测 390 视口下右缘 373px —— 零横向溢出 */
-body.m-body .info-panel { width: min(340px, calc(100vw - 34px)); padding: 10px 11px; }
-body.m-body .info-panel .ip-title { font-size: 13px; }
-/* 活动行：移除按钮触控目标放大（34px 是密集列表下的折中，不取 44px） */
-body.m-body .ev-del { width: 34px; height: 34px; }
-/* R40：目标方案分段（现状 / 开放日）在竖屏下收紧内边距，状态药丸允许换行 */
-body.m-body .sb-seg { padding: 8px 9px 9px; margin-left: 0; margin-right: 0; }
-body.m-body .sb-seg-head { gap: 6px; }
-body.m-body .sb-seg-status { font-size: 10px; padding: 1px 7px; }
-body.m-body .sb-text.shortage-line { font-size: 12.5px; line-height: 1.7; }
-body.m-body .sb-text.shortage-line .shortage-bottle { display: inline-block; margin-left: 0; margin-top: 2px; }
-/* R41：困难收益未计入的红字警示在竖屏下收紧字号 */
-body.m-body .stage-warn { font-size: 12px; line-height: 1.65; }
-body.m-body .ev-del svg { width: 15px; height: 15px; }
-body.m-body .ev-status { font-size: 12px; padding: 3px 10px; }
-/* 活动行的日期/模板在窄屏各占半行，避免三件挤成一行 */
-body.m-body .event-row .ev-template,
-body.m-body .event-row .ev-start { flex: 1 1 46%; }

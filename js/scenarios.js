@@ -153,11 +153,7 @@
     var start = new Date(snapshot.recorded_at.getTime());
     var natural = C.incomeBetween(snapshot, start, openAt);
     var wipeoutHours = snapshot.daily_wipeout_count * snapshot.wipeout_hours_each;
-    /* R62（2026-10-26）口径统一：歼灭次数与月卡箱都只能按「完整过去的天数」计
-       —— 7.5 天只做得了 7 天的歼灭、只领得到 7 天的月卡箱。
-       此处原为 Math.round（7.5→8），与 scenarioPlans 里 floor(daysF) 的同一指标相差 1 次歼灭，
-       导致「全箱梭哈」与「场景对比」两块给出不同的开放日等级。 */
-    var days = Math.max(0, Math.floor((openAt.getTime() - start.getTime()) / 86400000 + 1e-9));
+    var days = Math.max(0, Math.round((openAt.getTime() - start.getTime()) / 86400000));
     RESOURCES.forEach(function (r) {
       natural[r] += (snapshot.income_per_hour[r] || 0.0) * wipeoutHours * days;
     });
@@ -176,26 +172,6 @@
     return future;
   }
 
-  /* 箱类折算总额（固定小时箱 + 自选箱各取该资源最优选项）：只用于「同一批箱在新旧收益下的差」 */
-  function boxResourcesOf(snapshot, income) {
-    var fx = B.fixedBoxResources(snapshot, income);
-    var out = { credit: fx.credit || 0, battle_data: fx.battle_data || 0, core_dust: fx.core_dust || 0 };
-    RESOURCES.forEach(function (r) {
-      var best = 0;
-      (snapshot.selectable_boxes || []).forEach(function (b) {
-        if (!b.options || !b.options.length) return;
-        var bv = 0;
-        b.options.forEach(function (opt) {
-          var v = (opt.rewards && opt.rewards[r]) || 0;
-          bv = Math.max(bv, opt.mode === "units" ? v : v * (income[r] || 0));
-        });
-        best += bv * (b.quantity || 0);
-      });
-      out[r] += best;
-    });
-    return out;
-  }
-
   function futureMainStoryScenario(snapshot) {
     if (!snapshot.main_story_open_at || !snapshot.future_base_level) {
       return { available: false, reason: "未填写新主线开放时间或未来基地收益" };
@@ -203,22 +179,15 @@
     var openAt = new Date(snapshot.main_story_open_at.getTime());
     var future = futureSnapshot(snapshot);
     var fixed = immediateLevels(future, true, true, future.income_per_hour);
-    /* 开箱收益对比：同一批箱子（现状库存）按新基地收益 vs 当前收益折算出的资源差额，
-       再除以箱子落地等级的单级消耗 —— 只反映「箱子更值钱」这部分，不含等待期自然积累。
-       R60：改成**连续口径（小数级）**。旧口径是「两次整数等级之差」，1.85% 的收益差折合 ≈0.9 级，
-             正好压在 0/1 边界上：实测同一库存 10-16~10-26 恒为 0，而箱量 ±3% 就能在 0/1 之间来回翻，
-             表现为「多赚 1 级」忽然变「多赚 0 级」。连续值不再受取整边界影响。 */
+    // 开箱收益对比：同一资源底盘（现状裸资源，不含推图收益与等待期积累）下，
+    // 箱子按新基地收益 vs 当前收益折算的等级差 —— 只反映「箱子更值钱」这部分，
+    // 不含等待期自然积累（那部分与是否开箱无关）
     var boxGain = 0;
     if (snapshot.future_income_per_hour) {
-      var boxNow = boxResourcesOf(snapshot, snapshot.income_per_hour);
-      var boxFut = boxResourcesOf(snapshot, snapshot.future_income_per_hour);
-      var costAt = C.costForLevel(snapshot.upgrade_cost, fixed.level) || {};
-      var minLv = Infinity;
-      RESOURCES.forEach(function (r) {
-        var d = (boxFut[r] || 0) - (boxNow[r] || 0);
-        if (d > 0 && (costAt[r] || 0) > 0) minLv = Math.min(minLv, d / costAt[r]);
-      });
-      boxGain = isFinite(minLv) ? Math.max(0, minLv) : 0;
+      var baseSnap = Object.assign({}, snapshot, { stage_clear_resources: C.zeroRes() });
+      var lvNew = immediateLevels(baseSnap, true, true, snapshot.future_income_per_hour).level;
+      var lvOld = immediateLevels(baseSnap, true, true, snapshot.income_per_hour).level;
+      boxGain = Math.max(0, lvNew - lvOld);
     }
     return {
       available: true, open_at: C.isoMinutes(openAt),

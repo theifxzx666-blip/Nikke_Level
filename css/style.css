@@ -21,21 +21,13 @@
   --hero-bg: url("../assets/bg/hero.webp");
 }
 * { box-sizing: border-box; }
-/* 自定义字体：Kingnammm Maiyuan 2（子集化版，仅保留站内实际用到的 1552 个字符）
-   7.86MB 全量 ttf → 286KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
-   新增/改动文案若用到新汉字，需重跑子集化脚本（见 临时文件/scripts/font_charset.js + font_subset.py，
-   字符集文件 临时文件/out/_subset_chars.txt）。
-   ?v=20261016a：2026-10-16 补字（衡赚亏释，1508→1512）后加版本参数强制客户端换新字体，
-   同时修掉老用户缓存旧字体导致「衡」字型与全站不一致的问题。
-   ?v=20261016b：2026-10-16 再补 40 字（1512→1552）—— 覆盖 49 个章节名（乡兽匙印叛坠拜救沟烙牢
-   献盾矛笼蚀象逢钥…）、静态正文（哨币店既殊稀）与 JS 渲染文案（抬拆汇舍贡费述铸）/活动模板（券募招拾混狗笔）。
-   此前这些字回落系统字体，在「N章·章名」标题里字型明显不统一。
-   注意：index.html / mobile.html 的 <link rel="preload"> 必须与本处保持完全相同的 URL（含 ?v=），
-   否则浏览器会把字体下载两次。 */
+/* 自定义字体：Kingnammm Maiyuan 2（子集化版，仅保留站内实际用到的 1549 个字符）
+   7.86MB 全量 ttf → 277KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
+   新增/改动文案若用到新汉字，需重跑子集化脚本（见 临时文件/font_charset.js + font_subset.py）。 */
 @font-face {
   font-family: "MaiYuan";
-  src: url("../assets/fonts/maiyuan-subset.woff2?v=20261016b") format("woff2"),
-       url("../assets/fonts/maiyuan-subset.ttf?v=20261016b") format("truetype");
+  src: url("../assets/fonts/maiyuan-subset.woff2") format("woff2"),
+       url("../assets/fonts/maiyuan-subset.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -103,10 +95,6 @@ body::after {
 .btn-accent { background: #534ab7; color: #fff; border-color: #534ab7; }
 .btn-accent:hover { background: #3d3682; border-color: #3d3682; }
 .btn-big { width: 100%; padding: 14px; font-size: 16px; margin-top: 6px; }
-/* 「开始计算」+ 快捷同步图标同一行（R48）：间距由 .calc-row 统一给，按钮吃掉剩余宽度。
-   ⚠ .btn-big 的 margin-top 必须在这里归零 —— 否则 flex 交叉轴居中会被它自己顶偏 3px。 */
-.calc-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
-.calc-row .btn-big { flex: 1 1 auto; width: auto; min-width: 0; margin-top: 0; }
 /* 移动端悬浮「开始计算」按钮：桌面默认隐藏（避免成为 grid 子项挤乱双列布局），移动端媒体查询内再显示 */
 .btn-calc-fab { display: none; }
 /* 结果区导出图片按钮（tabs 右侧） */
@@ -144,24 +132,6 @@ input, select {
 }
 input:focus, select:focus { outline: 2px solid #9fe1cb; border-color: var(--primary); }
 .hint { font-size: 12px; color: var(--muted); margin: 4px 0; }
-
-/* 分服切换（R66）：从「账号状态」挪进「关卡进度」标题行，做成分段选项卡，一行显示。
-   legend 本体去背景，药丸只包 .lg-main，选项卡自成一组；真值在隐藏的 #f_server 上。 */
-legend.lg-split { display: inline-flex; align-items: center; gap: 10px; background: transparent !important; padding: 0 4px; }
-legend.lg-split .lg-main { background: #e5effa; padding: 2px 8px; border-radius: 6px; }
-.srv-tabs {
-  display: inline-flex; align-items: center; gap: 2px;
-  background: #fff; border: 1px solid #cfe0f2; border-radius: 999px; padding: 2px;
-}
-.srv-tabs .srv-tab {
-  border: none; background: transparent; color: #5a6b7d; cursor: pointer;
-  font: 600 12.5px/1 'MaiYuan', 'Microsoft YaHei', sans-serif;
-  min-width: 50px; padding: 6px 12px; border-radius: 999px;
-  transition: background .15s, color .15s;
-}
-.srv-tabs .srv-tab:hover { color: #185fa5; background: #eff5fb; }
-.srv-tabs .srv-tab.active { background: #185fa5; color: #fff; }
-.srv-tabs .srv-tab.active:hover { background: #134c86; color: #fff; }
 
 .fixed-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .fixed-table th, .fixed-table td { border: 1px solid var(--border); padding: 4px; text-align: center; }
@@ -235,82 +205,23 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 .raw-toolbar { display: flex; justify-content: flex-end; }
 .raw-toolbar .btn-export { margin-left: 0; }
 
-/* （收益账单的样式已随功能迁到独立页 ledger.html，见该文件内联 <style>：R47） */
-
-/* （悬浮进度球已按用户要求移除：2026-10-17「移除进度条统计，基本没啥用」） */
-
-/* ===== 「开始计算」同一行的快捷同步开关（R47 图标化 → R48 挪到按钮右侧） =====
-   本地保存本来就每次计算都会做（runCalc → saveForm），这个开关只管「顺手推到云端账号」。
-   文案不放常驻位置（用户反馈太长、抢视线）→ 只在 hover / 键盘聚焦时浮出。
-   状态由 app.js 的 paintAutoSync() 写到 [data-on] 上，样式只看这个属性。 */
-.as-tog {
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-  flex: 0 0 auto;                       /* 在 .calc-row 里不参与拉伸，宽度恒定 */
-  width: 42px; height: 42px; margin: 0;
-  border: 1px solid var(--border); border-radius: 50%;
-  background: #fff; color: var(--muted);
-  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
-  transition: color .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+/* 悬浮进度球 */
+.progress-fab {
+  position: fixed; right: 20px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%;
+  background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.18); cursor: pointer; z-index: 9999;
+  display: flex; align-items: center; justify-content: center; border: none;
 }
-.as-tog:hover { color: var(--primary-dark); border-color: rgba(29, 158, 117, .5); background: #f4faf7; }
-.as-tog[data-on="1"] { color: var(--primary); border-color: rgba(29, 158, 117, .45); background: #eaf6f1; }
-.as-tog[data-on="1"]:hover { box-shadow: 0 0 0 3px rgba(29, 158, 117, .12); }
-.as-tog input {                       /* 原生 checkbox 保留（值与 change 事件都用它），视觉隐藏 */
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  margin: 0; opacity: 0; cursor: pointer;
+.progress-panel {
+  position: fixed; right: 20px; bottom: 90px; width: 300px; max-width: 90vw;
+  background: #fff; border: 1px solid var(--border); border-radius: 12px; z-index: 9999;
+  box-shadow: 0 6px 24px rgba(0,0,0,.16); padding: 10px 12px;
 }
-.as-ico { width: 22px; height: 22px; display: block; }
-.as-tog[data-on="0"] .as-ico { opacity: .62; }
-/* 浮出文案（气泡）：图标已靠右 → 气泡必须右对齐向左展开，否则 240px 宽的文案会冲出屏幕右缘 */
-.as-tip {
-  position: absolute; right: 0; bottom: calc(100% + 9px);
-  transform: translate(0, 4px);
-  padding: 6px 10px; border-radius: 8px; white-space: nowrap;
-  background: #22322c; color: #fff; font-size: 12px; line-height: 1.35;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .2);
-  opacity: 0; pointer-events: none; transition: opacity .16s ease, transform .16s ease;
-  z-index: 6;
-}
-.as-tip::after {                      /* 箭头对准圆形图标中心：42px 宽 → 21 - 5 = 16px */
-  content: ""; position: absolute; right: 16px; top: 100%;
-  border: 5px solid transparent; border-top-color: #22322c;
-}
-.as-tog:hover .as-tip,
-.as-tog:focus-within .as-tip { opacity: 1; transform: translate(0, 0); }
-
-/* ===== 计算中的加载反馈 =====
-   顶部进度条（不确定进度 indeterminate）：横向滑动用 transform 实现，
-   跑在合成线程上 —— 计算期间主线程被 JS 占满时仍能持续滑动，用户才真的"看得到在算"。 */
-.calc-bar {
-  position: fixed; left: 0; right: 0; top: 0; height: 3px; z-index: 10000;
-  overflow: hidden; pointer-events: none;
-  opacity: 0; transition: opacity .18s ease;
-  background: rgba(29, 158, 117, .12);
-}
-.calc-bar.is-on { opacity: 1; }
-.calc-bar::after {
-  content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 34%;
-  background: linear-gradient(90deg, rgba(29,158,117,0) 0%, #1d9e75 45%, #0f6e56 60%, rgba(15,110,86,0) 100%);
-  will-change: transform;
-  animation: calcBarSlide 1.05s cubic-bezier(.45,.05,.55,.95) infinite;
-}
-@keyframes calcBarSlide {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(295%); }   /* 100% / 34% ≈ 294% → 完全移出右侧 */
-}
-/* 按钮 loading：转圈用伪元素，避免改动按钮文字（文字由 markCalculated/resetCalcButton 管理） */
-.btn.is-loading { pointer-events: none; }
-.btn.is-loading::before {
-  content: ""; display: inline-block; width: 13px; height: 13px; margin-right: 8px;
-  border: 2px solid rgba(255, 255, 255, .4); border-top-color: #fff; border-radius: 50%;
-  vertical-align: -2px;
-  animation: exportSpin .7s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .calc-bar::after { animation-duration: 2.4s; }
-  .btn.is-loading::before { animation-duration: 1.6s; }
-}
+.pp-head { font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.pp-close { border: none; background: none; cursor: pointer; font-size: 14px; color: var(--muted); }
+#ppList { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+#ppList li { padding: 2px 0; }
+.ok-item { color: #0f6e56; }
+.no-item { color: #a0a6a3; }
 
 /* ===== 一图流导出模式（html2canvas 截图时 onclone 触发） ===== */
 /* 隐藏 tabs 栏（不进入导出图） */
@@ -454,6 +365,11 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .card .lbl { font-size: 12px; }
   h3.sec { font-size: 15px; }
 
+  /* 悬浮进度球缩小、贴边 */
+  .progress-fab { width: 48px; height: 48px; right: 12px; bottom: 12px; }
+  .progress-fab svg { width: 40px; height: 40px; }
+  .progress-panel { right: 12px; bottom: 68px; width: 280px; }
+
   /* 防止任何元素把页面撑出横向滚动（clip 不会破坏 fixed/sticky） */
   body { overflow-x: clip; }
 
@@ -489,22 +405,17 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .form-panel.collapsible fieldset.collapsed > *:not(legend) { display: none; }
   .form-panel.collapsible fieldset.collapsed { margin-bottom: 8px; }
 
-  /* 移动端：整行 .calc-row 变吸底 dock，「开始计算」与快捷同步图标一行并排（R48）
-     —— 图标挪进按钮右侧后不再单独占一行，也就不会再被吸底按钮压住。 */
-  .calc-row {
-    position: fixed; left: 50%; transform: translateX(-50%);
-    bottom: 14px; z-index: 9000;
-    width: min(92vw, 440px); margin-top: 0; gap: 8px;
-  }
+  /* 移动端底部悬浮「开始计算」 */
   .btn-calc-fab {
-    display: block; flex: 1 1 auto; min-width: 0; width: auto;
+    display: block; position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: 14px; z-index: 9000; width: min(92vw, 440px);
     padding: 14px; font-size: 16px; border-radius: 999px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, .22);
   }
-  /* 移动端只保留底部 dock 里的按钮，隐藏表单内原「开始计算」，避免出现两个计算按钮 */
+  /* 移动端只保留底部悬浮按钮，隐藏表单底部原「开始计算」，避免出现两个计算按钮 */
   #btnCalc { display: none; }
-  /* 结果出来后 dock 下移贴底，且不要挡住结果底部操作 */
-  body.has-result .calc-row { bottom: 14px; }
+  /* 结果出来后，悬浮按钮文案提示可重算，且不要挡住结果底部操作 */
+  body.has-result .btn-calc-fab { bottom: 14px; }
 }
 
 /* 超小屏（≤420px）：字段全部单列，避免 2 列挤压 */
@@ -549,9 +460,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 9px;
   background: #e1f5ee; color: #0f6e56; font-size: 11px; font-weight: 600; vertical-align: 1px;
 }
-/* R59：Block② 拆解里只有「箱子等到开放日再开箱多赚 N 级」这项是真·多赚，其余是总升幅的组成部分 → 单独标红 */
-.sb-big .em-earn { color: #b3283a; }
-.sb-big .em-earn b { color: #b3283a; }
 .sb-plan { font-size: 13px; color: #334; margin-top: 4px; line-height: 1.6; }
 .sb-text { font-size: 13px; color: #334; line-height: 1.75; }
 .sb-text b { color: var(--primary-dark); }
@@ -572,35 +480,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .target-card .summary-block { border-top-color: #d9e6f2; }
 .target-card .sb-head { color: #185fa5; }
 
-/* ---------- R40：目标方案分段（现状 / 开放日）----------
-   用户反馈「现状不可达（全箱梭哈只到 557 级）与开放日可达两套开箱方案之间划分很模糊」，
-   故把每套方案包成独立分段：左侧色条（现状=灰、开放日=蓝）+ 分段标题 + 状态药丸。 */
-.sb-seg {
-  margin: 9px 0 3px; padding: 8px 10px 9px;
-  border: 1px solid #e1e8ee; border-radius: 9px; background: #fbfcfe;
-}
-.sb-seg + .sb-seg { margin-top: 12px; }
-.sb-seg-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
-.sb-seg-title { font-size: 12.5px; font-weight: 700; color: #3a4750; }
-.sb-seg-status { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
-.sb-seg-status.bad { background: #fdecee; color: #b3283a; }
-.sb-seg-status.ok { background: #e1f5ee; color: #0f6e56; }
-.sb-seg-now { border-left: 3px solid #a6b2bb; }
-.sb-seg-now .sb-seg-title { color: #58666f; }
-.sb-seg-fut { border-left: 3px solid #2f7dd1; background: #f7fbff; }
-.sb-seg-fut .sb-seg-title { color: #185fa5; }
-.sb-seg > *:last-child { margin-bottom: 0; }
-
-/* ---------- R40：不可达缺口压缩成一行（只列仍缺的资源） ---------- */
-.sb-text.shortage-line { margin-top: 4px; color: #5d4b26; }
-.sb-text.shortage-line .shortage-bottle { margin-left: 4px; color: #b3283a; }
-/* ⚠ .sb-text b 的规则优先级更高，会把「瓶颈：X」里的加粗资源名染成主色 → 这里强制继承红色 */
-.sb-text.shortage-line .shortage-bottle b { color: inherit; }
-/* ---------- R41：困难推图收益「未到达 → 未计入」的警示 ---------- */
-.stage-warn { display: block; margin-top: 5px; color: #b3283a; font-weight: 600; }
-.stage-warn b { color: inherit; }
-.stage-row-off { opacity: .5; }
-
 @media (max-width: 600px) {
   .summary-card { margin-bottom: 12px; }
   .sb-big { font-size: 14px; }
@@ -612,9 +491,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .result-panel.export-mode .sb-big { font-size: 17px !important; }
 .result-panel.export-mode .sb-big b { font-size: 20px !important; }
 .result-panel.export-mode .sb-plan, .result-panel.export-mode .sb-text { font-size: 15px !important; color: #2a3a3a !important; }
-.result-panel.export-mode .sb-seg-title { font-size: 14px !important; }
-.result-panel.export-mode .sb-seg-status { font-size: 12px !important; }
-.result-panel.export-mode .sb-seg { border-color: #cfd8e2 !important; background: #fbfcfe !important; }
 .result-panel.export-mode .summary-warn { font-size: 13px !important; }
 .result-panel.export-mode .summary-note { font-size: 13px !important; color: #2b2b2b !important; }
 
@@ -690,15 +566,15 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .app-view { display: none; }
 .app-view.active { display: block; }
 
-#appModStats, #appRerollStats, #appCombatPowerBeta, #appCombatReroll, #appAvatarFrame, #appLedger { padding: 8px 20px 60px; margin: 0 auto; max-width: 1480px; }
-#modStatsFrame, #rerollStatsFrame, #combatPowerBetaFrame, #combatRerollFrame, #avatarFrame, #ledgerFrame {
+#appModStats, #appRerollStats, #appCombatPowerBeta, #appAvatarFrame { padding: 8px 20px 60px; margin: 0 auto; max-width: 1480px; }
+#modStatsFrame, #rerollStatsFrame, #combatPowerBetaFrame, #avatarFrame {
   width: 100%; height: 480px; min-height: 300px; display: block;
   border: 0; border-radius: 12px; background: #eef3f1; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 @media (max-width: 820px) {
   .app-nav { max-width: 100%; }
   .app-nav-btn { flex: 1 1 auto; }
-  #appModStats, #appRerollStats, #appCombatPowerBeta, #appCombatReroll, #appAvatarFrame, #appLedger { padding: 0 12px 60px; }
+  #appModStats, #appRerollStats, #appCombatPowerBeta, #appAvatarFrame { padding: 0 12px 60px; }
   /* 无 JS 时的兜底：头像预览锁视口高。用 svh（最小视口高）而非 dvh——
      dvh 会随地址栏收放变化，iframe 高度反复跳变正是「容器一直在动」的成因之一 */
   #appAvatarFrame { padding: 0 8px 10px; }
@@ -757,127 +633,3 @@ body.avatar-full #avatarFrame { flex: 1 1 auto; min-height: 0; height: 100%; }
 .qr-area { min-height: 168px; }
 .qr-area img { width: 168px; height: 168px; image-rendering: pixelated; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
 .qr-fallback { font-size: 12px; color: var(--muted); margin: 8px 0; }
-
-/* ============================================================
-   2026-10-16 界面优化批：隐藏字段 / 资源图标 / 信息窗 / 活动行
-   ============================================================ */
-
-/* ---------- 视觉隐藏（DOM + state + 导出 JSON/XLSX 全部保留，仅收进视觉） ---------- */
-.field-hidden { display: none !important; }
-
-/* ---------- 行内「输入框 + 后缀按钮」一体化控件（数据日期的「今天」） ----------
-   用户反馈：按钮单独一个圆角小方块贴在日期框旁边，「有点割裂」。
-   改法 = 共享外框：输入框只留左侧圆角、按钮 margin-left:-1px 压掉双线、
-   只在按钮右端收圆角，背景用极浅的绿灰而不是纯白 → 视觉上是一个整体输入控件。 */
-.input-row { display: flex; align-items: stretch; gap: 0; }
-.input-row > input {
-  flex: 1 1 auto; min-width: 0;
-  border-top-right-radius: 0; border-bottom-right-radius: 0;
-}
-.input-row > .suffix-btn {
-  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-  margin-left: -1px; padding: 0 10px; min-height: 34px;
-  border: 1px solid var(--border); border-radius: 0 8px 8px 0;
-  background: #f6faf8; color: var(--primary-dark);
-  font-size: 12px; line-height: 1; white-space: nowrap; cursor: pointer;
-  transition: background .15s, color .15s;
-}
-.input-row > .suffix-btn:hover { background: #e8f5f0; }
-.input-row > .suffix-btn:active { background: #ddeee7; }
-.input-row > .suffix-btn:focus-visible { outline: 2px solid #9fe1cb; outline-offset: 1px; }
-.input-row > .suffix-btn svg { width: 13px; height: 13px; display: block; }
-
-/* 通用图标按钮（未内嵌在输入框旁时使用） */
-.icon-btn {
-  flex: 0 0 auto; width: 34px; height: 34px; padding: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border); border-radius: 8px;
-  background: #fff; color: var(--muted); cursor: pointer;
-  transition: color .15s, border-color .15s, background .15s;
-}
-.icon-btn:hover { color: var(--primary-dark); border-color: var(--primary); background: #f0faf6; }
-.icon-btn:active { background: #e6f6f0; }
-.icon-btn svg { width: 16px; height: 16px; display: block; }
-
-/* 结果区区块标题也可挂信息图标 → 需要 position:relative 作为面板锚点 */
-.sb-head { position: relative; }
-
-/* ---------- 分组配色：其他（中性灰蓝，放杂项开关） ---------- */
-.grp-e legend { color: #56687a; background: #eef2f6; }
-.grp-e { border-color: #cfd9e2; }
-
-/* ---------- 标题里的「标题文字 + 信息图标」容器 ----------
-   legend 在移动端是 flex + space-between；把两者包成【单个】flex item 后，
-   图标紧跟标题、不会被 space-between 推到行尾，折叠箭头（::after）仍在最后。
-   position:relative 是信息面板（absolute）的定位锚点，缺了它面板会跑到视口左上角。 */
-.lg-main { display: inline-flex; align-items: center; flex-wrap: wrap; position: relative; }
-/* 结果区「达成目标方案」标题同样是信息面板的锚点 */
-.target-title { position: relative; }
-
-/* ---------- 资源图标（信用点 / 战斗数据辑 / 红球）：比 .box-icon 小一号，避免双倍间距 ---------- */
-.res-icon { width: 18px; height: 18px; vertical-align: -3px; margin-right: 5px; object-fit: contain; }
-label > .res-icon, .box-name .res-icon { pointer-events: none; }
-
-/* ---------- 信息窗（InfoTip）：标题/卡片旁可点击的 ⓘ，点击浮出说明面板 ----------
-   面板绝对定位锚在容器左上；width 固定才不会被窄容器压成竖条。
-   放在 legend 内 ⇒ 必须 stopPropagation，否则点图标会连带折叠整段（见 app.js InfoTip）。 */
-.info-tip {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px; padding: 0; margin-left: 6px;
-  border: 1px solid var(--border); border-radius: 50%;
-  background: #fff; color: var(--muted); cursor: pointer;
-  flex: 0 0 auto; vertical-align: -3px;
-  transition: color .15s, border-color .15s, background .15s;
-}
-.info-tip:hover, .info-tip:focus-visible { color: var(--primary-dark); border-color: var(--primary); background: #f0faf6; outline: none; }
-.info-tip[aria-expanded="true"] { color: #fff; border-color: var(--primary); background: var(--primary); }
-.info-tip svg { width: 12px; height: 12px; display: block; }
-.info-panel {
-  position: absolute; left: 0; top: calc(100% + 6px); z-index: 3000;
-  width: min(380px, calc(100vw - 32px));
-  background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--primary);
-  border-radius: 10px; padding: 10px 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .16);
-  font-size: 12.5px; line-height: 1.7; color: #334; text-align: left;
-  white-space: normal; font-weight: 400;
-}
-.info-panel .ip-title { font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; font-size: 13px; padding-right: 18px; }
-.info-panel .ip-body b { color: var(--primary-dark); }
-.info-panel .ip-close {
-  position: absolute; top: 5px; right: 6px; border: none; background: none;
-  cursor: pointer; color: var(--muted); font-size: 13px; line-height: 1; padding: 2px 5px; border-radius: 5px;
-}
-.info-panel .ip-close:hover { background: rgba(0, 0, 0, .06); color: #333; }
-/* 卡片内使用（结果区四卡）：图标浮在卡片右上角，不参与卡片排版 */
-.card .info-tip { position: absolute; top: 6px; right: 6px; margin-left: 0; }
-.card.info-host { position: relative; }
-
-/* ---------- 活动行（表单内）：模板 + 开始日期 + 状态 + 圆形移除按钮 ---------- */
-.event-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
-.event-row .ev-template { flex: 1 1 150px; min-width: 0; }
-.event-row .ev-start { flex: 1 1 130px; min-width: 0; }
-.ev-status { flex: 0 0 auto; font-size: 11.5px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; background: #f0f2f1; color: #778; }
-.ev-status.on { background: #e1f5ee; color: #0f6e56; }
-.ev-status.done { background: #f6eeee; color: #a35; }
-.ev-del {
-  flex: 0 0 auto; width: 28px; height: 28px; padding: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border); border-radius: 50%;
-  background: #fff; color: var(--muted); cursor: pointer;
-  transition: color .15s, border-color .15s, background .15s;
-}
-.ev-del:hover { color: #d9534f; border-color: #f0b9b7; background: #fdf3f3; }
-.ev-del svg { width: 13px; height: 13px; display: block; }
-
-/* ---------- 活动奖励实时预览：改为与「固定小时箱数量」同表形 ---------- */
-.event-preview { margin: 6px 0 2px; }
-.event-preview .ep-head { font-size: 12px; color: var(--muted); margin: 6px 0 2px; }
-.event-preview .fixed-table { margin: 2px 0 6px; }
-.event-preview .ep-sum { font-size: 12px; color: var(--muted); margin: 4px 0; }
-
-/* 忘记密码（R-new）：登录面板里的重置入口 + 成功提示 */
-.nk-forgot-row { margin: 2px 0 8px; text-align: right; }
-.nk-forgot-row a { font-size: 12px; color: var(--primary-dark); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-.nk-forgot-row a:hover { color: var(--primary); }
-.nk-hint-ok { font-size: 12.5px; line-height: 1.6; color: var(--primary-dark); background: #e2f5ee; border: 1px solid #bfe6d8; border-radius: 8px; padding: 7px 10px; margin: 6px 0 0; }
-.nk-hint-ok:empty { display: none; }
