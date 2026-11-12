@@ -874,3 +874,10 @@ label > .res-icon, .box-name .res-icon { pointer-events: none; }
 .event-preview .ep-head { font-size: 12px; color: var(--muted); margin: 6px 0 2px; }
 .event-preview .fixed-table { margin: 2px 0 6px; }
 .event-preview .ep-sum { font-size: 12px; color: var(--muted); margin: 4px 0; }
+
+/* 忘记密码（R-new）：登录面板里的重置入口 + 成功提示 */
+.nk-forgot-row { margin: 2px 0 8px; text-align: right; }
+.nk-forgot-row a { font-size: 12px; color: var(--primary-dark); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.nk-forgot-row a:hover { color: var(--primary); }
+.nk-hint-ok { font-size: 12.5px; line-height: 1.6; color: var(--primary-dark); background: #e2f5ee; border: 1px solid #bfe6d8; border-radius: 8px; padding: 7px 10px; margin: 6px 0 0; }
+.nk-hint-ok:empty { display: none; }

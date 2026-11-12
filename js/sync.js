@@ -489,7 +489,9 @@
       '<div class="nk-field"><label>邮箱</label><input class="nk-in" id="nkEmail" type="email" inputmode="email" placeholder="you@example.com" autocomplete="username" value="' + esc(draftEmail) + '"></div>' +
       '<div class="nk-field"><label>密码</label><div class="nk-pwrow"><input class="nk-in" id="nkPass" type="password" placeholder="至少 6 位" autocomplete="' + (isReg ? "new-password" : "current-password") + '"><button type="button" class="nk-eye" data-eyes data-for="nkPass">显示</button></div></div>' +
       confirm +
+      (isReg ? "" : '<p class="nk-forgot-row"><a id="nkForgot">忘记密码？点这里发重置邮件</a></p>') +
       '<div id="nkAuthErr">' + (msg ? errBar(msg) : "") + "</div>" +
+      '<div id="nkAuthOk" class="nk-hint-ok"></div>' +
       '<div class="nk-row"><button class="nk-btn" id="nkAuthGo">' + (isReg ? "注册" : "登录") + "</button></div>" +
       '<p class="nk-sub">' + (isReg
         ? "填邮箱 + 设个密码就行，注册完直接可用云端同步。"
@@ -505,6 +507,8 @@
       });
     });
     $inner.querySelector("#nkAuthGo").addEventListener("click", function () { doAuth(m); });
+    var fg = $inner.querySelector("#nkForgot");
+    if (fg) fg.addEventListener("click", function (e) { e.preventDefault(); doForgot(); });
     var nt = $inner.querySelector("#nkNetTest");
     if (nt) nt.addEventListener("click", function () { runSelfTest(); });
     $inner.querySelectorAll("[data-mode]").forEach(function (t) {
@@ -811,8 +815,36 @@
   }
 
   /* ============ 认证 ============ */
-  async function doAuth(mode) {
-    var email = $inner.querySelector("#nkEmail").value.trim();
+  /* 忘记密码：发一封重置邮件到注册邮箱。不查、不显示、不设置任何人的密码 ——
+     邮件里的链接只有邮箱本人能点，点开后到 reset.html 自己设新密码。
+     回跳地址复用 mailRedirect()，必须在 Supabase 的 Redirect URLs 白名单里。 */
+  async function doForgot() {
+    var emailEl = $inner.querySelector("#nkEmail");
+    var errEl = $inner.querySelector("#nkAuthErr");
+    var okEl = $inner.querySelector("#nkAuthOk");
+    function setErr(s, code) { if (errEl) errEl.innerHTML = s ? errBar(s, code) : ""; }
+    function setOk(s) { if (okEl) okEl.textContent = s || ""; }
+    setErr(""); setOk("");
+    var email = emailEl ? emailEl.value.trim() : "";
+    draftEmail = email;
+    if (!email) { setErr("先把邮箱填上，再点「忘记密码」"); return; }
+    if (!isEmail(email)) { setErr("邮箱格式不太对，检查一下有没有多打空格。"); return; }
+    if (!ensureClient()) { setErr("云端参数没配好，暂时发不了重置邮件。"); return; }
+    var btn = $inner.querySelector("#nkAuthGo");
+    if (btn) { btn.disabled = true; btn.textContent = "发送中…"; }
+    try {
+      var r = await supabase.auth.resetPasswordForEmail(email, { redirectTo: mailRedirect() + "reset.html" });
+      if (r && r.error) throw r.error;
+      setOk("重置链接已发到 " + email + "。点邮件里的链接设置新密码；没收到就看一眼垃圾箱，链接会过期，尽早点。");
+    } catch (e) {
+      var ex = explainAuthError(e);
+      setErr(ex.text, ex.code);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "登录"; }
+    }
+  }
+
+  async function doAuth(mode) {    var email = $inner.querySelector("#nkEmail").value.trim();
     var pass = $inner.querySelector("#nkPass").value;
     var errEl = $inner.querySelector("#nkAuthErr");
     draftEmail = email;

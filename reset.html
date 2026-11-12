@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设置新密码 · NIKKE 资源规划计算器</title>
+<meta name="theme-color" content="#1d9e75">
+<link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
+<link rel="stylesheet" href="css/style.css?v=20261112a">
+<style>
+  .rp-wrap { max-width: 520px; margin: 48px auto; padding: 0 16px; }
+  .rp-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .rp-card h1 { font-size: 18px; margin: 0 0 6px; }
+  .rp-card p.sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .rp-field { margin-bottom: 12px; }
+  .rp-field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
+  .rp-pwrow { display: flex; gap: 8px; }
+  .rp-pwrow input { flex: 1 1 auto; min-width: 0; }
+  .rp-btn { width: 100%; padding: 11px; border-radius: 9px; border: 1px solid var(--primary);
+            background: var(--primary); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+  .rp-btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+  .rp-btn[disabled] { opacity: .6; cursor: default; }
+  .rp-msg { margin-top: 12px; font-size: 13px; line-height: 1.6; border-radius: 8px; padding: 9px 11px; display: none; }
+  .rp-msg.err { display: block; color: #8a2b2b; background: #fdecec; border: 1px solid #f3c9c9; }
+  .rp-msg.ok { display: block; color: var(--primary-dark); background: #e2f5ee; border: 1px solid #bfe6d8; }
+  .rp-back { display: inline-block; margin-top: 14px; font-size: 12.5px; color: var(--primary-dark); }
+</style>
+</head>
+<body>
+<div class="rp-wrap">
+  <div class="rp-card">
+    <h1>设置新密码</h1>
+    <p class="sub">从邮件里的链接进来才能改；链接过期就回计算器重新发一封。</p>
+
+    <div id="rpForm" style="display:none">
+      <div class="rp-field">
+        <label>新密码（至少 6 位）</label>
+        <div class="rp-pwrow">
+          <input class="nk-in" id="rpPass" type="password" autocomplete="new-password" placeholder="至少 6 位">
+          <button type="button" class="nk-eye" id="rpEye1">显示</button>
+        </div>
+      </div>
+      <div class="rp-field">
+        <label>再输一次</label>
+        <div class="rp-pwrow">
+          <input class="nk-in" id="rpPass2" type="password" autocomplete="new-password" placeholder="再输一次">
+          <button type="button" class="nk-eye" id="rpEye2">显示</button>
+        </div>
+      </div>
+      <button class="rp-btn" id="rpGo">保存新密码</button>
+    </div>
+
+    <div id="rpMsg" class="rp-msg"></div>
+    <a class="rp-back" href="index.html">← 回计算器</a>
+  </div>
+</div>
+
+<script src="assets/js/supabase.min.js?v=20260920e"></script>
+<script>
+(function () {
+  /* 只做一件事：拿邮件链接换来的临时会话，调用 updateUser 设置新密码。
+     不读取、不展示任何人的旧密码（Supabase 也只存哈希，读不出来）。 */
+  var SUPABASE_URL = "https://oologpjskkpjkvcpddhf.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_6FzpENHzylm1M-NSvX6RBQ__Xlpv7Oc";
+
+  var $form = document.getElementById("rpForm");
+  var $msg = document.getElementById("rpMsg");
+  var $go = document.getElementById("rpGo");
+  var $p1 = document.getElementById("rpPass");
+  var $p2 = document.getElementById("rpPass2");
+
+  function say(text, kind) {
+    $msg.className = "rp-msg " + (kind || "err");
+    $msg.textContent = text;
+  }
+  function clear() { $msg.className = "rp-msg"; $msg.textContent = ""; }
+
+  if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    say("页面没加载好（SDK 缺失），刷新一次试试。");
+    return;
+  }
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
+
+  var ready = false;
+  function arm() {
+    if (ready) return;
+    ready = true;
+    $form.style.display = "";
+    clear();
+  }
+
+  /* supabase-js v2 会把 #access_token=…&type=recovery 自动消费掉并抛 PASSWORD_RECOVERY */
+  sb.auth.onAuthStateChange(function (evt, session) {
+    if (evt === "PASSWORD_RECOVERY" || (evt === "SIGNED_IN" && session && location.hash.indexOf("type=recovery") >= 0)) {
+      arm();
+    }
+  });
+
+  /* 兜底：有些邮件客户端会丢掉 hash 事件，这里再查一次当前会话 */
+  sb.auth.getSession().then(function (r) {
+    if (r && r.data && r.data.session) arm();
+  }).catch(function () {});
+
+  setTimeout(function () {
+    if (!ready) {
+      say("没检测到有效的重置链接。请回计算器重新点「忘记密码」发一封，或确认直接打开了本页而不是从邮件进来。");
+    }
+  }, 2500);
+
+  function toggle(input, btn) {
+    btn.addEventListener("click", function () {
+      var show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.textContent = show ? "隐藏" : "显示";
+    });
+  }
+  toggle($p1, document.getElementById("rpEye1"));
+  toggle($p2, document.getElementById("rpEye2"));
+
+  $go.addEventListener("click", async function () {
+    clear();
+    var p1 = $p1.value, p2 = $p2.value;
+    if (!p1 || p1.length < 6) return say("新密码至少 6 位。");
+    if (p1 !== p2) return say("两次输入不一致，重输一下。");
+    $go.disabled = true; $go.textContent = "保存中…";
+    try {
+      var r = await sb.auth.updateUser({ password: p1 });
+      if (r && r.error) throw r.error;
+      say("密码已更新，用新密码登录就行。", "ok");
+      setTimeout(function () { location.href = "index.html"; }, 1600);
+    } catch (e) {
+      var m = (e && (e.message || e.error_description)) || "保存失败";
+      if (/expired|invalid|not found/i.test(m)) m = "链接已失效（一般 1 小时内有效）。回计算器重新发一封重置邮件。";
+      else if (/at least|too short|weak/i.test(m)) m = "密码太短，至少要 6 位。";
+      say(m);
+    } finally {
+      $go.disabled = false; $go.textContent = "保存新密码";
+    }
+  });
+})();
+</script>
+</body>
+</html>
