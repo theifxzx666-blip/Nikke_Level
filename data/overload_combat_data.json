@@ -8,19 +8,19 @@
   },
   "sources": {
     "optionMapping": {
-      "path": "F:\\Codex\\Nikke\\Nikke\\outputs\\词条战力拆包研究\\正式结果\\静态表\\静态表分析\\词条类型映射.json",
+      "path": "F:\\Codex\\Nikke\\03_归档\\Nikke_历史混杂工作区\\outputs\\词条战力拆包研究\\正式结果\\静态表\\静态表分析\\词条类型映射.json",
       "sha256": "6dec6b812f67a3e1f33e63119bee3a69d00122e1846e51648325a0bd37c66bad"
     },
     "config": {
-      "path": "F:\\Codex\\Nikke\\Nikke\\outputs\\词条战力拆包研究\\正式结果\\静态表\\json\\ConfigGameTable.json",
+      "path": "F:\\Codex\\Nikke\\03_归档\\Nikke_历史混杂工作区\\outputs\\词条战力拆包研究\\正式结果\\静态表\\json\\ConfigGameTable.json",
       "sha256": "0ced640b42f7cc8bc3b758c87989aaf4b7e932d0d85e5e401267537f8da4b628"
     },
     "characterCatalog": {
-      "path": "F:\\Codex\\Nikke\\Nikke_Wiki\\data\\nikke_character_dictionary.json",
+      "path": "F:\\Codex\\Nikke\\01_母体\\A_游戏词典\\data\\nikke_character_dictionary.json",
       "sha256": "8f5c69dacad4658d1720a160cbc30610ed201675508f4b59cd9327c93bce112e"
     },
     "formulaSource": {
-      "path": "F:\\Codex\\Nikke\\Nikke\\outputs\\词条战力拆包研究\\临时\\NK_Common_System_Stat_StatUtility.cs",
+      "path": "F:\\Codex\\Nikke\\03_归档\\Nikke_历史混杂工作区\\outputs\\词条战力拆包研究\\临时\\NK_Common_System_Stat_StatUtility.cs",
       "sha256": "3b14e1e6093fd0e027fcf407b591fc966ad3934e0a5007e60424074f2c05cbe6"
     }
   },

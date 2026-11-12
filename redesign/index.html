@@ -1,0 +1,272 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIKKE 资源规划计算器</title>
+<meta name="theme-color" content="#1d9e75">
+<base href="../">
+<link rel="stylesheet" href="redesign/stepper.css?v=20261109a">
+<link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
+<link rel="preload" href="assets/fonts/maiyuan-subset.woff2?v=20261016b" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/style.css?v=20261027b">
+<!-- html2canvas（导出结果图用，gzip ≈46KB）与 xlsx（导入/导出 Excel 用，gzip ≈316KB）改为「用到才加载」，
+     由 js/app.js 的 ensureVendor() 在点击导出/导入时注入，首屏不再跨境外拉 CDN，也不拖慢首屏 -->
+</head>
+<body>
+<section class="hero-banner" aria-label="NIKKE 主题 banner">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <h2 class="hero-title">NIKKE 资源规划计算器</h2>
+      <p class="hero-sub">实时资源统计 · 升级消耗预估 · 升级方案产出（仅供参考）</p>
+      <p class="hero-cred">GODDESS OF VICTORY · 嗷润吉-DORO 制作</p>
+    </div>
+    <div class="hero-toolbar">
+      <button id="btnSave" class="btn btn-primary">💾 保存当前表单</button>
+      <button id="btnTemplate" class="btn">下载 XLSX 模板</button>
+      <input type="file" id="fileXlsx" accept=".xlsx" style="display:none">
+      <button id="btnImport" class="btn">导入 XLSX</button>
+      <button id="btnShare" class="btn">📡 跨设备同步</button>
+      <span id="saveTip" class="save-tip"></span>
+    </div>
+  </div>
+</section>
+
+<nav class="app-nav" id="appNav" aria-label="功能切换">
+  <!-- 导航按钮由 js/shell.js 从 tools.json 动态渲染（禁止在此硬编码工具清单） -->
+</nav>
+
+<section id="appPlanner" class="app-view active">
+<div class="layout" id="layout">
+  <!-- ============ 表单区 ============ -->
+  <section id="formSection" class="form-panel">
+    <fieldset class="grp-a">
+      <legend>账号状态</legend>
+      <div class="grid g4">
+        <label>数据日期
+          <span class="input-row">
+            <input type="date" id="f_recorded">
+            <button type="button" id="btnToday" class="suffix-btn" aria-label="更新为今天" title="更新为今天"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13.2 6.5A5.6 5.6 0 1 0 13.5 9.7" stroke-linecap="round"/><path d="M13.7 3.3v3.3h-3.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>今天</span></button>
+          </span>
+        </label>
+        <label class="field-hidden">最近保存日期<input type="date" id="f_saved_at" readonly title="最后一次点击「保存当前表单」的日期，用于判断快照对应哪一天"></label>
+        <label class="field-hidden">采集前已回收基地
+          <select id="f_collected_before"><option>是</option><option>否</option></select>
+        </label>
+        <label>当前同步器等级<input type="number" id="f_current" min="1" step="1"></label>
+        <label>目标同步器等级<input type="number" id="f_target" min="1" step="1" value="481"></label>
+        <label>后续追求目标等级<input type="number" id="f_alternate" min="1" step="1" value="501"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-a">
+      <legend>现有资源</legend>
+      <div class="grid g3">
+        <label><span class="box-name"><img class="res-icon" src="assets/res_credit.webp" alt="">信用点</span><input id="f_bare_credit" placeholder="25169K"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/res_battle.webp" alt="">战斗数据辑</span><input id="f_bare_battle" placeholder="274M"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/res_dust.webp" alt="">红球</span><input id="f_bare_dust" placeholder="12181"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-a">
+      <legend><span class="lg-main">当前基地等级<button type="button" class="info-tip" data-tip="tip-base" aria-label="查看说明" aria-expanded="false"></button></span></legend>
+      <div class="grid g2">
+        <label>前哨基地防御等级<input type="number" id="f_base" min="1" step="1"></label>
+        <label>战术学院是否满级
+          <select id="f_tactics"><option>是</option><option>否</option></select>
+        </label>
+      </div>
+      <p class="hint" id="baseHint"></p>
+    </fieldset>
+
+    <fieldset class="grp-b">
+      <!-- R66：服务器从「账号状态」的独立选择块挪进本组标题行，一行分段选项卡；
+           真值仍写回隐藏的 #f_server（存档 / 云端 / 分享码读的都是它） -->
+      <legend class="lg-split"><span class="lg-main">关卡进度<button type="button" class="info-tip" data-tip="tip-stage" aria-label="查看说明" aria-expanded="false"></button></span><span class="srv-tabs" role="group" aria-label="服务器切换"><button type="button" class="srv-tab active" data-srv="cn" aria-pressed="true">国服</button><button type="button" class="srv-tab" data-srv="intl" aria-pressed="false">国际服</button></span></legend>
+      <select id="f_server" class="field-hidden" title="仅标注存档所属服；关卡表两服共用同一套，不影响可选关卡范围">
+        <option value="cn">国服</option>
+        <option value="intl">国际服</option>
+      </select>
+      <div class="grid g2">
+        <div>
+          <label>普通主线关卡</label>
+          <select id="f_normal_chapter"></select>
+          <select id="f_normal_stage"></select>
+        </div>
+        <div>
+          <label>困难主线关卡</label>
+          <select id="f_hard_chapter"></select>
+          <select id="f_hard_stage"></select>
+        </div>
+      </div>
+      <button type="button" id="btnAdoptBase" class="btn" style="display:none;font-size:13px;padding:6px 12px;margin-top:4px;">采用推算值</button>
+    </fieldset>
+
+    <fieldset class="grp-b">
+      <legend>当前收益与每日收益</legend>
+      <p class="hint">下方三个收益字段随「当前基地」的等级与战术学院口径自动带出，可手动修改（例如一举歼灭折算等特殊情形）。</p>
+      <div class="grid g3">
+        <label><span class="box-name"><img class="res-icon" src="assets/res_credit.webp" alt="">信用点收益</span><input id="f_credit_rate" placeholder="57240/h"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/res_battle.webp" alt="">战斗数据辑收益</span><input id="f_battle_rate" placeholder="570180/h"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/res_dust.webp" alt="">红球收益</span><input id="f_dust_rate" placeholder="88/h"></label>
+      </div>
+      <div class="grid g2">
+        <label>每日一举歼灭次数<input type="number" id="f_wipeouts" min="0" step="1" value="1"></label>
+        <label>今天已完成歼灭次数<input type="number" id="f_completed" min="0" step="1" value="1"></label>
+      </div>
+      <div class="grid g2">
+        <label class="field-hidden">每次等价小时数<input type="number" id="f_wipeout_hours" min="0" step="0.5" value="2"></label>
+        <label class="field-hidden">后续是否每天完成全部次数<select id="f_daily_full"><option>是</option><option>否</option></select></label>
+        <label class="field-hidden">服务器每日重置时间<input type="time" id="f_reset_time" value="04:00"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-c">
+      <legend><span id="futureTitleText">预计新主线进度</span></legend>
+      <div class="grid g2">
+        <label>预计新主线开放日期<input type="date" id="f_future_open"></label>
+        <div><p class="hint">选择下方「预计普通/困难主线关卡」章节后，自动推算预计新基地等级与收益。</p></div>
+      </div>
+      <div class="grid g2">
+        <div><label>预计普通主线关卡</label><select id="f_future_normal_chapter"></select><select id="f_future_normal_stage"></select></div>
+        <div><label>预计困难主线关卡</label><select id="f_future_hard_chapter"></select><select id="f_future_hard_stage"></select></div>
+      </div>
+      <div class="grid g4">
+        <label>预计新基地等级<input type="number" id="f_future_base" min="1" step="1"></label>
+        <label>预计新信用点收益<input id="f_future_credit" placeholder="58530/h"></label>
+        <label>预计新战斗数据收益<input id="f_future_battle" placeholder="584950/h"></label>
+        <label>预计新红球收益<input id="f_future_dust" placeholder="90.02/h"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grp-c">
+      <legend id="stageClearTitle"><span class="lg-main"><span id="stageClearTitleText">预计新主线推图收益</span><button type="button" class="info-tip" data-tip="tip-stageclear" aria-label="查看说明" aria-expanded="false"></button></span></legend>
+      <p class="hint">新主线推图给的一次性资源 = 该章关卡通关奖励 + 该章主线任务奖励；默认值随「预计普通主线关卡」所选章节自动带出。</p>
+      <div class="grid g3">
+        <label>计入范围<select id="f_stage_mode"><option>不计算</option><option>只计普通</option><option>普通+困难</option></select></label>
+      </div>
+      <div class="grid g3">
+        <label>推图信用点（普通·K）<input id="f_stage_credit"></label>
+        <label>推图战斗数据（普通·K）<input id="f_stage_battle"></label>
+        <label>推图红球（普通）<input id="f_stage_dust"></label>
+      </div>
+      <div class="grid g3" id="stageHardRow">
+        <label>推图信用点（困难·K）<input id="f_stage_credit2"></label>
+        <label>推图战斗数据（困难·K）<input id="f_stage_battle2"></label>
+        <label>推图红球（困难）<input id="f_stage_dust2"></label>
+      </div>
+      <div class="grid g3" id="stageTaskRow">
+        <label>主线任务信用点（K）<input id="f_stage_task_credit"></label>
+        <label>主线任务战斗数据（K）<input id="f_stage_task_battle"></label>
+        <label>主线任务红球<input id="f_stage_task_dust"></label>
+      </div>
+      <p class="hint" id="stageClearNote"></p>
+    </fieldset>
+
+    <fieldset class="grp-c">
+      <legend><span class="lg-main">活动收益（可选 · 按具体日期计入）<button type="button" class="info-tip" data-tip="tip-event" aria-label="查看说明" aria-expanded="false"></button></span></legend>
+      <div id="eventRows"></div>
+      <button type="button" id="btnAddEvent" class="btn" style="font-size:13px;padding:6px 12px;">＋ 添加活动</button>
+      <p class="hint" id="eventTotals">未添加活动。</p>
+      <p class="hint note">活动期间的资源与箱子按日计入（从数据日期次日起算），并参与开箱顺序与全箱梭哈上限；商店按既有兑换节点自动兑换（Hard 开放日清一轮固定物资、活动结束前余代币兑信用点）。活动「一天」= 一次凌晨 04:00 服务器重置。</p>
+    </fieldset>
+
+    <fieldset class="grp-d">
+      <legend>升级消耗素材量</legend>
+      <p class="hint">默认按内置阶梯表（每 50 级一档）随「当前同步器等级」自动写入，可手动覆盖。</p>
+      <div class="grid g3">
+        <label><span class="box-name"><img class="res-icon" src="assets/res_credit.webp" alt="">当前升1级所需信用点</span><input id="f_cost_credit" placeholder="随当前等级自动写入"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/res_battle.webp" alt="">当前升1级所需战斗数据</span><input id="f_cost_battle" placeholder="随当前等级自动写入"></label>
+        <label><span class="box-name"><img class="res-icon" src="assets/res_dust.webp" alt="">当前升1级所需红球</span><input id="f_cost_dust" placeholder="随当前等级自动写入"></label>
+      </div>
+      <div id="costPreviewWrap"></div>
+    </fieldset>
+
+    <fieldset class="grp-d">
+      <legend>固定小时箱数量</legend>
+      <table class="fixed-table">
+        <thead><tr><th>箱子 \ 小时</th><th>24h</th><th>12h</th><th>8h</th><th>4h</th><th>2h</th><th>1h</th></tr></thead>
+        <tbody>
+          <tr><td><img class="box-icon" src="assets/box_core_dust.webp" alt="芯尘盒">芯尘盒</td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="芯尘盒" data-h="1" min="0"></td></tr>
+          <tr><td><img class="box-icon" src="assets/box_battle.webp" alt="战斗数据辑盒">战斗数据辑盒</td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="战斗数据辑盒" data-h="1" min="0"></td></tr>
+          <tr><td><img class="box-icon" src="assets/box_credit.webp" alt="信用点盒">信用点盒</td><td><input type="number" class="fixed" data-label="信用点盒" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="信用点盒" data-h="1" min="0"></td></tr>
+          <tr><td><img class="box-icon" src="assets/box_growth.webp" alt="成长套组">成长套组</td><td><input type="number" class="fixed" data-label="成长套组" data-h="24" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="12" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="8" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="4" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="2" min="0"></td><td><input type="number" class="fixed" data-label="成长套组" data-h="1" min="0"></td></tr>
+        </tbody>
+      </table>
+    </fieldset>
+
+    <fieldset class="grp-d">
+      <legend>自选箱数量</legend>
+      <div class="grid g3">
+        <label><span class="box-name"><img class="box-icon" src="assets/mbox_ark.webp" alt="方舟官方补给物资Ⅰ">方舟官方补给物资Ⅰ</span><input type="number" id="f_ark" min="0" step="1" value="870"></label>
+        <label><span class="box-name"><img class="box-icon" src="assets/mbox_30d.jpg" alt="30天成长补给箱">30天成长补给箱</span><input type="number" id="f_growth" min="0" step="1" value="27"></label>
+        <label><span class="box-name"><img class="box-icon" src="assets/mbox_challenger.webp" alt="挑战者成长宝箱">挑战者成长宝箱</span><input type="number" id="f_challenger" min="0" step="1" value="340"></label>
+      </div>
+      <p class="hint">挑战者成长宝箱为固定数值奖励；资源选择见下方「其他」段。</p>
+    </fieldset>
+
+    <fieldset class="grp-e">
+      <legend><span class="lg-main">其他<button type="button" class="info-tip" data-tip="tip-misc" aria-label="查看说明" aria-expanded="false"></button></span></legend>
+      <div class="grid g2">
+        <label>保留箱（每种留 1 个）<select id="f_keep_one_box"><option>否</option><option>是</option></select></label>
+        <div><p class="hint">适合想每种箱各留一枚收藏的玩家，开启后每种箱子各保留 1 个不开。</p></div>
+      </div>
+      <div class="grid g2">
+        <label>月卡（30天成长补给箱）<select id="f_monthly_card"><option>否</option><option>是</option></select></label>
+        <div><p class="hint">月卡每日到账 <b>1 个「30天成长补给箱」</b>（自选箱：芯尘 10h / 信用 30h / 战斗 10h）。开启后按「数据日期 → 新主线开放日」的天数自动并入<b>开放日</b>箱量，不影响现状口径。</p></div>
+      </div>
+      <div class="grid g2">
+        <label>挑战者箱资源选择<select id="f_challenger_pref"><option value="auto">自动择优</option><option value="battle">战斗数据辑优先</option><option value="dust">芯尘优先</option></select></label>
+        <div><p class="hint" id="challengerNote">挑战者成长宝箱为固定数值（units）奖励，不随基地等级变化；默认「自动择优」按当前目标与库存挑更划算的一项，两项等价时优先芯尘（红球每小时产出最少，长期最稀缺）。</p></div>
+      </div>
+    </fieldset>
+
+    <!-- R48：「开始计算」与快捷同步图标合并到同一行（桌面：按钮占满左侧、图标贴右；
+         移动端：整行变吸底 dock，.calc-row 转 fixed，图标跟着按钮走，不再单独占一行）。 -->
+    <div class="calc-row">
+      <button id="btnCalc" class="btn btn-primary btn-big">开始计算</button>
+      <button id="btnCalcFab" class="btn btn-primary btn-calc-fab">开始计算</button>
+      <label class="as-tog" id="asTog" data-on="1">
+        <input type="checkbox" id="chkAutosync" checked aria-label="计算后自动保存并同步到云端">
+        <svg class="as-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/><path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>
+        <span class="as-tip">已开启：计算后自动保存并同步到云端</span>
+      </label>
+    </div>
+  </section>
+
+  <!-- ============ 结果区 ============ -->
+  <section id="resultSection" class="result-panel" style="display:none">
+    <nav class="tabs">
+      <button class="tab active" data-tab="tabResult">计算结果</button>
+      <button class="tab" data-tab="tabExtra">补充信息</button>
+      <button class="tab" data-tab="tabRaw">原始 JSON</button>
+      <button id="btnExportImg" class="btn btn-export">📷 导出图片</button>
+    </nav>
+    <div id="tabResult" class="tab-panel active"></div>
+    <div id="tabExtra" class="tab-panel"></div>
+    <div id="tabRaw" class="tab-panel"></div>
+  </section>
+</div>
+
+</section>
+
+<!-- 其余工具的视图容器由 js/shell.js 从 tools.json 动态创建 -->
+
+<script src="js/core.js?v=20260917c"></script>
+<script src="js/events.js?v=20261024a"></script>
+<script src="js/outpost.js?v=20261029a"></script>
+<script src="js/servers.js?v=20261029a"></script>
+<script src="js/boxes.js?v=20261026b"></script>
+<script src="js/scenarios.js?v=20261026b"></script>
+<script src="js/ledger.js?v=20261019g"></script>
+<script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
+<script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
+<script src="js/app.js?v=20261029a"></script>
+<script src="assets/js/supabase.min.js?v=20260920e"></script>
+<script src="js/errlog.js?v=20261019a"></script>
+<script src="js/sync.js?v=20261102b"></script>
+<!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->
+<script src="js/shell.js?v=20261031a"></script>
+<script src="redesign/stepper.js?v=20261109a"></script>
+</body>
+</html>
