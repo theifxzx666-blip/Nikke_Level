@@ -96,6 +96,16 @@
 
 > WorkBuddy 旧 app（`wbapp_Gg6VAj3R43dpJZtGByLF2T` / `nikke-level-planner.app.workbuddy.host`）已 403 失效，现用新 app `wbapp_Jf0Q8SP3b2SJ91mSeeDgtL`。双端同步流程见 `核心目录\方案文档\PUSH_GUIDE.md` §7.4。
 
+仓库 About 区同期补齐（原先 description / homepage 均为空，违反项目规范「仓库 Description 禁空」）：
+
+| 字段 | 值 |
+| :--- | :--- |
+| description | 含 WorkBuddy 备用镜像地址，并标注「链接需带访问码」 |
+| homepage | GitHub Pages 地址（About 右侧 Website） |
+| topics | `nikke` `calculator` `github-pages` `vanilla-js` `gaming-tools` `planner` |
+
+> WorkBuddy 托管**必须带 `?sharecode=`**：实测去掉后返回 403「链接不完整」，平台级分享机制，无法简化；域名里的 `-07475` 也是创建时因旧应用占用前缀而自动分配的，改不了。对外统一用 GitHub Pages 的纯链接。
+
 ---
 
 ## 2026-11-13（第三十三轮）

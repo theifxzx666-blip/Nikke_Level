@@ -1,6 +1,6 @@
 # NIKKE 资源规划计算器
 
-[GitHub Pages](https://theifxzx666-blip.github.io/Nikke_Level/) ｜ [WorkBuddy 镜像](https://nikke-level-planner-07475.app.workbuddy.host/?sharecode=YHW5333IQR) ｜ 纯前端 · 无后端 · 数据只存浏览器本地
+[GitHub Pages](https://theifxzx666-blip.github.io/Nikke_Level/) ｜ [WorkBuddy 备用镜像](https://nikke-level-planner-07475.app.workbuddy.host/?sharecode=YHW5333IQR)（平台要求带访问码） ｜ 纯前端 · 无后端 · 数据只存浏览器本地
 
 算「现有资源 + 箱子 + 活动 + 推图收益」能把同步器推到几级、要多少天。计算引擎由 Python 版移植为纯 JavaScript，金标准回归与 Python 版逐项一致（`test_golden.js`）。
 
