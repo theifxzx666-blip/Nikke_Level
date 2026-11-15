@@ -385,7 +385,7 @@
   /* ---------- 活动收益（可选）：模板由 data/event_templates.json 运行时加载 ---------- */
   function loadEventTemplates() {
     if (!EV) return Promise.resolve();
-    return fetch("data/event_templates.json?v=20261012a")
+    return fetch("data/event_templates.json?v=20261115a")
       .then(function (r) { return r.json(); })
       .then(function (d) { EV.setTemplates(d); })
       .catch(function () { EV.setTemplates(null); });
@@ -406,10 +406,8 @@
   function activityRowEl(a) {
     var row = document.createElement("div");
     row.className = "event-row";
-    row.style.cssText = "display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap;";
     var sel = document.createElement("select");
     sel.className = "ev-template";
-    sel.style.cssText = "flex:1 1 150px;padding:6px;";
     var tpls = EV ? EV.templateList() : [];
     if (!tpls.length) {
       var o0 = document.createElement("option");
@@ -419,20 +417,25 @@
     tpls.forEach(function (t) {
       var o = document.createElement("option");
       o.value = t.id;
-      o.textContent = t.label + "（" + t.duration + " 天）";
+      /* 标签自带天数（「14天小活动」）时不再追加「（14 天）」，避免重复计数 */
+      var hasDays = t.label.indexOf(t.duration + "天") >= 0 || t.label.indexOf(t.duration + " 天") >= 0;
+      o.textContent = hasDays ? t.label : (t.label + "（" + t.duration + " 天）");
       if (t.id === a.template) o.selected = true;
       sel.appendChild(o);
     });
     var dt = document.createElement("input");
     dt.type = "date"; dt.className = "ev-start";
-    dt.style.cssText = "flex:1 1 130px;padding:6px;";
     dt.value = a.start_date || "";
     dt.title = "活动开始日期（服务器当日 04:00 起算）";
+    // 活动状态（R25）：未开始 / 剩余 N 天 / 已结束 —— 基准日 = 数据日期（与计入区间同基准）
+    var st = document.createElement("span");
+    st.className = "ev-status";
+    st.textContent = "—";
     var del = document.createElement("button");
     del.type = "button"; del.className = "ev-del";
-    del.style.cssText = "flex:0 0 auto;padding:6px 10px;cursor:pointer;";
-    del.textContent = "✕"; del.title = "移除该活动";
-    row.appendChild(sel); row.appendChild(dt); row.appendChild(del);
+    del.title = "移除该活动"; del.setAttribute("aria-label", "移除该活动");
+    del.innerHTML = EV_DEL_SVG;   // 圆形 ghost 按钮 + 细线 ✕（此前是纯文本 ✕ + 内联样式、CSS 里零样式）
+    row.appendChild(sel); row.appendChild(dt); row.appendChild(st); row.appendChild(del);
     return row;
   }
 
@@ -450,19 +453,19 @@
     if (!box) return;
     syncActivitiesFromRows();
     var acts = state.form.activities || [];
-    if (!acts.length) { box.textContent = "未添加活动。"; return; }
-    if (!EV || !EV.getTemplates()) { box.textContent = "活动模板加载失败，已按「不计入活动收益」处理，可刷新重试。"; return; }
+    if (!acts.length) { box.textContent = "未添加活动。"; refreshActivityStatus(null); return; }
+    if (!EV || !EV.getTemplates()) { box.textContent = "活动模板加载失败，已按「不计入活动收益」处理，可刷新重试。"; refreshActivityStatus(null); return; }
     var rec = val("f_recorded");
     var t0 = rec ? new Date(rec + "T00:00:00") : new Date();
     var sched;
     try { sched = EV.schedule({ recorded_at: t0, activities: acts }); }
-    catch (e) { box.textContent = "活动参数异常：" + e.message; return; }
+    catch (e) { box.textContent = "活动参数异常：" + e.message; refreshActivityStatus(null); return; }
     if (!sched.dates.length) {
       box.innerHTML = "已计入 <b>0</b> 天：所填活动均已结束（或尚未进入计入区间）。已到手的奖励请直接填进上方箱量。";
       return;
     }
-    box.innerHTML = "已计入 <b>" + sched.dates.length + "</b> 天（" + sched.dates[0] + " ~ " + sched.dates[sched.dates.length - 1] +
-      "）：" + esc(EV.totalsText(sched.totals)) + "。";
+    refreshActivityStatus(sched);
+    renderEventTotals(box, sched);
   }
 
   function renderForm() {
@@ -1380,6 +1383,114 @@
     "信用点盒": "box_credit.webp", "成长套组": "box_growth.webp"
   };
   var FIXED_BOX_HOURS = [24, 12, 8, 4, 2, 1];
+  /* ===== 活动收益预览：2026-11-15 从 bc4d8a8 恢复（23a23c8 曾整块删掉） ===== */
+  var EV_DEL_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">'
+    + '<path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6" stroke-linecap="round"/></svg>';
+  /* 资源图标文件名（与 assets/res_*.webp 对应） */
+  var RES_ICON_FILE = { credit: "res_credit.webp", battle_data: "res_battle.webp", core_dust: "res_dust.webp" };
+  function resIconDir() {
+    var img = document.querySelector(".res-icon");
+    var src = img ? (img.getAttribute("src") || "") : "";
+    return src ? src.replace(/[^/]*$/, "") : "";
+  }
+  function resIconHtml(r) {
+    var dir = resIconDir(), f = RES_ICON_FILE[r];
+    return (dir && f) ? '<img class="res-icon" alt="" src="' + dir + f + '">' : "";
+  }
+  /* 自选箱图标（与输入区「自选箱数量」同素材：mbox_*） */
+  var SELECTABLE_BOX_ICON = {
+    "挑战者成长宝箱": "mbox_challenger.webp",
+    "方舟官方补给物资Ⅰ": "mbox_ark.webp",
+    "30天成长补给箱": "mbox_30d.webp"
+  };
+  function boxIconHtml(name) {
+    var dir = fixedIconDir();
+    if (!dir) return "";
+    var f = SELECTABLE_BOX_ICON[name] || FIXED_BOX_ICON[name];
+    if (!f) return "";
+    if (name === "30天成长补给箱" && dir.indexOf("/m/") < 0) f = f.replace(/\.webp$/, ".jpg");
+    return '<img class="box-icon" alt="" src="' + dir + f + '">';
+  }
+  function simpleTable(headers, rows, cls) {
+    var head = "<tr>" + headers.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>";
+    var body = rows.map(function (r) {
+      return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+    }).join("");
+    return el("table", "<thead>" + head + "</thead><tbody>" + body + "</tbody>", cls || "fixed-table plan");
+  }
+  function daysBetweenISO(a, b) {
+    var da = new Date(String(a) + "T00:00:00Z").getTime();
+    var db = new Date(String(b) + "T00:00:00Z").getTime();
+    if (isNaN(da) || isNaN(db)) return null;
+    return Math.round((da - db) / 86400000);
+  }
+  function refreshActivityStatus(sched) {
+    var wrap = $("eventRows");
+    if (!wrap) return;
+    var rows = wrap.querySelectorAll(".event-row");
+    var today = todayLocal();
+    var byIdx = {};
+    ((sched && sched.meta) || []).forEach(function (m) {
+      if (m && m.index !== undefined) byIdx[m.index] = m;
+    });
+    for (var i = 0; i < rows.length; i++) {
+      var st = rows[i].querySelector(".ev-status");
+      if (!st) continue;
+      var m = byIdx[i];
+      var cls = "", txt = "—";
+      if (!m) { txt = "—"; }
+      else if (m.error) { cls = "done"; txt = "⚠ 数据异常"; }
+      else if (today < m.start) { txt = "未开始"; }
+      else if (today > m.end) { cls = "done"; txt = "已结束"; }
+      else {
+        var n = daysBetweenISO(m.end, today);
+        cls = "on";
+        txt = (n === null) ? "进行中" : (n > 0 ? ("剩余 " + n + " 天") : "今天最后一天");
+      }
+      st.className = "ev-status" + (cls ? " " + cls : "");
+      st.textContent = txt;
+      st.title = (!m || m.error) ? "" :
+        ("活动 " + m.start + " ~ " + m.end + "（按今天 " + today + " 算剩余）；"
+          + "本次计入 " + (m.inject_days || 0) + " 天"
+          + (m.active ? "（" + m.inject_start + " ~ " + m.inject_end + "）" : ""));
+    }
+  }
+  function renderEventTotals(box, sched) {
+    box.innerHTML = "";
+    var t = sched.totals || {};
+    var n = sched.dates.length;
+    var wrap = el("div", "", "event-preview");
+    wrap.appendChild(el("div", "已计入 <b>" + n + "</b> 天（" + sched.dates[0] + " ~ " + sched.dates[n - 1] + "）", "ep-head"));
+    var dir = resIconDir();
+    var resRows = C.RESOURCES.map(function (r) {
+      var f = RES_ICON_FILE[r];
+      var icon = (dir && f) ? '<img class="res-icon" alt="" src="' + dir + f + '">' : "";
+      return [icon + esc(C.RESOURCE_LABELS[r] || r), fmtNum((t.res && t.res[r]) || 0)];
+    });
+    wrap.appendChild(simpleTable(["资源", "活动计入"], resRows));
+    // 固定小时箱矩阵（行 = 箱类含图标、列 = 24h…1h；0 记作 —），与输入表同表形
+    // ⚠ simpleTable 会把每个元素各自包一层 <td>：这里只能给【单元格内容】，
+    //    曾经多写一层 <td>…</td> → 浏览器把嵌套 td 提出去，整表右移一列并溢出（2026-10-16 修）
+    var frows = FIXED_BOX_ORDER.map(function (nm) {
+      var map = (t.fixed && t.fixed[nm]) || {};
+      return [boxIconHtml(nm) + esc(nm)].concat(FIXED_BOX_HOURS.map(function (h) {
+        var c = map[String(h)] || 0;
+        return c > 0 ? "<b>" + c + "</b>" : "—";
+      }));
+    });
+    wrap.appendChild(el("div", "固定小时箱到账（按箱型 × 时长）", "ep-head"));
+    wrap.appendChild(simpleTable(["箱子 \\ 小时"].concat(FIXED_BOX_HOURS.map(function (h) { return h + "h"; })), frows));
+    // 自选箱清单（含图标）
+    var selNames = Object.keys(t.selectable || {}).filter(function (k) { return (t.selectable[k] || 0) > 0; });
+    if (selNames.length) {
+      var srows = selNames.map(function (k) { return [boxIconHtml(k) + esc(k), String(t.selectable[k])]; });
+      wrap.appendChild(el("div", "自选箱到账", "ep-head"));
+      wrap.appendChild(simpleTable(["自选箱", "活动计入"], srows));
+    }
+    wrap.appendChild(el("div", "活动期间的资源与箱子按日计入，并参与开箱顺序与全箱梭哈上限。", "ep-sum"));
+    box.appendChild(wrap);
+  }
+
   /* 图标目录跟随页面上输入表实际使用的资源目录（桌面 assets/、移动版 assets/m/） */
   function fixedIconDir() {
     var img = document.querySelector(".fixed-table td:first-child img.box-icon");

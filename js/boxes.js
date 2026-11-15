@@ -6,31 +6,39 @@
   var RESOURCES = C.RESOURCES;
   var addRes = C.addRes;
 
-  function fixedBoxResources(snapshot, incomePerHour) {
-    var result = C.zeroRes();
+  /* ===== 红球定点口径（R62）：先把所有箱折算成总小时数、最后统一 floor 一次 =====
+     逐箱 floor 在 100 个 1H 盒上少算 41~95 个（lv518 少 0.65%、lv1 少 6.8%）。
+     2026-11-15 从 bc4d8a8 恢复（23a23c8 曾把此处退回逐箱 floor）。 */
+  function dustTrunc(v) { return Math.floor(v + 1e-9); }
+  function hoursOfFixed(snapshot) {
+    var hours = { credit: 0, battle_data: 0, core_dust: 0 };
     var names = { "芯尘盒": "core_dust", "信用点盒": "credit", "战斗数据辑盒": "battle_data" };
-    function boxValue(resource, hours) {
-      var rate = incomePerHour[resource] || 0.0;
-      if (resource === "core_dust") return Math.floor(rate * hours);
-      return rate * hours;
-    }
     Object.keys(snapshot.fixed_boxes || {}).forEach(function (name) {
-      var hoursMap = snapshot.fixed_boxes[name] || {};
+      var map = snapshot.fixed_boxes[name] || {};
       if (name === "成长套组") {
-        // 成长套组计入固定箱折算：对信用/战斗/芯尘三类各按小时收益*数量叠加（纳入计算口径）
-        Object.keys(hoursMap).forEach(function (h) {
-          var count = hoursMap[h];
-          RESOURCES.forEach(function (r) { result[r] += boxValue(r, parseInt(h, 10)) * count; });
+        Object.keys(map).forEach(function (h) {
+          var hh = parseInt(h, 10) || 0, cnt = map[h] || 0;
+          RESOURCES.forEach(function (r) { hours[r] += hh * cnt; });
         });
         return;
       }
-      var resource = names[name];
-      if (!resource) return;
-      Object.keys(hoursMap).forEach(function (h) {
-        result[resource] += boxValue(resource, parseInt(h, 10)) * hoursMap[h];
-      });
+      var r0 = names[name];
+      if (!r0) return;
+      Object.keys(map).forEach(function (h) { hours[r0] += (parseInt(h, 10) || 0) * (map[h] || 0); });
     });
-    return result;
+    return hours;
+  }
+  function joinHours(hours, incomePerHour) {
+    var inc = incomePerHour || {};
+    function out(r) {
+      var v = (inc[r] || 0.0) * (hours[r] || 0);
+      return r === "core_dust" ? dustTrunc(v) : v;
+    }
+    return { credit: out("credit"), battle_data: out("battle_data"), core_dust: out("core_dust") };
+  }
+
+  function fixedBoxResources(snapshot, incomePerHour) {
+    return joinHours(hoursOfFixed(snapshot), incomePerHour);
   }
 
   /* 固定小时箱按缺口最小开启：单资源箱从大时长到小时长，成长套组同时补三资源。
@@ -40,8 +48,11 @@
     RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, gaps[r] || 0.0); });
     var used = {};
     var names = { "芯尘盒": "core_dust", "信用点盒": "credit", "战斗数据辑盒": "battle_data" };
+    /* R62：决策一律用精确值 rate×h（不逐箱 floor）——
+       定点口径下 N 个箱的总贡献是 floor(rate×h×N)，与逐箱 floor 之和不同；
+       用精确值做贪心才能得到最少箱数，实际开出的数值由 planResources 按「总小时数 → 一次 floor」给出 */
     function boxVal(res, h) {
-      return res === "core_dust" ? Math.floor((incomePerHour[res] || 0.0) * h) : (incomePerHour[res] || 0.0) * h;
+      return (incomePerHour[res] || 0.0) * h;
     }
     ["芯尘盒", "信用点盒", "战斗数据辑盒"].forEach(function (name) {
       var res = names[name];
