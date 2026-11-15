@@ -1,15 +1,20 @@
 # NIKKE 资源规划计算器 · 纯前端版
 
-[GitHub Pages 公开链接](https://你的用户名.github.io/仓库名/) ｜ 无后端、可离线、localStorage 本地保存
+[GitHub Pages](https://theifxzx666-blip.github.io/Nikke_Level/) ｜ [WorkBuddy 镜像](https://nikke-level-planner-07475.app.workbuddy.host/?sharecode=YHW5333IQR) ｜ 无后端、可离线、localStorage 本地保存
 
 与参考站 [nikke-sr-collection-planner](https://shiki1255.github.io/nikke-sr-collection-planner/) 同款的「通过链接直接访问交互」形态。计算引擎（约 840 行）由 Python 版移植为纯 JavaScript，**金标准回归结果与 Python 版完全一致**（现有 474 / 固定箱后 487 / 全箱梭哈 496 / 不开箱到 481 约 29.8557 天 / 新主线后开箱约 503）。
 
 ## 特性
 
 - 完整表单：账号状态、关卡两级联动、困难跟随普通 + 困难上限约束、当前收益与每日收益、预计新主线（默认 +2 章联动）、现有资源、推图资源（计入范围默认只计普通 + 标题/数值随预计新主线联动）、升级消耗（默认阶梯表，可手动覆盖）、固定小时箱（含成长套组）、自选箱
+- **三步分页**：填写 / 目标 / 结果；分页条与表单卡共用一张外框，翻页自动回到子页第一行
+- **设置弹窗**（居中）：服务器（国服 / 国际服）、战术学院是否满级、每击歼灭次数、月卡、每种箱留 1 个；重置时间与每次等价小时在此只读展示
+- **信息窗**：前哨基地收益、推图奖励（表格）、活动收益明细、结果口径说明，都在卡片内展开，不跳页
+- **活动收益**：按日期逐日计入，活动排期可在卡片内维护；赠送的箱子参与开箱顺序与全箱梭哈上限
 - 浮动进度球 + 12 项明细
 - localStorage 自动记忆 + 💾 手动保存按钮，刷新/重启自动回填
 - 完整结果展示：4 大数字卡片、最大等级表（单资源 vs 三资源同时）、开箱达成统计、开主线前后对比、501 三方案
+- 结果分三页签：总览 / 收益明细 / 原始数据；收益明细按 资源 · 固定小时箱 · 自选箱 分块并带道具图标，长小数统一收成 1 位
 - 顶部 NIKKE 主题 banner + body 模糊背景图（`assets/bg/hero.webp` 一键换图，**卡片白底不透明不影响阅读**）
 - 移动端全面优化：触控目标 ≥40px、表格横滚容器、超小屏单列、悬浮球贴边、计算后自动定位结果区
 - 导出 JSON 快照、Markdown 报告；下载/导入 XLSX（SheetJS CDN）
@@ -21,18 +26,24 @@
 nikke-planner-web/
   index.html          # 单页入口（顺序加载 js/* + CDN xlsx）
   css/style.css       # 样式（含 4 组配色、移动端适配、背景图层）
+  css/v16.css         # 分页 / 设置弹窗 / 信息窗 / 收益明细分块
+  tools.json          # 工具导航注册表（shell.js 据此渲染）
   js/
     core.js           # 解析、消耗、每日收益（自 calculator/{parsing,level_cost,income} 移植）
     outpost.js        # 关卡→基地等级换算 + 收益表（自 outpost_level 移植）
     boxes.js          # 固定箱折算 + 自选箱优化（自 boxes 移植）
     scenarios.js      # 场景 A-F + 总评估（自 scenarios 移植）
     app.js            # 前端 UI、表单联动、计算入口、结果渲染、存储
+    events.js         # 活动收益引擎（模板 + 逐日到账）
+    shell.js          # 工具导航外壳（读 tools.json 渲染按钮与容器）
+    v16.js            # 分页 / 设置弹窗 / 收益明细分块（运行时重排，不改业务代码）
   data/
     stage_map.json           # 1699 个关卡编号（普通+困难）
     outpost_income.json      # 700 级基地收益（含战术学院满级）
     level_cost_table.json    # 每 50 级一档的升级消耗
     box_definitions.json     # 箱子定义
     stage_clear_resources.json  # 推图资源（37-38 章实测）
+    event_templates.json        # 活动收益模板
   assets/
     bg/hero.webp            # 顶部 banner + body 模糊底图的背景图（355KB，**换图改这一个文件**）
   test_golden.js            # Node 金标准回归（与 Python 版对比）
