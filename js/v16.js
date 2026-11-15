@@ -1315,6 +1315,19 @@
     [0, 150, 500, 1200].forEach(function (t) { setTimeout(function () { syncStageCols(); updStageSum(); }, t); });
   }
 
-  if (document.readyState === 'complete') setTimeout(boot, 0);
-  else window.addEventListener('load', function () { setTimeout(boot, 0); });
+  /* 启动时机：
+     不能只等 window.load —— 线上字体 / Supabase 等外部资源慢的时候 load 可能迟迟不触发，
+     整页会停在「没分页」的原始形态。改为 DOMContentLoaded 后启动，再留 3 秒兜底。
+     仍要晚于 app.js：它在 DOMContentLoaded 里遍历 #formSection 绑 onFormChange，
+     我们用 setTimeout 让出这一轮，保证搬移字段时事件已经绑好。 */
+  var booted = false;
+  function bootOnce() { if (booted) return; booted = true; boot(); }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(bootOnce, 0); });
+  } else {
+    setTimeout(bootOnce, 0);
+  }
+  window.addEventListener('load', function () { setTimeout(bootOnce, 0); });
+  setTimeout(bootOnce, 3000);
 })();
