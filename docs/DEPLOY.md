@@ -25,6 +25,17 @@ git -c credential.helper= -c credential.helper=wincred push origin main
 
 ## 同步 WorkBuddy 镜像
 
+> ⚠️ **2026-11-17 实测：本工作区 `D:\Codex\Nikke` 已被「思凯角色档案」应用
+> （`wbapp_DfSOJ5MV4P164QxXuS94U8`，`?sharecode=CMVQ5HISFK`）占用，一个工作区只挂一个应用。**
+>
+> 在本工作区对**任何**目录执行 sites deploy，内容都会覆盖到思凯那个应用上；换目录、删 `.wbapp_*.genie`、
+> 补目录内 `.workbuddy`、显式传 `appId` 全都无效（4 次实测）。也不会命中计算器的旧应用
+> `wbapp_Jf0Q8SP3b2SJ91mSeeDgtL` —— 它的 localDir 是已不存在的 `F:\Codex\...\临时车间\deploy_clean_1007`。
+>
+> **发计算器到 WorkBuddy 的唯一路径**：另开一个工作区（如 `D:\Codex\临时\nikke_level_deploy_20261117`），
+> 在新会话里发布，才会**新建应用、产生新分享链接**。发布后先看返回的 `shareLink`：
+> 若不是计算器自己的域名，说明又覆盖了别的应用 → 立刻按该应用 genie 里的 `localDir` 重新 deploy 回去。
+
 镜像目录是发布源，`deploy` 的目标由它反查，**不读本地 genie**。
 
 ```bash

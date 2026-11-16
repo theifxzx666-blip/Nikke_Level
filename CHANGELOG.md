@@ -45,6 +45,19 @@
 
 探针脚本：`临时车间\cdp_probe_20261117.js` / `cdp_cards_20261117.js` / `cdp_ev_20261117.js` / `cdp_expired_20261117.js`（一次性，不入库）。
 
+### 四、上线
+
+| 端 | 状态 |
+| :--- | :--- |
+| GitHub Pages | ✅ 已推 `0970130`（rebase 到远端 `6f76af4` 之上），线上 30~60s 生效 |
+| WorkBuddy | ⛔ **本轮未同步**，原因见下 |
+
+**WorkBuddy 端被工作区应用槽位挡住**：本工作区 `D:\Codex\Nikke` 已绑定「思凯角色档案」应用（`wbapp_DfSOJ5MV4P164QxXuS94U8`）。实测 4 次，无论目录换成 `D:\Codex\临时\nikke_level_deploy_20261117`、删掉 `.wbapp_DfSOJ5MV4P164QxXuS94U8.genie`、给目录补 `.workbuddy`、还是显式传 `appId=wbapp_Jf0Q8SP3b2SJ91mSeeDgtL`，deploy 一律把内容覆盖到思凯那个应用上，不会新建应用。
+
+已 4 次把思凯档案按原 `localDir` 重新 deploy 回去，线上 `title` 复核为「思凯 · SKY｜NIKKE 角色档案」，内容无损。计算器旧 WorkBuddy 链接（`nikke-level-planner-07475...`）仍在，内容停在 11-15 版（`v16.js` 无 `decorateCards`、`v16.css` 无 v17 标记，已复核）。
+
+**发计算器的正确路径**：另开工作区 → 在新会话发布 → 会**新建应用、换新链接**。坑已写进 `docs/DEPLOY.md`「同步 WorkBuddy 镜像」。
+
 ---
 
 ## 2026-11-15（第三十四轮）
