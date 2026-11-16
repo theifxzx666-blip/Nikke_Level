@@ -352,13 +352,8 @@
 
   function paintEventNames() {
     Array.prototype.forEach.call(document.querySelectorAll('#eventRows .event-row'), function (row) {
-      /* 状态徽章按文案上色（app.js 只改文字，不换 class） */
-      var st = row.querySelector('.ev-status');
-      if (st) {
-        var t = st.textContent || '';
-        st.classList.toggle('on', /剩余|计入/.test(t));
-        st.classList.toggle('off', /已结束/.test(t));
-      }
+      /* 状态徽章的上色由 app.js 的 refreshActivityStatus 负责（连文本带 class 一起写）；
+         这里只补活动名，不要再去 toggle .on/.off —— 会把黄/红判据覆盖成绿。 */
       if (row.querySelector('.ev-name')) return;
       var sel = row.querySelector('.ev-template');
       var dt = row.querySelector('.ev-start');
@@ -416,7 +411,7 @@
     var steps = el('nav', 'v3-steps');
     steps.setAttribute('aria-label', '填写步骤');
     [{ id: 1, t: '填写', s: '账号 · 资源 · 库存' },
-     { id: 2, t: '目标', s: '新主线 · 活动' },
+     { id: 2, t: '推图进度&amp;活动', s: '基地 · 新主线 · 活动' },
      { id: 3, t: '结果', s: '汇总 · 明细' }].forEach(function (p) {
       var b = el('button', 'v3-step');
       b.type = 'button'; b.dataset.pg = p.id;
@@ -466,12 +461,16 @@
     if (tgt) row1.appendChild(tgt);
     if (S.p1) {
       S.p1.appendChild(row1);
-      ['现有资源', '当前基地', '关卡进度', '固定小时箱数量', '自选箱数量'].forEach(function (k) {
+      ['现有资源', '固定小时箱数量', '自选箱数量'].forEach(function (k) {
         var fs = fsByPrefix(k); if (fs) S.p1.appendChild(fs);
       });
     }
 
-    /* 目标页：预计新主线进度 + 推图收益 并排 */
+    /* 第 2 页 = 推图进度 & 活动：当前基地（含关卡进度推算折叠）从第 1 页挪过来，排在预计新主线之前 */
+    var baseFs = fsByPrefix('当前基地');
+    if (baseFs && S.p2) S.p2.appendChild(baseFs);
+
+    /* 新主线：预计进度 + 推图收益 并排 */
     var row2 = el('div', 'v4-row');
     ['预计新主线进度', '预计新主线推图收益'].forEach(function (k) {
       var fs = fsByPrefix(k); if (fs) row2.appendChild(fs);
@@ -492,6 +491,7 @@
         '<span class="h-name">活动</span>' +
         '<span class="h-tpl">模板</span>' +
         '<span class="h-dt">起始日期</span>' +
+        '<span class="h-end">最后一天</span>' +
         '<span class="h-st">状态</span><i></i>'));
       ['eventRows'].forEach(function (id) {
         var n = byId(id); if (n) body.appendChild(n);
@@ -706,6 +706,9 @@
       '<div class="v4-pop v6-pop-wide" id="v6EvPop">' +
         '<div class="hd">活动收益明细<small>随活动行与计算口径实时汇总</small></div>' +
         '<div id="v6EvHost"></div>' +
+        '<div class="ft">活动「最后一天」留空 = 按模板天数（28/21/14 天，按 04:00 重置次数计）推算。'
+          + '官方公告若写明实际结束时间、或该期受强更（强制更新停服）影响顺延/缩短，'
+          + '把公告里的最后一天填进每行末列，状态、计入天数与收益都会按它重算。</div>' +
         '<div class="ft">活动期间的资源与箱子按日计入，并参与开箱顺序与全箱梭哈上限。</div>' +
       '</div>';
     return card;
@@ -945,7 +948,7 @@
       rt._roundWatch = 1;
       new MutationObserver(function () {
         clearTimeout(t1);
-        t1 = setTimeout(function () { roundResultNumbers(rt); }, 60);
+        t1 = setTimeout(function () { roundResultNumbers(rt); decorateCards(); }, 60);
       }).observe(rt, { childList: true, subtree: true });
     }
     if (re && !re._extraWatch) {
@@ -956,6 +959,7 @@
       }).observe(re, { childList: true, subtree: true });
     }
     roundResultNumbers(rt);
+    decorateCards();
     decorateExtra();
   }
 
@@ -1042,7 +1046,7 @@
       '<button type="button" class="v3-btn" id="v3Prev" hidden>上一步</button>' +
       '<button type="button" class="v3-btn" id="v3Recalc" hidden>重新填写</button>' +
       '<span class="spacer"></span>' +
-      '<button type="button" class="v3-btn" id="v3Next">下一步：目标</button>';
+      '<button type="button" class="v3-btn" id="v3Next">下一步：推图进度&amp;活动</button>';
 
     var calcBtn = byId('btnCalc');
     if (calcBtn) nav.appendChild(calcBtn);     /* 开始计算搬进同一行 */
@@ -1132,20 +1136,13 @@
   /* ---------------- 结果页：标题条 ---------------- */
   function decorateResult() {
     var rs = byId('resultSection'); if (!rs) return;
-    var head = el('div', 'v3-rhead');
-    /* 分页栏第三步已经写着「结果」，这里不再重复一个「计算结果」大标题 */
-    head.innerHTML = '<span class="t" id="v3Time"></span>' +
-      '<button type="button" class="v4-info" id="v7CapBtn" title="四张卡的口径说明" aria-label="口径说明">i</button>' +
-      '<div class="v4-pop v7-cap-pop" id="v7CapPop">' +
-        '<div class="hd">四张卡的口径<small>总览上方那四张数字卡</small></div>' +
-        '<div class="v7-capbody" id="v7CapBody"></div>' +
-      '</div>';
+    /* 「生成于 …」时间条已去掉：规划结果和计算时刻无关，反而占掉一行。
+       四张卡的口径也不再挤成一个总弹窗，改为每张卡各挂一个 i（见 decorateCards）。 */
     var tabText = { tabResult: '总览', tabExtra: '收益明细', tabRaw: '原始数据' };
     Array.prototype.forEach.call(rs.querySelectorAll('.tab[data-tab]'), function (b) {
       var k = b.dataset.tab;
       if (tabText[k]) b.textContent = tabText[k];
     });
-    rs.parentNode.insertBefore(head, rs);
 
     /* 「返回修改」挪进结果页自己的 tab 行，紧挨「导出图片」 */
     var backBtn = el('button', 'btn btn-back-edit');
@@ -1155,26 +1152,112 @@
     if (expBtn && expBtn.parentNode) expBtn.parentNode.insertBefore(backBtn, expBtn);
     else if (rs.querySelector('.tabs')) rs.querySelector('.tabs').appendChild(backBtn);
     backBtn.addEventListener('click', function () { go(2); });
-    S.rhead = head;
-    bindPop(byId('v7CapBtn'), byId('v7CapPop'));
-    var syncCap = function () {
-      var cap = rs.querySelector('#tabResult .cards-caption');
-      var body = byId('v7CapBody');
-      if (!cap || !body) return;
-      body.innerHTML = cap.innerHTML;
-      cap.classList.add('v3-hide');
-    };
-    new MutationObserver(syncCap).observe(rs, { childList: true, subtree: true });
-    syncCap();
-    var sync2 = function () {
-      if (DASH) { head.style.display = (S.page === 3) ? '' : 'none'; return; }
-      head.style.display = rs.style.display === 'none' ? 'none' : '';
-    };
+
     new MutationObserver(function () {
       if (rs.style.display !== 'none') S.hasResult = true;
-      sync2();
     }).observe(rs, { attributes: true, attributeFilter: ['style'] });
-    sync2();
+  }
+
+  /* ---------------- 四张卡：各自挂一个口径信息窗 ---------------- */
+  /* app.js 把四条口径拼成一段 .cards-caption（①②③④，有活动时追加⑤）。
+     这里按序号拆开，分别挂到对应的数字卡右上角；⑤ 讲的是「①②③都不含活动收益」，
+     并入第 1 张卡。document 级关闭监听全页只注册一次，避免每次重算堆监听。 */
+  var CAP_MARK = ['①', '②', '③', '④'];
+  var CAP_TITLE = ['当前同步器等级', '仅使用固定小时箱', '全箱梭哈', '自然升级（不开箱）'];
+  var CARD_POPS = [], cardPopBound = false;
+
+  function bindCardPop(btn, pop) {
+    var rec = { btn: btn, pop: pop, locked: false };
+    CARD_POPS.push(rec);
+
+    var place = function () {
+      var host = pop.parentNode;
+      if (!host) return;
+      var br = btn.getBoundingClientRect(), hr = host.getBoundingClientRect();
+      var pw = pop.offsetWidth;
+      pop.style.right = 'auto';
+      pop.style.left = Math.max(8, Math.min(br.left - hr.left, host.clientWidth - pw - 8)) + 'px';
+      pop.style.top = (br.bottom - hr.top + 6) + 'px';
+    };
+    var show = function () { place(); pop.classList.add('on'); btn.classList.add('on'); };
+    var hide = function () { rec.locked = false; pop.classList.remove('on'); btn.classList.remove('on'); };
+
+    btn.addEventListener('mouseenter', show);
+    btn.addEventListener('mouseleave', function () { if (!rec.locked) hide(); });
+    pop.addEventListener('mouseenter', show);
+    pop.addEventListener('mouseleave', function () { if (!rec.locked) hide(); });
+    btn.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      rec.locked = !rec.locked;
+      if (rec.locked) show(); else hide();
+    });
+
+    if (cardPopBound) return;
+    cardPopBound = true;
+    document.addEventListener('click', function (e) {
+      CARD_POPS.forEach(function (r) {
+        if (!r.locked) return;
+        if (r.pop.contains(e.target) || r.btn.contains(e.target)) return;
+        r.locked = false; r.pop.classList.remove('on'); r.btn.classList.remove('on');
+      });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      CARD_POPS.forEach(function (r) { r.locked = false; r.pop.classList.remove('on'); r.btn.classList.remove('on'); });
+    });
+  }
+
+  function decorateCards() {
+    var rt = byId('tabResult'); if (!rt) return;
+    var cards = rt.querySelectorAll('.cards .card');
+    if (!cards.length) return;
+    if (cards[0].getAttribute('data-cap')) return;      /* 这一轮已经处理过 */
+
+    CARD_POPS = CARD_POPS.filter(function (r) { return document.body.contains(r.btn); });
+
+    var cap = rt.querySelector('.cards-caption');
+    var parts = {};
+    if (cap) {
+      var lines = [], buf = '';
+      Array.prototype.forEach.call(cap.childNodes, function (n) {
+        if (n.nodeType === 1 && n.nodeName === 'BR') { lines.push(buf); buf = ''; }
+        else buf += (n.textContent || '');
+      });
+      if (buf.trim()) lines.push(buf);
+      lines.forEach(function (t) {
+        var s = String(t).replace(/^\s+/, '');
+        var k = s.charAt(0);
+        if (CAP_MARK.indexOf(k) >= 0 || k === '⑤') parts[k] = s.replace(/^[①②③④⑤]\s*/, '').trim();
+      });
+      cap.classList.add('v3-hide');
+    }
+
+    var host = rt.querySelector('.cards');
+    if (host) host.classList.add('v3-cards-rel');
+
+    Array.prototype.forEach.call(cards, function (cardEl, i) {
+      var txt = parts[CAP_MARK[i]]; if (!txt) return;
+      cardEl.setAttribute('data-cap', '1');
+
+      var btn = el('button', 'v4-info v4-info--card');
+      btn.type = 'button'; btn.textContent = 'i';
+      btn.title = CAP_TITLE[i] + '：口径说明';
+      btn.setAttribute('aria-label', btn.title);
+
+      var pop = el('div', 'v4-pop v7-card-pop');
+      pop.appendChild(el('div', 'hd', CAP_TITLE[i]));
+      var p = document.createElement('p'); p.className = 'ft'; p.textContent = txt;
+      pop.appendChild(p);
+      if (i === 0 && parts['⑤']) {
+        var p5 = document.createElement('p');
+        p5.className = 'ft'; p5.textContent = parts['⑤'];
+        pop.appendChild(p5);
+      }
+
+      (host || cardEl).appendChild(pop);
+      cardEl.appendChild(btn);
+      bindCardPop(btn, pop);
+    });
   }
 
   /* ---------------- 仪表盘结果 ---------------- */
@@ -1256,7 +1339,6 @@
     var raw = rs.querySelector('#tabResult');
     if (raw) byId('v3Raw').innerHTML = raw.innerHTML;
     rs.style.display = 'none';
-    var t = byId('v3Time'); if (t) t.textContent = '生成于 ' + new Date().toLocaleString('zh-CN', { hour12: false });
   }
 
   function fmt(n) {
@@ -1289,9 +1371,6 @@
       calc.addEventListener('click', function () {
         setTimeout(function () {
           if (byId('resultSection').style.display === 'none') return;
-          /* 标题去掉了，这条留着告诉用户结果是哪一刻算的 */
-          var t = byId('v3Time');
-          if (t) t.textContent = '生成于 ' + new Date().toLocaleString('zh-CN', { hour12: false });
           go(3);
         }, 600);
       }, true);

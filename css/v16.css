@@ -714,14 +714,17 @@ fieldset.v8-corner > legend { padding-right: 26px; }
 
 /* 模板 / 日期：等宽的次要控件 */
 .v3-cfg .event-row .ev-template,
-.v3-cfg .event-row .ev-start {
+.v3-cfg .event-row .ev-start,
+.v3-cfg .event-row .ev-end {
   flex: 0 0 auto; width: 124px; min-width: 0;
   font-size: 12px; padding: 5px 7px;
   border: 1px solid #e3ece7; border-radius: 7px; background: #fff;
   color: #47584f;
 }
+/* 结束日是可选的覆盖项，留空即按模板天数推算（空的 date 控件本身灰显） */
 .v3-cfg .event-row .ev-template:focus,
-.v3-cfg .event-row .ev-start:focus { border-color: var(--primary); outline: none; }
+.v3-cfg .event-row .ev-start:focus,
+.v3-cfg .event-row .ev-end:focus { border-color: var(--primary); outline: none; }
 
 /* 状态靠右，删除按钮贴最右 */
 .v3-cfg .event-row .ev-status {
@@ -731,7 +734,14 @@ fieldset.v8-corner > legend { padding-right: 26px; }
   background: #f2f5f4; color: #6b7a74;
 }
 .v3-cfg .event-row .ev-status.on { background: #e1f5ee; color: #0f6e56; }
-.v3-cfg .event-row .ev-status.off { background: #f8efef; color: #a35560; }
+/* 剩余 1~7 天：黄 */
+.v3-cfg .event-row .ev-status.warn { background: #fdf3e0; color: #9a6b12; }
+/* 最后一天 / 数据异常：红 */
+.v3-cfg .event-row .ev-status.danger { background: #fdeaea; color: #b13a3a; }
+/* 一周内开：蓝（还没开始，不能沿用「进行中」的绿） */
+.v3-cfg .event-row .ev-status.soon { background: #e8f1fb; color: #2f6ba8; }
+.v3-cfg .event-row .ev-status.off,
+.v3-cfg .event-row .ev-status.done { background: #f8efef; color: #a35560; }
 
 .v3-cfg .event-row .ev-del {
   flex: 0 0 auto; width: 24px; height: 24px; padding: 0;
@@ -746,14 +756,12 @@ fieldset.v8-corner > legend { padding-right: 26px; }
 #btnAddEvent { margin-top: 10px; }
 
 /* 已结束的活动弱化，让当前/未来的更突出 */
-.v3-cfg .event-row:has(.ev-status.off) .ev-name { color: #9aa8a2; font-weight: 500; }
+.v3-cfg .event-row:has(.ev-status.off) .ev-name,
+.v3-cfg .event-row:has(.ev-status.done) .ev-name { color: #9aa8a2; font-weight: 500; }
 .v3-cfg .event-row:has(.ev-status.off) .ev-template,
-.v3-cfg .event-row:has(.ev-status.off) .ev-start { color: #8c9a94; border-color: #edf2ef; }
-
-/* 已结束的活动弱化，让当前/未来的更突出 */
-.v3-cfg .event-row:has(.ev-status.off) .ev-name { color: #9aa8a2; font-weight: 500; }
-.v3-cfg .event-row:has(.ev-status.off) .ev-template,
-.v3-cfg .event-row:has(.ev-status.off) .ev-start { color: #8c9a94; border-color: #edf2ef; }
+.v3-cfg .event-row:has(.ev-status.off) .ev-start,
+.v3-cfg .event-row:has(.ev-status.done) .ev-template,
+.v3-cfg .event-row:has(.ev-status.done) .ev-start { color: #8c9a94; border-color: #edf2ef; }
 
 /* 服务器设置项 */
 .v11-srv { margin-bottom: 12px; }
@@ -814,7 +822,8 @@ html body {
 .v3-evhead .h-name { flex: 1 1 auto; min-width: 0; max-width: 42%; }   /* 与 .ev-name 的 42% 对齐 */
 .v3-evhead .h-tpl  { flex: 0 0 124px; }
 .v3-evhead .h-dt   { flex: 0 0 124px; }
-.v3-evhead .h-st   { flex: 0 0 70px; text-align: center; margin-left: auto; }
+.v3-evhead .h-end  { flex: 0 0 124px; }
+.v3-evhead .h-st   { flex: 0 0 84px; text-align: center; margin-left: auto; }
 .v3-evhead i       { flex: 0 0 24px; }
 
 /* 行：压紧、加斑马、分隔线做实 */
@@ -830,13 +839,14 @@ html body {
 /* 状态列定宽；auto margin 把「状态 + 删除」一起推到右端，
    表头的 h-st 也给了同样的 auto，两边才对得齐。 */
 .v3-cfg .event-row .ev-status {
-  min-width: 70px; text-align: center;
+  min-width: 84px; text-align: center;
 }
 
 /* 活动名与控件随行高收一档 */
 .v3-cfg .event-row .ev-name { font-size: 12.5px; }
 .v3-cfg .event-row .ev-template,
-.v3-cfg .event-row .ev-start { padding: 3px 6px; font-size: 11.5px; height: 26px; }
+.v3-cfg .event-row .ev-start,
+.v3-cfg .event-row .ev-end { padding: 3px 6px; font-size: 11.5px; height: 26px; }
 
 /* 添加按钮：进卡头右上角 */
 .v3-cfg .ch #btnAddEvent {
@@ -857,17 +867,27 @@ html body {
 .v3-modal .sec + .sec { border-top: 1px solid #e2ebe6; padding-top: 12px; margin-top: 10px; }
 .v3-modal .sec > h4, .v3-modal .sec > b { color: #3f5149; }
 
-/* ---------- 窄屏：活动行改两行式，别横向溢出 ---------- */
+/* ---------- 窄屏：活动行改三行式，别横向溢出 ---------- */
 @media (max-width: 720px) {
   .v3-evhead { display: none; }
-  /* 两行式：名字占满第一行，第二行 模板 | 日期 | 状态 | 删除 */
+  /* 三行式：名字 / 模板 + 起始 + 删除 / 最后一天 + 状态 */
   .v3-cfg .event-row {
-    display: grid; grid-template-columns: 1fr 1fr auto 24px;
+    display: grid; grid-template-columns: 1fr 1fr 24px;
+    grid-template-areas:
+      "name name name"
+      "tpl  start del"
+      "end  st   st";
     gap: 6px; padding: 8px; align-items: center;
   }
-  .v3-cfg .event-row .ev-name { grid-column: 1 / -1; max-width: none; }
+  .v3-cfg .event-row .ev-name { grid-area: name; max-width: none; }
+  .v3-cfg .event-row .ev-template { grid-area: tpl; }
+  .v3-cfg .event-row .ev-start { grid-area: start; }
+  .v3-cfg .event-row .ev-end { grid-area: end; }
+  .v3-cfg .event-row .ev-status { grid-area: st; }
+  .v3-cfg .event-row .ev-del { grid-area: del; }
   .v3-cfg .event-row .ev-template,
-  .v3-cfg .event-row .ev-start { width: auto; min-width: 0; }
+  .v3-cfg .event-row .ev-start,
+  .v3-cfg .event-row .ev-end { width: auto; min-width: 0; }
   .v3-cfg .event-row .ev-status { min-width: 0; margin-left: 0; }
 }
 
@@ -929,3 +949,28 @@ html body {
 /* 设置弹窗：各设置项之间留出固定呼吸位（战术学院插在服务器说明后面，原来贴太近） */
 .v3-modal .sec > label { margin-top: 9px; }
 .v3-modal .sec > label:first-of-type { margin-top: 0; }
+
+/* ============================================================
+   v17：四张卡各挂一个口径信息窗（原来的「生成于」时间条与总弹窗已去掉）
+   ============================================================ */
+.cards.v3-cards-rel { position: relative; }
+
+.card { position: relative; }
+.card .v4-info--card {
+  position: absolute; right: 6px; top: 6px; margin: 0;
+  width: 16px; height: 16px; font-size: 10px;
+  background: rgba(255, 255, 255, .82);
+}
+
+/* 浮层挂在 .cards 上（卡片本身太窄，300px 的说明会被压成一列） */
+.v7-card-pop {
+  left: auto; right: 8px; top: 46px;
+  width: min(340px, calc(100% - 16px));
+}
+.v7-card-pop .hd { margin-bottom: 6px; }
+.v7-card-pop .ft { margin: 0; line-height: 1.65; }
+.v7-card-pop .ft + .ft { margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--line-soft, #e4ece8); }
+
+@media (max-width: 720px) {
+  .v7-card-pop { left: 8px; right: 8px; width: auto; }
+}

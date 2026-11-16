@@ -398,7 +398,13 @@
     var list = [];
     wrap.querySelectorAll(".event-row").forEach(function (row) {
       var t = row.querySelector(".ev-template"), d = row.querySelector(".ev-start");
-      if (t && d && t.value && d.value) list.push({ template: t.value, start_date: d.value });
+      if (t && d && t.value && d.value) {
+        var it = { template: t.value, start_date: d.value };
+        // 结束日覆盖（官方公告口径）：空 = 按模板天数自动推算
+        var e2 = row.querySelector(".ev-end");
+        if (e2 && e2.value) it.end_date = e2.value;
+        list.push(it);
+      }
     });
     state.form.activities = list;
   }
@@ -427,7 +433,14 @@
     dt.type = "date"; dt.className = "ev-start";
     dt.value = a.start_date || "";
     dt.title = "活动开始日期（服务器当日 04:00 起算）";
-    // 活动状态（R25）：未开始 / 剩余 N 天 / 已结束 —— 基准日 = 数据日期（与计入区间同基准）
+    // 结束日覆盖：模板天数只是按 28/21/14 天推算的默认值。
+    // 官方公告若写明实际结束时间、或该期受强更（强制更新停服）影响而顺延/缩短，
+    // 把公告里的「最后一天」填这里，状态、计入区间、收益全按它算。
+    var de = document.createElement("input");
+    de.type = "date"; de.className = "ev-end";
+    de.value = a.end_date || "";
+    de.title = "最后一天（可留空 = 按模板天数推算）。官方公告通常写「~12/9 03:59」，那最后一天就填 12/9 的前一天 12/8；强更顺延同理按公告填。";
+    // 活动状态（R25）：未开始 / 即将上线 / 剩余 N 天 / 已结束 —— 基准日 = 本机今天（不是数据日期）
     var st = document.createElement("span");
     st.className = "ev-status";
     st.textContent = "—";
@@ -435,7 +448,7 @@
     del.type = "button"; del.className = "ev-del";
     del.title = "移除该活动"; del.setAttribute("aria-label", "移除该活动");
     del.innerHTML = EV_DEL_SVG;   // 圆形 ghost 按钮 + 细线 ✕（此前是纯文本 ✕ + 内联样式、CSS 里零样式）
-    row.appendChild(sel); row.appendChild(dt); row.appendChild(st); row.appendChild(del);
+    row.appendChild(sel); row.appendChild(dt); row.appendChild(de); row.appendChild(st); row.appendChild(del);
     return row;
   }
 
@@ -462,6 +475,7 @@
     catch (e) { box.textContent = "活动参数异常：" + e.message; refreshActivityStatus(null); return; }
     if (!sched.dates.length) {
       box.innerHTML = "已计入 <b>0</b> 天：所填活动均已结束（或尚未进入计入区间）。已到手的奖励请直接填进上方箱量。";
+      refreshActivityStatus(sched);   // 一条都没计入时状态徽章也得刷新，否则停在旧文案
       return;
     }
     refreshActivityStatus(sched);
@@ -880,7 +894,9 @@
       upgrade_cost: upgradeCost,
       stage_clear_resources: stage,
       // 活动收益（按日期计入；空数组 = 不开启本功能，行为与改动前一致）
-      activities: (f.activities || []).map(function (a) { return { template: a.template, start_date: a.start_date }; }),
+      activities: (f.activities || []).map(function (a) {
+        return { template: a.template, start_date: a.start_date, end_date: a.end_date || null };
+      }),
       // 月卡（默认否）：等待期内每日 1 个「30 天成长补给箱」并入开放日箱量
       monthly_card: f.monthly_card === "是",
       // 每种箱子各保留 1 个不开：仅影响计算（由 calculate() 生成保留后的快照），表单仍显示原始库存
@@ -1424,6 +1440,9 @@
     if (isNaN(da) || isNaN(db)) return null;
     return Math.round((da - db) / 86400000);
   }
+  /* 状态徽章：文案与颜色都在这里定，v16.js 的 paintEventNames 不再碰 .ev-status。
+     颜色按「离结束还有多久」分档：> 7 天绿、1~7 天黄、最后一天红；
+     未开始的按「离开始还有多久」：≤ 7 天写「即将上线」（蓝），更远写「未开始」（灰）。 */
   function refreshActivityStatus(sched) {
     var wrap = $("eventRows");
     if (!wrap) return;
@@ -1439,20 +1458,29 @@
       var m = byIdx[i];
       var cls = "", txt = "—";
       if (!m) { txt = "—"; }
-      else if (m.error) { cls = "done"; txt = "⚠ 数据异常"; }
-      else if (today < m.start) { txt = "未开始"; }
+      else if (m.error) { cls = "danger"; txt = "⚠ 数据异常"; }
+      else if (today < m.start) {
+        // 「即将上线」= 距开始 ≤ 7 天；再远只写「未开始」
+        var togo = daysBetweenISO(m.start, today);
+        if (togo !== null && togo <= 7) { cls = "soon"; txt = "即将上线"; }
+        else { txt = "未开始"; }
+      }
       else if (today > m.end) { cls = "done"; txt = "已结束"; }
       else {
+        // 剩余天数按时间长短渐变：> 7 天绿，1~7 天黄，最后一天红
         var n = daysBetweenISO(m.end, today);
-        cls = "on";
-        txt = (n === null) ? "进行中" : (n > 0 ? ("剩余 " + n + " 天") : "今天最后一天");
+        if (n === null) { cls = "on"; txt = "进行中"; }
+        else if (n <= 0) { cls = "danger"; txt = "今天最后一天"; }
+        else if (n <= 7) { cls = "warn"; txt = "剩余 " + n + " 天"; }
+        else { cls = "on"; txt = "剩余 " + n + " 天"; }
       }
       st.className = "ev-status" + (cls ? " " + cls : "");
       st.textContent = txt;
-      st.title = (!m || m.error) ? "" :
+      st.title = !m ? "" : (m.error ? ("活动数据异常：" + m.error) :
         ("活动 " + m.start + " ~ " + m.end + "（按今天 " + today + " 算剩余）；"
           + "本次计入 " + (m.inject_days || 0) + " 天"
-          + (m.active ? "（" + m.inject_start + " ~ " + m.inject_end + "）" : ""));
+          + (m.active ? "（" + m.inject_start + " ~ " + m.inject_end + "）" : "")
+          + (m.end_override ? "；结束日已按官方公告覆盖" : "")));
     }
   }
   function renderEventTotals(box, sched) {
@@ -1975,7 +2003,8 @@
     });
     $("eventRows").addEventListener("change", function (e) {
       if (e.target && e.target.classList &&
-          (e.target.classList.contains("ev-template") || e.target.classList.contains("ev-start"))) {
+          (e.target.classList.contains("ev-template") || e.target.classList.contains("ev-start") ||
+           e.target.classList.contains("ev-end"))) {
         updateActivityTotals();
       }
     });

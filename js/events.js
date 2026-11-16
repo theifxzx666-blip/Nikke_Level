@@ -308,16 +308,30 @@
   /* 单活动实例：把模板按起始日实例化 → 全窗口跑一次引擎 → 按计入区间裁剪
      计入区间 = [ max(Estart, T0+1), Eend ]；t0 为 null 时取整窗口（用于基线断言）
      注意：必须先用「完整窗口」跑 aggregate（商店清仓逻辑依赖 d1 <= hi），再裁剪 —— 顺序不可颠倒 */
-  function planActivity(tplId, startDate, t0) {
+  /* 官方公告口径覆盖：endDate 非空时，活动结束日改用它（含强更顺延/缩短）。
+     endDate 语义 = 活动「最后一天」（该日 04:00 起的最后一档），与 meta.end 同口径；
+     早于开始日视为无效，退回模板天数。 */
+  function instantiateWithEnd(tpl, startDate, endDate) {
+    var ev = instantiate(tpl, startDate);
+    ev.end_override = false;
+    if (endDate && endDate >= startDate && endDate !== ev.window.end) {
+      ev.window.end = endDate;
+      ev.end_override = true;
+    }
+    return ev;
+  }
+
+  function planActivity(tplId, startDate, t0, endDate) {
     var tpl = templateById(tplId);
     if (!tpl || !startDate) return null;
-    var ev = instantiate(tpl, startDate);
+    var ev = instantiateWithEnd(tpl, startDate, endDate);
     var start = ev.window.start, end = ev.window.end;
     var lo = t0 ? maxISO(start, addDays(t0, 1)) : start;
     var hi = end;
     var meta = {
       template: tplId, label: tpl.label || tplId, start: start, end: end,
       inject_start: lo, inject_end: hi, inject_days: 0, active: lo <= hi, error: null,
+      end_override: !!ev.end_override,
     };
     var tot = emptyTotals();
     if (meta.active) {
@@ -358,8 +372,16 @@
     var byDate = {}, meta = [], totals = emptyTotals(), dates = [];
     acts.forEach(function (a, idx) {
       var m = null;
-      try { m = planActivity(a.template, a.start_date, t0); }
-      catch (e) { m = { template: a.template, start: a.start_date, error: String(e && e.message || e), active: false, totals: emptyTotals() }; }
+      try { m = planActivity(a.template, a.start_date, t0, a.end_date); }
+      catch (e) {
+        var em = String(e && e.message || e);
+        /* 结束日被覆盖得太短时，引擎会报「章节开放日超出窗口」——换成用户能照做的说法 */
+        if (em.indexOf("超出事件窗口") >= 0) {
+          em = "结束日（" + (a.end_date || "-") + "）早于活动内置章节的开放日，无法按窗口推算收益；"
+             + "请按官方公告核对结束日，留空则按模板天数算";
+        }
+        m = { template: a.template, start: a.start_date, error: em, active: false, totals: emptyTotals() };
+      }
       if (!m) return;
       m.index = idx;
       meta.push(m);
@@ -367,7 +389,7 @@
       /* 逐日重算该活动的按日产出（供时间轴推进；与 planActivity 同源） */
       var tpl = templateById(a.template);
       if (!tpl) return;
-      var ev = instantiate(tpl, a.start_date);
+      var ev = instantiateWithEnd(tpl, a.start_date, a.end_date);
       var days = aggregate(ev, ev.window.start, ev.window.end, 1, 5, "dust");
       var perDay = (tpl.daily_task || {}).per_day || {};
       Object.keys(days).sort().forEach(function (d) {
@@ -482,6 +504,7 @@
     templateList: templateList,
     /* 引擎移植（node 侧测试可直接调用） */
     instantiate: instantiate,
+    instantiateWithEnd: instantiateWithEnd,
     aggregate: aggregate,
     simStages: simStages,
     sweepTarget: sweepTarget,
