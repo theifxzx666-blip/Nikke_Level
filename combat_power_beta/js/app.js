@@ -1427,6 +1427,31 @@
     if (tag) tag.textContent = state.account && state.account.enabled ? "已导入" : "未导入";
     pkStatus(k ? pkMaskedKey(k) : "未保存 Key · 每次打开都要重新填", k ? "ok" : "");
   }
+  /* ---------------- URL ?k= 自动填入阿卡Key（2026-11-17） ----------------
+     分享链接形如 .../combat_power_beta/index.html?k=XXXX，打开即填入顶栏，
+     省掉「复制 → 粘贴 → 保存」三步。链接优先：显式给出的值就是要用的，
+     填完存进 localStorage，刷新/换标签页都不丢。
+     填完把 k 从地址栏抹掉（replaceState）—— Key 不该留在浏览历史里被截图或转发带走；
+     其它参数（如 demo=1）原样保留。 */
+  function applyKeyFromQuery() {
+    var m = /[?&]k=([^&#]*)/.exec(window.location.search || "");
+    if (!m) return;
+    var v = "";
+    try { v = decodeURIComponent(m[1] || "").replace(/\+/g, " ").trim(); }
+    catch (e) { v = String(m[1] || "").trim(); }
+    if (!v) return;
+    var inp = $("pk-key");
+    if (inp) inp.value = v;
+    pkSetKey(v);
+    pkRefreshUI();
+    try {
+      var q = (window.location.search || "").replace(/[?&]k=[^&#]*/g, "").replace(/^&/, "?");
+      if (q === "?") q = "";
+      var url = window.location.pathname + q + (window.location.hash || "");
+      if (window.history && window.history.replaceState) window.history.replaceState(null, "", url);
+    } catch (e) { /* 部分环境限制 replaceState —— Key 已填入，不影响使用 */ }
+    setNotice("已从链接填入阿卡Key（" + v.length + " 位，已保存到本机）", "ok");
+  }
   /** 清掉「没有归属」的可选键，避免脏数据把 state 撑大 */
   function pkApply(raw, from) {
     if (!PK) { setNotice("映射模块 pinkuro.js 未加载", "error"); return; }
@@ -1689,6 +1714,7 @@
     if (/[?&]demo=1/.test(window.location.search)) state = applyDemo();
     decorateRoster();       // 角色目录必须在 load() 之后装饰（存档里选中的角色得能命中）
     renderAll();
+    applyKeyFromQuery();   // URL ?k= 自动填入阿卡Key（2026-11-17）
     setMode(state.mode || "loadout");
     if (/[?&]demo=1/.test(window.location.search)) setNotice("已载入示例（拉毗：小红帽 · 同步器 492 · SR15 收藏 · 魔方15）—— 左上「角色」可切换全部 " + D.roster.length + " 名角色，改中间栏词条即可看战力变化", "ok");
 
