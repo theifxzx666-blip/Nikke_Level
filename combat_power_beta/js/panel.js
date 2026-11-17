@@ -120,11 +120,14 @@
       });
     }
 
-    /* ---- Group2-魔方 ---- */
+    /* ---- Group2-魔方 ----
+     * 类型不参与计算（2026-10-28 定稿）：静态表 16 款魔方（1000301~1000316）的 stats 与 bp
+     * 两组数组**逐元素完全相同**，类型不产生任何差异 → 只按等级取表，固定用第一款。
+     * 页面上的魔方类型下拉已移除，cubeId 仅作为旧存档兼容字段保留。 */
     var cubeBP = 0;
     var cubeLv = Math.max(0, Math.min(15, Math.trunc(lo.cubeLv || 0)));
     if (cubeLv) {
-      var cube = findCube(data, lo.cubeId);
+      var cube = findCubes(data)[0] || findCube(data, lo.cubeId);
       if (cube) {
         var cs = pick(cube.stats, cubeLv - 1);
         if (cs) { atk += cs[0]; hp += cs[1]; def += cs[2]; }
