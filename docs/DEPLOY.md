@@ -35,6 +35,10 @@ git -c credential.helper= -c credential.helper=wincred push origin main
 > **发计算器到 WorkBuddy 的唯一路径**：另开一个工作区（如 `D:\Codex\临时\nikke_level_deploy_20261117`），
 > 在新会话里发布，才会**新建应用、产生新分享链接**。发布后先看返回的 `shareLink`：
 > 若不是计算器自己的域名，说明又覆盖了别的应用 → 立刻按该应用 genie 里的 `localDir` 重新 deploy 回去。
+>
+> **本机例外（2026-11-17 实测，`F:\Codex\Nikke`）**：镜像目录 `临时车间\deploy_clean_1007` **存在**，
+> 工作区根 `.workbuddy\applications.yaml` 绑定的就是 `wbapp_Jf0Q8SP3b2SJ91mSeeDgtL`（NIKKE资源规划计算器），
+> 具备正常同步条件。上面「localDir 已不存在」只对 `D:\Codex` 那台设备成立，别照搬结论。
 
 镜像目录是发布源，`deploy` 的目标由它反查，**不读本地 genie**。
 
