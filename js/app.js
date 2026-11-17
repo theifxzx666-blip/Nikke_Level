@@ -204,6 +204,20 @@
     try { localStorage.setItem(LS_KEY, JSON.stringify(state.form)); } catch (e) {}
   }
 
+  /* R88：计算后自动同步云端（恢复 R46 的行为）。开关键 nikke_calc_autosync，
+     由 v16「设置 → 计算后自动同步云端」维护；未登录静默跳过，不弹面板打断计算。 */
+  function autoSyncAfterCalc() {
+    var on = true;
+    try { on = localStorage.getItem("nikke_calc_autosync") !== "0"; } catch (e) {}
+    if (!on) return;
+    var SY = window.__nikkeSync;
+    if (!SY || typeof SY.status !== "function" || typeof SY.quickUpload !== "function") return;
+    var st = null;
+    try { st = SY.status(); } catch (e) { return; }
+    if (!st || !st.loggedIn) return;
+    try { SY.quickUpload("planner"); } catch (e) {}
+  }
+
   /* Toast 弹窗提示（底部居中，淡入淡出 + 上浮） */
   function tip(msg) {
     var t = $("toast");
@@ -1733,6 +1747,7 @@
       renderExtra(state.lastResult, snapCalc);
       renderRaw(state.lastResult);
       saveForm();
+      autoSyncAfterCalc();
       // 标记可横向滑动的结果表（内容溢出时显示右缘渐隐提示）
       markScrollableTables();
       // 计算结果出现后切到双列布局（结果在右侧）+ hero 与左表单等宽对齐

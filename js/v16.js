@@ -767,6 +767,20 @@
       });
       s1.appendChild(keep);
     }
+
+    /* 计算后自动同步（R46 原口径，23a23c8 连同 UI 一起删了，这里放回设置）。
+       用 select 是沿用「战术学院」那套写法，样式全在 .v3-modal .row 里，不用新增 CSS。 */
+    var syncRow = el('div', 'row',
+      '<span class="lb">计算后自动同步云端<small>未登录时只存本机，不弹面板打扰；要立刻上传点右侧云图标</small></span>' +
+      '<select id="v16Autosync"><option value="1">是</option><option value="0">否</option></select>');
+    s1.appendChild(syncRow);
+    var syncSel = syncRow.querySelector('#v16Autosync');
+    syncSel.value = autosyncOn() ? '1' : '0';
+    syncSel.addEventListener('change', function () {
+      try { localStorage.setItem(SYNC_PREF, syncSel.value); } catch (e) {}
+      paintSyncBtn();
+    });
+
     mb.appendChild(s1);
 
     var s2 = el('div', 'sec', '<h4>内置默认（只读，仅在此处与日志可见）</h4>');
@@ -1013,29 +1027,65 @@
   }
 
   /* ---------------- 翻页 ---------------- */
-  /* 云同步开关（原版 R48 的快捷同步图标，23a23c8 删掉后一直没回来） */
-  function buildSyncTog() {
-    var lb = el('label', 'as-tog');
-    lb.id = 'asTog';
-    lb.setAttribute('data-on', '1');
-    lb.title = '计算后自动保存并同步到云端';
-    lb.innerHTML =
-      '<input type="checkbox" id="chkAutosync" checked aria-label="计算后自动保存并同步到云端">' +
+  /* 云同步按钮（R88 修复）：23a23c8 删掉 R46 的快捷同步后，v16 只把壳画了回来 ——
+     一个没有监听、没有上传调用的空勾选框，点下去只会变色。现在拆成两件事：
+       ① 这个圆形云图标 = 点一下立即上传（未登录会自动打开同步面板引导）
+       ② 「计算后自动同步」= 设置里的开关，键名沿用 R46 的 nikke_calc_autosync */
+  var SYNC_PREF = 'nikke_calc_autosync';
+  function autosyncOn() {
+    try { return localStorage.getItem(SYNC_PREF) !== '0'; } catch (e) { return true; }
+  }
+  function paintSyncBtn() {
+    var b = byId('asTog'); if (!b) return;
+    var st = null;
+    try { st = (window.__nikkeSync && window.__nikkeSync.status) ? window.__nikkeSync.status() : null; } catch (e) {}
+    var on = !!(st && st.loggedIn);
+    b.setAttribute('data-on', on ? '1' : '0');
+    var t = b.querySelector('.as-tip');
+    if (t) t.textContent = on
+      ? '已登录' + (st.email ? ' · ' + st.email : '') + '，点击立即同步到云端'
+      : '未登录：点击登录后同步到云端';
+  }
+  function syncNow() {
+    var b = byId('asTog');
+    var SY = window.__nikkeSync;
+    if (!SY || typeof SY.quickUpload !== 'function') return;
+    if (b) b.classList.add('is-busy');
+    var fin = function (r) {
+      if (b) {
+        b.classList.remove('is-busy');
+        if (r && r.ok) {
+          b.classList.add('is-ok');
+          setTimeout(function () { b.classList.remove('is-ok'); }, 1600);
+        }
+      }
+      paintSyncBtn();
+    };
+    try {
+      var p = SY.quickUpload('planner');    /* 内部已有 toast：成功 / 未登录 / 本地为空 都会提示 */
+      if (p && typeof p.then === 'function') p.then(fin, function () { fin(null); });
+      else fin(null);
+    } catch (e) { fin(null); }
+  }
+  function buildSyncBtn() {
+    var b = el('button', 'as-tog');
+    b.type = 'button';
+    b.id = 'asTog';
+    b.title = '同步到云端';
+    b.innerHTML =
       '<svg class="as-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/>' +
       '<path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>' +
-      '<span class="as-tip">已开启：计算后自动保存并同步到云端</span>';
-    var cb = lb.querySelector('input');
-    var paint = function () {
-      lb.setAttribute('data-on', cb.checked ? '1' : '0');
-      lb.querySelector('.as-tip').textContent = cb.checked
-        ? '已开启：计算后自动保存并同步到云端'
-        : '已关闭：只在本机保存，不上传';
-    };
-    cb.addEventListener('change', paint);
-    paint();
-    return lb;
+      '<span class="as-tip">同步到云端</span>';
+    b.addEventListener('click', syncNow);
+    /* 首次登录态由 sync.js 异步 getSession 拿，不会触发 onAuthStateChange，
+       所以补一次延时重画；之后的登录/登出走 onAuth 订阅 */
+    setTimeout(paintSyncBtn, 1200);
+    try {
+      if (window.__nikkeSync && window.__nikkeSync.onAuth) window.__nikkeSync.onAuth(function () { paintSyncBtn(); });
+    } catch (e) {}
+    return b;
   }
 
   function buildNav() {
@@ -1050,7 +1100,7 @@
 
     var calcBtn = byId('btnCalc');
     if (calcBtn) nav.appendChild(calcBtn);     /* 开始计算搬进同一行 */
-    nav.appendChild(buildSyncTog());
+    nav.appendChild(buildSyncBtn());
 
     form.appendChild(nav);
     byId('v3Next').addEventListener('click', function () { go(2); });

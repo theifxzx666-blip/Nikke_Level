@@ -623,10 +623,16 @@ fieldset.v8-corner > legend { padding-right: 26px; }
   position: relative; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
   width: 46px; height: 46px; margin: 0;
+  padding: 0; font: inherit;
   border: 1px solid var(--border); border-radius: 50%;
   background: #fff; color: var(--muted); cursor: pointer;
-  transition: color .18s, border-color .18s, background .18s;
+  transition: color .18s, border-color .18s, background .18s, transform .12s;
 }
+.as-tog:active { transform: scale(.95); }
+.as-tog.is-busy { pointer-events: none; }
+.as-tog.is-busy .as-ico { animation: asPulse .9s ease-in-out infinite; }
+.as-tog.is-ok { color: #148457; border-color: #9fdcc4; background: #eaf8f1; }
+@keyframes asPulse { 0%, 100% { opacity: 1; } 50% { opacity: .32; } }
 .as-tog input { position: absolute; opacity: 0; width: 0; height: 0; }
 .as-tog .as-ico { width: 20px; height: 20px; display: block; }
 .as-tog[data-on="1"] { color: var(--primary); border-color: #b9e3d3; background: #f2faf6; }

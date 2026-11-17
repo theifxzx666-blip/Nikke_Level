@@ -60,6 +60,55 @@
 
 ---
 
+**R88 · 修复云同步按钮：点击不上传、计算后也不自动同步**
+
+### 一、用户需求
+
+> 现在计算器的保存按钮貌似有bug，点击同步按钮状态，且已开启计算同步的情况下没有同步
+
+### 二、根因
+
+不是按钮坏了，是**从来没接上线**。23a23c8 删掉 R46 的快捷同步逻辑后，v16 把那颗云图标当成「样式」画了回来：`#chkAutosync` 只有一个 `change` 监听用来改自己颜色，全站没有一处调用 `__nikkeSync.quickUpload`；`calculate()` 里也没有 R46 的 `autoSyncAfterCalc()`。所以：
+
+| 现象 | 原因 |
+| :--- | :--- |
+| 点一下只变色 | 圆图标是个 `<label>` 包着隐藏 checkbox，点击 = 切勾选，无任何上传 |
+| 勾着「计算后自动同步」也不传 | `autoSyncAfterCalc()` 整个函数在事故里丢了，`quickUpload` 零调用方 |
+
+线上数据佐证：Supabase `sync_data` 表 144 行里 `feature='planner'` **一条都没有**（其余全是定制模组统计）。
+
+### 三、改动
+
+| 文件 | 改了什么 |
+| :--- | :--- |
+| `js/v16.js` | `buildSyncTog()` → `buildSyncBtn()`：改成真 `<button>`，点击 `syncNow()` → `__nikkeSync.quickUpload('planner')`；未登录由 `quickUpload` 自己开面板引导。按钮色改为反映登录态（绿=已登录），新增 `is-busy` 脉冲与 `is-ok` 成功态。`onAuth` 订阅 + 1.2s 兜底重画（`getSession` 不触发 `onAuthStateChange`） |
+| `js/v16.js` | 设置弹窗「计算设置」新增「计算后自动同步云端」是/否，写 `nikke_calc_autosync`（沿用 R46 原键名）。用 `select` 是沿用「战术学院」写法，零新增 CSS |
+| `js/app.js` | 补回 `autoSyncAfterCalc()`：开关开 + 已登录才 `quickUpload('planner')`；未登录静默跳过。挂在 `calculate()` 的 `saveForm()` 之后 |
+| `css/v16.css` | `.as-tog` 补 `padding:0; font:inherit`（button 默认内边距会把图标挤歪）+ `.is-busy` / `.is-ok` |
+| `index.html` · `mobile.html` | 版本号 `20261117a` → `20261117b`（app.js / v16.js / v16.css） |
+
+### 四、验证
+
+无头 Chrome 探针 `F:\Codex\临时\verify_sync_20261117.js`（把 `quickUpload` 换成记录器，只验接线不碰网络），**同一套脚本对修复前后各跑一次**：
+
+| 检查项 | 修复前 | 修复后 |
+| :--- | :-: | :-: |
+| 点云图标调用 `quickUpload` | ❌ 0 次 | ✅ 1 次 |
+| 传入 id = `planner` | ❌ 空 | ✅ |
+| 已登录 → 按钮开启态 | ❌ data-on=0 | ✅ data-on=1 |
+| 设置内有 `#v16Autosync` | ❌ null | ✅ 默认「是」 |
+| 开始计算 → 自动上传 | ❌ 0 次 | ✅ 1 次 |
+| 关掉开关 → 计算不上传 | ✅ | ✅ |
+| 关掉开关后仍可手动同步 | ❌ 0 次 | ✅ 1 次 |
+| 未捕获异常 / 控制台报错 | 0 / 0 | 0 / 0 |
+
+合计：修复前 6 项失败 → 修复后 10/10 通过。
+`node --check` 三个 JS 全过；`css/v16.css` 大括号 406/406 平衡。
+
+> 未验证项：真实 Supabase 往返（探针绕过了网络）。登录态下点一次云图标后的落库结果，要等线上有登录账号时人工确认一次。
+
+---
+
 ## 2026-11-15（第三十四轮）
 
 **R86 · 恢复活动收益与计算口径，计算器 v16 外壳上线**（`638684f`、`67a20e1`、`a1e4b32`）
