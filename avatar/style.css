@@ -239,8 +239,10 @@ html.locked,html.locked body{height:100%;overflow:hidden;overscroll-behavior:non
 @media(min-width:901px){
   .stage > .preview-wrap{margin-top:auto}
   .stage > .stage-actions{margin-bottom:auto}
-  /* 角色/头像框信息并排一行，省竖向空间（长名自动换行不截断） */
-  .stage-info{flex-direction:row;align-items:baseline;gap:18px;padding:9px 14px}
+  /* 角色/头像框信息并排一行，省竖向空间（长名自动换行不截断）
+     R26 加了「称号」第 4 项后单行放不下，改为可换行、每项不压缩 → 自动成两行 */
+  .stage-info{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:6px 18px;padding:9px 14px}
+  .stage-info .row{flex:0 0 auto}
   .stage-info .k{flex:0 0 auto}
   .stage-info .v{font-size:12.5px}
 }
@@ -255,6 +257,11 @@ html.locked,html.locked body{height:100%;overflow:hidden;overscroll-behavior:non
   .topbar h1::before{height:13px;margin-right:7px}
   .stat{display:none}
   .btn.primary{padding:8px 12px;font-size:12.5px;white-space:nowrap}
+
+  /* 四个 Tab 在 390px 下会超出视口（3 个时刚好），收紧内边距与字号；
+     min-width:0 让它可缩，避免把整页撑出横向滚动 */
+  .tab{min-width:0;padding:12px 6px;font-size:13px;white-space:nowrap}
+  .tab em{margin-left:4px;font-size:11px}
 
   /* 预览条：左预览 + 右当前选择，横向排布以省出列表高度 */
   .stage{
@@ -317,3 +324,16 @@ html.locked,html.locked body{height:100%;overflow:hidden;overscroll-behavior:non
   .cell:hover{transform:none;border-color:var(--line)}
   .cell:active{transform:scale(.96);border-color:#9fe1cb}
 }
+
+/* ---------- 称号分区（R26）----------
+   称号是 308×82 / 256×68 的宽幅横幅，不是正方头像，继续用正方格会把字压到看不清。
+   深底是因为横幅自带透明底版、文字多为白色，浅色棋盘格上对比度不足。 */
+.grid.titles{
+  grid-template-columns:repeat(auto-fill,minmax(clamp(150px,15vw,190px),1fr));
+}
+.grid.titles .cell .thumb{
+  aspect-ratio:308/82;
+  background:#241f2c;
+}
+.grid.titles .cell .thumb img{max-width:100%;max-height:100%}
+.grid.titles .cell .cap{height:2.5em;font-size:10.5px}

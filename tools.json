@@ -39,7 +39,7 @@
     },
     {
       "id": "avatar",
-      "name": "头像预览",
+      "name": "头像与称号",
       "icon": "assets/tab_avatar.png",
       "type": "web",
       "entry": "avatar/index.html",

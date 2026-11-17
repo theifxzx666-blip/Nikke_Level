@@ -20,8 +20,9 @@
 
   // 头像圆形遮罩在 compositeTo 内用 msk 画布完成
 
-  const state = { tab: 'avatar', q: '', filter: { avatar: '全部', frame: '全部', pendant: '全部' },
-                  avatar: null, frame: null, pendant: null };
+  const state = { tab: 'avatar', q: '',
+                  filter: { avatar: '全部', frame: '全部', pendant: '全部', title: '全部' },
+                  avatar: null, frame: null, pendant: null, title: null };
 
   /* ---------------- 筛选卡 ----------------
      头像 Tab：按企业（全部/极乐净土/米西利斯/泰特拉/朝圣者/反常/其他）
@@ -37,6 +38,8 @@
   ];
   const FRAME_CHIPS = ['全部', '动态', '静态', '其他'];
   const PENDANT_CHIPS = ['全部', '冠军竞技场', '博物馆'];
+  /* 称号按资源前缀分类，分类名由生成脚本写入 data.js 的「分类」字段 */
+  const TITLE_CHIPS = ['全部', '个突', '活动·联动', '联盟', '频道', '模拟室', '拦截战', '异常', '其他'];
 
   function pendantCat(o) {
     if (o.名称.indexOf('champion_arena') === 0) return '冠军竞技场';
@@ -53,6 +56,10 @@
       if (k === '全部') return D.挂件.length;
       return D.挂件.filter(o => pendantCat(o) === k).length;
     }
+    if (tab === 'title') {
+      if (k === '全部') return D.称号.length;
+      return D.称号.filter(o => (o.分类 || '其他') === k).length;
+    }
     if (k === '全部') return D.静态框.length + D.动态框.length;
     if (k === '动态') return D.动态框.filter(o => o.中文名).length;
     if (k === '静态') return D.静态框.filter(o => o.中文名).length;
@@ -67,7 +74,9 @@
       ? MFG_CHIPS.map(c => ({ k: c.k, icon: c.icon }))
       : state.tab === 'pendant'
         ? PENDANT_CHIPS.map(k => ({ k }))
-        : FRAME_CHIPS.map(k => ({ k }));
+        : state.tab === 'title'
+          ? TITLE_CHIPS.map(k => ({ k }))
+          : FRAME_CHIPS.map(k => ({ k }));
     defs.forEach(d => {
       const cnt = chipCount(state.tab, d.k);
       // 空分类不渲染（如 R21 全部汉化后「其他」为 0）；若当前筛选已失效则回退「全部」
@@ -148,6 +157,18 @@
     compositeTo(ctx, SIZE, frameImg, state.pendant && state.pendant.img);
   }
 
+  /* 称号是 308×82 宽幅横幅，不参与圆形合成：按原始比例居中、最大占画布 92% */
+  function paintTitle() {
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    const t = state.title;
+    if (!t || !t.img) return;
+    const k = Math.min(SIZE * 0.92 / t.img.width, SIZE * 0.92 / t.img.height);
+    const dw = Math.round(t.img.width * k), dh = Math.round(t.img.height * k);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(t.img, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
+  }
+
   let timer = null;
   function stopPlay() {
     if (timer) { clearTimeout(timer); timer = null; }
@@ -156,6 +177,7 @@
   function repaint() {
     stopPlay();
     updateGifBtn();
+    if (state.tab === 'title') { paintTitle(); return; }
     const f = state.frame;
     if (!f) { paint(null); return; }
     if (f.frames && f.frames.length) {          // 动态框：按游戏逐帧时长循环
@@ -179,6 +201,11 @@
       .replace(/^si_/, '').replace(/_s$/, '')
       .replace(/^(icn|dynamic)_soloraid_/, '')
       .replace(/_frame$/, '');
+  }
+
+  /* 称号无国服中文名时的展示名：只去掉 usertitle_ 前缀，不改写其余部分 */
+  function titleLabel(name) {
+    return name.replace(/^usertitle_/, '');
   }
 
   async function pickAvatar(item) {
@@ -234,11 +261,27 @@
     updateInfo(); markGrid(); repaint();
   }
 
+  async function pickTitle(entry) {
+    if (!entry) {
+      state.title = null;
+      updateInfo(); markGrid(); repaint();
+      return;
+    }
+    loadingEl.hidden = false;
+    try {
+      state.title = { name: entry.名称, zh: entry.中文名 || '',
+                      img: await IMG(ROOT + entry.文件) };
+    } catch (e) { console.warn(e); }
+    loadingEl.hidden = true;
+    updateInfo(); markGrid(); repaint();
+  }
+
   function onPick(o) {
     if (o.kind === 'avatar') pickAvatar(o.raw);
     else if (o.kind === 'none') pickFrame(null);
     else if (o.kind === 'no-pendant') pickPendant(null);
     else if (o.kind === 'pendant') pickPendant(o.raw);
+    else if (o.kind === 'title') pickTitle(o.raw);
     else pickFrame(o);
   }
 
@@ -254,6 +297,11 @@
                                      kind: 'pendant', raw: o, thumb: o.文件 }));
       return arr;
     }
+    if (state.tab === 'title') {
+      return (D.称号 || []).map(o => ({ key: o.名称, label: o.中文名 || titleLabel(o.名称),
+                                        code: titleLabel(o.名称), kind: 'title', raw: o,
+                                        thumb: o.文件 }));
+    }
     const arr = [{ key: '__none__', label: '无框', kind: 'none', thumb: null }];
     D.静态框.forEach(o => arr.push({ key: o.名称, label: o.中文名 || label(o.名称), code: label(o.名称),
                                      kind: 'static', raw: o, thumb: o.文件 }));
@@ -265,6 +313,7 @@
   function renderGrid() {
     const q = state.q.trim().toLowerCase();
     const flt = state.filter[state.tab];
+    gridEl.classList.toggle('titles', state.tab === 'title');
     const all = list().filter(o => {
       if (state.tab === 'avatar') {
         return flt === '全部' || (o.raw.企业 || '其他') === flt;
@@ -272,6 +321,9 @@
       if (state.tab === 'pendant') {
         if (o.kind === 'no-pendant') return flt === '全部';
         return flt === '全部' || pendantCat(o.raw) === flt;
+      }
+      if (state.tab === 'title') {
+        return flt === '全部' || (o.raw.分类 || '其他') === flt;
       }
       if (o.kind === 'none') return flt === '全部';   // 「无框」只在全部里出现
       if (flt === '动态') return o.kind === 'dynamic' && o.raw.中文名;
@@ -336,6 +388,7 @@
     let cur;
     if (state.tab === 'avatar') cur = state.avatar && state.avatar.item.名称;
     else if (state.tab === 'pendant') cur = state.pendant ? state.pendant.name : '__nopendant__';
+    else if (state.tab === 'title') cur = state.title ? state.title.name : null;
     else cur = state.frame ? state.frame.name : '__none__';
     Array.prototype.forEach.call(gridEl.children, c => {
       c.classList.toggle('on', !!c.dataset && c.dataset.key === cur);
@@ -355,16 +408,27 @@
     const p = state.pendant;
     pEl.textContent = p ? (p.zh || p.name) : '无挂件';
     pEl.title = p ? p.name : '';
+    const tEl = document.getElementById('cur-title');
+    const t = state.title;
+    tEl.textContent = t ? (t.zh || titleLabel(t.name)) : '未选择';
+    tEl.title = t ? t.name : '';
   }
 
   /* ---------------- 交互 ---------------- */
+  function activateTab(name, syncHash) {
+    state.tab = name;
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'),
+      x => x.classList.toggle('on', x.dataset.tab === name));
+    renderChips(); renderGrid(); repaint();
+    // 首次进入称号分区自动选第一条，避免画布空白
+    if (name === 'title' && !state.title && (D.称号 || []).length) pickTitle(D.称号[0]);
+    if (syncHash) {
+      try { history.replaceState(null, '', name === 'title' ? '#title' : '#'); } catch (e) {}
+    }
+  }
+
   Array.prototype.forEach.call(document.querySelectorAll('.tab'), t => {
-    t.onclick = () => {
-      Array.prototype.forEach.call(document.querySelectorAll('.tab'),
-        x => x.classList.toggle('on', x === t));
-      state.tab = t.dataset.tab;
-      renderChips(); renderGrid();
-    };
+    t.onclick = () => activateTab(t.dataset.tab, true);
   });
 
   /* 筛选区折叠（仅窄屏生效，PC 上折叠头被 CSS 隐藏）：
@@ -392,16 +456,15 @@
   };
 
   document.getElementById('btn-none').onclick = () => {
-    if (state.tab !== 'frame') {
-      state.tab = 'frame';
-      Array.prototype.forEach.call(document.querySelectorAll('.tab'),
-        x => x.classList.toggle('on', x.dataset.tab === 'frame'));
-      renderGrid();
-    }
+    if (state.tab !== 'frame') activateTab('frame', true);
     pickFrame(null);
   };
 
   document.getElementById('btn-random').onclick = () => {
+    if (state.tab === 'title' && (D.称号 || []).length) {
+      pickTitle(D.称号[Math.floor(Math.random() * D.称号.length)]);
+      return;
+    }
     pickAvatar(D.头像[Math.floor(Math.random() * D.头像.length)]);
     const pool = D.静态框.map(o => ({ kind: 'static', raw: o }))
       .concat(D.动态框.map(o => ({ kind: 'dynamic', raw: o })));
@@ -425,6 +488,10 @@
     const a = state.avatar && state.avatar.item;
     const f = state.frame;
     const p = state.pendant;
+    if (state.tab === 'title') {
+      const t = state.title;
+      return t ? fname(t.zh || titleLabel(t.name)) : 'notitle';
+    }
     return [
       a ? (a.中文名 || label(a.名称)) : 'nochar',
       f ? (f.zh || f.name) : 'noframe',
@@ -502,21 +569,26 @@
   function updateGifBtn() {
     const f = state.frame;
     document.getElementById('btn-gif').disabled =
-      !(f && f.kind === 'dynamic' && window.gifenc);
+      !(state.tab !== 'title' && f && f.kind === 'dynamic' && window.gifenc);
   }
 
   /* ---------------- 启动 ---------------- */
   document.getElementById('n-avatar').textContent = D.头像.length;
   document.getElementById('n-frame').textContent = D.静态框.length + D.动态框.length;
   document.getElementById('n-pendant').textContent = (D.挂件 || []).length;
+  document.getElementById('n-title').textContent = (D.称号 || []).length;
   document.getElementById('stat').textContent =
     '素材源自游戏原始资源 ｜ 头像 ' + D.头像.length +
     ' ｜ 静态框 ' + D.静态框.length + ' ｜ 动态框 ' + D.动态框.length +
-    ' 组 ｜ 挂件 ' + (D.挂件 || []).length;
+    ' 组 ｜ 挂件 ' + (D.挂件 || []).length +
+    ' ｜ 称号 ' + (D.称号 || []).length;
 
   renderChips();
   renderGrid();
   pickAvatar(D.头像.filter(o => o.名称 === 'si_c100_00_s')[0] || D.头像[0]);
+
+  // 深链：.../avatar/index.html#title 直接落在称号分区
+  if (location.hash === '#title') activateTab('title', false);
 
   // file:// 下可正常预览，但 canvas 会被标记为跨源，导出 PNG 必然失败——提前告知
   if (location.protocol === 'file:') {

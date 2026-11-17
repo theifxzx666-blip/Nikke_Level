@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NIKKE 头像预览</title>
-<link rel="stylesheet" href="style.css?v=20260923a">
+<title>NIKKE 头像与称号预览</title>
+<link rel="stylesheet" href="style.css?v=20261118a">
 </head>
 <body>
 
 <header class="topbar">
-  <h1>NIKKE 头像预览</h1>
+  <h1>NIKKE 头像与称号预览</h1>
   <div class="topbar-right">
     <span id="stat" class="stat"></span>
     <button id="btn-export" class="btn primary">导出 PNG</button>
@@ -32,6 +32,7 @@
       <div class="row"><span class="k">角色</span><span class="v" id="cur-avatar">未选择</span></div>
       <div class="row"><span class="k">头像框</span><span class="v" id="cur-frame">无框（白环）</span></div>
       <div class="row"><span class="k">挂件</span><span class="v" id="cur-pendant">无挂件</span></div>
+      <div class="row"><span class="k">称号</span><span class="v" id="cur-title">未选择</span></div>
     </div>
 
     <div class="stage-actions">
@@ -51,6 +52,7 @@
       <button class="tab on" data-tab="avatar">角色头像<em id="n-avatar"></em></button>
       <button class="tab" data-tab="frame">头像框<em id="n-frame"></em></button>
       <button class="tab" data-tab="pendant">挂件<em id="n-pendant"></em></button>
+      <button class="tab" data-tab="title">称号<em id="n-title"></em></button>
     </div>
     <div class="filter" id="filter">
       <!-- 折叠头只在窄屏显示：手机上一行摘要即可，展开才有搜索框与企业筛选卡（收起时省约 120px 列表高度） -->
@@ -71,8 +73,8 @@
   </section>
 </main>
 
-<script src="data.js?v=20261029a"></script>
+<script src="data.js?v=20261118a"></script>
 <script src="gifenc.js?v=20260918g"></script>
-<script src="app.js?v=20261006b"></script>
+<script src="app.js?v=20261118a"></script>
 </body>
 </html>
