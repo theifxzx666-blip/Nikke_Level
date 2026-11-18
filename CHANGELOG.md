@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-11-18（第三十六轮）
+
+**R89 · 求解器性能优化：evaluate() 1.96s → 28ms（输出逐字节不变）**
+
+### 一、用户需求
+
+> 检查下计算器的算法规则，看看还有没有什么值得优化的点，没有的话不用强求。
+
+### 二、改动
+
+| # | 文件 | 改了什么 |
+| :-: | :--- | :--- |
+| 1 | `js/boxes.js` | `fastThreeTwoFlexiblePlan()` 三重枚举改为**等价裁剪**。三项自选箱（方舟 / 30天 / 挑战者）里每箱只贡献一种资源、成本恒为 1 箱，故某项投给某资源的数量一旦超过 `ceil(该资源剩余缺口 / 单箱价值)`，再多的部分全是溢出浪费，不可能出现在「总箱数最少」的解里。据此把上界从 `q3` 压到「按需上界」，86 箱从 **10.6 万组降到约 400 组**。 |
+| 2 | `js/boxes.js` | 内层循环去掉 `C.zeroRes()` / `labels3` / `combos` / `remaining` 等每轮新建的对象，改成 3 个数字累加；二选一箱（挑战者）的贡献与条目恒定，提到循环外只算一次。 |
+| 3 | `js/boxes.js` | 二选一箱的 `two.left = 0` / `two.choices[...]` 原来写在循环体内就地改；一旦循环没产出方案，被改过的状态会污染后面的贪心兜底。改为**命中方案后才回写**。 |
+| 4 | `js/boxes.js` | `auto` 双跑的下标不再写死 `0 / 1`，改用 `challengerIndexForPref(snapshot,"battle"/"dust")` 按奖励内容解析。当前表顺序是 `[战斗数据辑, 芯尘]`，写死虽等价，但上表顺序一旦调整就会静默变成「战斗优先」，与「都可达取芯尘」的口径相反。两个下标相同时只跑一次。 |
+| 5 | `js/scenarios.js` | `evaluate()` 里 `scenario_f` 与 `scenario_f_alt` 是**参数完全相同**的两次调用，而 `scenario_f` 全站无人读取 —— 白算一整份（含 `naturalToTarget` 的逐级推进）。改为算一次、两处引用；两个目标等级相同时连 `scenario_f_target` 也复用。 |
+
+### 三、验证
+
+| 项 | 结果 |
+| :--- | :--- |
+| 输出等价性 | 优化前后各生成 54 条组合基线（4 种箱型组合 × 7 个目标步数 + `evaluate` + `bestEffortPlan`），`json.dumps(sort_keys)` 逐条比对 —— **54/54 完全一致，0 处差异** |
+| 性能（Node 22，同一快照） | `evaluate()` **1964ms → 28.0ms（70×）**；`optimizeSelectableForTarget(100步, auto)` 155.6 → 13.0ms；`scenarioF` 260 → 0.8ms；`bestEffortPlan(200)` 1027 → 50.3ms |
+| 回归测试 | `test_golden` / `test_box_gain` / `test_stage_clear` / `test_keep_one_box` / `test_event_units` / `test_monthly_card` / `test_overload_combat` / `test_ledger`(40/40) 全过；`test_challenger` 仍因 `solveWithChallenger` 改名而报错（陈旧测试，与本次无关） |
+| 边界实验（未落地） | 临时放开 `quantity <= 100` 上限后，大箱量场景 `boxes_used` 完全相同（300 → 300），只是分配次序不同 —— 无收益，**已还原**，不改既有结果 |
+
+---
+
 ## 2026-11-17（第三十五轮）
 
 **R87 · 活动时长按官方公告可覆盖；状态分色与「即将上线」；分页/信息窗调整**

@@ -489,12 +489,19 @@
         perResource.future_selectable[r] = snapshot.current_sync_level + C.affordableLevelsSingle(fSel, snapshot, snapshot.current_sync_level, r);
       });
     }
+    /* scenarioF 的三组方案（立即 / 开放日后 / 自然增长）最重，里面含 naturalToTarget 的逐级推进。
+       旧实现把「备选目标」这一份算了两遍（scenario_f 与 scenario_f_alt 参数完全相同），
+       而 scenario_f 在任何地方都没被读取 —— 白算一整份。现在算一次、两处引用。 */
+    var scenAlt = scenarioF(snapNow, snapshot.alternate_target_level, stage);
+    var scenTarget = snapshot.target_sync_level === snapshot.alternate_target_level
+      ? Object.assign({}, scenAlt)
+      : scenarioF(snapNow, snapshot.target_sync_level, stage);
     return {
       no_box: noBox, bare: bare, fixed: fixed, selectable: selectable,
       future_main_story: future,
-      scenario_f: scenarioF(snapNow, snapshot.alternate_target_level, stage),
-      scenario_f_target: scenarioF(snapNow, snapshot.target_sync_level, stage),
-      scenario_f_alt: scenarioF(snapNow, snapshot.alternate_target_level, stage),
+      scenario_f: Object.assign({}, scenAlt),
+      scenario_f_target: scenTarget,
+      scenario_f_alt: scenAlt,
       per_resource: perResource,
       // 目标等级口径的自选箱分配（当前收益 / 新主线后）
       target_selectable_now: targetPlanNow,

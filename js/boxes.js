@@ -181,8 +181,13 @@
        ① 一方可达 → 取可达那方；② 都可达 → 芯尘优先；③ 都不可达 → 比 1H 箱折算缺口小者，相等取芯尘。 */
     var chalPref = (snapshot && snapshot.challenger_pref) || "auto";
     if (typeof chalForceIdx !== "number" && chalPref === "auto" && challengerOptionsOf(snapshot)) {
-      var runA = optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, 0);
-      var runB = optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, 1);
+      /* 两个候选下标按「奖励内容」解析，不写死 0/1：当前挑战者箱是 [战斗数据辑, 芯尘]，
+         但顺序若被上表调整，写死的 1 会静默变成「战斗优先」，与「都可达取芯尘」的口径相反。 */
+      var iBattle = challengerIndexForPref(snapshot, "battle", 0);
+      var iDust = challengerIndexForPref(snapshot, "dust", 1);
+      if (iBattle === iDust) return optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, iBattle);
+      var runA = optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, iBattle);
+      var runB = optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, iDust);
       if (runA.feasible !== runB.feasible) return runA.feasible ? runA : runB;
       if (runA.feasible && runB.feasible) return runB;   // 都可达 → 芯尘优先（红球长期最稀缺）
       return gapHours(runA, incomePerHour) < gapHours(runB, incomePerHour) ? runA : runB;
@@ -310,66 +315,108 @@
 
     var best = null;
     var q3 = three.box.quantity;
-    for (var count0 = 0; count0 <= q3; count0++) {
-      for (var count1 = 0; count1 <= q3 - count0; count1++) {
-        for (var count2 = 0; count2 <= q3 - count0 - count1; count2++) {
-        var contrib = C.zeroRes();
-        var labels3 = {};
-        var combos = [count0, count1, count2];
-        for (var i = 0; i < 3; i++) {
-          var o = threeOptions[i];
-          contrib[o.resource] += combos[i] * o.value;
-          labels3[o.label] = combos[i];
-        }
-        // 挑战者（two）已在开箱顺序①全消耗（units 固定数值、无分配损耗），
-        // 其贡献已从 shortage 中扣除，这里只汇总方案条目；
-        // 非 units 二选一箱（罕见，顺序①不消耗）维持旧口径：全消耗选第一项
-        var contrib2 = { credit: contrib.credit, battle_data: contrib.battle_data, core_dust: contrib.core_dust };
-        var labels2 = {};
-        var usedTwo = two.box.quantity - two.left;
-        if (two.left > 0) {
-          usedTwo = two.box.quantity;
-          two.left = 0;
-          labels2[twoOptions[0].label] = two.box.quantity;
-          two.choices[twoOptions[0].label] = two.box.quantity;
-          contrib2[twoOptions[0].resource] += two.box.quantity * twoOptions[0].value;
-        } else {
-          Object.keys(two.choices).forEach(function (k) { labels2[k] = two.choices[k]; });
-        }
-        var remaining = {};
-        RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, shortage[r] - contrib2[r]); });
-          var flexCounts = {};
+
+    /* 二选一箱（挑战者）已在开箱顺序①消耗：它的贡献与方案条目在整个枚举里恒定，先算一次。
+       旧实现把它们放在三重循环内部，且就地改 two.left / two.choices —— 一旦循环没产出方案，
+       被改过的状态会污染后面的贪心兜底。改为只算局部量、命中方案时才回写。 */
+    var usedTwo = two.box.quantity - two.left;
+    var labels2 = {};
+    var contribTwo = C.zeroRes();
+    if (two.left > 0) {
+      usedTwo = two.box.quantity;
+      labels2[twoOptions[0].label] = two.box.quantity;
+      contribTwo[twoOptions[0].resource] += two.box.quantity * twoOptions[0].value;
+    } else {
+      Object.keys(two.choices).forEach(function (k) { labels2[k] = two.choices[k]; });
+    }
+    var R = RESOURCES;
+    var remBase = [0.0, 0.0, 0.0];
+    for (var ri = 0; ri < R.length; ri++) {
+      remBase[ri] = Math.max(0.0, (shortage[R[ri]] || 0.0) - (contribTwo[R[ri]] || 0.0));
+    }
+    var o0res = R.indexOf(threeOptions[0].resource), o0val = threeOptions[0].value;
+    var o1res = R.indexOf(threeOptions[1].resource), o1val = threeOptions[1].value;
+    var o2res = R.indexOf(threeOptions[2].resource), o2val = threeOptions[2].value;
+    var flexVal = [0.0, 0.0, 0.0];
+    for (var fi = 0; fi < R.length; fi++) {
+      flexVal[fi] = flexValues[R[fi]] ? flexValues[R[fi]].value : 0.0;
+    }
+
+    /* 枚举上界（等价裁剪）：每个箱子只贡献一种资源、成本恒为 1 个箱子，
+       因此某项投给某资源的数量超过 ceil(该资源剩余缺口 / 单箱价值) 之后全是溢出浪费，
+       永远不会出现在「总箱数最少」的解里 —— 砍掉这部分不改变最优解，只砍搜索空间。
+       旧实现固定枚举 (q3³)/6 组：方舟箱 86 个即 10.6 万组、单次求解 ≈78ms，evaluate() 全量 ≈2s。 */
+    function capOf(res, val) {
+      if (res < 0 || !(val > 0)) return 0;
+      var need = remBase[res];
+      if (need <= 1e-6) return 0;
+      return Math.min(q3, Math.ceil(need / val));
+    }
+    var cap0 = capOf(o0res, o0val);
+    var cap1 = capOf(o1res, o1val);
+    var cap2 = capOf(o2res, o2val);
+
+    for (var count0 = 0; count0 <= cap0; count0++) {
+      for (var count1 = 0; count1 <= cap1 && count0 + count1 <= q3; count1++) {
+        var add0 = count0 * o0val, add1 = count1 * o1val;
+        var used01 = count0 + count1;
+        for (var count2 = 0; count2 <= cap2 && used01 + count2 <= q3; count2++) {
+          var used3 = used01 + count2;
+          if (best && used3 + usedTwo >= best.boxes_used) continue;   // 还没加 flex 就已经不更优
+          var add2 = count2 * o2val;
+          var rem0 = remBase[0], rem1 = remBase[1], rem2 = remBase[2];
+          if (o0res === 0) rem0 -= add0; else if (o0res === 1) rem1 -= add0; else if (o0res === 2) rem2 -= add0;
+          if (o1res === 0) rem0 -= add1; else if (o1res === 1) rem1 -= add1; else if (o1res === 2) rem2 -= add1;
+          if (o2res === 0) rem0 -= add2; else if (o2res === 1) rem1 -= add2; else if (o2res === 2) rem2 -= add2;
+          if (rem0 < 0) rem0 = 0;
+          if (rem1 < 0) rem1 = 0;
+          if (rem2 < 0) rem2 = 0;
+
+          var flexCounts = [0, 0, 0];
           var flexUsed = 0;
           var possible = true;
-          RESOURCES.forEach(function (r) {
-            if (remaining[r] <= 1e-6) return;
-            if (!flexValues[r]) { possible = false; return; }
-            var fv = flexValues[r].value;
-            var cntF = fv ? Math.ceil(remaining[r] / fv) : 1e9;
-            flexCounts[r] = cntF;
+          var rems = [rem0, rem1, rem2];
+          for (var k = 0; k < 3; k++) {
+            if (rems[k] <= 1e-6) continue;
+            var fv = flexVal[k];
+            if (!(fv > 0)) { possible = false; break; }
+            var cntF = Math.ceil(rems[k] / fv);
+            flexCounts[k] = cntF;
             flexUsed += cntF;
-          });
-          if (!possible || flexUsed > flex.box.quantity) continue;
-          var total = count0 + count1 + count2 + usedTwo + flexUsed;
-          if (!best || total < best.boxes_used) {
-            var labelsFlex = {};
-            Object.keys(flexValues).forEach(function (r) { labelsFlex[flexValues[r].label] = flexCounts[r] || 0; });
-            best = {
-              target_steps: targetSteps, needed: needed,
-              fixed_used: fixedUsed,
-              selectable: [
-                { name: two.box.name, used: usedTwo, keep: two.box.quantity - usedTwo, choices: labels2 },
-                { name: three.box.name, used: count0 + count1 + count2, keep: three.box.quantity - count0 - count1 - count2, choices: labels3 },
-                { name: flex.box.name, used: flexUsed, keep: flex.box.quantity - flexUsed, choices: labelsFlex },
-              ],
-              boxes_used: total,
-              remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 },
-              feasible: true,
-            };
           }
+          if (!possible || flexUsed > flex.box.quantity) continue;
+          var total = used3 + usedTwo + flexUsed;
+          if (best && total >= best.boxes_used) continue;
+
+          var labels3 = {};
+          labels3[threeOptions[0].label] = count0;
+          labels3[threeOptions[1].label] = count1;
+          labels3[threeOptions[2].label] = count2;
+          var labelsFlex = {};
+          Object.keys(flexValues).forEach(function (r) {
+            var ix = R.indexOf(r);
+            labelsFlex[flexValues[r].label] = ix >= 0 ? flexCounts[ix] : 0;
+          });
+          best = {
+            target_steps: targetSteps, needed: needed,
+            fixed_used: fixedUsed,
+            selectable: [
+              { name: two.box.name, used: usedTwo, keep: two.box.quantity - usedTwo, choices: labels2 },
+              { name: three.box.name, used: used3, keep: three.box.quantity - used3, choices: labels3 },
+              { name: flex.box.name, used: flexUsed, keep: flex.box.quantity - flexUsed, choices: labelsFlex },
+            ],
+            boxes_used: total,
+            remaining_shortage: { credit: 0.0, battle_data: 0.0, core_dust: 0.0 },
+            feasible: true,
+          };
         }
       }
-      }
+    }
+    /* 命中方案后回写二选一箱的消耗状态（与旧行为一致：供后续条目汇总） */
+    if (best && two.left > 0) {
+      two.left = 0;
+      two.choices[twoOptions[0].label] = two.box.quantity;
+    }
     return best;
   }
 
