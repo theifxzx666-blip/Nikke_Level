@@ -1,9 +1,9 @@
 {
   "kind": "stage_clear_resources",
   "unit": "credit / battle 单位 K；dust 单位个。一次性资源（该章推图通关 + 该章主线任务）",
-  "source": "国际服 152 CampaignStageTable（实机关卡口径 StageType=1：49 章 / 1787 普通关 + 1787 困难关，433 条子关卡已排除；非关卡条目 StageType=2 的 410 条已排除）+ MainQuestTable（596 条）",
+  "source": "国际服 153 CampaignStageTable（实机关卡口径 StageType=1：51 章 / 1875 普通关 + 1875 困难关，子关卡已排除；非关卡条目 StageType=2 已排除）+ MainQuestTable（629 条）",
   "key_note": "键 = 计算器章节号 K = 官方 ChapterId − 1 = 游戏内关卡前缀；例：键 \"37\" = 官方第 38 章「苦战」= 关卡 37-x",
-  "fallback_chapter": "48",
+  "fallback_chapter": "50",
   "chapters": {
     "0": {
       "name": "坠落",
@@ -788,6 +788,38 @@
       "task_battle": 0.0,
       "task_dust": 650.0,
       "task_count": 7
+    },
+    "49": {
+      "name": "决战",
+      "official_chapter": 50,
+      "n_normal": 44,
+      "n_hard": 44,
+      "credit": 16090.0,
+      "battle": 48233.4,
+      "dust": 390.0,
+      "credit_hard": 2929.9,
+      "battle_hard": 40873.8,
+      "dust_hard": 900.0,
+      "task_credit": 250.35,
+      "task_battle": 0.0,
+      "task_dust": 650.0,
+      "task_count": 9
+    },
+    "50": {
+      "name": "登上地面",
+      "official_chapter": 51,
+      "n_normal": 44,
+      "n_hard": 44,
+      "credit": 16362.7,
+      "battle": 49178.5,
+      "dust": 440.0,
+      "credit_hard": 2953.2,
+      "battle_hard": 41226.6,
+      "dust_hard": 900.0,
+      "task_credit": 377.55,
+      "task_battle": 8609.2,
+      "task_dust": 1950.0,
+      "task_count": 24
     }
   }
 }

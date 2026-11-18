@@ -8,7 +8,9 @@
   function loadStageMap() {
     if (STAGE_MAP) return Promise.resolve(STAGE_MAP);
     return fetch("data/stage_map.json").then(function (r) { return r.json(); }).then(function (d) {
-      STAGE_MAP = d || { stages: [], normal_start_id: 19, hard_start_id: 1 };
+      /* 兜底值必须是「下拉起点 1 + 基地起点 19」两套字段，
+         20-11-13 的回归就是兜底写成 normal_start_id:19 后才被当成基地起点用。 */
+      STAGE_MAP = d || { stages: [], normal_start_id: 1, hard_start_id: 1, base_start_normal_id: 19, base_start_hard_id: 1 };
       return STAGE_MAP;
     });
   }
@@ -37,8 +39,12 @@
 
   function computeBaseLevel(normalStage, hardStage) {
     if (!STAGE_MAP) return null;
-    var normalStart = STAGE_MAP.normal_start_id || 19;
-    var hardStart = STAGE_MAP.hard_start_id || 1;
+    /* 基地计数起点 ≠ 关卡下拉起点（R64 定案）：
+       normal_start_id / hard_start_id 是**关卡列表**起点（都是 0-1，= 1）；
+       前哨基地 2-12 才解锁，基地计数必须用 base_start_normal_id（= 19）单独取值。
+       混用会把 Chapter 0~1 从普通关卡下拉里剔掉，或让基地等级整整高 3~4 级。 */
+    var normalStart = Number(STAGE_MAP.base_start_normal_id) || 19;
+    var hardStart = Number(STAGE_MAP.base_start_hard_id) || 1;
     var nId = normalStage ? stageId(normalStage) : null;
     var hId = hardStage ? stageId(hardStage) : null;
     if (nId === null && hId === null) return null;
@@ -63,7 +69,7 @@
   /* 关卡集合：all stages (normal/hard mode)，章节列表 */
   function allStages(mode) {
     var stages = (STAGE_MAP && STAGE_MAP.stages) || [];
-    var startId = mode === "normal" ? (STAGE_MAP.normal_start_id || 19) : (STAGE_MAP.hard_start_id || 1);
+    var startId = mode === "normal" ? (Number(STAGE_MAP.normal_start_id) || 1) : (Number(STAGE_MAP.hard_start_id) || 1);
     return stages.filter(function (s) { return s.id >= startId; });
   }
 
@@ -78,6 +84,10 @@
   function stagesInChapter(chapter, mode) {
     return allStages(mode).filter(function (s) { return s.chapter === chapter; }).map(function (s) { return s.section; });
   }
+
+  /* 只读访问器：供 test_server_split 校验「下拉起点 / 基地计数起点」两套基准与关卡总数 */
+  function stageMap() { return STAGE_MAP; }
+  function stageCount(mode) { return allStages(mode).length; }
 
   function chapterOf(section) {
     var stages = (STAGE_MAP && STAGE_MAP.stages) || [];
@@ -97,6 +107,8 @@
     chapters: chapters,
     stagesInChapter: stagesInChapter,
     chapterOf: chapterOf,
+    stageMap: stageMap,
+    stageCount: stageCount,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = global.NikkeOutpost;
 })(typeof window !== "undefined" ? window : globalThis);

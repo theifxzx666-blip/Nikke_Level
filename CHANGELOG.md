@@ -34,6 +34,51 @@
 
 ---
 
+**R90 · 关卡只能选到 Chapter 48：还原被 `23a23c8` 退回的 51 章关卡表 + 拆回两套起点字段**
+
+### 一、用户需求
+
+> 线上的问题修复了吗？为什么章节关卡只能选到 48 章了？？？
+
+### 二、根因
+
+又是 `23a23c8`（11-13）的批量回退，这次伤的是**数据文件**：
+
+| 文件 | 10-29（R68）正确版 | 被退回成 |
+| :--- | :--- | :--- |
+| `data/stage_map.json` | 1,875 关 / **51 章（Chapter 0–50）** | 1,787 关 / 49 章（Chapter 0–48） |
+| `data/stage_clear_resources.json` | 51 章 / `fallback_chapter: 50` | 49 章 / `fallback_chapter: 48` |
+
+`servers.js` 里的档案一直写着 `chapters: 51 / max_chapter: 50 / base_cap: 747`，但关卡表只剩 49 章 → 下拉框自然只能选到 Chapter 48。
+
+**连带隐患**：10-29 版 `stage_map.json` 的 `normal_start_id` 是 **1**（关卡下拉起点），基地计数起点是独立字段 `base_start_normal_id`（=19）。重构后的 `outpost.js` 把两者混成一个字段，还原数据后会把 Chapter 0–1 从普通下拉剔除、且基地等级整整高 3 级（50-36 双侧算出 751 而非 747）。
+
+### 三、改动
+
+| # | 文件 | 改了什么 |
+| :-: | :--- | :--- |
+| 1 | `data/stage_map.json` | 从 `aacdd86` 还原：1,875 关 / 51 章 / 末章 Chapter 50 |
+| 2 | `data/stage_clear_resources.json` | 从 `aacdd86` 还原：51 章 / `fallback_chapter: 50` |
+| 3 | `js/outpost.js` | `computeBaseLevel()` 改用 `base_start_normal_id`(19) / `base_start_hard_id`(1)；`allStages()` 用 `normal_start_id`(1) 作下拉起点；兜底默认值同步拆开 |
+| 4 | `js/outpost.js` | 补只读访问器 `stageMap()` / `stageCount(mode)`，让 `test_server_split.js` 这道守卫能真正跑起来 |
+| 5 | `test_server_split.js` | 去掉已删除的 `O.setServer` / `O.clampSection` 旧 API 调用；「不截断」改为直接断言 50-36 BOSS / 49-28A-2 等关卡在表中存在。`income_scale` 机制自检改为断言现行契约（两服均为 1.0） |
+| 6 | `index.html` / `mobile.html` / `redesign/index.html` | `outpost.js?v=` → `20261118c` |
+
+> 未回退 `data/outpost_income.json`：它在 `23a23c8` 里是**变大**的（多出 `_mul` 含加成字段、扩到 800 级），与官方 `OutpostBattleTable` 对拍过，属正确版本。
+> `data/overload_combat_data.json` 的改动只是路径重写（`Nikke\outputs\…` → `03_归档\Nikke_历史混杂工作区\outputs\…`），保留。
+
+### 四、验证
+
+| 项 | 结果 |
+| :--- | :--- |
+| 基地等级金标准 | 2-12 仅普通 **Lv1** ／ 20-1 双侧 **Lv208** ／ 40-1 双侧 **Lv554** ／ 48-36 BOSS 双侧 **Lv712** ／ 48-36 仅普通 **Lv354** ／ **50-36 BOSS 双侧 Lv747** —— 6/6 |
+| 章节覆盖 | 普通 / 困难各 51 章，首章 Chapter 0，末章 Chapter 50；Chapter 50 共 44 关（含 50-15A/B、50-27A/B 分支），末关 50-36 BOSS |
+| 收益表 | Lv747 有行：`credit 75670 / battle 779130 / core_dust 121.49` |
+| 守卫测试 | `test_server_split.js` **124 项全过**（此前因 `stageMap/clampSection/setServer` 全缺而长期红着，等于这道闸门一直没生效） |
+| 其余回归 | `test_golden` / `test_box_gain` / `test_stage_clear` / `test_keep_one_box` / `test_event_units` / `test_monthly_card` / `test_overload_combat` / `test_ledger`(40/40) 全过 |
+
+---
+
 ## 2026-11-17（第三十五轮）
 
 **R87 · 活动时长按官方公告可覆盖；状态分色与「即将上线」；分页/信息窗调整**

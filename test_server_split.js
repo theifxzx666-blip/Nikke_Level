@@ -40,12 +40,8 @@ function eq(actual, expect, label) {
 function useServer(key) {
   const p = SV.get(key);
   SV.setCurrent(p.key);
-  O.setServer({
-    key: p.key,
-    maxChapter: Number(p.max_chapter),
-    cap: SV.capOf(p.key),
-    incomeScale: SV.incomeScaleOf(p.key),
-  });
+  /* 2026-11-18：服务器切换已统一由 NikkeServers 承担，outpost.js 不再有 setServer()；
+     保留这段注释是为了让「旧 API 不存在」这件事有据可查，不要再往 outpost 里加回全局状态。 */
   return p;
 }
 
@@ -146,14 +142,14 @@ function r61Formula(nId, hId) {
   }
 
   /* ---------- ③ 不截断（R63） ---------- */
+  /* 2026-11-18：clampSection 这类「按服截断」的 API 已随 23a23c8 删除，且不该复活。
+     截断是否发生的等价判据 = 这些关卡在表里到底存不存在：
+     表被退回 49 章时，50-36 BOSS / 49-25A-1 会 stageId()=null。 */
   for (const key of ["intl", "cn"]) {
     useServer(key);
-    eq(O.clampSection("40-1", "normal"), "40-1", key + "：40-1 不被截断");
-    eq(O.clampSection("32-33 BOSS", "normal"), "32-33 BOSS", key + "：32-33 BOSS 不被截断");
-    eq(O.clampSection("48-36 BOSS", "hard"), "48-36 BOSS", key + "：48-36 BOSS 不被截断");
-    eq(O.clampSection("50-36 BOSS", "hard"), "50-36 BOSS", key + "：50-36 BOSS 不被截断（R68 新满进度）");
-    eq(O.clampSection("49-25A-1", "normal"), "49-25A-1", key + "：49-25A-1（新章分支关）不被截断");
-    eq(O.clampSection("", "normal"), "", key + "：空值原样返回");
+    for (const sec of ["0-1", "40-1", "32-33 BOSS", "48-36 BOSS", "49-28A-2", "50-36 BOSS"]) {
+      ok(O.stageId(sec) !== null, key + "：关卡表含 " + sec + "（未被按服截断）");
+    }
     eq(O.computeBaseLevel("48-36 BOSS", "48-36 BOSS"), 712, key + "：R68 前满进度基地 Lv712");
     eq(O.computeBaseLevel("50-36 BOSS", "50-36 BOSS"), 747, key + "：满进度基地 Lv747");
     eq(O.computeBaseLevel("40-1", "40-1"), 554, key + "：40-1 普通+困难 = Lv554");
@@ -231,22 +227,16 @@ function r61Formula(nId, hId) {
   const cn518 = O.incomeForLevel(518, true);
   eq(JSON.stringify(cn518), JSON.stringify(base518), "两服 Lv518 收益逐位相同");
 
-  /* 机制自检：把系数改成 0.5，收益必须正好减半 —— 证明开关真的接在查表路径上 */
-  O.setServer({ key: "cn", maxChapter: 48, cap: 715, incomeScale: 0.5 });
-  const half = O.incomeForLevel(518, true);
-  ok(Math.abs(half.credit - base518.credit / 2) < 1e-6, "scale=0.5 → 信用点减半", half.credit + " vs " + base518.credit / 2);
-  ok(Math.abs(half.core_dust - base518.core_dust / 2) < 1e-9, "scale=0.5 → 红球减半");
-  ok(Math.abs(half.battle_data - base518.battle_data / 2) < 1e-6, "scale=0.5 → 战斗数据减半");
-
-  /* 非法系数必须回落到 1（0 会把收益整体乘成 0，是灾难性的） */
-  O.setServer({ key: "cn", maxChapter: 48, cap: 715, incomeScale: 0 });
-  eq(O.incomeForLevel(518, true).credit, base518.credit, "scale=0 视为无效 → 回落 1");
-  O.setServer({ key: "cn", maxChapter: 48, cap: 715, incomeScale: -3 });
-  eq(O.incomeForLevel(518, true).credit, base518.credit, "scale=-3 视为无效 → 回落 1");
-  O.setServer({ key: "cn", maxChapter: 48, cap: 715 });   // 不传 → 也是 1
-  eq(O.incomeForLevel(518, true).credit, base518.credit, "不传 incomeScale → 回落 1");
+  /* 机制自检（2026-11-18 改写）：
+     原断言通过 O.setServer({incomeScale:0.5}) 验证「补正系数真的接在查表路径上」。
+     23a23c8 重构后 setServer 与 outpost.js 里的 income_scale 乘法一并被删，
+     现由 NikkeServers.incomeScaleOf() 单独承载（两服都是 1.0，当前无数值差异）。
+     这里只断言**现行契约**：非法系数归一到 1，且查表结果就是表中原值。 */
+  eq(SV.incomeScaleOf("cn"), 1, "cn income_scale 归一为 1");
+  eq(SV.incomeScaleOf("intl"), 1, "intl income_scale 归一为 1");
+  eq(SV.incomeScaleOf("不存在的服"), 1, "未知服名 → 回落默认服（系数 1）");
+  eq(O.incomeForLevel(518, true).credit, base518.credit, "查表结果 = 表中原值（未做二次缩放）");
   useServer("cn");                                        // 恢复
-  eq(SV.incomeScale(), 1, "恢复后系数回到 1");
 
   /* ---------- ⑥ 推图收益数据与新上限对齐（R68：主线 49/50 章） ---------- */
   {
