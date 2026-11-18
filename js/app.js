@@ -136,6 +136,7 @@
       cost_credit: "", cost_battle: "", cost_dust: "",
       fixed: JSON.parse(JSON.stringify(DEFAULT_FIXED)),
       ark: "1159", growth: "56", challenger: "1125",
+      challenger_pref: "auto",  // 挑战者箱资源选择：auto 自动择优 / battle 战斗数据辑 / dust 芯尘
       activities: [],         // 活动收益：[{ template: "small14"|"large21"|"large28", start_date: "YYYY-MM-DD" }]
       monthly_card: "否",     // 月卡：等待期内每日到账 1 个「30 天成长补给箱」（默认关闭）
       keep_one_box: "否",     // 每种箱子各保留 1 个不开（收藏向；默认关闭）
@@ -182,6 +183,7 @@
     f.stage_clear_task_credit = val("f_stage_task_credit"); f.stage_clear_task_battle = val("f_stage_task_battle"); f.stage_clear_task_dust = val("f_stage_task_dust");
     f.cost_credit = val("f_cost_credit"); f.cost_battle = val("f_cost_battle"); f.cost_dust = val("f_cost_dust");
     f.ark = val("f_ark"); f.growth = val("f_growth"); f.challenger = val("f_challenger");
+    f.challenger_pref = val("f_challenger_pref");
     f.monthly_card = val("f_monthly_card");
     f.keep_one_box = val("f_keep_one_box");
     f.saved_at = val("f_saved_at");
@@ -513,6 +515,7 @@
     setVal("f_stage_task_credit", f.stage_clear_task_credit); setVal("f_stage_task_battle", f.stage_clear_task_battle); setVal("f_stage_task_dust", f.stage_clear_task_dust);
     setVal("f_cost_credit", f.cost_credit); setVal("f_cost_battle", f.cost_battle); setVal("f_cost_dust", f.cost_dust);
     setVal("f_ark", f.ark); setVal("f_growth", f.growth); setVal("f_challenger", f.challenger);
+    setVal("f_challenger_pref", f.challenger_pref || "auto");
     setVal("f_monthly_card", f.monthly_card || "否");
     setVal("f_keep_one_box", f.keep_one_box || "否");
     document.querySelectorAll(".fixed").forEach(function (inp) {
@@ -647,7 +650,14 @@
 
   function syncFutureBase() {
     var f = collectForm();
-    var level = O.computeBaseLevel(f.future_normal_stage || null, f.future_hard_stage || null);
+    var derived = O.computeBaseLevel(f.future_normal_stage || null, f.future_hard_stage || null);
+    /* 手填优先（2026-11-18）：把手填基地与「当前关卡推算值」的差值带到未来等级上。
+       否则手填 589、关卡推算 571 时，未来等级会算出 588（比当前还低），与
+       「以手填基地等级为准」自相矛盾。未手填 / 两者一致时 offset = 0，行为与改动前相同。 */
+    var curManual = parseInt(val("f_base"), 10) || 0;
+    var curDerived = currentCalculatedBase();
+    var offset = (curManual && curDerived) ? (curManual - curDerived) : 0;
+    var level = derived ? Math.max(0, derived + offset) : 0;
     if (level) {
       setVal("f_future_base", level);
       var income = O.incomeForLevel(level, f.tactics !== "否");
@@ -905,6 +915,7 @@
       extra_daily: extra,
       fixed_boxes: fixed,
       selectable_boxes: selectable,
+      challenger_pref: f.challenger_pref || "auto",   // 挑战者箱二选一口径，随快照下传
       upgrade_cost: upgradeCost,
       stage_clear_resources: stage,
       // 活动收益（按日期计入；空数组 = 不开启本功能，行为与改动前一致）
@@ -2070,7 +2081,16 @@
     $("f_tactics").addEventListener("change", function () { syncCurrentBase(); syncIncomeFromBase(); syncFutureBase(); onFormChange(); });
     $("f_stage_mode").addEventListener("change", function () { updateStageClearUI(); onFormChange(); });
     $("f_future_open").addEventListener("change", onFormChange);
-    $("f_base").addEventListener("change", function () { syncIncomeFromBase(); syncCurrentBase(); onFormChange(); });
+    $("f_base").addEventListener("change", function () {
+      syncIncomeFromBase();
+      syncCurrentBase();
+      /* 手填基地要一并刷新「新主线开放后」区块（2026-11-18）：
+         syncFutureBase 会按手填偏移重算 f_future_base，再派发 change 让 v16 面板重绘。 */
+      syncFutureBase();
+      var fb = $("f_future_base");
+      if (fb) fb.dispatchEvent(new Event("change", { bubbles: true }));
+      onFormChange();
+    });
     $("btnAdoptBase").addEventListener("click", function () {
       var level = currentCalculatedBase();
       if (!level) return;

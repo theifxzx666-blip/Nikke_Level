@@ -99,14 +99,59 @@
     return fixedFillGaps(snapshot, gaps, incomePerHour);
   }
 
-  /* 挑战者成长宝箱（units 固定数值二选一）全开的资源贡献：开箱顺序①，始终全消耗选第一项 */
-  function challengerUnitsResources(snapshot) {
+  /* ===== 挑战者箱二选一：偏好解析 + 折算缺口（2026-11-18 从 aacdd86 恢复）=====
+     23a23c8 曾把这里改成「永远选第一项（战斗数据辑）」，导致「自动择优 / 芯尘优先」两项设置整体消失。 */
+  var CHALLENGER_REWARD_KEY = { battle: "battle_data", dust: "core_dust" };
+
+  /* 找出「units 二选一」的挑战者箱选项数组；没有则返回 null */
+  function challengerOptionsOf(snapshot) {
+    var list = (snapshot && snapshot.selectable_boxes) || [];
+    for (var i = 0; i < list.length; i++) {
+      var b = list[i];
+      if (b.quantity > 0 && b.options && b.options.length === 2 &&
+          b.options.every(function (o) { return o.mode === "units"; })) return b.options;
+    }
+    return null;
+  }
+
+  /* 偏好 → 选项下标；解析不出（无箱 / 非 units / auto）时用 fallbackIdx（缺省 0） */
+  function challengerIndexForPref(snapshot, pref, fallbackIdx) {
+    var opts = challengerOptionsOf(snapshot);
+    var fb = (fallbackIdx === undefined ? 0 : fallbackIdx);
+    if (!opts) return fb;
+    var key = CHALLENGER_REWARD_KEY[pref];
+    if (!key) return fb;
+    for (var i = 0; i < opts.length; i++) {
+      if (opts[i].rewards && opts[i].rewards[key] > 0) return i;
+    }
+    return fb;
+  }
+
+  /* 1H 箱折算总缺口（小时）：auto 双跑时用来比谁更省缺口（旧版 R31 定稿口径） */
+  function gapHours(plan, incomePerHour) {
+    if (!plan || !plan.remaining_shortage) return 0;
+    var inc = incomePerHour || {}, total = 0;
+    RESOURCES.forEach(function (r) {
+      var g = plan.remaining_shortage[r] || 0;
+      if (g <= 1e-6) return;
+      var rate = inc[r] || 0;
+      total += rate > 0 ? (g / rate) : Infinity;
+    });
+    return total;
+  }
+
+  /* 挑战者成长宝箱（units 固定数值二选一）全开的资源贡献：开箱顺序①
+     idx 缺省 = 按 snapshot.challenger_pref 解析（battle→战斗数据辑 / dust→芯尘 / auto→第一项；
+     auto 的「双跑择优」在 optimizeSelectableForTarget 里做，本函数只负责单跑取数）。 */
+  function challengerUnitsResources(snapshot, idx) {
     var res = C.zeroRes();
+    var useIdx = (typeof idx === "number") ? idx
+      : challengerIndexForPref(snapshot, (snapshot && snapshot.challenger_pref) || "auto", 0);
     (snapshot.selectable_boxes || []).forEach(function (b) {
       if (b.quantity <= 0 || !b.options || b.options.length !== 2) return;
       var allUnits = b.options.every(function (o) { return o.mode === "units"; });
       if (!allUnits) return;
-      var o0 = b.options[0];
+      var o0 = b.options[useIdx] || b.options[0];
       if (o0.rewards) RESOURCES.forEach(function (r) { res[r] += (o0.rewards[r] || 0) * b.quantity; });
     });
     return res;
@@ -131,7 +176,19 @@
        开放日（future）= 裸资源 + 等待期自然积累 + 推图收益 ×1
      本函数不再自行叠加 stage_clear_resources —— 否则会与调用方叠加成 ×2，
      凭空多出一份推图收益（2026-10-14 修：曾导致「达成目标方案」漏开信用点盒）。 */
-  function optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour) {
+  function optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, chalForceIdx) {
+    /* 挑战者箱二选一：auto 走「双跑择优」（2026-11-18 从 aacdd86 恢复，旧版 R31 定稿口径）
+       ① 一方可达 → 取可达那方；② 都可达 → 芯尘优先；③ 都不可达 → 比 1H 箱折算缺口小者，相等取芯尘。 */
+    var chalPref = (snapshot && snapshot.challenger_pref) || "auto";
+    if (typeof chalForceIdx !== "number" && chalPref === "auto" && challengerOptionsOf(snapshot)) {
+      var runA = optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, 0);
+      var runB = optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, 1);
+      if (runA.feasible !== runB.feasible) return runA.feasible ? runA : runB;
+      if (runA.feasible && runB.feasible) return runB;   // 都可达 → 芯尘优先（红球长期最稀缺）
+      return gapHours(runA, incomePerHour) < gapHours(runB, incomePerHour) ? runA : runB;
+    }
+    var chalIdx = (typeof chalForceIdx === "number") ? chalForceIdx
+      : challengerIndexForPref(snapshot, chalPref, 0);
     var needed = C.costForLevels(snapshot, snapshot.current_sync_level, targetSteps);
     var base = baseResources;
     var shortage = {};
@@ -150,12 +207,12 @@
       }
     });
 
-    // 开箱顺序①：挑战者成长宝箱（units 固定数值二选一）优先全消耗（选第一项，无分配损耗）
+    // 开箱顺序①：挑战者成长宝箱（units 固定数值二选一）优先全消耗（按 chalIdx 取项，无分配损耗）
     var challengerRes = C.zeroRes();
     boxes.forEach(function (item) {
       var opts = item.box.options || [];
       if (item.left > 0 && opts.length === 2 && opts.every(function (o) { return o.mode === "units"; })) {
-        var o0 = opts[0];
+        var o0 = opts[chalIdx] || opts[0];
         item.left = 0;
         item.choices[o0.label] = item.box.quantity;
         if (o0.rewards) {

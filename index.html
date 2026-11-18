@@ -197,7 +197,10 @@
         <label><span class="box-name"><img class="box-icon" src="assets/mbox_30d.jpg" alt="30天成长补给箱">30天成长补给箱</span><input type="number" id="f_growth" min="0" step="1" value="27"></label>
         <label><span class="box-name"><img class="box-icon" src="assets/mbox_challenger.webp" alt="挑战者成长宝箱">挑战者成长宝箱</span><input type="number" id="f_challenger" min="0" step="1" value="340"></label>
       </div>
-      <p class="hint">挑战者成长宝箱为固定数值奖励，默认全部消耗（不受基地等级影响）。</p>
+      <div class="grid g2">
+        <label>挑战者箱资源选择<select id="f_challenger_pref"><option value="auto">自动择优</option><option value="battle">战斗数据辑优先</option><option value="dust">芯尘优先</option></select></label>
+        <div><p class="hint" id="challengerNote">挑战者成长宝箱为固定数值（units）奖励，不随基地等级变化；默认「自动择优」按当前目标与库存挑更划算的一项，两项等价时优先芯尘（红球每小时产出最少，长期最稀缺）。</p></div>
+      </div>
       <div class="grid g2">
         <label>保留箱（每种留 1 个）<select id="f_keep_one_box"><option>否</option><option>是</option></select></label>
         <div><p class="hint">开启后<b>每种箱子各保留 1 个不开</b>（固定小时箱按「箱型 × 档位」逐格、方舟/30天/挑战者按名称），全箱梭哈上限与开箱方案都按保留后的数量计算。适合想每种箱各留一枚收藏的玩家。</p></div>
@@ -243,11 +246,11 @@
 <script src="js/core.js?v=20260917c"></script>
 <script src="js/events.js?v=20261117a"></script>
 <script src="js/outpost.js?v=20260917c"></script>
-<script src="js/boxes.js?v=20261014a"></script>
+<script src="js/boxes.js?v=20261118a"></script>
 <script src="js/scenarios.js?v=20261014c"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261117b"></script>
+<script src="js/app.js?v=20261118a"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/sync.js?v=20261113c"></script>
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->
