@@ -189,7 +189,14 @@
       var runA = optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, iBattle);
       var runB = optimizeSelectableForTarget(snapshot, baseResources, targetSteps, incomePerHour, iDust);
       if (runA.feasible !== runB.feasible) return runA.feasible ? runA : runB;
-      if (runA.feasible && runB.feasible) return runB;   // 都可达 → 芯尘优先（红球长期最稀缺）
+      if (runA.feasible && runB.feasible) {
+        /* 都可达：默认芯尘（红球长期最稀缺），但**先比箱子数** ——
+           典型反例（2026-11-20 用户报障）：芯尘早被裸资源覆盖，选芯尘等于白开一个方舟箱，
+           此时选战斗数据辑反而更省。箱数相同才按「芯尘优先」定。 */
+        var na = runA.boxes_used || 0, nb = runB.boxes_used || 0;
+        if (na !== nb) return na < nb ? runA : runB;
+        return runB;
+      }
       return gapHours(runA, incomePerHour) < gapHours(runB, incomePerHour) ? runA : runB;
     }
     var chalIdx = (typeof chalForceIdx === "number") ? chalForceIdx

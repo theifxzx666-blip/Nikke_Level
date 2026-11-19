@@ -1009,8 +1009,13 @@
     if (!plan || !plan.length || plan.every(function (p) { return !p.used; })) {
       return reached ? "无需开箱（资源已足够）" : "无需开箱（等待自然增长）";
     }
-    var hasChal = plan.some(function (p) { return p.name.indexOf("挑战") >= 0 && p.used > 0; });
-    var parts = hasChal ? ["挑战者成长宝箱全开"] : [];
+    var chal = (plan || []).filter(function (p) { return p.name.indexOf("挑战") >= 0 && p.used > 0; })[0] || null;
+    var parts = [];
+    /* 2026-11-20：挑战者箱必须写清「选哪项资源」，否则自动择优看起来像没生效 */
+    if (chal) {
+      var pick0 = Object.keys(chal.choices || {}).filter(function (k) { return chal.choices[k]; }).join("、");
+      parts.push("挑战者成长宝箱全开" + (pick0 ? "（选 " + pick0 + "）" : ""));
+    }
     plan.forEach(function (p) {
       if (p.used > 0 && p.name.indexOf("挑战") < 0) {
         var det = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
@@ -1065,7 +1070,9 @@
       var plan2 = S.planForTarget(snap, tgt, future ? "future" : "now");
       var n2 = 0;
       ((plan2 && plan2.selectable) || []).forEach(function (p) { if (p.name.indexOf("挑战") >= 0) n2 = Math.max(n2, p.used); });
-      if (n2 > 0) {
+      /* 2026-11-20：chalRes 是按「挑战者选第一项」预扣的，而求解器 auto 可能选另一项。
+         只有求解器自己也判定可行时才敢说「只开挑战者即可达成」，否则会给出做不到的方案。 */
+      if (n2 > 0 && plan2 && plan2.feasible) {
         return { days: "0", date: immediate,
           plan: "只开挑战者成长宝箱（" + n2 + " 个）即可达成（固定小时箱与方舟/30天箱无需开启）",
           selectablePlan: plan2 ? plan2.selectable : null,
@@ -1076,13 +1083,18 @@
     // ③ 挑战者全开 + 固定小时箱按需开启即可达成
     if (minL(fixed) >= tgt) {
       var need = B.fixedBoxesNeeded(s2, baseRes, steps, income, chalRes);
-      var n = 0;
-      Object.keys(need.used || {}).forEach(function (nm) {
-        Object.keys(need.used[nm]).forEach(function (h) { n += need.used[nm][h]; });
-      });
-      return { days: "0", date: immediate,
-        plan: "挑战者成长宝箱全开 + 固定小时箱按需开启 " + n + " 个即可达成（无需开方舟/30天箱）",
-        fixedNeed: need.used || {}, diag: diagOf() };
+      /* 同 ②：预扣是按第一项算的，必须确认「按此方案开完后真的没有缺口」才敢下结论 */
+      var leftGap = need.remaining_shortage || {};
+      var covered = C.RESOURCES.every(function (r) { return (leftGap[r] || 0) <= 1e-6; });
+      if (covered) {
+        var n = 0;
+        Object.keys(need.used || {}).forEach(function (nm) {
+          Object.keys(need.used[nm]).forEach(function (h) { n += need.used[nm][h]; });
+        });
+        return { days: "0", date: immediate,
+          plan: "挑战者成长宝箱全开 + 固定小时箱按需开启 " + n + " 个即可达成（无需开方舟/30天箱）",
+          fixedNeed: need.used || {}, diag: diagOf() };
+      }
     }
     // ④ 全箱梭哈可达成：按「当前正在渲染的这个目标等级」现算开够即停方案
     //   （此前误用 target_selectable_* —— 那是按「目标同步器等级」预计算的，导致「后续追求目标等级」显示的是别个目标的方案）
