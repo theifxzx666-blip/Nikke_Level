@@ -265,6 +265,45 @@
 
 ---
 
+**R96 · 移除 XLSX/跨设备同步 / 开箱顺序收敛进信息窗 / 达成目标方案重构 / 收益明细分区**
+
+### 一、用户需求（原文六条）
+
+> - 下载 XLSX 模板，导入 XLSX，📡 跨设备同步相关功能移除
+> - 开箱顺序（全箱梭哈）：① 挑战者成长宝箱全开 → ② 固定小时箱按需 → ③ 自选箱按下表逐箱开启：… 这些不用反复出现，说明一次即可，建议提炼开箱顺序的规则，用信息窗收纳就行
+> - ✅ 已达目标级 541 类似的描述很多余，用户不是傻子
+> - 达成目标方案：口径那段无意义，移除；直接给方案表格，3 类箱的开箱方案如果需要用上也要展示；「三资源配平诊断（现状口径）」移除，改成**目标无法达成时按智能配平之后的资源缺口用表单显示**
+> - 奖励明细也需要做分区，样式同总览
+> - 活动收益仅展示收益表单，收益日期计入时间段这些信息用信息窗收纳起来
+
+### 二、改动
+
+| # | 文件 | 改了什么 |
+| :-: | :--- | :--- |
+| 1 | `index.html` / `mobile.html` / `js/app.js` | **移除 XLSX 模板 / 导入 XLSX / 跨设备同步**：3 个按钮 + 隐藏 file input + `buildXlsxTemplate` / `readXlsxFile` / `shareCodeOf` / `unshareCode` / `applyFormFromCode` / `buildShareModal` + 全部事件监听 + `ensureVendor` 的 xlsx 条目（净减 254 行）。`redesign/index.html` 是**冻结原型**（加载 20261029a 旧 app.js，其 bindEvents 会硬绑这些节点），按钮保留并加注释说明 |
+| 2 | `mobile.html` | 顺带修 R95 遗漏：顶栏 `#progressFab` 进度球 DOM 还在（样式与 `updateProgress()` 已删，只剩死按钮），本次移除；同时删掉 `m-hidden` 里为旧版 app.js 保留的 XLSX 三件套 |
+| 3 | `js/app.js` | **开箱顺序规则收敛成信息窗**：新增 `BOX_ORDER_HTML` + 通用 `infoPop()`（全站唯一信息窗构造器，支持字符串与 DOM 节点混合）。「即刻飞升」「达成目标方案」两个标题各挂一个 i，规则只在这里说明一次；删掉 4 处重复的「① 挑战者全开 → ② 固定小时箱按需 → ③ 自选箱按下表逐箱开启」文案、3 处 `selCaption`、`fixedPlanTable` 里「与上方表单同表形」 |
+| 4 | `js/app.js` | 删「✅ 已达目标级 N」两处（`ok-tag`） |
+| 5 | `js/app.js` | **达成目标方案重构**：删「口径：…」整段；删 `balanceDiagTable`（三资源配平诊断）与死代码 `diagOf()`；新增 `gapTable()` 出「智能配平后的资源缺口」——**目标累计消耗 / 智能配平可用 / 缺口 / 折算 1H 箱**，只在目标不可达时渲染。结构改为：可达→直接给方案；不可达→先报上限与缺口，再给「最优均衡能到哪」的逐箱方案 |
+| 6 | `js/app.js` + `css/style.css` | **收益明细分区**：新增 `.extra-card`（与 `.target-card` 同款蓝系），把 5 个 `h3.sec` 平铺区块改成 5 张卡；每张卡的长口径说明收进 i 信息窗，卡内只留必要一行 |
+| 7 | `js/app.js` | **活动收益只留收益表单**：活动清单表（模板/窗口/计入区间/天数/状态）、计入区间规则、与开放日的关系、商店与每日任务规则全部进信息窗；卡内只保留「本表单持仓 / 活动计入 / 合计」表 + 折合等级增量一行 |
+| 8 | `css/style.css` | `.summary-card` / `.target-card` 加 `position: relative`（信息窗以卡片为定位宿主）；信息窗内表格字号与颜色单独调优 |
+| 9 | `index.html` / `mobile.html` | `style.css` / `app.js` → `20261120c` |
+
+### 三、验证
+
+| 项 | 结果 |
+| :--- | :--- |
+| 语法 | `node --check` 通过（`app.js` / `v16.js`） |
+| 逻辑回归 | 13 个测试文件全过：golden / box_gain / stage_clear / keep_one_box / event_units / monthly_card / overload / ledger 40 / server_split 124 / mod_stats 27 / challenger_pref 8 / future_base 5 / calendar 19 |
+| 残留符号 | `shareCodeOf` / `buildShareModal` / `buildXlsxTemplate` / `readXlsxFile` / `btnShare` / `btnTemplate` / `btnImport` / `fileXlsx` / `LZString` / `selCaption` / `diagOf` / `balanceDiagTable` 全部 0 引用 |
+| 行尾 | 5 个改动文件 CRLF 与总行数一致（2045/2045、244/244、353/353、674/674） |
+| 依赖符号 | 新代码引用的 `el/table/infoPop/boxOrderInfo/extraCard/gapTable/fmtNum/fmtInt/fmtDays/esc/localDateStr/levelGainSplit/allInTotal/DEFAULT_FIXED/RESOURCE_LABELS/affordableLevelsSingle/planForTarget` 全部存在 |
+
+> 边界说明：本机无 playwright/puppeteer，UI 仅做语法 + 符号 + 行尾检查，未跑真实浏览器。
+
+---
+
 ## 2026-11-17（第三十五轮）
 
 **R87 · 活动时长按官方公告可覆盖；状态分色与「即将上线」；分页/信息窗调整**

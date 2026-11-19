@@ -23,6 +23,8 @@
     </div>
     <div class="hero-toolbar">
       <button id="btnSave" class="btn btn-primary">💾 保存当前表单</button>
+      <!-- 本页是冻结原型，加载的是 20261029a 旧版 app.js，其 bindEvents 会直接绑定下列节点；
+           主站（index.html / mobile.html）已移除 XLSX 与跨设备同步，这里保留仅为避免旧版 JS 报 null 错。 -->
       <button id="btnTemplate" class="btn">下载 XLSX 模板</button>
       <input type="file" id="fileXlsx" accept=".xlsx" style="display:none">
       <button id="btnImport" class="btn">导入 XLSX</button>
