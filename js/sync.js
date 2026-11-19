@@ -353,7 +353,7 @@
     s.textContent =
       ".nk-acc-btn{background:#1d9e75;color:#fff;border:none;border-radius:8px;padding:8px 14px;font:600 14px/1.4 'MaiYuan','Microsoft YaHei',sans-serif;cursor:pointer}" +
       ".nk-acc-btn:hover{background:#178a64}" +
-      ".nk-ov{position:fixed;inset:0;background:rgba(15,35,28,.45);z-index:5000;display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;box-sizing:border-box;overflow:auto}" +
+      ".nk-ov{position:fixed;inset:0;background:rgba(15,35,28,.45);z-index:10001;display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;box-sizing:border-box;overflow:auto}" +
       ".nk-ov.show{display:flex}" +
       ".nk-panel{background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.25);width:min(520px,94vw);padding:20px 22px;box-sizing:border-box;font-family:'MaiYuan','Microsoft YaHei',sans-serif;color:#223}" +
       ".nk-panel h3{margin:0 0 4px;font-size:18px;color:#1d9e75}" +

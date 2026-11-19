@@ -24,6 +24,7 @@ node test_monthly_card.js    # 月卡
 node test_stage_clear.js     # 推图收益
 node test_challenger_pref.js # 挑战者箱自动择优 / 手动优先（R94）
 node test_future_base.js     # 「新主线开放后」基地等级口径（R93）
+node test_mod_stats_calendar.js # 定制模组历史日历视图（R95）
 node test_server_split.js    # 分服：51 章 / Lv747 / 不截断
 node test_ledger.js          # 台账
 ```

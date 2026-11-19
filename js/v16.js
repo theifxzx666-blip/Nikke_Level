@@ -479,8 +479,8 @@
     if (!plan || !layout) return false;
     var steps = el('nav', 'v3-steps');
     steps.setAttribute('aria-label', '填写步骤');
-    [{ id: 1, t: '填写', s: '账号 · 资源 · 库存' },
-     { id: 2, t: '推图进度&amp;活动', s: '基地 · 新主线 · 活动' },
+    [{ id: 1, t: '资源摸底', s: '账号 · 资源 · 库存' },
+     { id: 2, t: '节点统计', s: '基地 · 新主线 · 活动' },
      { id: 3, t: '结果', s: '汇总 · 明细' }].forEach(function (p) {
       var b = el('button', 'v3-step');
       b.type = 'button'; b.dataset.pg = p.id;
@@ -1544,10 +1544,10 @@
         '<span class="rail"></span><span class="fill" style="width:' + pct(sel.level || cur).toFixed(1) + '%"></span>' +
         track + '</div></div>' +
       '<div class="v3-kpis">' +
-        '<div class="v3-kpi"><div class="k">当前同步器</div><div class="v">' + cur + '<small>级</small></div><div class="d">手填基准</div></div>' +
-        '<div class="v3-kpi"><div class="k">仅固定小时箱</div><div class="v">' + (fixed.level || '—') + '<small>级</small></div><div class="d">不消耗自选箱</div></div>' +
-        '<div class="v3-kpi key"><div class="k">全箱梭哈</div><div class="v">' + (sel.level || '—') + '<small>级</small></div><div class="d">按最优开箱顺序</div></div>' +
-        '<div class="v3-kpi"><div class="k">自然升级到目标</div><div class="v">' + (noBox.days != null ? Math.round(noBox.days * 10) / 10 : '—') + '<small>天</small></div><div class="d">完全不开箱</div></div>' +
+        '<div class="v3-kpi base"><div class="k"><i class="no">起点</i>当前同步器</div><div class="v">' + cur + '<small>级</small></div><div class="d">手填基准</div></div>' +
+        '<div class="v3-kpi step"><div class="k"><i class="no">①</i>仅固定小时箱</div><div class="v">' + (fixed.level || '—') + '<small>级</small></div><div class="d">不消耗自选箱</div></div>' +
+        '<div class="v3-kpi step key"><div class="k"><i class="no">②</i>全箱梭哈</div><div class="v">' + (sel.level || '—') + '<small>级</small></div><div class="d">按最优开箱顺序</div></div>' +
+        '<div class="v3-kpi alt"><div class="k"><i class="no">另一条路</i>自然升级到目标</div><div class="v">' + (noBox.days != null ? Math.round(noBox.days * 10) / 10 : '—') + '<small>天</small></div><div class="d">完全不开箱</div></div>' +
       '</div>' +
       '<div class="v3-dcard"><h4>三资源可用量（条长 = 裸资源占「含箱全开」的比例，偏短说明主要得靠箱子）</h4><div class="v3-res">' + resRows + '</div>' +
         '<p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">' + verdict + '</p></div>' +
@@ -1588,16 +1588,17 @@
     decorateResult();
     if (DASH) document.body.classList.add('v3-dash-mode');
 
-    /* 「开始计算」点完自动跳结果页 */
-    var calc = byId('btnCalc');
-    if (calc) {
+    /* 「开始计算」点完自动跳结果页（桌面 #btnCalc；移动端用吸底 #btnCalcFab，两个都要接） */
+    ['btnCalc', 'btnCalcFab'].forEach(function (id) {
+      var calc = byId(id);
+      if (!calc) return;
       calc.addEventListener('click', function () {
         setTimeout(function () {
           if (byId('resultSection').style.display === 'none') return;
           go(3);
         }, 600);
       }, true);
-    }
+    });
     /* 仪表盘：重算后刷新 */
     if (DASH) {
       var rs = byId('resultSection');

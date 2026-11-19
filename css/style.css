@@ -207,23 +207,6 @@ pre.raw { background: #f7f9f8; border: 1px solid var(--border); border-radius: 8
 .raw-toolbar { display: flex; justify-content: flex-end; }
 .raw-toolbar .btn-export { margin-left: 0; }
 
-/* 悬浮进度球 */
-.progress-fab {
-  position: fixed; right: 20px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%;
-  background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.18); cursor: pointer; z-index: 9999;
-  display: flex; align-items: center; justify-content: center; border: none;
-}
-.progress-panel {
-  position: fixed; right: 20px; bottom: 90px; width: 300px; max-width: 90vw;
-  background: #fff; border: 1px solid var(--border); border-radius: 12px; z-index: 9999;
-  box-shadow: 0 6px 24px rgba(0,0,0,.16); padding: 10px 12px;
-}
-.pp-head { font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-.pp-close { border: none; background: none; cursor: pointer; font-size: 14px; color: var(--muted); }
-#ppList { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-#ppList li { padding: 2px 0; }
-.ok-item { color: #0f6e56; }
-.no-item { color: #a0a6a3; }
 
 /* ===== 一图流导出模式（html2canvas 截图时 onclone 触发） ===== */
 /* 隐藏 tabs 栏（不进入导出图） */
@@ -366,11 +349,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .card .num { font-size: 22px; }
   .card .lbl { font-size: 12px; }
   h3.sec { font-size: 15px; }
-
-  /* 悬浮进度球缩小、贴边 */
-  .progress-fab { width: 48px; height: 48px; right: 12px; bottom: 12px; }
-  .progress-fab svg { width: 40px; height: 40px; }
-  .progress-panel { right: 12px; bottom: 68px; width: 280px; }
 
   /* 防止任何元素把页面撑出横向滚动（clip 不会破坏 fixed/sticky） */
   body { overflow-x: clip; }

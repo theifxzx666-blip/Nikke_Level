@@ -292,7 +292,6 @@
     }
     renderForm();
     try { syncCostFromLevel(); } catch (e) {}
-    updateProgress();
     saveForm();
     return true;
   }
@@ -743,7 +742,6 @@
   function onFormChange() {
     collectForm();
     saveForm();
-    updateProgress();
     // 表单发生变化 -> 计算结果已过时，按钮还原为"开始计算"初始状态
     resetCalcButton();
   }
@@ -2019,27 +2017,6 @@
   }
 
   /* ---------- 悬浮进度球 ---------- */
-  function updateProgress() {
-    var f = collectForm();
-    var items = [
-      ["当前同步器等级", !!f.current], ["目标同步器等级", !!f.target], ["基地防御等级", !!f.base],
-      ["关卡进度", !!(f.normal_stage || f.hard_stage)],
-      ["信用点收益", !!f.credit_rate], ["战斗数据收益", !!f.battle_rate], ["红球收益", !!f.dust_rate],
-      ["每日歼灭次数", f.wipeouts !== ""], ["现有信用点", !!f.bare_credit], ["现有战斗数据", !!f.bare_battle],
-      ["现有红球", !!f.bare_dust], ["升级消耗", !!(f.cost_credit || f.cost_battle || f.cost_dust || COST_TIERS.length)],
-    ];
-    var filled = items.filter(function (i) { return i[1]; }).length;
-    var pct = Math.round(filled / items.length * 100);
-    var ring = $("progressRing"), txt = $("progressText"), count = $("ppCount"), list = $("ppList");
-    ring.setAttribute("stroke-dashoffset", String(163.4 * (1 - filled / items.length)));
-    ring.setAttribute("stroke", pct === 100 ? "#0f6e56" : pct >= 60 ? "#1d9e75" : "#e0a63c");
-    txt.textContent = pct + "%";
-    count.textContent = filled + "/" + items.length;
-    list.innerHTML = items.map(function (i) {
-      return "<li class='" + (i[1] ? "ok-item" : "no-item") + "'>" + (i[1] ? "✅" : "⬜") + " " + esc(i[0]) + "</li>";
-    }).join("");
-  }
-
   /* ---------- 事件绑定 ---------- */
   function bindEvents() {
     // 跨设备同步：弹窗
@@ -2176,14 +2153,6 @@
         $(t.dataset.tab).classList.add("active");
       });
     });
-
-    // 悬浮进度球
-    $("progressFab").addEventListener("click", function () {
-      var p = $("progressPanel");
-      p.style.display = p.style.display === "none" ? "block" : "none";
-      updateProgress();
-    });
-    $("ppClose").addEventListener("click", function () { $("progressPanel").style.display = "none"; });
   }
 
   /* ---------- 移动端表单增强：可折叠分组 + 悬浮「开始计算」 ---------- */
@@ -2265,7 +2234,6 @@
         /* 上面是程序化写值，不会触发事件；派发一次让 v16 的「新主线开放后」卡按新值重绘 */
         var fbInit = $("f_future_base");
         if (fbInit) fbInit.dispatchEvent(new Event("change", { bubbles: true }));
-        updateProgress();
         tip("就绪");
         // 携带 #data= 分享链接进入：自动恢复表单并出结果
         restoreFromShareHash();

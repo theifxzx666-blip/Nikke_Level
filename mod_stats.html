@@ -342,6 +342,44 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .bind-login input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.15);border-radius:8px;padding:8px 10px;font-size:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px;text-transform:uppercase;color:#2c2c2a;background:#fff}
 .bind-login input::placeholder{letter-spacing:0;text-transform:none;color:#a8a69f}
 .bind-ver{float:right;opacity:.75;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* ===== 历史：列表 / 日历 双视图（2026-11-20） ===== */
+.viewtog{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:#fff;vertical-align:middle}
+.vt-btn{border:0;background:transparent;padding:4px 11px;font-size:12px;color:var(--text2);cursor:pointer;line-height:1.6}
+.vt-btn+.vt-btn{border-left:1px solid var(--border)}
+.vt-btn.active{background:var(--accent);color:#fff;font-weight:600}
+.cal-top{display:flex;align-items:center;gap:8px;margin:10px 0 8px;flex-wrap:wrap}
+.cal-nav{width:28px;height:28px;border:1px solid var(--border);background:#fff;border-radius:8px;color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
+.cal-nav:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.cal-nav:disabled{opacity:.35;cursor:not-allowed}
+#calTitle{font-size:14px;min-width:96px;text-align:center}
+.cal-legend{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.cal-legend .lg{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid transparent}
+.cal-legend em{font-style:normal;margin-left:4px}
+.cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:11px;color:var(--text2);text-align:center;margin-bottom:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{min-height:52px;border-radius:8px;border:1px solid #eef2f0;padding:4px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafcfb}
+.cal-cell.blank{border:0;background:transparent}
+.cd{font-size:12px;font-weight:600;color:#3d4f48;line-height:1.2}
+.cp{font-size:10.5px;font-weight:600;line-height:1.3;white-space:nowrap}
+.cal-cell.today{outline:2px solid var(--accent);outline-offset:-2px}
+/* 三档深浅 × 正负两色；背景浅、文字深，保证对比度 */
+.cal-cell.g1{background:#eef8f2;border-color:#d8ede1}.cal-cell.g1 .cp{color:#1c6b4f}
+.cal-cell.g2{background:#d9f0e4;border-color:#bde3d1}.cal-cell.g2 .cp{color:#14654a}
+.cal-cell.g3{background:#bfe6d3;border-color:#9fd6bd}.cal-cell.g3 .cp{color:#0c4c37}
+.cal-cell.b1{background:#fdf0ee;border-color:#f6dcd7}.cal-cell.b1 .cp{color:#8a3527}
+.cal-cell.b2{background:#fadfd9;border-color:#f0c3ba}.cal-cell.b2 .cp{color:#7a291b}
+.cal-cell.b3{background:#f4c4bb;border-color:#e7a99e}.cal-cell.b3 .cp{color:#661e12}
+.cal-legend .lg.n{background:#fafcfb;border-color:#eef2f0}
+.cal-legend .lg.g1{background:#eef8f2}.cal-legend .lg.g2{background:#d9f0e4}.cal-legend .lg.g3{background:#bfe6d3}
+.cal-legend .lg.b1{background:#fdf0ee}.cal-legend .lg.b2{background:#fadfd9}.cal-legend .lg.b3{background:#f4c4bb}
+.cal-hint{font-size:11px;color:var(--text2);margin:8px 0 0}
+@media (max-width:560px){
+  .cal-cell{min-height:46px}
+  .cd{font-size:11.5px}.cp{font-size:9.5px}
+  .cal-legend em{display:none}
+  .cal-legend{margin-left:0}
+}
 </style>
 
 <div id="bindMask" onclick="if(event.target===this)closeBindPanel()">
@@ -434,7 +472,8 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 </div>
 
 <section class="panel" id="historyPanel" aria-labelledby="historyTitle">
-  <div class="panel-head"><div><h2 class="panel-title" id="historyTitle">📋 历史记录<button type="button" class="info-btn" id="histInfoBtn" data-tip="tipHistory" aria-expanded="false" aria-controls="tipHistory" aria-label="记录概况" title="记录概况"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="6.6" width="1.5" height="4.7" rx=".75" fill="currentColor"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg></button></h2></div><div class="table-tools"><span class="badge double" id="doubleDaySummary">双倍日：0 天</span><span class="badge" id="fragmentSummary">碎片累计：0</span><span class="badge" id="completeFragmentSummary">可兑换：0 + 0 碎片</span></div></div>
+  <div class="panel-head"><div><h2 class="panel-title" id="historyTitle">📋 历史记录<button type="button" class="info-btn" id="histInfoBtn" data-tip="tipHistory" aria-expanded="false" aria-controls="tipHistory" aria-label="记录概况" title="记录概况"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="6.6" width="1.5" height="4.7" rx=".75" fill="currentColor"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg></button></h2></div><div class="table-tools"><span class="viewtog" role="group" aria-label="视图切换"><button type="button" class="vt-btn active" id="histViewList" onclick="setHistView('list')">列表</button><button type="button" class="vt-btn" id="histViewCal" onclick="setHistView('cal')">日历</button></span><span class="badge double" id="doubleDaySummary">双倍日：0 天</span><span class="badge" id="fragmentSummary">碎片累计：0</span><span class="badge" id="completeFragmentSummary">可兑换：0 + 0 碎片</span></div></div>
+  <div id="histListView">
   <div class="table-scroll" tabindex="0" role="region" aria-label="完整历史明细，可横向和纵向滚动">
     <table>
       <thead>
@@ -443,6 +482,22 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
       </thead>
       <tbody id="tableBody"><tr><td colspan="16" class="empty"><span class="empty-icon">📭</span>暂无记录，请先添加数据</td></tr></tbody>
     </table>
+  </div>
+  </div>
+
+  <div id="histCalView" hidden>
+    <div class="cal-top">
+      <button type="button" class="cal-nav" id="calPrev" aria-label="上个月" onclick="shiftCalMonth(-1)">‹</button>
+      <b id="calTitle">—</b>
+      <button type="button" class="cal-nav" id="calNext" aria-label="下个月" onclick="shiftCalMonth(1)">›</button>
+      <span class="cal-legend" aria-hidden="true">
+        <i class="lg b3"></i><i class="lg b2"></i><i class="lg b1"></i><i class="lg n"></i><i class="lg g1"></i><i class="lg g2"></i><i class="lg g3"></i>
+        <em>偏差：偏非 ← → 偏欧</em>
+      </span>
+    </div>
+    <div class="cal-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+    <div class="cal-grid" id="histCalGrid"></div>
+    <p class="cal-hint">颜色深浅 = 累计偏差幅度（相对理论值）。灰＝暂无记录；数字为当天产出模组，百分比为当日为止的累计偏差。</p>
   </div>
 </section>
 
@@ -490,7 +545,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 </div>
 
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
-<script src="js/sync.js?v=20261113c"></script>
+<script src="js/sync.js?v=20261120b"></script>
 <script>
 /* ============================================================================
  * R69（2026-10-30）跟随作者新版 UI：4 卡总览 + 样本条 + 周期「本段」增量 +
@@ -1120,6 +1175,69 @@ function renderServerInfo(){
   document.getElementById('serverGL').classList.toggle('active',currentServer==='global');
   updateServerSummary();
 }
+/* ---------- 历史：列表 / 日历 双视图（2026-11-20） ----------
+   列表看明细，日历看趋势：颜色越深偏差越大，绿=偏欧、红=偏非，文字一律深色保证可读。 */
+const HIST_VIEW_KEY='nikke_mod_hist_view';
+let histView=localStorage.getItem(HIST_VIEW_KEY)||'list';
+let calMonth=null;                      /* 'YYYY-MM'，null = 跟随最新记录 */
+function setHistView(v){
+  histView=(v==='cal')?'cal':'list';
+  try{ localStorage.setItem(HIST_VIEW_KEY,histView) }catch(e){}
+  applyHistView(computeStats(loadRecords()));
+}
+function applyHistView(stats){
+  const l=document.getElementById('histListView'), c=document.getElementById('histCalView');
+  const bl=document.getElementById('histViewList'), bc=document.getElementById('histViewCal');
+  if(l) l.hidden = histView==='cal';
+  if(c) c.hidden = histView!=='cal';
+  if(bl) bl.classList.toggle('active',histView!=='cal');
+  if(bc) bc.classList.toggle('active',histView==='cal');
+  if(histView==='cal') renderCalendar(stats);
+}
+/* 偏差 → 色阶：|p|<2% 浅、2~6% 中、>6% 深；正负分绿/红 */
+function calBand(p){
+  const a=Math.abs(p);
+  const lv = a>=6?3 : a>=2?2 : 1;
+  return (p>=0?'g':'b')+lv;
+}
+function shiftCalMonth(delta){
+  if(!calMonth){ const l=loadRecords(); calMonth=l.length?l[l.length-1].date.slice(0,7):todayStr().slice(0,7); }
+  const [y,m]=calMonth.split('-').map(Number);
+  const dt=new Date(y,m-1+delta,1);
+  calMonth=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');
+  renderCalendar(computeStats(loadRecords()));
+}
+function renderCalendar(stats){
+  const grid=document.getElementById('histCalGrid'); if(!grid) return;
+  const list=(stats&&stats.list)||[];
+  const byDate=new Map(list.map(r=>[r.date,r]));
+  if(!calMonth){
+    const last=list[list.length-1];
+    calMonth=last?last.date.slice(0,7):todayStr().slice(0,7);
+  }
+  const [Y,M]=calMonth.split('-').map(Number);
+  const firstDow=(new Date(Y,M-1,1).getDay()+6)%7;   /* 周一为第一列 */
+  const days=new Date(Y,M,0).getDate();
+  let html='';
+  for(let i=0;i<firstDow;i++) html+='<div class="cal-cell blank" aria-hidden="true"></div>';
+  for(let d=1;d<=days;d++){
+    const ds=calMonth+'-'+String(d).padStart(2,'0');
+    const r=byDate.get(ds);
+    if(!r){ html+='<div class="cal-cell'+(ds===todayStr()?' today':'')+'"><span class="cd">'+d+'</span></div>'; continue; }
+    const p=r.devPct*100, sign=p>=0?'+':'';
+    html+='<div class="cal-cell '+calBand(p)+(ds===todayStr()?' today':'')+'" title="'+ds+' · 当天 '+r.total.toFixed(2)+' 模组 · 累计偏差 '+sign+p.toFixed(1)+'%">'+
+          '<span class="cd">'+d+'</span><span class="cp">'+sign+p.toFixed(1)+'%</span></div>';
+  }
+  grid.innerHTML=html;
+  const t=document.getElementById('calTitle'); if(t) t.textContent=Y+' 年 '+M+' 月';
+  const dates=list.map(r=>r.date).sort();
+  const minM=dates.length?dates[0].slice(0,7):calMonth;
+  const maxM=dates.length?dates[dates.length-1].slice(0,7):calMonth;
+  const prev=document.getElementById('calPrev'), next=document.getElementById('calNext');
+  if(prev) prev.disabled = calMonth<=minM;
+  if(next) next.disabled = calMonth>=maxM;
+}
+
 function render(stats){
   renderServerInfo();
   document.getElementById('statActual').textContent=stats.totalActual.toFixed(2);
@@ -1158,6 +1276,7 @@ function render(stats){
     }).join('');
   }
   renderPeriods(stats);
+  applyHistView(stats);
 }
 /* R73：周期统计改为「堆叠翻页」——一屏一张，置顶＝最近已完成的周期，底部只留页数圆点 */
 const SAMPLE_DAYS=90;                    /* R81：建议样本线的天数，「建议样本」tag 就挂在清单的这一天 */

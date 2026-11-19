@@ -179,30 +179,6 @@ body.m-body .btn-calc-fab:active { background: var(--primary-dark); }
 body.m-body.tool-mode .btn-calc-fab,
 body.m-body.avatar-full .btn-calc-fab { display: none; }
 
-/* 表单填写进度球：常驻顶栏右侧。
-   原先的右下角浮层（bottom:140px）在竖屏下正好压住输入框右侧，挪进顶栏后不再遮挡内容。 */
-body.m-body .m-top .progress-fab {
-  position: static;
-  flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
-  background: rgba(255, 255, 255, 0.93);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
-}
-body.m-body .m-top .progress-fab svg { width: 38px; height: 38px; }
-/* 进度明细面板：从顶栏下方弹出（不再从屏幕底部往上弹） */
-body.m-body .progress-panel {
-  right: 10px;
-  top: calc(64px + env(safe-area-inset-top, 0px));
-  bottom: auto;
-  width: min(300px, 90vw);
-}
-
-/* 子工具视图隐藏计算器顶栏 —— 与桌面版「进入子工具即隐藏 hero 与工具栏」同一行为，
-   当前所在工具由底部 Tab 的高亮直接体现；腾出的顶部空间改由容器自身补安全区。 */
-body.m-body.tool-mode .m-top,
-body.m-body.avatar-full .m-top { display: none; }
-
 /* ---------- 子工具视图（iframe）底部留白 + 顶部安全区 ---------- */
 body.m-body #appModStats,
 body.m-body #appRerollStats,
