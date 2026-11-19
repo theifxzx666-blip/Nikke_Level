@@ -364,6 +364,49 @@
     });
   }
 
+  /* 已结束活动 → 历史留档（2026-11-19）
+     主列表隐藏、卡头「历史」图标带条数角标；浮层只读展示，不参与计算。 */
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function eventRowsAll() {
+    return Array.prototype.slice.call(document.querySelectorAll('#eventRows .event-row'));
+  }
+  function isExpiredRow(row) {
+    var st = row ? row.querySelector('.ev-status') : null;
+    if (!st) return false;
+    return st.classList.contains('done') || /已结束/.test(st.textContent || '');
+  }
+  function refreshEventHistory() {
+    var n = 0;
+    eventRowsAll().forEach(function (row) {
+      var ex = isExpiredRow(row);
+      row.classList.toggle('v3-ev-expired', ex);
+      if (ex) n++;
+    });
+    var badge = byId('v6EvHistN');
+    if (badge) { badge.textContent = n ? String(n) : ''; badge.hidden = !n; }
+    var b = byId('v6EvHist');
+    if (b) b.classList.toggle('is-empty', !n);
+    return n;
+  }
+  function renderEventHistory() {
+    var rows = eventRowsAll().filter(isExpiredRow);
+    if (!rows.length) return '<p class="ft">还没有已结束的活动。活动结束后会自动收进这里，只做留档、不参与计算。</p>';
+    var html = '<div class="hd">已结束的活动<small>只做留档，不参与计算</small></div>' +
+      '<table class="v3-histtbl"><thead><tr><th>活动</th><th>起始</th><th>最后一天</th><th>状态</th></tr></thead><tbody>';
+    rows.forEach(function (row) {
+      var nm = row.querySelector('.ev-name');
+      var st = row.querySelector('.ev-start');
+      var en = row.querySelector('.ev-end');
+      html += '<tr><td>' + escHtml((nm ? nm.textContent : '').trim() || '（未命名）') + '</td>' +
+        '<td>' + escHtml(st ? st.value : '—') + '</td>' +
+        '<td>' + escHtml(en && en.value ? en.value : '按模板') + '</td>' +
+        '<td class="muted">已结束</td></tr>';
+    });
+    return html + '</tbody></table>';
+  }
+
   /* 信息窗开关：里面有输入框，只认点击（鼠标划过不关），Esc / 点外部关闭 */
   function bindPop(btn, pop) {
     if (!btn || !pop) return;
@@ -392,6 +435,32 @@
       if (locked) close();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && locked) close(); });
+  }
+
+  /* 给字段挂一个 i 信息窗：长说明收进浮层，卡片上只留一个小圆点。
+     label 是 flex column，必须把字段名包成 span 才能与按钮同行（同 decorateBase 的做法）。
+     hostEl 必须是 position:relative 的容器（fieldset 已由 #formSection fieldset 统一设置）。 */
+  function attachInfo(labelEl, title, html, hostEl) {
+    if (!labelEl || !hostEl) return null;
+    var btn = el('button', 'v4-info');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', '查看说明');
+    btn.title = title || '查看说明';
+    btn.textContent = 'i';
+    if (labelEl.firstChild && labelEl.firstChild.nodeType === 3) {
+      var span = document.createElement('span');
+      span.className = 'v4-lab';
+      span.textContent = labelEl.firstChild.nodeValue;
+      labelEl.replaceChild(span, labelEl.firstChild);
+      span.appendChild(btn);
+    } else {
+      labelEl.insertBefore(btn, labelEl.querySelector('input, select'));
+    }
+    var pop = el('div', 'v4-pop v3-pop-sm');
+    pop.innerHTML = '<div class="hd">' + (title || '说明') + '</div><div class="ft">' + html + '</div>';
+    hostEl.appendChild(pop);
+    bindPop(btn, pop);
+    return pop;
   }
 
   var CFG = {
@@ -459,16 +528,26 @@
     var row1 = el('div', 'v4-row');
     if (acc) row1.appendChild(acc);
     if (tgt) row1.appendChild(tgt);
+    /* 2026-11-19：前哨基地防御等级是一切收益的输入，从第 2 页挪回第 1 页、紧贴现有资源上一行 */
+    var baseFs = fsByPrefix('当前基地');
     if (S.p1) {
       S.p1.appendChild(row1);
+      if (baseFs) S.p1.appendChild(baseFs);
       ['现有资源', '固定小时箱数量', '自选箱数量'].forEach(function (k) {
         var fs = fsByPrefix(k); if (fs) S.p1.appendChild(fs);
       });
+      /* 每日一举歼灭次数：从设置弹窗搬回第 1 页（默认 1 次，信息窗注明含每日免费次数） */
+      var resFs = fsByPrefix('现有资源');
+      var wipe = labelOf('f_wipeouts');
+      if (resFs && wipe) {
+        var wg = el('div', 'grid g3 v3-wipe');
+        wg.appendChild(wipe);
+        resFs.appendChild(wg);
+        attachInfo(wipe, '每日一举歼灭次数',
+          '填<b>每天一共打几次</b>，<b>包含每日免费的那 1 次</b>。免费次数也占一次，所以「只打免费的一把」填 1。' +
+          '<br>每次等价小时数默认 2 小时（歼灭一次折算的挂机时长），影响每日收益里的额外积累。', resFs);
+      }
     }
-
-    /* 第 2 页 = 推图进度 & 活动：当前基地（含关卡进度推算折叠）从第 1 页挪过来，排在预计新主线之前 */
-    var baseFs = fsByPrefix('当前基地');
-    if (baseFs && S.p2) S.p2.appendChild(baseFs);
 
     /* 新主线：预计进度 + 推图收益 并排 */
     var row2 = el('div', 'v4-row');
@@ -487,16 +566,44 @@
       if (addBtn) card.querySelector('.ch').appendChild(addBtn);
 
       var body = el('div', 'v3-evbody');
+      /* 2026-11-19：去掉「最后一天」列（按用户要求），数据仍保留在 .ev-end 输入里，
+         只是不展示；已结束的活动收进右上角「历史」浮层。 */
       body.appendChild(el('div', 'v3-evhead',
         '<span class="h-name">活动</span>' +
         '<span class="h-tpl">模板</span>' +
         '<span class="h-dt">起始日期</span>' +
-        '<span class="h-end">最后一天</span>' +
         '<span class="h-st">状态</span><i></i>'));
       ['eventRows'].forEach(function (id) {
         var n = byId(id); if (n) body.appendChild(n);
       });
       card.appendChild(body);
+
+      /* 已结束活动 → 历史浮层（图标在卡头，带条数角标） */
+      var ch = card.querySelector('.ch');
+      if (ch) {
+        var hist = el('button', 'v6-more v3-histbtn');
+        hist.type = 'button'; hist.id = 'v6EvHist';
+        hist.title = '已结束的活动';
+        hist.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4.5V9h4.5"/><path d="M12 7.5V12l3 1.8"/></svg>' +
+          '<span>历史</span><b class="v3-histn" id="v6EvHistN"></b>';
+        ch.appendChild(hist);
+        var hpop = el('div', 'v4-pop v3-histpop');
+        var hbody = el('div', 'v3-histbody', '<p class="ft">还没有已结束的活动。</p>');
+        hpop.appendChild(hbody);
+        card.appendChild(hpop);
+        hist.addEventListener('click', function () {
+          hbody.innerHTML = renderEventHistory();
+        });
+        bindPop(hist, hpop);
+        refreshEventHistory();
+        if (window.MutationObserver) {
+          var t = 0;
+          new MutationObserver(function () {
+            clearTimeout(t); t = setTimeout(refreshEventHistory, 120);
+          }).observe(byId('eventRows') || card, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+        }
+      }
 
       S.p2.appendChild(card);
       ev.classList.add('v3-hide');
@@ -681,18 +788,56 @@
       /* 章节 / 日期变化会重算未来收益，这里只是把面板同步过去 */
       var ff = fsByPrefix('预计新主线进度');
       if (ff) ff.addEventListener('change', function () { setTimeout(paintFutureIncome, 60); });
+      /* 2026-11-19 修：手填前哨基地等级、战术学院、收益字段变化时这张卡不跟着刷新（用户报障）。
+         之前只监听「预计新主线进度」这一个块，改 f_base 只重算了隐藏输入框，卡片还是旧值。 */
+      ['f_base', 'f_tactics', 'f_credit_rate', 'f_battle_rate', 'f_dust_rate'].forEach(function (id) {
+        var n = byId(id);
+        if (!n) return;
+        n.addEventListener('change', function () { setTimeout(paintFutureIncome, 60); });
+        n.addEventListener('input', function () { setTimeout(paintFutureIncome, 90); });
+      });
     }
 
     var stage = fsByPrefix('关卡进度');
     if (stage) {
-      var d = document.createElement('details');
-      d.className = 'v3-extra';
-      d.innerHTML = '<summary>关卡进度推算 <small>（可选，仅用于校验基地等级）</small></summary>';
-      var body = el('div', 'body');
+      /* 2026-11-19：由 <details> 折叠条改成「字段名旁的算器图标 + 可收起面板」，
+         参照 pinkuro 的做法：基地等级是手填输入框，章节进度只是它的换算器，默认收起。 */
       var lg2 = stage.querySelector('legend'); if (lg2) lg2.remove();
-      while (stage.firstChild) body.appendChild(stage.firstChild);
-      d.appendChild(body); stage.appendChild(d); fs.appendChild(stage);
+      var wrap = el('div', 'v3-progwrap');
+      wrap.hidden = true;
+      while (stage.firstChild) wrap.appendChild(stage.firstChild);
+      fs.appendChild(wrap);
+      stage.classList.add('v3-hide');
+
+      var pb = el('button', 'v4-icobtn');
+      pb.type = 'button'; pb.title = '章节进度换算'; pb.setAttribute('aria-label', '章节进度换算');
+      pb.setAttribute('aria-expanded', 'false');
+      pb.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M7.5 7.5h9"/>' +
+        '<path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>';
+      var labSpan = baseLabel ? baseLabel.querySelector('.v4-lab') : null;
+      (labSpan || baseLabel || fs).appendChild(pb);
+      pb.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        wrap.hidden = !wrap.hidden;
+        pb.classList.toggle('on', !wrap.hidden);
+        pb.setAttribute('aria-expanded', String(!wrap.hidden));
+      });
     }
+  }
+
+  /* ---------------- 自选箱：挑战者箱说明收进信息窗 ---------------- */
+  function decorateBoxes() {
+    var note = byId('challengerNote');
+    if (!note) return;
+    var sel = byId('f_challenger_pref');
+    var lab = sel ? sel.closest('label') : null;
+    var fs = fsByPrefix('自选箱数量');
+    if (!lab || !fs) return;
+    var html = note.innerHTML;
+    var cell = note.parentNode;
+    if (cell) { note.remove(); if (!cell.textContent.trim()) cell.classList.add('v3-hide'); }
+    attachInfo(lab, '挑战者箱资源选择', html, fs);
   }
 
   /* ---------------- 云端配置卡 ---------------- */
@@ -756,8 +901,8 @@
       s1.appendChild(tactics);
     }
 
-    var wipe = labelOf('f_wipeouts'), card = labelOf('f_monthly_card'), keep = labelOf('f_keep_one_box');
-    if (wipe) s1.appendChild(wipe);
+    var card = labelOf('f_monthly_card'), keep = labelOf('f_keep_one_box');
+    /* 每日一举歼灭次数已搬回第 1 页（arrange 里处理），设置里不再重复放一份 */
     if (card) s1.appendChild(card);
     if (keep) {
       if (keep.firstChild && keep.firstChild.nodeType === 3) keep.firstChild.nodeValue = '每种箱留 1 个';
@@ -1017,12 +1162,17 @@
 
   /* ---------------- 顶部入口（挂在既有 hero 工具条里） ---------------- */
   function buildEntry() {
-    /* 只放「设置」：配置版本与控制台属开发者侧，不进入用户页面 */
+    /* 只放「设置」：配置版本与控制台属开发者侧，不进入用户页面。
+       2026-11-19：文字按钮改成小图标（齿轮），省一行横向空间，鼠标悬停给 title。 */
     var bar = document.querySelector('.hero-toolbar');
     if (!bar) return;
-    var gear = el('button', 'btn');
+    var gear = el('button', 'btn v3-gear');
     gear.type = 'button'; gear.id = 'v3Gear';
-    gear.textContent = '设置';
+    gear.title = '设置';
+    gear.setAttribute('aria-label', '设置');
+    gear.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      '<circle cx="12" cy="12" r="3.2"/>' +
+      '<path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.6 1.7 1.7 0 0 0 10 3.04V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 8.9c.13.6.64 1.03 1.25 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.07z"/></svg>';
     bar.appendChild(gear);
   }
 
@@ -1035,16 +1185,34 @@
   function autosyncOn() {
     try { return localStorage.getItem(SYNC_PREF) !== '0'; } catch (e) { return true; }
   }
+  /* 云同步按钮 = 开关（2026-11-19 用户口径）
+     开启：点「开始计算」会把表单同步到云端；关闭：点计算不同步（数据只在本机）。
+     以前这颗按钮是「点一下立即上传」，与设置里的开关是两套逻辑，用户分不清哪个说了算。 */
   function paintSyncBtn() {
     var b = byId('asTog'); if (!b) return;
-    var st = null;
-    try { st = (window.__nikkeSync && window.__nikkeSync.status) ? window.__nikkeSync.status() : null; } catch (e) {}
-    var on = !!(st && st.loggedIn);
+    var on = autosyncOn();
     b.setAttribute('data-on', on ? '1' : '0');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.title = on
+      ? '已开启：点「开始计算」会同步到云端（点击关闭）'
+      : '已关闭：点「开始计算」不会同步，只存本机（点击开启）';
     var t = b.querySelector('.as-tip');
-    if (t) t.textContent = on
-      ? '已登录' + (st.email ? ' · ' + st.email : '') + '，点击立即同步到云端'
-      : '未登录：点击登录后同步到云端';
+    if (t) t.textContent = on ? '计算后自动同步' : '不同步';
+    /* 设置弹窗里那个下拉是同一个开关，按钮一改要同步回显 */
+    var sel = byId('v16Autosync');
+    if (sel) sel.value = on ? '1' : '0';
+  }
+  function toggleSync() {
+    var on = !autosyncOn();
+    try { localStorage.setItem(SYNC_PREF, on ? '1' : '0'); } catch (e) {}
+    if (on) {
+      var st = null;
+      try { st = (window.__nikkeSync && window.__nikkeSync.status) ? window.__nikkeSync.status() : null; } catch (e) {}
+      if (!(st && st.loggedIn) && window.__nikkeSync && window.__nikkeSync.open) {
+        try { window.__nikkeSync.open('planner'); } catch (e) {}
+      }
+    }
+    paintSyncBtn();
   }
   function syncNow() {
     var b = byId('asTog');
@@ -1078,7 +1246,7 @@
       '<path d="M6.4 15.2h7.2a3.5 3.5 0 0 0 .4-6.98 4.6 4.6 0 0 0-8.85-1.1A3.4 3.4 0 0 0 6.4 15.2Z"/>' +
       '<path d="M10 12.1V8.3"/><path d="M8.3 9.9 10 8.2l1.7 1.7"/></svg>' +
       '<span class="as-tip">同步到云端</span>';
-    b.addEventListener('click', syncNow);
+    b.addEventListener('click', toggleSync);
     /* 首次登录态由 sync.js 异步 getSession 拿，不会触发 onAuthStateChange，
        所以补一次延时重画；之后的登录/登出走 onAuth 订阅 */
     setTimeout(paintSyncBtn, 1200);
@@ -1409,6 +1577,7 @@
     buildPages();
     arrange();
     decorateBase();
+    decorateBoxes();
     buildEntry();
     buildModal();
     buildNav();

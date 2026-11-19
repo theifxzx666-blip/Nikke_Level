@@ -980,3 +980,39 @@ html body {
 @media (max-width: 720px) {
   .v7-card-pop { left: 8px; right: 8px; width: auto; }
 }
+
+/* ============================================================
+   2026-11-19（R92）：设置图标化 / 基地等级前置 / 章节进度换算器 / 活动历史
+   ============================================================ */
+/* 顶栏「设置」改小图标 */
+.v3-gear { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+
+/* 前哨基地防御等级旁的「章节进度换算」图标按钮（默认收起，点开才展开进度选择） */
+.v4-icobtn {
+  width: 22px; height: 22px; margin-left: 2px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #cfd8d4; border-radius: 6px; background: #fff;
+  color: var(--muted); cursor: pointer; transition: border-color .12s, color .12s, background .12s;
+}
+.v4-icobtn:hover, .v4-icobtn.on { border-color: var(--primary); color: var(--primary); background: #f2faf6; }
+.v3-progwrap { margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
+.v3-progwrap[hidden] { display: none; }
+.v3-pop-sm { width: min(380px, calc(100% - 28px)); }
+
+/* 活动：不再展示「最后一天」列（值仍在 .ev-end 里，参与计算只是不露出） */
+.v3-evhead .h-end { display: none; }
+.v3-cfg .event-row .ev-end { display: none !important; }
+.v3-evhead .h-dt { flex: 1 1 auto; max-width: 34%; }
+
+/* 已结束的活动收进「历史」，主列表不再占行 */
+.v3-cfg .event-row.v3-ev-expired { display: none !important; }
+.v3-histbtn { margin-left: 6px; }
+.v3-histbtn.is-empty { opacity: .6; }
+.v3-histn { margin-left: 3px; padding: 0 5px; border-radius: 999px; background: var(--primary); color: #fff; font-size: 10px; font-weight: 600; line-height: 16px; }
+.v3-histn:empty { display: none; }
+.v3-histpop { width: min(520px, calc(100% - 20px)); }
+.v3-histtbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.v3-histtbl th { text-align: left; font-weight: 500; color: var(--text2); padding: 3px 6px; border-bottom: 1px solid #e8f0ec; white-space: nowrap; }
+.v3-histtbl td { padding: 3px 6px; border-bottom: 1px solid #f1f6f3; }
+.v3-histtbl td.muted { color: var(--text2); }
+.v3-wipe { margin-top: 8px; }

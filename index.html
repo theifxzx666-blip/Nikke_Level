@@ -7,8 +7,8 @@
 <meta name="theme-color" content="#1d9e75">
 <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=20261117a">
-<link rel="stylesheet" href="css/v16.css?v=20261117b">
+<link rel="stylesheet" href="css/style.css?v=20261119a">
+<link rel="stylesheet" href="css/v16.css?v=20261119a">
 <!-- html2canvas（导出结果图用，gzip ≈46KB）与 xlsx（导入/导出 Excel 用，gzip ≈316KB）改为「用到才加载」，
      由 js/app.js 的 ensureVendor() 在点击导出/导入时注入，首屏不再跨境外拉 CDN，也不拖慢首屏 -->
 </head>
@@ -100,9 +100,9 @@
         <label>红球收益<input id="f_dust_rate" placeholder="88/h"></label>
       </div>
       <div class="grid g3">
-        <label>每日一举歼灭次数<input type="number" id="f_wipeouts" min="0" step="1" value="3"></label>
+        <label>每日一举歼灭次数<input type="number" id="f_wipeouts" min="0" step="1" value="1"></label>
         <label>每次等价小时数<input type="number" id="f_wipeout_hours" min="0" step="0.5" value="2"></label>
-        <label>今天已完成歼灭次数<input type="number" id="f_completed" min="0" step="1" value="3"></label>
+        <label>今天已完成歼灭次数<input type="number" id="f_completed" min="0" step="1" value="1"></label>
       </div>
       <div class="grid g2">
         <label>后续是否每天完成全部次数<select id="f_daily_full"><option>是</option><option>否</option></select></label>
@@ -250,11 +250,11 @@
 <script src="js/scenarios.js?v=20261118b"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261118a"></script>
+<script src="js/app.js?v=20261119a"></script>
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
 <script src="js/sync.js?v=20261113c"></script>
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->
 <script src="js/shell.js?v=20261009b"></script>
-<script src="js/v16.js?v=20261117b"></script>
+<script src="js/v16.js?v=20261119a"></script>
 </body>
 </html>

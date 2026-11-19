@@ -126,7 +126,7 @@
       recorded: "2026-09-02", current: "489", target: "501", alternate: "521",
       normal_stage: "", hard_stage: "", base: "518", tactics: "是",
       credit_rate: "59860/h", battle_rate: "600440/h", dust_rate: "91.95/h",
-      wipeouts: "3", wipeout_hours: "2", completed: "3", daily_full: "是", reset_time: "04:00",
+      wipeouts: "1", wipeout_hours: "2", completed: "1", daily_full: "是", reset_time: "04:00",
       future_open: "2026-10-14", future_normal_stage: "", future_hard_stage: "", future_base: "535",
       future_credit: "61110/h", future_battle: "614880/h", future_dust: "102.41/h",
       bare_credit: "66605K", bare_battle: "302M", bare_dust: "13591",
@@ -658,6 +658,9 @@
     var curDerived = currentCalculatedBase();
     var offset = (curManual && curDerived) ? (curManual - curDerived) : 0;
     var level = derived ? Math.max(0, derived + offset) : 0;
+    /* 未来等级不得低于手填的当前等级：没填当前关卡进度时 curDerived 为空、offset 只能取 0，
+       会出现「未来 588 < 当前手填 589」这种自相矛盾的对比（2026-11-19 用户报障）。 */
+    if (level && curManual) level = Math.max(level, curManual);
     if (level) {
       setVal("f_future_base", level);
       var income = O.incomeForLevel(level, f.tactics !== "否");
@@ -1159,7 +1162,9 @@
   function renderTargetPlans(result, snap) {
     var wrap = el("div", "", "target-card");
     wrap.appendChild(el("div", "达成目标方案", "target-title"));
-    wrap.appendChild(el("p", "「<b>三资源配平诊断</b>」以你填写的目标等级为基准。<b>单项资源上限</b> = 把自选箱全部按该项资源选择、单独看这一项能到的等级。<b>还缺</b> = 以「单项资源上限」为可用量，离目标等级的<b>累计消耗</b>还差多少，按该资源 <b>1H 箱产量</b>折算 —— 这是<b>乐观口径</b>（假设每个自选箱都只用于这一项）；三项都报「还缺」说明单纯补某一项不够、需要同时补，全为「✅ 足够」则现有箱子足以达成。现状口径<b>不含</b>新主线推图收益；开放日口径含推图收益 + 等待期自然积累 + 新基地收益。", "caption"));
+    /* 2026-11-19：原来这里是一大段重复解释（同一套口径在每张表下方又说一遍），现只留一句，
+       把「开箱方案」提到诊断前面 —— 用户真正要的是「开哪个箱、开多少」。 */
+    wrap.appendChild(el("p", "口径：<b>现状</b>不含推图收益；<b>开放日</b>含推图收益 + 等待期积累 + 新基地收益。<b>配平诊断</b>是乐观上限（每个自选箱都只给同一项），三项都报还缺说明要同时补。", "caption"));
     var targets = [
       { lv: snap.target_sync_level, name: "目标同步器等级" },
       { lv: snap.alternate_target_level, name: "后续追求目标等级" }
@@ -1207,15 +1212,16 @@
             pushDetail(fp, "按下表逐箱开启：");
           }
         }
-        b.appendChild(el("p", "上表为<b>乐观口径</b>：即使把每个自选箱都只用于该项资源，离目标等级的累计消耗仍差这么多 —— 表内报「还缺」的项<b>都要补足</b>（三项共用同一批自选箱，只补其中一项不够）；某项若显示「✅ 足够」，说明该项在单项口径下已够、瓶颈不在它。「最优均衡开箱方案」是在现有箱量下能升到的最高等级（把箱子全堆给某一项并不会升得更高）。", "caption"));
+        b.appendChild(el("p", "报「还缺」的项都要补（三项共用同一批自选箱）；「最优均衡开箱方案」是现有箱量能到的最高等级。", "caption"));
         wrap.appendChild(b);
         return;
       }
       if (nowOk) {
         b.appendChild(el("div", "现状可达（" + np.date + "）", "sb-big"));
-        pushDiag(np, incNow, "三资源配平诊断（现状口径）");
+        /* 开箱方案优先：这是用户真正要执行的东西，诊断表退到后面 */
         if (np.plan) b.appendChild(el("div", np.plan, "sb-text"));
         pushDetail(np, "开箱方案（按下表逐箱开启）：");
+        pushDiag(np, incNow, "三资源配平诊断（现状口径）");
       } else {
         // 现状不可达但未来可达：先给现状缺口，再给开放日口径
         b.appendChild(el("div", "现状不可达（全箱梭哈只到 " + result.selectable.level + " 级）", "sb-text"));
@@ -1408,7 +1414,13 @@
         "<span>使用 <b>" + p.used + "</b></span><span>保留 <b>" + p.keep + "</b></span>", "bc-nums"));
       card.appendChild(el("div", detail, "bc-detail"));
       if (p.name.indexOf("挑战者") >= 0) {
-        card.appendChild(el("div", "固定数值奖励，默认全部消耗（不受基地等级影响）", "bc-note"));
+        /* 2026-11-19：明确写出「这批箱子该选哪项资源」—— 之前只藏在「分配明细」里，
+           用户反馈方案没给挑战者箱的资源选择。 */
+        var picks = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; });
+        var pref = (state.lastSnapshot && state.lastSnapshot.challenger_pref) || "auto";
+        var prefTxt = pref === "battle" ? "战斗数据辑优先" : (pref === "dust" ? "芯尘优先" : "自动择优");
+        card.appendChild(el("div", "资源选择：<b>" + (picks.join("、") || "—") + "</b>（" + prefTxt + "）", "bc-pick"));
+        card.appendChild(el("div", "固定数值奖励，不受基地等级影响；优先项可在「自选箱数量」里切换", "bc-note"));
       }
       box.appendChild(card);
     });
