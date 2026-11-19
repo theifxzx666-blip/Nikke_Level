@@ -648,19 +648,24 @@
     syncFutureBase();
   }
 
+  /* 未来基地等级的唯一口径：未来关卡推算 + 手填偏移，且不低于手填当前等级。
+     syncFutureBase()（显示）与 buildSnapshot()（计算）共用同一份，避免两边各算一套 ——
+     2026-11-19 用户报障「手填 553、未来卡显示 535」，就是因为计算侧读的是隐藏输入框里
+     上一次会话存下的旧值，而显示侧按新口径算。 */
+  function resolveFutureBase(f) {
+    var derived = O.computeBaseLevel(f.future_normal_stage || null, f.future_hard_stage || null);
+    if (!derived) return null;
+    var curManual = parseInt(f.base, 10) || 0;
+    var curDerived = O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null);
+    var offset = (curManual && curDerived) ? (curManual - curDerived) : 0;
+    var level = Math.max(0, derived + offset);
+    if (curManual) level = Math.max(level, curManual);
+    return level || null;
+  }
+
   function syncFutureBase() {
     var f = collectForm();
-    var derived = O.computeBaseLevel(f.future_normal_stage || null, f.future_hard_stage || null);
-    /* 手填优先（2026-11-18）：把手填基地与「当前关卡推算值」的差值带到未来等级上。
-       否则手填 589、关卡推算 571 时，未来等级会算出 588（比当前还低），与
-       「以手填基地等级为准」自相矛盾。未手填 / 两者一致时 offset = 0，行为与改动前相同。 */
-    var curManual = parseInt(val("f_base"), 10) || 0;
-    var curDerived = currentCalculatedBase();
-    var offset = (curManual && curDerived) ? (curManual - curDerived) : 0;
-    var level = derived ? Math.max(0, derived + offset) : 0;
-    /* 未来等级不得低于手填的当前等级：没填当前关卡进度时 curDerived 为空、offset 只能取 0，
-       会出现「未来 588 < 当前手填 589」这种自相矛盾的对比（2026-11-19 用户报障）。 */
-    if (level && curManual) level = Math.max(level, curManual);
+    var level = resolveFutureBase(f);
     if (level) {
       setVal("f_future_base", level);
       var income = O.incomeForLevel(level, f.tactics !== "否");
@@ -838,6 +843,13 @@
     var f = collectForm();
     var income = { credit: C.parseRate(f.credit_rate), battle_data: C.parseRate(f.battle_rate), core_dust: C.parseRate(f.dust_rate) };
     var futureIncome = { credit: C.parseRate(f.future_credit), battle_data: C.parseRate(f.future_battle), core_dust: C.parseRate(f.future_dust) };
+    /* 未来基地与收益一律现算（2026-11-19）：隐藏输入框里的值可能是上一次会话留下的旧数，
+       与「手填等级 / 当前关卡」早已不一致。resolveFutureBase 和显示层用的是同一份口径。 */
+    var futureBase = resolveFutureBase(f);
+    if (futureBase) {
+      var fbIncome = O.incomeForLevel(futureBase, f.tactics !== "否");
+      if (fbIncome) futureIncome = { credit: fbIncome.credit, battle_data: fbIncome.battle_data, core_dust: fbIncome.core_dust };
+    }
     var extra = { credit: 0, battle_data: 0, core_dust: 0 };
     var stage = { credit: 0, battle_data: 0, core_dust: 0 };
     if (f.stage_clear_mode !== "不计算") {
@@ -907,7 +919,7 @@
       alternate_target_level: parseInt(f.alternate, 10) || 501,
       base_level: parseInt(f.base, 10) || 483,
       income_per_hour: income,
-      future_base_level: parseInt(f.future_base, 10) || null,
+      future_base_level: futureBase || (parseInt(f.future_base, 10) || null),
       future_income_per_hour: futureIncome,
       main_story_open_at: openDate,
       bare_resources: { credit: C.num(f.bare_credit, 0), battle_data: C.num(f.bare_battle, 0), core_dust: C.num(f.bare_dust, 0) },
@@ -2109,6 +2121,9 @@
       setVal("f_base", level);
       syncIncomeFromBase();
       syncCurrentBase();
+      syncFutureBase();          // 采用推算值后未来卡也要跟着走（原先漏了这一步）
+      var fb0 = $("f_future_base");
+      if (fb0) fb0.dispatchEvent(new Event("change", { bubbles: true }));
       onFormChange();
     });
     $("f_current").addEventListener("change", function () { syncCostFromLevel(); onFormChange(); });
@@ -2231,6 +2246,13 @@
         bindEvents();
         setupMobileForm();
         syncCostFromLevel();
+        /* 页面加载先按当前口径重算一次基地与未来基地：隐藏输入框里可能是上次会话存下的旧值
+           （2026-11-19 用户报障：手填 553，未来卡显示 535 —— 就是读了旧 f_future_base）。 */
+        syncCurrentBase();
+        syncFutureBase();
+        /* 上面是程序化写值，不会触发事件；派发一次让 v16 的「新主线开放后」卡按新值重绘 */
+        var fbInit = $("f_future_base");
+        if (fbInit) fbInit.dispatchEvent(new Event("change", { bubbles: true }));
         updateProgress();
         tip("就绪");
         // 携带 #data= 分享链接进入：自动恢复表单并出结果

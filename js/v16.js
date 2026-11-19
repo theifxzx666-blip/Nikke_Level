@@ -803,6 +803,10 @@
       /* 2026-11-19：由 <details> 折叠条改成「字段名旁的算器图标 + 可收起面板」，
          参照 pinkuro 的做法：基地等级是手填输入框，章节进度只是它的换算器，默认收起。 */
       var lg2 = stage.querySelector('legend'); if (lg2) lg2.remove();
+      /* 「采用推算值」按钮原本长在关卡进度块里，整块隐藏会连它一起藏掉（用户反馈点了没有）。
+         先把它提到基地卡上，再搬剩余内容。 */
+      var adopt = byId('btnAdoptBase');
+      if (adopt) { adopt.style.marginTop = '8px'; fs.appendChild(adopt); }
       var wrap = el('div', 'v3-progwrap');
       wrap.hidden = true;
       while (stage.firstChild) wrap.appendChild(stage.firstChild);
