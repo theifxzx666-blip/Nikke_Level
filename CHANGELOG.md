@@ -223,6 +223,9 @@
 | 既有测试 | 10 个文件全过（golden / box_gain / stage_clear / keep_one_box / event_units / monthly_card / overload / ledger 40 / server_split 124 / mod_stats 27） |
 | 版本号 | `js/boxes.js`、`js/app.js` → `20261120a` |
 
+> 同批把两个临时回归收进仓库：`test_challenger_pref.js`（8 项）、`test_future_base.js`（5 项），
+> 并在 `docs/DEVELOPMENT.md` 的测试清单里登记。此前它们只在 `%TEMP%`，重启即失。
+
 ---
 
 ## 2026-11-17（第三十五轮）
