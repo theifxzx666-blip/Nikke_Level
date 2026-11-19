@@ -674,7 +674,14 @@ async function cloudPut(obj){
   try{ return await a.push(SYNC_FEATURE,obj) }catch(e){ return {ok:false,why:e.message} }
 }
 
-/* 云端补进本机：只补本机没有的日期，不拿云端旧值盖掉本机正在编辑的那天 */
+/* 云端补进本机：只补本机没有的日期，不拿云端旧值盖掉本机正在编辑的那天。
+   唯一例外：本机那一天是**空壳**（次数与掉落全 0），而云端有数 —— 这时补满不会丢任何东西。
+   起因（2026-11-19）：群里报完，本机若已存在当天的空行，云端那条永远进不来。 */
+function isEmptyRec(r){
+  if(!r) return true;
+  if(Number(r.runs||0)>0) return false;
+  return !(r.drops||[]).some(x=>Number(x)>0);
+}
 function adoptCloud(cloud){
   const cur=loadAll();
   let changed=0;
@@ -683,12 +690,32 @@ function adoptCloud(cloud){
     const byDate=new Map(mine.map(r=>[r.date,r]));
     theirs.forEach(r=>{
       if(!r||typeof r.date!=='string') return;
-      if(!byDate.has(r.date)){ byDate.set(r.date,r); changed++ }
+      const had=byDate.get(r.date);
+      if(!had){ byDate.set(r.date,r); changed++; return }
+      if(isEmptyRec(had)&&!isEmptyRec(r)){ byDate.set(r.date,r); changed++ }
     });
     cur[s]=[...byDate.values()];
   });
-  if(changed) saveAll(cur);
+  if(changed){ saveAll(cur); autoPickServer() }
   return {changed};
+}
+
+/* 云端拉回来以后：当前这本账是空的、另一本有记录 → 自动切过去。
+   2026-11-19 起因：新设备 localStorage 没有 nikke_current_server，默认落到「国服」，
+   而群报数全在「国际服」，用户看到空白页就以为机器人记的没同步。
+   只改视图、不动任何记录；每次打开页面最多自动切一次，之后用户手动切回去不会再被抢。 */
+let autoPickedServer=false;
+function autoPickServer(){
+  if(autoPickedServer) return false;
+  autoPickedServer=true;
+  const all=loadAll();
+  const mine=(all[currentServer]||[]).filter(r=>r&&typeof r.date==='string');
+  if(mine.length) return false;
+  const other=currentServer==='cn'?'global':'cn';
+  const theirs=(all[other]||[]).filter(r=>r&&typeof r.date==='string');
+  if(!theirs.length) return false;
+  switchServer(other);
+  return true;
 }
 
 /* ---------- 本机改了哪几天就推哪几天 ---------- */
