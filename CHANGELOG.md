@@ -5,6 +5,80 @@
 
 ---
 
+## 2026-11-20（第三十七轮）
+
+**R96.1 · 修「进页面就报错」+ 顶栏三按钮整理 + 日历与日期选择器重名冲突**
+
+### 一、三个问题
+
+| # | 用户反馈 | 根因 |
+| :-: | :--- | :--- |
+| 1 | 进页面弹「数据加载失败：`restoreFromShareHash is not defined`」 | R96 删跨设备同步时，删了 `restoreFromShareHash()` 的**定义**，漏了两处**调用**：`bindEvents` 里的 `hashchange` 监听、`init` 末尾的 `#data=` 恢复。后者在 `.then()` 末尾抛错，被 `.catch` 接住弹出该提示 |
+| 2 | 保存 / 账号同步 emoji 与位置 | 「保存当前表单」带 💾、「账号同步」带 👤；`.hero-toolbar` 是 `flex-direction: column`，三个按钮 + 一个空 `saveTip` 竖着堆，且「设置」是 30px 齿轮圆钮、账号同步是绿底实心，三者形状颜色都不统一 |
+| 3 | 定制模组日历视图显示异常 | **日历早就存在**：`mod_stats.html` 有日期选择弹窗（`.calendar-pop` / `#calGrid` / `#calTitle` / `changeMonth()`）。R95 新增历史日历时用了**同名 class**（`.cal-nav` / `.cal-grid` / `.cal-week` / `.cal-cell`）和**重复 id `calTitle`**，还定义了**同名函数 `renderCalendar`** —— 同一 script 内后声明覆盖先声明，于是历史日历的渲染代码被日期弹窗的版本顶掉，永远渲染到 `#calGrid` 而不是 `#histCalGrid`；`calTitle` 也只剩第一个生效，日期弹窗标题不再更新 |
+
+### 二、改动
+
+| # | 文件 | 改了什么 |
+| :-: | :--- | :--- |
+| 1 | `js/app.js` | 删掉 `window.addEventListener("hashchange", restoreFromShareHash)` 与 `init` 末尾的 `restoreFromShareHash()` 调用 |
+| 2 | `index.html` / `sync.js` / `js/v16.js` | 「💾 保存当前表单」→「保存当前表单」；「👤 账号同步」→「账号同步」；「设置」齿轮 SVG → 纯文本按钮 |
+| 3 | `css/style.css` | `.hero-toolbar` 由 `column` 改 `row` + 右对齐 + 统一 `min-height: 34px`；用 `order` 固定顺序（保存 → 账号同步 → 设置，因 JS 是 `appendChild`，执行顺序不定）；删掉跨设备同步区块里遗留的 `.hero-toolbar { flex-wrap: wrap }` 补丁；删掉从未写入过的空 `#saveTip` 节点 |
+| 4 | `js/sync.js` | `.nk-acc-btn` 由绿底实心改白底绿字描边，与主按钮「保存」拉开层级 |
+| 5 | `css/v16.css` | 删除不再使用的 `.v3-gear` |
+| 6 | `mod_stats.html` | 历史日历全套改名加 `hcal-` 前缀：`.hcal-top` / `.hcal-nav` / `.hcal-week` / `.hcal-grid` / `.hcal-cell` / `.hcal-hint` / `.hcal-legend` / `.hcd` / `.hcp`，id 改 `histCalTitle` / `histCalPrev` / `histCalNext`，函数改 `renderHistCalendar()`。**日期选择弹窗的 `.cal-*` 与 `renderCalendar()` 一字未动** |
+| 7 | `test_mod_stats_calendar.js` | 同步改名（调用 `renderHistCalendar`、断言 `hcal-cell` / `hcd` / `hcp`） |
+| 8 | 版本号 | `style.css` `v16.css` `app.js` `v16.js` `sync.js` `mobile.css` `mod_stats` 入口 → `20261120d` |
+
+### 三、验证
+
+| 项 | 结果 |
+| :--- | :--- |
+| 残留符号 | `restoreFromShareHash` **0 引用**；`mod_stats.html` 重复 id **0**、重复函数定义 **0** |
+| DOM 引用完整性 | `app.js` 里 `$("id")` / `byId('id')` 引用的 39 个 id，页面全部存在（0 缺失） |
+| 未定义调用 | 静态扫描 app.js 全部函数调用，除 `html2canvas` / Promise 回调参数外无未定义 |
+| 语法 | `node --check` 通过（app / v16 / sync / mod_stats 内联脚本） |
+| 测试 | 13 个文件全过，含 `test_mod_stats_calendar` **19/19**、`mod_stats` 27/27、`server_split` 124/124、`ledger` 40/40 |
+
+> 教训：**同名函数在同一 script 里后声明覆盖先声明，不报错、不警告**。给已有页面加功能前，先 `grep` 目标 class / id / 函数名，别假定新名字没人用。
+
+---
+
+**R96.2 · 线上看不到新代码：index.html 补防缓存声明 + 版本号换新 + 6 个文件行尾复原**
+
+### 一、用户反馈
+
+> workbuddy 的链接还没修复（进页面仍弹 `restoreFromShareHash is not defined`）
+
+### 二、根因
+
+| # | 现象 | 根因 |
+| :-: | :--- | :--- |
+| 1 | WorkBuddy 链接进页面仍报旧错 | R96.1 只 commit 进仓库并同步到发布源，**没有重新部署**：线上最后一次部署是 04:12，发布源文件更新于 09:08。且云端网关对 html / js 不返回 `Cache-Control`，浏览器按 Last-Modified 做启发式缓存，直接复用旧 `index.html`（旧版本参数 → 旧 app.js） |
+| 2 | `nikke_src` 里 6 个文件成了 LF | 历史编辑把 CRLF 写成 LF，与全站 CRLF 规范不一致；文本内容本身无差异 |
+
+### 三、改动
+
+| # | 文件 | 改了什么 |
+| :-: | :--- | :--- |
+| 1 | `index.html` | `<head>` 的 charset 之后补 3 行防缓存声明（`Cache-Control: no-cache, no-store, must-revalidate` / `Pragma: no-cache` / `Expires: 0`），避免「部署了但用户看到旧页面」反复发生 |
+| 2 | `index.html` `mobile.html` `mod_stats.html` | 版本号 `20261120d` → `20261120e`（10 处），把 css / js 的 URL 全部换新，绕开浏览器里已缓存的旧 `app.js?v=20261120d` |
+| 3 | `mod_stats.html` `ledger.html` `combat_reroll.html` `js/errlog.js` `js/ledger.js` `js/overload_combat_core.js` | 行尾 LF → CRLF（纯字节修正，0 行内容改动） |
+| 4 | `test_challenger.js` | 回归测试对齐现状：断言从已删字段 `plan.challenger_index` 改为从方案 `selectable` 的 `choices` 反解下标；第 2 组去掉已删的 `solveWithChallenger()` 对照，第 6 / 7 组（依赖 `solveWithChallenger` / `gapHours`）标注跳过，口径由 `test_challenger_pref.js` 覆盖 |
+
+### 四、验证
+
+| 项 | 结果 |
+| :--- | :--- |
+| 线上与发布源一致 | 从线上取回 `js/app.js` md5 `ba7cb321…`、`js/v16.js` md5 `c40e71c8…`，与发布源逐字节相同 |
+| 残留符号 | 线上 `js/app.js` 中 `restoreFromShareHash` **0 处** |
+| 脚本可达性 | `index.html` 引用的 9 个 js 全部 HTTP 200（app / boxes / core / events / outpost / scenarios / shell / sync / v16） |
+| 行尾 | `nikke_src` 全站 0 个 LF 文件（未跟踪的 `__verify_harness.html` 除外）；`git diff --stat` 仅 index.html 的 +3 行与新版本号 |
+| 测试 | 15 / 15 全过（`test_challenger.js` 此前因读已删字段长期红，本轮一并修好） |
+| 两端 | GitHub `main` 与 `origin/main` 0/0；WorkBuddy 重新部署后 `Last-Modified` 随之更新 |
+
+---
+
 ## 2026-11-18（第三十六轮）
 
 **R89 · 求解器性能优化：evaluate() 1.96s → 28ms（输出逐字节不变）**
@@ -301,43 +375,6 @@
 | 依赖符号 | 新代码引用的 `el/table/infoPop/boxOrderInfo/extraCard/gapTable/fmtNum/fmtInt/fmtDays/esc/localDateStr/levelGainSplit/allInTotal/DEFAULT_FIXED/RESOURCE_LABELS/affordableLevelsSingle/planForTarget` 全部存在 |
 
 > 边界说明：本机无 playwright/puppeteer，UI 仅做语法 + 符号 + 行尾检查，未跑真实浏览器。
-
----
-
-**R96.1 · 修「进页面就报错」+ 顶栏三按钮整理 + 日历与日期选择器重名冲突**
-
-### 一、三个问题
-
-| # | 用户反馈 | 根因 |
-| :-: | :--- | :--- |
-| 1 | 进页面弹「数据加载失败：`restoreFromShareHash is not defined`」 | R96 删跨设备同步时，删了 `restoreFromShareHash()` 的**定义**，漏了两处**调用**：`bindEvents` 里的 `hashchange` 监听、`init` 末尾的 `#data=` 恢复。后者在 `.then()` 末尾抛错，被 `.catch` 接住弹出该提示 |
-| 2 | 保存 / 账号同步 emoji 与位置 | 「保存当前表单」带 💾、「账号同步」带 👤；`.hero-toolbar` 是 `flex-direction: column`，三个按钮 + 一个空 `saveTip` 竖着堆，且「设置」是 30px 齿轮圆钮、账号同步是绿底实心，三者形状颜色都不统一 |
-| 3 | 定制模组日历视图显示异常 | **日历早就存在**：`mod_stats.html` 有日期选择弹窗（`.calendar-pop` / `#calGrid` / `#calTitle` / `changeMonth()`）。R95 新增历史日历时用了**同名 class**（`.cal-nav` / `.cal-grid` / `.cal-week` / `.cal-cell`）和**重复 id `calTitle`**，还定义了**同名函数 `renderCalendar`** —— 同一 script 内后声明覆盖先声明，于是历史日历的渲染代码被日期弹窗的版本顶掉，永远渲染到 `#calGrid` 而不是 `#histCalGrid`；`calTitle` 也只剩第一个生效，日期弹窗标题不再更新 |
-
-### 二、改动
-
-| # | 文件 | 改了什么 |
-| :-: | :--- | :--- |
-| 1 | `js/app.js` | 删掉 `window.addEventListener("hashchange", restoreFromShareHash)` 与 `init` 末尾的 `restoreFromShareHash()` 调用 |
-| 2 | `index.html` / `sync.js` / `js/v16.js` | 「💾 保存当前表单」→「保存当前表单」；「👤 账号同步」→「账号同步」；「设置」齿轮 SVG → 纯文本按钮 |
-| 3 | `css/style.css` | `.hero-toolbar` 由 `column` 改 `row` + 右对齐 + 统一 `min-height: 34px`；用 `order` 固定顺序（保存 → 账号同步 → 设置，因 JS 是 `appendChild`，执行顺序不定）；删掉跨设备同步区块里遗留的 `.hero-toolbar { flex-wrap: wrap }` 补丁；删掉从未写入过的空 `#saveTip` 节点 |
-| 4 | `js/sync.js` | `.nk-acc-btn` 由绿底实心改白底绿字描边，与主按钮「保存」拉开层级 |
-| 5 | `css/v16.css` | 删除不再使用的 `.v3-gear` |
-| 6 | `mod_stats.html` | 历史日历全套改名加 `hcal-` 前缀：`.hcal-top` / `.hcal-nav` / `.hcal-week` / `.hcal-grid` / `.hcal-cell` / `.hcal-hint` / `.hcal-legend` / `.hcd` / `.hcp`，id 改 `histCalTitle` / `histCalPrev` / `histCalNext`，函数改 `renderHistCalendar()`。**日期选择弹窗的 `.cal-*` 与 `renderCalendar()` 一字未动** |
-| 7 | `test_mod_stats_calendar.js` | 同步改名（调用 `renderHistCalendar`、断言 `hcal-cell` / `hcd` / `hcp`） |
-| 8 | 版本号 | `style.css` `v16.css` `app.js` `v16.js` `sync.js` `mobile.css` `mod_stats` 入口 → `20261120d` |
-
-### 三、验证
-
-| 项 | 结果 |
-| :--- | :--- |
-| 残留符号 | `restoreFromShareHash` **0 引用**；`mod_stats.html` 重复 id **0**、重复函数定义 **0** |
-| DOM 引用完整性 | `app.js` 里 `$("id")` / `byId('id')` 引用的 39 个 id，页面全部存在（0 缺失） |
-| 未定义调用 | 静态扫描 app.js 全部函数调用，除 `html2canvas` / Promise 回调参数外无未定义 |
-| 语法 | `node --check` 通过（app / v16 / sync / mod_stats 内联脚本） |
-| 测试 | 13 个文件全过，含 `test_mod_stats_calendar` **19/19**、`mod_stats` 27/27、`server_split` 124/124、`ledger` 40/40 |
-
-> 教训：**同名函数在同一 script 里后声明覆盖先声明，不报错、不警告**。给已有页面加功能前，先 `grep` 目标 class / id / 函数名，别假定新名字没人用。
 
 ---
 

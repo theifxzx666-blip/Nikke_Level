@@ -12,8 +12,8 @@
 <link rel="icon" type="image/webp" href="assets/m/favicon.webp">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
-<link rel="stylesheet" href="css/style.css?v=20261120d">
-<link rel="stylesheet" href="css/mobile.css?v=20261120d">
+<link rel="stylesheet" href="css/style.css?v=20261120e">
+<link rel="stylesheet" href="css/mobile.css?v=20261120e">
 </head>
 <body class="m-body">
 
@@ -241,7 +241,7 @@
 <script src="js/scenarios.js?v=20261118b"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261120d"></script>
+<script src="js/app.js?v=20261120e"></script>
 <!-- 顶层功能切换沿用桌面版外壳脚本（tools.json 驱动）；移动版只把导航用 CSS 固定到屏幕底部 -->
 <script src="js/shell.js?v=20261009b"></script>
 <script>
@@ -250,7 +250,7 @@
    sync.js 的 init() 自带 readyState 判断（否则会永远等不到 DOMContentLoaded），延后加载同样能完成初始化；
    mod_stats 子页在加载完成后仍可通过父页 __nikkeSync 打开云同步。 */
 window.addEventListener("load", function () {
-  ["assets/js/supabase.min.js?v=20260920e", "js/sync.js?v=20261120d"].forEach(function (src) {
+  ["assets/js/supabase.min.js?v=20260920e", "js/sync.js?v=20261120e"].forEach(function (src) {
     var s = document.createElement("script");
     s.src = src;
     s.async = false; /* 保持先后顺序：supabase 必须先于 sync.js */

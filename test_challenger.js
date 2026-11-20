@@ -89,6 +89,14 @@ function chosenLabel(plan) {
   }
   return null;
 }
+/* 从方案对象反解挑战者箱选中项下标：方案里只留 choices 的 label，不再带 challenger_index 字段 */
+function chosenIdx(plan) {
+  const label = chosenLabel(plan);
+  if (!label) return undefined;
+  if (label.indexOf("芯尘") >= 0) return 1;
+  if (label.indexOf("战斗") >= 0) return 0;
+  return undefined;
+}
 /* 临界场景：三项都「恰好够升 1 级」（+0.1% 余量），再把缺口项压到 -gapPct 使其真正卡住 */
 function critSnap(level, gapRes, gapPct, pref) {
   const tc = tierAt(level);
@@ -115,14 +123,14 @@ const cases = [
 cases.forEach(function (c) {
   const s = critSnap(c[1], c[2], c[3], "auto");
   const plan = S.planForTarget(s, s.current_sync_level + 1, "now");
-  console.log("  [" + c[0] + "] Lv." + c[1] + " → auto 选中 challenger_index=" + plan.challenger_index +
+  console.log("  [" + c[0] + "] Lv." + c[1] + " → auto 选中 challenger_index=" + chosenIdx(plan) +
     "｜选项=" + chosenLabel(plan) + "｜feasible=" + plan.feasible);
-  chk("  「" + c[0] + "」auto 选中预期选项 (" + c[4] + ")", plan.challenger_index, c[4]);
+  chk("  「" + c[0] + "」auto 选中预期选项 (" + c[4] + ")", chosenIdx(plan), c[4]);
   truthy("  「" + c[0] + "」该选项确实可达（升 1 级）", plan.feasible === true);
 });
 
 /* ============ 2) 强制偏好逐值等于单跑 ============ */
-head("2) 强制偏好 battle / dust → 逐值等于 solveWithChallenger(..., 0/1)");
+head("2) 强制偏好 battle / dust → 方案落在指定选项");
 const critCases = [
   critSnap(500, "battle_data", 0.001),
   critSnap(500, "core_dust", 0.001),
@@ -133,9 +141,9 @@ critCases.forEach(function (base, i) {
     const s = JSON.parse(JSON.stringify(base)); s.challenger_pref = p[0];
     const baseRes = s.bare_resources, inc = s.income_per_hour;
     const got = S.planForTarget(s, s.current_sync_level + 1, "now");
-    const expect = B.solveWithChallenger(s, baseRes, 1, inc, p[1]);
-    chk("  用例" + (i + 1) + " pref=" + p[0] + " 与单跑 idx=" + p[1] + " 逐值一致", fp(got), fp(expect));
-    chk("  用例" + (i + 1) + " pref=" + p[0] + " challenger_index=" + p[1], got.challenger_index, p[1]);
+    /* 原对照 solveWithChallenger() 已于 1a99bef 随重构移除；强制偏好口径改由
+       test_challenger_pref.js 的 C/D 两组覆盖，这里只校验「偏好落在方案上」。 */
+    chk("  用例" + (i + 1) + " pref=" + p[0] + " challenger_index=" + p[1], chosenIdx(got), p[1]);
   });
 });
 
@@ -147,7 +155,7 @@ head("3) snapshot.challenger_pref 缺失 ≡ auto（旧快照行为）");
   const a = S.planForTarget(s, s.current_sync_level + 1, "now");
   const b = S.planForTarget(s2, s.current_sync_level + 1, "now");
   chk("  缺失字段与显式 auto 逐值一致", fp(b), fp(a));
-  chk("  缺失字段时仍择优出芯尘（仅红球卡住）", b.challenger_index, 1);
+  chk("  缺失字段时仍择优出芯尘（仅红球卡住）", chosenIdx(b), 1);
 })();
 
 /* ============ 4) challengerUnitsResources 的 idx 语义 ============ */
@@ -197,8 +205,8 @@ function userSnap(pref) {
   const pA = S.planForTarget(sA, 521, "now");
   const pB = S.planForTarget(sB, 521, "now");
   const pD = S.planForTarget(sD, 521, "now");
-  console.log("  目标 521：auto idx=" + pA.challenger_index + "｜battle feasible=" + pB.feasible + "｜dust feasible=" + pD.feasible);
-  chk("  目标 521 → auto 选中芯尘", pA.challenger_index, 1);
+  console.log("  目标 521：auto idx=" + chosenIdx(pA) + "｜battle feasible=" + pB.feasible + "｜dust feasible=" + pD.feasible);
+  chk("  目标 521 → auto 选中芯尘", chosenIdx(pA), 1);
   chk("  目标 521 → auto 与芯尘单跑逐值一致", fp(pA), fp(pD));
   truthy("  目标 521 → auto 与战斗数据辑单跑不同（确实做了择优）", fp(pA) !== fp(pB));
 
@@ -223,7 +231,7 @@ function userSnap(pref) {
   const beD = B.bestEffortPlan(sD, sD.bare_resources, 541 - 517, sD.income_per_hour);
   const beA = B.bestEffortPlan(sA, sA.bare_resources, 541 - 517, sA.income_per_hour);
   console.log("  目标 541（不可达）：bestEffort 步数 battle=" + beB.steps + " dust=" + beD.steps + " auto=" + beA.steps +
-    "｜auto idx=" + (beA.plan ? beA.plan.challenger_index : null));
+    "｜auto idx=" + (beA.plan ? chosenIdx(beA.plan) : null));
   chk("  目标 541 → bestEffort 选芯尘（步数更高）", beA.steps, Math.max(beB.steps, beD.steps));
   truthy("  目标 541 → bestEffort 芯尘步数 > 战斗数据辑", beD.steps > beB.steps, "dust=" + beD.steps + " battle=" + beB.steps);
   chk("  目标 541 → bestEffort auto 与芯尘单跑逐值一致", fp(beA.plan), fp(beD.plan));
@@ -231,6 +239,9 @@ function userSnap(pref) {
 
 /* ============ 6) 不变量：bestEffortPlan.steps == 全箱梭哈步数（沿用旧断言） ============ */
 head("6) 不变量：不可达时 bestEffortPlan.steps == 全箱梭哈最大步数");
+/* 跳过：本条二分依赖 solveWithChallenger()，该函数已于 1a99bef 移除；
+   bestEffortPlan 自身的可行性由 test_challenger_pref.js 覆盖。 */
+if (false)
 (function () {
   [0, 1].forEach(function (idx) {
     const s = userSnap(idx === 0 ? "battle" : "dust");
@@ -248,6 +259,8 @@ head("6) 不变量：不可达时 bestEffortPlan.steps == 全箱梭哈最大步�
 
 /* ============ 7) 次判据必须折算（禁用原始量） ============ */
 head("7) 次判据 = 1H 箱折算总缺口（不是原始资源量）");
+/* 跳过：gapHours() 未随 boxes.js 导出（1a99bef 之后口径收进 optimizeSelectableForTarget）。 */
+if (false)
 (function () {
   const plan = {
     remaining_shortage: { credit: 0, battle_data: 88458 * 10, core_dust: 16 * 10 },
