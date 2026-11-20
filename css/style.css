@@ -485,8 +485,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   background: transparent;
   border: 0;
   border-left: 3px solid currentColor;
+  border-top: 1px dashed #d5e7df;
   border-radius: 0 8px 8px 0;
-  padding: 8px 0 8px 12px;
+  padding: 10px 0 8px 12px;
   margin: 0 0 10px;
 }
 .summary-card .summary-block:last-child,
@@ -495,8 +496,12 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .summary-card .summary-block { border-left-color: #1d9e75; }
 .summary-card .summary-block.tone-1 { border-left-color: #86cfb4; }
 
-.target-card .summary-block { border-left-color: #185fa5; }
+.target-card .summary-block { border-left-color: #185fa5; border-top-color: #d9e6f2; }
 .target-card .summary-block.tone-1 { border-left-color: #7fb3dd; }
+
+/* 紧跟标题的第一个块不要顶线（标题与内容之间靠间距区分就够） */
+.summary-title + .summary-block,
+.target-title + .summary-block { border-top: 0; padding-top: 2px; }
 
 /* 目标等级旁的可达标记：√ 可达 / × 不可达（取代原来那行「现状可达（立即可达（今天））」） */
 .sb-head .sb-mark { margin-left: 7px; font-weight: 700; }
