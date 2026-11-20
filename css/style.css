@@ -477,27 +477,26 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .target-card .summary-block { border-top-color: #d9e6f2; }
 .target-card .sb-head { color: #185fa5; }
 
-/* 2026-11-20：大卡内部再分两档小类 —— **同色系、一白一淡**，不做跨色系
-   （上一版把蓝块放进绿卡、绿块放进蓝卡，看着发花，已撤回）。
-   绿卡（即刻飞升）：tone-0 白 / tone-1 浅绿
-   蓝卡（达成目标）：tone-0 白 / tone-1 浅蓝
-   注意内层 .box-card 自带 4px 绿色左边条，这里不再加左边条，避免三层叠色。 */
+/* 2026-11-20（R102）：底色统一、只用**左侧竖条**分小类 —— 跟两个大类卡片的左边条同语言。
+   大类 5px → 小类 3px → 内层箱卡 4px，粗细递进，不靠色块区分。
+   两档竖条同色系深浅：绿卡（即刻飞升）/ 蓝卡（达成目标）。 */
 .summary-card .summary-block,
 .target-card .summary-block {
-  border: 1px solid #dfeaf1;
-  border-radius: 10px;
-  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid currentColor;
+  border-radius: 0 8px 8px 0;
+  padding: 8px 0 8px 12px;
   margin: 0 0 10px;
-  background: #ffffff;
 }
 .summary-card .summary-block:last-child,
 .target-card .summary-block:last-child { margin-bottom: 0; }
 
-.summary-card .summary-block { border-color: #d9ece3; }
-.summary-card .summary-block.tone-1 { background: #eefaf5; border-color: #c9e8da; }
+.summary-card .summary-block { border-left-color: #1d9e75; }
+.summary-card .summary-block.tone-1 { border-left-color: #86cfb4; }
 
-.target-card .summary-block { border-color: #d8e6f3; }
-.target-card .summary-block.tone-1 { background: #eff6fd; border-color: #c9def2; }
+.target-card .summary-block { border-left-color: #185fa5; }
+.target-card .summary-block.tone-1 { border-left-color: #7fb3dd; }
 
 /* 目标等级旁的可达标记：√ 可达 / × 不可达（取代原来那行「现状可达（立即可达（今天））」） */
 .sb-head .sb-mark { margin-left: 7px; font-weight: 700; }

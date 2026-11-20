@@ -940,9 +940,11 @@
         if (chalUsed.length) {
           pickTxt = Object.keys(chalUsed[0].choices || {}).filter(function (k) { return chalUsed[0].choices[k]; }).join("、");
         }
+        /* 固定箱表格 + 挑战者卡片都在下面，这里只补一句「哪些箱没动」，不复述数量 */
         return { days: "0", date: immediate,
-          plan: "挑战者成长宝箱全开" + (pickTxt ? "（选 " + pickTxt + "）" : "") +
-                "，固定小时箱按需开启（明细见下表；方舟 / 30天箱无需开启）",
+          plan: chalUsed.length
+            ? "方舟 / 30天成长补给箱无需开启"
+            : ("挑战者成长宝箱全开" + (pickTxt ? "（选 " + pickTxt + "）" : "")),
           fixedNeed: need.used || {},
           selectablePlan: chalUsed.length ? chalUsed : null };
       }
@@ -952,8 +954,10 @@
     if (maxLv >= tgt) {
       var plan = S.planForTarget(snap, tgt, future ? "future" : "now");
       var arr = plan ? plan.selectable : null;
-      return { days: "0", date: immediate, plan: boxPlanText(arr, true), selectablePlan: arr,
-        fixedNeed: plan ? plan.fixed_used : null };
+      /* planVerbose：这句话把每个箱子的分配又列了一遍，而下面已有箱子卡片 + 表格，
+         用户明确要求「底下有方案了，不用再重复说明」→ 有卡片时不渲染文字 */
+      return { days: "0", date: immediate, plan: boxPlanText(arr, true), planVerbose: true,
+        selectablePlan: arr, fixedNeed: plan ? plan.fixed_used : null };
     }
     // ⑤ 全资源投入也无法达成：给「最优均衡能到的最高等级」方案 + 智能配平缺口
     var gap = tgt - maxLv;
@@ -1078,7 +1082,7 @@
 
       /* ① 现状可达：直接给方案，不摆诊断 */
       if (nowOk) {
-        if (np.plan) b.appendChild(el("div", np.plan, "sb-text"));
+        if (np.plan && !np.planVerbose) b.appendChild(el("div", np.plan, "sb-text"));
         pushDetail(b, np);
         wrap.appendChild(b);
         return;
@@ -1097,7 +1101,7 @@
       if (futureAvail && fp) {
         if (fOk) {
           b.appendChild(el("div", "开放日（" + futDate + "）可达", "sb-big"));
-          if (fp.plan) b.appendChild(el("div", fp.plan, "sb-text"));
+          if (fp.plan && !fp.planVerbose) b.appendChild(el("div", fp.plan, "sb-text"));
           pushDetail(b, fp);
         } else {
           b.appendChild(el("div", "开放日（" + futDate + "）也不可达：上限 <b>同步器 " +
