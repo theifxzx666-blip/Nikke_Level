@@ -1638,11 +1638,6 @@
         big2 += "（较现状多 <b>" + diff + "</b> 级 = 等待期到账资源 <b>+" + wv + "</b> 级 + 开箱 <b>+" + ov + "</b> 级；箱子按新收益折算另 +" + boxGain + " 级）";
       }
       b2.appendChild(el("div", big2, "sb-big"));
-      if (diff > 0 && gs.NB !== null && gs.FB !== null) {
-        // 只用同口径的裸资源层（per_resource 的 bare 层与联合口径等价）
-        // 自选箱层是「全给单项」的乐观上界，与 futLv 不同口径，不能混用
-        b2.appendChild(el("div", "其中：不开箱可到 " + gs.NB + " → " + gs.FB + " 级；全箱梭哈 " + nowLv + " → " + futLv + " 级。", "sb-text"));
-      }
       // 与 Block① 对称：取「开放日全箱梭哈到该最高等级」的真实逐箱分配
       //   （此前误用 target_selectable_future —— 那是为「达成目标等级」优化的方案，目标被裸资源+固定箱满足时会是空表）
       var futPlanNode = (fut.result && fut.result.selectable) || null;
@@ -1664,28 +1659,6 @@
       b2.appendChild(el("div", "未填写新主线进度，无法评估该口径；可在「预计新主线进度」中填写后重新计算。", "sb-text"));
     }
     wrap.appendChild(b2);
-
-    // Block ③ 整合结论
-    var b3 = el("div", "", "summary-block tone-0");
-    b3.appendChild(el("div", "③ 整合结论", "sb-head"));
-    var text3;
-    if (hasFut) {
-      var diff3 = futLv - nowLv;
-      if (diff3 > 0) {
-        var bg3 = fut.box_gain_vs_now || 0;
-        var wv3 = (gs.waitLv !== null) ? Math.min(gs.waitLv, diff3) : Math.max(0, diff3 - bg3);
-        var ov3 = Math.max(0, diff3 - wv3 - bg3);
-        text3 = "💰 <b>建议等新主线开放后再全箱梭哈</b>：现在梭哈到 <b>同步器 " + nowLv + "</b>；等 " + date + " 再梭哈可到 <b>同步器 " + futLv + "</b>，多 <b>" + diff3 + "</b> 级（等待期到账资源 +" + wv3 + " 级，开箱 +" + ov3 + " 级；箱子按新收益折算另 +" + bg3 + " 级）。";
-      } else {
-        text3 = "现在全箱梭哈可到 <b>同步器 " + nowLv + "</b>；等新主线开放后再梭哈可到 <b>同步器 " + futLv + "</b>（收益相当，可立即梭哈）。";
-      }
-    } else {
-      text3 = "当前全箱梭哈最高可到 <b>同步器 " + nowLv + "</b>。";
-    }
-    var days = result.no_box ? result.no_box.days : null;
-    if (days != null && isFinite(days)) text3 += " 完全不开箱自然增长到目标 " + target + " 需 <b>" + fmtDays(days) + "</b> 天。";
-    b3.appendChild(el("div", text3, "sb-text"));
-    wrap.appendChild(b3);
 
     var hasKeep = (sellArr && sellArr.some(function (p) { return p.keep > 0; })) ||
                   (fsell && fsell.some(function (p) { return p.keep > 0; }));
