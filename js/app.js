@@ -1061,8 +1061,9 @@
       b.appendChild(gapTable(p.gapPlan, income));
     }
 
-    targets.forEach(function (t) {
-      var b = el("div", "", "summary-block");
+    targets.forEach(function (t, ti) {
+      /* tone-0 / tone-1 交替：两个目标各成一个色块，避免连成一片 */
+      var b = el("div", "", "summary-block tone-" + (ti % 2));
       var np = planByLevels(result, snap, t.lv, false);
       var nowOk = np.days !== "-";
       var fp = null, fOk = false;
@@ -1598,7 +1599,7 @@
     var gs = levelGainSplit(result);
 
     // Block ① 现状（当前基地 · 直接全箱梭哈）
-    var b1 = el("div", "", "summary-block");
+    var b1 = el("div", "", "summary-block tone-0");
     b1.appendChild(el("div", "① 现状（当前基地等级 · 直接全箱梭哈）", "sb-head"));
     var big1 = "全箱梭哈最高可到 <b>同步器 " + nowLv + "</b>";
     if (nowLv < target) big1 += "（目标 " + target + " 还差 " + Math.max(0, target - nowLv) + " 级）";
@@ -1618,7 +1619,7 @@
     wrap.appendChild(b1);
 
     // Block ② 考虑新主线（开放后按新基地收益全箱梭哈）
-    var b2 = el("div", "", "summary-block");
+    var b2 = el("div", "", "summary-block tone-1");
     b2.appendChild(el("div", "② 考虑新主线（开放后按新基地收益开箱）", "sb-head"));
     if (hasFut) {
       var date = fut.open_at ? localDateStr(fut.open_at) : "";
@@ -1661,7 +1662,7 @@
     wrap.appendChild(b2);
 
     // Block ③ 整合结论
-    var b3 = el("div", "", "summary-block");
+    var b3 = el("div", "", "summary-block tone-0");
     b3.appendChild(el("div", "③ 整合结论", "sb-head"));
     var text3;
     if (hasFut) {

@@ -477,15 +477,24 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .target-card .summary-block { border-top-color: #d9e6f2; }
 .target-card .sb-head { color: #185fa5; }
 
-/* 2026-11-20：两个目标原先只隔一条虚线，看着连成一片 → 各自成块 */
+/* 2026-11-20：块内再分色 —— 两个目标 / 三个阶段各自成一个色块，一眼能分开。
+   tone-0 冷白蓝（现状类）、tone-1 冷白绿（新主线类），两档交替使用。 */
+.summary-card .summary-block,
 .target-card .summary-block {
-  border: 1px solid #e0edf7;
-  background: #fdfefe;
+  border: 1px solid transparent;
   border-radius: 10px;
   padding: 10px 12px;
   margin: 0 0 10px;
 }
+.summary-card .summary-block:first-of-type,
+.target-card .summary-block:first-of-type {
+  border-top: 1px solid transparent;
+  padding-top: 10px;
+}
+.summary-card .summary-block:last-child,
 .target-card .summary-block:last-child { margin-bottom: 0; }
+.summary-block.tone-0 { background: #f3f8fd; border-color: #d8e7f4; }
+.summary-block.tone-1 { background: #f1faf5; border-color: #cfe9dc; }
 
 /* 目标等级旁的可达标记：√ 可达 / × 不可达（取代原来那行「现状可达（立即可达（今天））」） */
 .sb-head .sb-mark { margin-left: 7px; font-weight: 700; }
