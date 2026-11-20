@@ -420,7 +420,8 @@
   }
   /* 以手填前哨基地等级为准：仅关卡进度变更（autoFill=true）且基地为空时才自动填推算值；
      手填路径只提示推算参考，不覆盖、不打断输入。
-     国服统计进度约比国际服多 3 关，推算值可能偏高 → 建议以游戏内实际等级为准 */
+     推算只作参考：国服/国际服拆包表在 0~32 章逐章一致，更高章节未逐一核对，
+     所以与游戏内不一致时一律以手填为准，不解释差异来源 */
   function syncCurrentBase(autoFill) {
     var level = currentCalculatedBase();
     var hint = $("baseHint");
@@ -443,17 +444,17 @@
     if (!cur && autoFill) {
       setVal("f_base", level);
       syncIncomeFromBase();
-      say("已按关卡进度自动填入推算值 lv." + level + "（国际服口径，每通关 5 关 +1）。国服统计进度约比国际服多 3 关，推算值可能偏高，建议核对游戏内实际等级后手填修正。");
+      say("已按关卡进度自动填入推算值 lv." + level + "（每通关 5 关 +1）。若与游戏内不一致，请直接手填修正。");
       if (btn) btn.style.display = "none";
     } else if (!cur) {
-      say("基地等级未填。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，可能偏高），可直接点下方按钮采用，或手填游戏内实际等级。");
+      say("基地等级未填。关卡进度推算值为 lv." + level + "，可直接点下方按钮采用，或手填游戏内实际等级。");
       showBtn(level);
     } else if (cur === level) {
       /* 一致时不说话：等级就在输入框里，收益也在下面，不必再复述一遍 */
       say("");
       if (btn) btn.style.display = "none";
     } else {
-      say("以手填基地等级 lv." + cur + " 为准（收益按此计算）。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，推算值可能偏高）。");
+      say("以手填基地等级 lv." + cur + " 为准（收益按此计算）。关卡进度推算值为 lv." + level + "，两者不一致时以手填为准。");
       showBtn(level);
     }
   }

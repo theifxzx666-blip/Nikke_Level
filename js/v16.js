@@ -1124,19 +1124,15 @@
     try { return localStorage.getItem('nikke_planner_server') || 'cn'; } catch (e) { return 'cn'; }
   }
 
-  /* app.js 把「国际服口径 / 国服多 3 关」写死在 #baseHint 里，
-     选国服时把这段改写成不误导的表述（数值不变，只改标注）。 */
+  /* 2026-11-20：app.js 的 #baseHint 已改中性（不再声称国服与国际服差几关），
+     这里只留「国际服口径 → 国服口径」的兜底替换，防止别处文案再写死服别。 */
   var srvBusy = false;
   function paintServerLabel() {
     var hint = byId('baseHint');
     if (!hint) return;
     if (getServer() !== 'cn') return;          /* 国际服保持 app.js 原文 */
     var t = hint.textContent;
-    var n = t
-      .replace(/国际服口径/g, '国服口径')
-      .replace(/国服统计进度约比国际服多 3 关，推算值可能偏高/g, '国服进度比国际服略靠后，建议以游戏内实际等级为准')
-      .replace(/国服统计进度约多 3 关，推算值可能偏高/g, '国服进度比国际服略靠后，以游戏内实际等级为准')
-      .replace(/国服统计进度约多 3 关，可能偏高/g, '国服进度比国际服略靠后，可能偏高');
+    var n = t.replace(/国际服口径/g, '国服口径');
     if (n !== t) {
       srvBusy = true;
       hint.textContent = n;
