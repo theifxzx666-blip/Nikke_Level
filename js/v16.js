@@ -544,8 +544,8 @@
         wg.appendChild(wipe);
         resFs.appendChild(wg);
         attachInfo(wipe, '每日一举歼灭次数',
-          '填<b>每天一共打几次</b>，<b>包含每日免费的那 1 次</b>。免费次数也占一次，所以「只打免费的一把」填 1。' +
-          '<br>每次等价小时数默认 2 小时（歼灭一次折算的挂机时长），影响每日收益里的额外积累。', resFs);
+          '填<b>每天一共打几次</b>，<b>包含每日免费的那 1 次</b>。' +
+          '<br>每次等价小时数默认 2 小时，影响每日收益里的额外积累。', resFs);
       }
     }
 
@@ -620,12 +620,6 @@
     var daily = fsByPrefix('当前收益与每日收益'); if (daily) daily.classList.add('v3-hide');
     var cost = fsByPrefix('升级消耗素材量'); if (cost) cost.classList.add('v3-hide');
     hideLabel('f_saved_at'); hideLabel('f_collected_before');
-    /* 月卡：搬进设置弹窗，同行说明一起藏 */
-    var mc = byId('f_monthly_card');
-    if (mc) {
-      var g = mc.closest('.grid');
-      if (g) Array.prototype.forEach.call(g.querySelectorAll('.hint'), function (h) { h.classList.add('v3-hide'); });
-    }
     /* 预计收益 4 格随关卡自动带出，仍隐藏；推图奖励 9 格改为搬进「奖励明细」信息窗 */
     ['f_future_base', 'f_future_credit', 'f_future_battle', 'f_future_dust'].forEach(hideGridOf);
     /* 推图收益：标题去掉「官方拆包」字样（app.js 会随章节重写，需持续纠正） */
@@ -688,7 +682,7 @@
       }
 
       var pop = el('div', 'v4-pop');
-      pop.innerHTML = '<div class="hd">前哨基地收益<small>随等级自动带出，可手动覆盖</small></div>';
+      pop.innerHTML = '<div class="hd">前哨基地收益</div>';
       var daily = fsByPrefix('当前收益与每日收益');
       if (daily) {
         /* 收益三项也要道具图标（和前哨基地奖励一块儿显示，不能只在明细里有） */
@@ -699,7 +693,6 @@
         if (g) pop.appendChild(g);
         daily.classList.add('v3-hide');
       }
-      pop.appendChild(el('p', 'ft', '一般不用改；一举歼灭折算等特殊情形可直接改，仍参与计算。'));
       fs.appendChild(pop);
 
       var locked = false, timer = 0;
@@ -905,9 +898,9 @@
       s1.appendChild(tactics);
     }
 
-    var card = labelOf('f_monthly_card'), keep = labelOf('f_keep_one_box');
-    /* 每日一举歼灭次数已搬回第 1 页（arrange 里处理），设置里不再重复放一份 */
-    if (card) s1.appendChild(card);
+    var keep = labelOf('f_keep_one_box');
+    /* 每日一举歼灭次数已搬回第 1 页（arrange 里处理），设置里不再重复放一份；
+       月卡也不再搬进来，它留在「自选箱数量」里与挑战者箱资源选择同排 */
     if (keep) {
       if (keep.firstChild && keep.firstChild.nodeType === 3) keep.firstChild.nodeValue = '每种箱留 1 个';
       var kg = keep.closest('.grid');
@@ -1264,7 +1257,7 @@
       '<button type="button" class="v3-btn" id="v3Prev" hidden>上一步</button>' +
       '<button type="button" class="v3-btn" id="v3Recalc" hidden>重新填写</button>' +
       '<span class="spacer"></span>' +
-      '<button type="button" class="v3-btn" id="v3Next">下一步：推图进度&amp;活动</button>';
+      '<button type="button" class="v3-btn" id="v3Next">下一步</button>';
 
     var calcBtn = byId('btnCalc');
     if (calcBtn) nav.appendChild(calcBtn);     /* 开始计算搬进同一行 */

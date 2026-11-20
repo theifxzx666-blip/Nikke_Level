@@ -422,24 +422,31 @@
     function showBtn(lv) {
       if (btn) { btn.style.display = ""; btn.textContent = "采用推算值 lv." + lv; }
     }
+    /* 2026-11-20：空文案直接隐藏整行，不占位 */
+    function say(txt) {
+      if (!hint) return;
+      hint.textContent = txt || "";
+      hint.style.display = txt ? "" : "none";
+    }
     if (!level) {
-      hint.textContent = "推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。";
+      say("推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。");
       if (btn) btn.style.display = "none";
       return;
     }
     if (!cur && autoFill) {
       setVal("f_base", level);
       syncIncomeFromBase();
-      hint.textContent = "已按关卡进度自动填入推算值 lv." + level + "（国际服口径，每通关 5 关 +1）。国服统计进度约比国际服多 3 关，推算值可能偏高，建议核对游戏内实际等级后手填修正。";
+      say("已按关卡进度自动填入推算值 lv." + level + "（国际服口径，每通关 5 关 +1）。国服统计进度约比国际服多 3 关，推算值可能偏高，建议核对游戏内实际等级后手填修正。");
       if (btn) btn.style.display = "none";
     } else if (!cur) {
-      hint.textContent = "基地等级未填。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，可能偏高），可直接点下方按钮采用，或手填游戏内实际等级。";
+      say("基地等级未填。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，可能偏高），可直接点下方按钮采用，或手填游戏内实际等级。");
       showBtn(level);
     } else if (cur === level) {
-      hint.textContent = "基地等级 lv." + cur + "（收益按此计算），与关卡进度推算值一致（国际服口径）。";
+      /* 一致时不说话：等级就在输入框里，收益也在下面，不必再复述一遍 */
+      say("");
       if (btn) btn.style.display = "none";
     } else {
-      hint.textContent = "以手填基地等级 lv." + cur + " 为准（收益按此计算）。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，推算值可能偏高）。";
+      say("以手填基地等级 lv." + cur + " 为准（收益按此计算）。关卡进度推算值为 lv." + level + "（国际服口径；国服统计进度约多 3 关，推算值可能偏高）。");
       showBtn(level);
     }
   }
@@ -912,13 +919,24 @@
       var leftGap = need.remaining_shortage || {};
       var covered = C.RESOURCES.every(function (r) { return (leftGap[r] || 0) <= 1e-6; });
       if (covered) {
-        var n = 0;
-        Object.keys(need.used || {}).forEach(function (nm) {
-          Object.keys(need.used[nm]).forEach(function (h) { n += need.used[nm][h]; });
-        });
+        /* 箱数只在表尾说一次（原来这里和「共需开启固定小时箱 N 个」重复了）；
+           挑战者选了哪项必须显式写出来，否则「自动择优」看起来像没生效。
+           选择结果直接取求解器 —— 它和本分支用的是同一套择优口径。 */
+        var pl = S.planForTarget(snap, tgt, future ? "future" : "now");
+        var sell = (pl && pl.selectable) ? pl.selectable : null;
+        var chalUsed = [];
+        if (sell) {
+          chalUsed = sell.filter(function (p) { return p.used > 0 && p.name.indexOf("挑战") >= 0; });
+        }
+        var pickTxt = "";
+        if (chalUsed.length) {
+          pickTxt = Object.keys(chalUsed[0].choices || {}).filter(function (k) { return chalUsed[0].choices[k]; }).join("、");
+        }
         return { days: "0", date: immediate,
-          plan: "挑战者成长宝箱全开 + 固定小时箱按需开启 " + n + " 个即可达成（无需开方舟/30天箱）",
-          fixedNeed: need.used || {} };
+          plan: "挑战者成长宝箱全开" + (pickTxt ? "（选 " + pickTxt + "）" : "") +
+                "，固定小时箱按需开启（明细见下表；方舟 / 30天箱无需开启）",
+          fixedNeed: need.used || {},
+          selectablePlan: chalUsed.length ? chalUsed : null };
       }
     }
     // ④ 全箱梭哈可达成：按「当前正在渲染的这个目标等级」现算开够即停方案
@@ -1037,15 +1055,20 @@
 
     targets.forEach(function (t) {
       var b = el("div", "", "summary-block");
-      b.appendChild(el("div", t.name + " " + t.lv, "sb-head"));
       var np = planByLevels(result, snap, t.lv, false);
       var nowOk = np.days !== "-";
       var fp = null, fOk = false;
       if (futureAvail) { fp = planByLevels(result, snap, t.lv, true); fOk = fp.days !== "-"; }
 
+      /* 目标等级旁一个 √ / × 就够说明可达性（原来那行「现状可达（立即可达（今天））」纯属复述） */
+      var head = el("div", t.name + " " + t.lv, "sb-head");
+      var mark = el("span", nowOk ? "✓" : "×", "sb-mark " + (nowOk ? "ok" : "no"));
+      mark.title = nowOk ? ("现状可达 · " + np.date) : "现状不可达";
+      head.appendChild(mark);
+      b.appendChild(head);
+
       /* ① 现状可达：直接给方案，不摆诊断 */
       if (nowOk) {
-        b.appendChild(el("div", "现状可达（" + np.date + "）", "sb-big"));
         if (np.plan) b.appendChild(el("div", np.plan, "sb-text"));
         pushDetail(b, np);
         wrap.appendChild(b);
@@ -1534,6 +1557,20 @@
     pop.setAttribute("data-infopop", "1");
     hostEl.appendChild(pop);
   }
+  /* 信息窗就近展开：贴着 i 按钮往下弹，下方放不下就翻到上方。
+     原先靠 CSS 固定 left:14 / top:32，在宽卡片上弹窗会跑到左上角，离按钮很远。 */
+  function placeInfoPop(btn, pop, host) {
+    if (!btn || !pop || !host) return;
+    var br = btn.getBoundingClientRect(), hr = host.getBoundingClientRect();
+    var pw = pop.offsetWidth || 320, ph = pop.offsetHeight || 140;
+    pop.style.right = "auto";
+    var left = br.left - hr.left;
+    var maxL = Math.max(8, host.clientWidth - pw - 8);
+    pop.style.left = Math.max(8, Math.min(left, maxL)) + "px";
+    var below = br.bottom - hr.top + 6;
+    var above = br.top - hr.top - ph - 6;
+    pop.style.top = (below + ph > window.innerHeight && above > 8) ? above + "px" : below + "px";
+  }
   function boxOrderInfo(titleEl, hostEl, headText) {
     infoPop(titleEl, hostEl, headText || "开箱顺序", BOX_ORDER_HTML);
   }
@@ -1827,7 +1864,7 @@
       var willOpen = !(pop && pop.classList.contains("on"));
       for (var k = 0; k < allPop.length; k++) allPop[k].classList.remove("on");
       for (var m = 0; m < allBtn.length; m++) allBtn[m].classList.remove("on");
-      if (pop && willOpen) { pop.classList.add("on"); btn.classList.add("on"); }
+      if (pop && willOpen) { placeInfoPop(btn, pop, host); pop.classList.add("on"); btn.classList.add("on"); }
     });
 
     // 跨设备同步：弹窗

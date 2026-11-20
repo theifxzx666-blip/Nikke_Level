@@ -21,13 +21,17 @@
   --hero-bg: url("../assets/bg/hero.webp");
 }
 * { box-sizing: border-box; }
-/* 自定义字体：Kingnammm Maiyuan 2（子集化版，仅保留站内实际用到的 1549 个字符）
-   7.86MB 全量 ttf → 277KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
-   新增/改动文案若用到新汉字，需重跑子集化脚本（见 临时文件/font_charset.js + font_subset.py）。 */
+/* 自定义字体：Kingnammm Maiyuan 2（子集化版，覆盖全站文案 1569 个码位）
+   8.2MB 全量 ttf → 299KB woff2；完整原字体保留在 assets/fonts/maiyuan.ttf 以便回滚。
+   2026-11-20 重做：上一版子集漏了 111 个常用汉字（丢争尽帮废弱…），这些字会掉到系统字体，
+   看起来「部分文案不是麦圆体」。新增/改动文案后重跑：
+     python 等级计算/临时车间/build_charset.py
+     python -m fontTools.subset assets/fonts/maiyuan.ttf --text-file=... --flavor=woff2
+   url 带 ?v= 是必须的 —— 文件名不变时浏览器会一直用缓存里的旧字体。 */
 @font-face {
   font-family: "MaiYuan";
-  src: url("../assets/fonts/maiyuan-subset.woff2") format("woff2"),
-       url("../assets/fonts/maiyuan-subset.ttf") format("truetype");
+  src: url("../assets/fonts/maiyuan-subset.woff2?v=20261120f") format("woff2"),
+       url("../assets/fonts/maiyuan-subset.ttf?v=20261120f") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -472,6 +476,26 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .target-title { position: relative; margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #185fa5; letter-spacing: 0.5px; }
 .target-card .summary-block { border-top-color: #d9e6f2; }
 .target-card .sb-head { color: #185fa5; }
+
+/* 2026-11-20：两个目标原先只隔一条虚线，看着连成一片 → 各自成块 */
+.target-card .summary-block {
+  border: 1px solid #e0edf7;
+  background: #fdfefe;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 10px;
+}
+.target-card .summary-block:last-child { margin-bottom: 0; }
+
+/* 目标等级旁的可达标记：√ 可达 / × 不可达（取代原来那行「现状可达（立即可达（今天））」） */
+.sb-head .sb-mark { margin-left: 7px; font-weight: 700; }
+.sb-head .sb-mark.ok { color: #1a8f5b; }
+.sb-head .sb-mark.no { color: #c0392b; }
+
+/* 预计普通 / 困难主线关卡：上下两行，行内两个下拉并排且留间距 */
+.v3-stage-pair { margin-bottom: 2px; }
+.v3-stage-pair .pair-row { display: flex; gap: 8px; margin-top: 6px; }
+.v3-stage-pair .pair-row > select { flex: 1 1 0; min-width: 0; }
 
 @media (max-width: 600px) {
   .summary-card { margin-bottom: 12px; }
