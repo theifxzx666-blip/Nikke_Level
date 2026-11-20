@@ -1306,25 +1306,40 @@
     return selectableBoxCards(planArr);
   }
 
+  /* 资源名着色：战斗数据辑深蓝 / 芯尘深红 / 信用点深橘黄（只在箱子卡片里用） */
+  function colorRes(txt) {
+    return String(txt == null ? "" : txt)
+      .replace(/战斗数据辑/g, '<span class="res-battle">战斗数据辑</span>')
+      .replace(/芯尘/g, '<span class="res-dust">芯尘</span>')
+      .replace(/信用点/g, '<span class="res-credit">信用点</span>');
+  }
+
   /* 分配表卡片：一箱一张（数值 + 明细 + 备注竖排） */
   function selectableBoxCards(planArr) {
     var box = el("div", "", "box-cards");
     (planArr || []).forEach(function (p) {
-      var detail = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; })
-        .map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
+      var isChal = p.name.indexOf("挑战者") >= 0;
+      var picks = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; });
       var card = el("div", "", "box-card");
-      card.appendChild(el("div", p.name, "bc-name"));
+      var nameEl = el("div", p.name, "bc-name");
+      card.appendChild(nameEl);
       card.appendChild(el("div",
         "<span>使用 <b>" + p.used + "</b></span><span>保留 <b>" + p.keep + "</b></span>", "bc-nums"));
-      card.appendChild(el("div", detail, "bc-detail"));
-      if (p.name.indexOf("挑战者") >= 0) {
-        /* 2026-11-19：明确写出「这批箱子该选哪项资源」—— 之前只藏在「分配明细」里，
-           用户反馈方案没给挑战者箱的资源选择。 */
-        var picks = Object.keys(p.choices || {}).filter(function (k) { return p.choices[k]; });
+
+      if (isChal) {
+        /* 挑战者箱只出一种资源：数量在「使用 N」里、选了哪项在「资源选择」里，
+           再列一行「战斗数据辑 xN」纯属重复 → 不渲染 bc-detail。
+           说明文字原先平铺成一行灰色小字，收进 i 信息窗（2026-11-20 用户要求）。 */
         var pref = (state.lastSnapshot && state.lastSnapshot.challenger_pref) || "auto";
         var prefTxt = pref === "battle" ? "战斗数据辑优先" : (pref === "dust" ? "芯尘优先" : "自动择优");
-        card.appendChild(el("div", "资源选择：<b>" + (picks.join("、") || "—") + "</b>（" + prefTxt + "）", "bc-pick"));
-        card.appendChild(el("div", "固定数值奖励，不受基地等级影响；优先项可在「自选箱数量」里切换", "bc-note"));
+        card.appendChild(el("div",
+          "资源选择：" + colorRes(picks.join("、") || "—") + "（" + prefTxt + "）", "bc-pick"));
+        infoPop(nameEl, card, "挑战者成长宝箱",
+          "固定数值奖励，不受基地等级影响。<br>" +
+          "优先项可在「自选箱数量」里切换（自动择优 / 战斗数据辑优先 / 芯尘优先）。");
+      } else {
+        var detail = picks.map(function (k) { return k + " x" + p.choices[k]; }).join("、") || "无需开启";
+        card.appendChild(el("div", colorRes(detail), "bc-detail"));
       }
       box.appendChild(card);
     });
@@ -1579,7 +1594,18 @@
     pop.style.right = "auto";
     var left = br.left - hr.left;
     var maxL = Math.max(8, host.clientWidth - pw - 8);
-    pop.style.left = Math.max(8, Math.min(left, maxL)) + "px";
+    if (pw > host.clientWidth - 16) {
+      /* 宿主比弹窗窄（例如结果里的箱子卡片 ~140px）：改用「以按钮为中心 + 夹进视口」，
+         否则 clamp 会把 left 压到 8px，弹窗从卡片左边一路向右溢出屏幕。 */
+      left = br.left + br.width / 2 - pw / 2 - hr.left;
+      var vLeft = hr.left + left;
+      if (vLeft < 8) left += 8 - vLeft;
+      var vRight = hr.left + left + pw;
+      if (vRight > window.innerWidth - 8) left -= vRight - (window.innerWidth - 8);
+    } else {
+      left = Math.max(8, Math.min(left, maxL));
+    }
+    pop.style.left = left + "px";
     var below = br.bottom - hr.top + 6;
     var above = br.top - hr.top - ph - 6;
     pop.style.top = (below + ph > window.innerHeight && above > 8) ? above + "px" : below + "px";
