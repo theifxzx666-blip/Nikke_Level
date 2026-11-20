@@ -233,11 +233,13 @@
   }
 
   /* ---------- 渲染表单 ---------- */
-  function fillSelect(sel, options, selected) {
+  /* labels 可选：只改显示文本，value 仍是原始值（关卡名要拿去查 id，不能被后缀污染） */
+  function fillSelect(sel, options, selected, labels) {
     sel.innerHTML = "";
-    options.forEach(function (opt) {
+    options.forEach(function (opt, i) {
       var o = document.createElement("option");
-      o.value = opt; o.textContent = opt;
+      o.value = opt;
+      o.textContent = (labels && labels[i] != null) ? labels[i] : opt;
       if (opt === selected) o.selected = true;
       sel.appendChild(o);
     });
@@ -402,7 +404,12 @@
     var saved = state.form[kind === "normal" ? "normal_stage" : kind === "hard" ? "hard_stage" : kind === "future_normal" ? "future_normal_stage" : "future_hard_stage"];
     var cur = stSel.value;
     var selected = (cur && cur !== "") ? cur : (saved && opts.indexOf(saved) >= 0 ? saved : "未选择");
-    fillSelect(stSel, ["未选择"].concat(opts), selected);
+    /* 每章最后一关标「末关」：章节里有 A/B 分叉关（41-17A-1 这类），编号不连续，
+       用户很容易把倒数第二关当成终点 —— 少选 1 关就差 1 级（2026-11-20 国服用户报障）。 */
+    var labels = ["未选择"].concat(opts.map(function (s, i) {
+      return i === opts.length - 1 ? s + "（末关）" : s;
+    }));
+    fillSelect(stSel, ["未选择"].concat(opts), selected, labels);
   }
 
   /* ---------- 联动 ---------- */
