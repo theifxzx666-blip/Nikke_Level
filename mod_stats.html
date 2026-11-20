@@ -348,37 +348,37 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 .vt-btn{border:0;background:transparent;padding:4px 11px;font-size:12px;color:var(--text2);cursor:pointer;line-height:1.6}
 .vt-btn+.vt-btn{border-left:1px solid var(--border)}
 .vt-btn.active{background:var(--accent);color:#fff;font-weight:600}
-.cal-top{display:flex;align-items:center;gap:8px;margin:10px 0 8px;flex-wrap:wrap}
-.cal-nav{width:28px;height:28px;border:1px solid var(--border);background:#fff;border-radius:8px;color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
-.cal-nav:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
-.cal-nav:disabled{opacity:.35;cursor:not-allowed}
-#calTitle{font-size:14px;min-width:96px;text-align:center}
-.cal-legend{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
-.cal-legend .lg{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid transparent}
-.cal-legend em{font-style:normal;margin-left:4px}
-.cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:11px;color:var(--text2);text-align:center;margin-bottom:4px}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-cell{min-height:52px;border-radius:8px;border:1px solid #eef2f0;padding:4px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafcfb}
-.cal-cell.blank{border:0;background:transparent}
-.cd{font-size:12px;font-weight:600;color:#3d4f48;line-height:1.2}
-.cp{font-size:10.5px;font-weight:600;line-height:1.3;white-space:nowrap}
-.cal-cell.today{outline:2px solid var(--accent);outline-offset:-2px}
+.hcal-top{display:flex;align-items:center;gap:8px;margin:10px 0 8px;flex-wrap:wrap}
+.hcal-nav{width:28px;height:28px;border:1px solid var(--border);background:#fff;border-radius:8px;color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
+.hcal-nav:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.hcal-nav:disabled{opacity:.35;cursor:not-allowed}
+#histCalTitle{font-size:14px;min-width:96px;text-align:center}
+.hcal-legend{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.hcal-legend .lg{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid transparent}
+.hcal-legend em{font-style:normal;margin-left:4px}
+.hcal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:11px;color:var(--text2);text-align:center;margin-bottom:4px}
+.hcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.hcal-cell{min-height:52px;border-radius:8px;border:1px solid #eef2f0;padding:4px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafcfb}
+.hcal-cell.blank{border:0;background:transparent}
+.hcd{font-size:12px;font-weight:600;color:#3d4f48;line-height:1.2}
+.hcp{font-size:10.5px;font-weight:600;line-height:1.3;white-space:nowrap}
+.hcal-cell.today{outline:2px solid var(--accent);outline-offset:-2px}
 /* 三档深浅 × 正负两色；背景浅、文字深，保证对比度 */
-.cal-cell.g1{background:#eef8f2;border-color:#d8ede1}.cal-cell.g1 .cp{color:#1c6b4f}
-.cal-cell.g2{background:#d9f0e4;border-color:#bde3d1}.cal-cell.g2 .cp{color:#14654a}
-.cal-cell.g3{background:#bfe6d3;border-color:#9fd6bd}.cal-cell.g3 .cp{color:#0c4c37}
-.cal-cell.b1{background:#fdf0ee;border-color:#f6dcd7}.cal-cell.b1 .cp{color:#8a3527}
-.cal-cell.b2{background:#fadfd9;border-color:#f0c3ba}.cal-cell.b2 .cp{color:#7a291b}
-.cal-cell.b3{background:#f4c4bb;border-color:#e7a99e}.cal-cell.b3 .cp{color:#661e12}
-.cal-legend .lg.n{background:#fafcfb;border-color:#eef2f0}
-.cal-legend .lg.g1{background:#eef8f2}.cal-legend .lg.g2{background:#d9f0e4}.cal-legend .lg.g3{background:#bfe6d3}
-.cal-legend .lg.b1{background:#fdf0ee}.cal-legend .lg.b2{background:#fadfd9}.cal-legend .lg.b3{background:#f4c4bb}
-.cal-hint{font-size:11px;color:var(--text2);margin:8px 0 0}
+.hcal-cell.g1{background:#eef8f2;border-color:#d8ede1}.hcal-cell.g1 .hcp{color:#1c6b4f}
+.hcal-cell.g2{background:#d9f0e4;border-color:#bde3d1}.hcal-cell.g2 .hcp{color:#14654a}
+.hcal-cell.g3{background:#bfe6d3;border-color:#9fd6bd}.hcal-cell.g3 .hcp{color:#0c4c37}
+.hcal-cell.b1{background:#fdf0ee;border-color:#f6dcd7}.hcal-cell.b1 .hcp{color:#8a3527}
+.hcal-cell.b2{background:#fadfd9;border-color:#f0c3ba}.hcal-cell.b2 .hcp{color:#7a291b}
+.hcal-cell.b3{background:#f4c4bb;border-color:#e7a99e}.hcal-cell.b3 .hcp{color:#661e12}
+.hcal-legend .lg.n{background:#fafcfb;border-color:#eef2f0}
+.hcal-legend .lg.g1{background:#eef8f2}.hcal-legend .lg.g2{background:#d9f0e4}.hcal-legend .lg.g3{background:#bfe6d3}
+.hcal-legend .lg.b1{background:#fdf0ee}.hcal-legend .lg.b2{background:#fadfd9}.hcal-legend .lg.b3{background:#f4c4bb}
+.hcal-hint{font-size:11px;color:var(--text2);margin:8px 0 0}
 @media (max-width:560px){
-  .cal-cell{min-height:46px}
-  .cd{font-size:11.5px}.cp{font-size:9.5px}
-  .cal-legend em{display:none}
-  .cal-legend{margin-left:0}
+  .hcal-cell{min-height:46px}
+  .hcd{font-size:11.5px}.hcp{font-size:9.5px}
+  .hcal-legend em{display:none}
+  .hcal-legend{margin-left:0}
 }
 </style>
 
@@ -486,18 +486,18 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
   </div>
 
   <div id="histCalView" hidden>
-    <div class="cal-top">
-      <button type="button" class="cal-nav" id="calPrev" aria-label="上个月" onclick="shiftCalMonth(-1)">‹</button>
-      <b id="calTitle">—</b>
-      <button type="button" class="cal-nav" id="calNext" aria-label="下个月" onclick="shiftCalMonth(1)">›</button>
-      <span class="cal-legend" aria-hidden="true">
-        <i class="lg b3"></i><i class="lg b2"></i><i class="lg b1"></i><i class="lg n"></i><i class="lg g1"></i><i class="lg g2"></i><i class="lg g3"></i>
+    <div class="hcal-top">
+      <button type="button" class="hcal-nav" id="histCalPrev" aria-label="上个月" onclick="shiftCalMonth(-1)">‹</button>
+      <b id="histCalTitle">—</b>
+      <button type="button" class="hcal-nav" id="histCalNext" aria-label="下个月" onclick="shiftCalMonth(1)">›</button>
+      <span class="hcal-legend" aria-hidden="true">
+        <i class="hlg b3"></i><i class="hlg b2"></i><i class="hlg b1"></i><i class="hlg n"></i><i class="hlg g1"></i><i class="hlg g2"></i><i class="hlg g3"></i>
         <em>偏差：偏非 ← → 偏欧</em>
       </span>
     </div>
-    <div class="cal-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
-    <div class="cal-grid" id="histCalGrid"></div>
-    <p class="cal-hint">颜色深浅 = 累计偏差幅度（相对理论值）。灰＝暂无记录；数字为当天产出模组，百分比为当日为止的累计偏差。</p>
+    <div class="hcal-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+    <div class="hcal-grid" id="histCalGrid"></div>
+    <p class="hcal-hint">颜色深浅 = 累计偏差幅度（相对理论值）。灰＝暂无记录；数字为当天产出模组，百分比为当日为止的累计偏差。</p>
   </div>
 </section>
 
@@ -545,7 +545,7 @@ td:nth-child(5),td:nth-child(7),td:nth-child(10),td:nth-child(13),td:nth-child(1
 </div>
 
 <script src="assets/js/supabase.min.js?v=20260920e"></script>
-<script src="js/sync.js?v=20261120b"></script>
+<script src="js/sync.js?v=20261120d"></script>
 <script>
 /* ============================================================================
  * R69（2026-10-30）跟随作者新版 UI：4 卡总览 + 样本条 + 周期「本段」增量 +
@@ -1192,7 +1192,7 @@ function applyHistView(stats){
   if(c) c.hidden = histView!=='cal';
   if(bl) bl.classList.toggle('active',histView!=='cal');
   if(bc) bc.classList.toggle('active',histView==='cal');
-  if(histView==='cal') renderCalendar(stats);
+  if(histView==='cal') renderHistCalendar(stats);
 }
 /* 偏差 → 色阶：|p|<2% 浅、2~6% 中、>6% 深；正负分绿/红 */
 function calBand(p){
@@ -1207,7 +1207,7 @@ function shiftCalMonth(delta){
   calMonth=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');
   renderCalendar(computeStats(loadRecords()));
 }
-function renderCalendar(stats){
+function renderHistCalendar(stats){
   const grid=document.getElementById('histCalGrid'); if(!grid) return;
   const list=(stats&&stats.list)||[];
   const byDate=new Map(list.map(r=>[r.date,r]));
@@ -1219,21 +1219,21 @@ function renderCalendar(stats){
   const firstDow=(new Date(Y,M-1,1).getDay()+6)%7;   /* 周一为第一列 */
   const days=new Date(Y,M,0).getDate();
   let html='';
-  for(let i=0;i<firstDow;i++) html+='<div class="cal-cell blank" aria-hidden="true"></div>';
+  for(let i=0;i<firstDow;i++) html+='<div class="hcal-cell blank" aria-hidden="true"></div>';
   for(let d=1;d<=days;d++){
     const ds=calMonth+'-'+String(d).padStart(2,'0');
     const r=byDate.get(ds);
-    if(!r){ html+='<div class="cal-cell'+(ds===todayStr()?' today':'')+'"><span class="cd">'+d+'</span></div>'; continue; }
+    if(!r){ html+='<div class="hcal-cell'+(ds===todayStr()?' today':'')+'"><span class="hcd">'+d+'</span></div>'; continue; }
     const p=r.devPct*100, sign=p>=0?'+':'';
-    html+='<div class="cal-cell '+calBand(p)+(ds===todayStr()?' today':'')+'" title="'+ds+' · 当天 '+r.total.toFixed(2)+' 模组 · 累计偏差 '+sign+p.toFixed(1)+'%">'+
-          '<span class="cd">'+d+'</span><span class="cp">'+sign+p.toFixed(1)+'%</span></div>';
+    html+='<div class="hcal-cell '+calBand(p)+(ds===todayStr()?' today':'')+'" title="'+ds+' · 当天 '+r.total.toFixed(2)+' 模组 · 累计偏差 '+sign+p.toFixed(1)+'%">'+
+          '<span class="hcd">'+d+'</span><span class="hcp">'+sign+p.toFixed(1)+'%</span></div>';
   }
   grid.innerHTML=html;
-  const t=document.getElementById('calTitle'); if(t) t.textContent=Y+' 年 '+M+' 月';
+  const t=document.getElementById('histCalTitle'); if(t) t.textContent=Y+' 年 '+M+' 月';
   const dates=list.map(r=>r.date).sort();
   const minM=dates.length?dates[0].slice(0,7):calMonth;
   const maxM=dates.length?dates[dates.length-1].slice(0,7):calMonth;
-  const prev=document.getElementById('calPrev'), next=document.getElementById('calNext');
+  const prev=document.getElementById('histCalPrev'), next=document.getElementById('histCalNext');
   if(prev) prev.disabled = calMonth<=minM;
   if(next) next.disabled = calMonth>=maxM;
 }

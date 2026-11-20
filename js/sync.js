@@ -351,8 +351,8 @@
     var s = document.createElement("style");
     s.id = CSP;
     s.textContent =
-      ".nk-acc-btn{background:#1d9e75;color:#fff;border:none;border-radius:8px;padding:8px 14px;font:600 14px/1.4 'MaiYuan','Microsoft YaHei',sans-serif;cursor:pointer}" +
-      ".nk-acc-btn:hover{background:#178a64}" +
+      ".nk-acc-btn{background:#fff;color:#1d9e75;border:1px solid #1d9e75;border-radius:8px;padding:7px 14px;font:600 13px/1.4 'MaiYuan','Microsoft YaHei',sans-serif;cursor:pointer}" +
+      ".nk-acc-btn:hover{background:#f2faf6}" +
       ".nk-ov{position:fixed;inset:0;background:rgba(15,35,28,.45);z-index:10001;display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;box-sizing:border-box;overflow:auto}" +
       ".nk-ov.show{display:flex}" +
       ".nk-panel{background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.25);width:min(520px,94vw);padding:20px 22px;box-sizing:border-box;font-family:'MaiYuan','Microsoft YaHei',sans-serif;color:#223}" +
@@ -942,7 +942,7 @@
     var b = document.createElement("button");
     b.id = "nkSyncOpen";
     b.type = "button";
-    b.textContent = mob ? "账号" : "👤 账号同步";
+    b.textContent = mob ? "账号" : "账号同步";
     b.title = "登录后云端同步你的数据";
     b.classList.add(mob ? "m-top-btn" : "nk-acc-btn");
     b.addEventListener("click", function () { open(); });

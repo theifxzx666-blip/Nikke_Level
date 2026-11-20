@@ -304,6 +304,43 @@
 
 ---
 
+**R96.1 · 修「进页面就报错」+ 顶栏三按钮整理 + 日历与日期选择器重名冲突**
+
+### 一、三个问题
+
+| # | 用户反馈 | 根因 |
+| :-: | :--- | :--- |
+| 1 | 进页面弹「数据加载失败：`restoreFromShareHash is not defined`」 | R96 删跨设备同步时，删了 `restoreFromShareHash()` 的**定义**，漏了两处**调用**：`bindEvents` 里的 `hashchange` 监听、`init` 末尾的 `#data=` 恢复。后者在 `.then()` 末尾抛错，被 `.catch` 接住弹出该提示 |
+| 2 | 保存 / 账号同步 emoji 与位置 | 「保存当前表单」带 💾、「账号同步」带 👤；`.hero-toolbar` 是 `flex-direction: column`，三个按钮 + 一个空 `saveTip` 竖着堆，且「设置」是 30px 齿轮圆钮、账号同步是绿底实心，三者形状颜色都不统一 |
+| 3 | 定制模组日历视图显示异常 | **日历早就存在**：`mod_stats.html` 有日期选择弹窗（`.calendar-pop` / `#calGrid` / `#calTitle` / `changeMonth()`）。R95 新增历史日历时用了**同名 class**（`.cal-nav` / `.cal-grid` / `.cal-week` / `.cal-cell`）和**重复 id `calTitle`**，还定义了**同名函数 `renderCalendar`** —— 同一 script 内后声明覆盖先声明，于是历史日历的渲染代码被日期弹窗的版本顶掉，永远渲染到 `#calGrid` 而不是 `#histCalGrid`；`calTitle` 也只剩第一个生效，日期弹窗标题不再更新 |
+
+### 二、改动
+
+| # | 文件 | 改了什么 |
+| :-: | :--- | :--- |
+| 1 | `js/app.js` | 删掉 `window.addEventListener("hashchange", restoreFromShareHash)` 与 `init` 末尾的 `restoreFromShareHash()` 调用 |
+| 2 | `index.html` / `sync.js` / `js/v16.js` | 「💾 保存当前表单」→「保存当前表单」；「👤 账号同步」→「账号同步」；「设置」齿轮 SVG → 纯文本按钮 |
+| 3 | `css/style.css` | `.hero-toolbar` 由 `column` 改 `row` + 右对齐 + 统一 `min-height: 34px`；用 `order` 固定顺序（保存 → 账号同步 → 设置，因 JS 是 `appendChild`，执行顺序不定）；删掉跨设备同步区块里遗留的 `.hero-toolbar { flex-wrap: wrap }` 补丁；删掉从未写入过的空 `#saveTip` 节点 |
+| 4 | `js/sync.js` | `.nk-acc-btn` 由绿底实心改白底绿字描边，与主按钮「保存」拉开层级 |
+| 5 | `css/v16.css` | 删除不再使用的 `.v3-gear` |
+| 6 | `mod_stats.html` | 历史日历全套改名加 `hcal-` 前缀：`.hcal-top` / `.hcal-nav` / `.hcal-week` / `.hcal-grid` / `.hcal-cell` / `.hcal-hint` / `.hcal-legend` / `.hcd` / `.hcp`，id 改 `histCalTitle` / `histCalPrev` / `histCalNext`，函数改 `renderHistCalendar()`。**日期选择弹窗的 `.cal-*` 与 `renderCalendar()` 一字未动** |
+| 7 | `test_mod_stats_calendar.js` | 同步改名（调用 `renderHistCalendar`、断言 `hcal-cell` / `hcd` / `hcp`） |
+| 8 | 版本号 | `style.css` `v16.css` `app.js` `v16.js` `sync.js` `mobile.css` `mod_stats` 入口 → `20261120d` |
+
+### 三、验证
+
+| 项 | 结果 |
+| :--- | :--- |
+| 残留符号 | `restoreFromShareHash` **0 引用**；`mod_stats.html` 重复 id **0**、重复函数定义 **0** |
+| DOM 引用完整性 | `app.js` 里 `$("id")` / `byId('id')` 引用的 39 个 id，页面全部存在（0 缺失） |
+| 未定义调用 | 静态扫描 app.js 全部函数调用，除 `html2canvas` / Promise 回调参数外无未定义 |
+| 语法 | `node --check` 通过（app / v16 / sync / mod_stats 内联脚本） |
+| 测试 | 13 个文件全过，含 `test_mod_stats_calendar` **19/19**、`mod_stats` 27/27、`server_split` 124/124、`ledger` 40/40 |
+
+> 教训：**同名函数在同一 script 里后声明覆盖先声明，不报错、不警告**。给已有页面加功能前，先 `grep` 目标 class / id / 函数名，别假定新名字没人用。
+
+---
+
 ## 2026-11-17（第三十五轮）
 
 **R87 · 活动时长按官方公告可覆盖；状态分色与「即将上线」；分页/信息窗调整**

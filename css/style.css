@@ -76,7 +76,17 @@ body::after {
 .hero-title { margin: 0 0 6px; font-size: 24px; font-weight: 700; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 .hero-sub { margin: 0 0 8px; font-size: 13px; opacity: 0.95; text-shadow: 0 1px 4px rgba(0,0,0,0.5); max-width: 95%; }
 .hero-cred { margin: 0; font-size: 11px; opacity: 0.75; letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
-.hero-toolbar { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
+/* 2026-11-20：原来竖排（column），三个按钮 + 空 saveTip 堆成一列占掉近半 hero 高度，
+   且「设置」是 30px 齿轮、「账号同步」是绿底实心，三者形状颜色都不统一。
+   现改为横排右对齐、统一高度，并用 order 固定视觉顺序（JS 是 appendChild，执行顺序不定）。 */
+.hero-toolbar {
+  flex: 0 0 auto; display: flex; flex-direction: row; flex-wrap: wrap;
+  align-items: center; justify-content: flex-end; gap: 8px;
+}
+.hero-toolbar > button { min-height: 34px; }
+.hero-toolbar #btnSave { order: 1; }
+.hero-toolbar #nkSyncOpen { order: 2; }
+.hero-toolbar #v3Gear { order: 3; }
 .hero-toolbar .btn {
   padding: 7px 14px; border: 1px solid rgba(255,255,255,0.4); border-radius: 8px;
   background: rgba(255,255,255,0.92); color: #222; cursor: pointer; font-size: 13px; white-space: nowrap;
@@ -495,8 +505,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 @keyframes exportSpin { to { transform: rotate(360deg); } }
 .export-loading-text { font-size: 13px; color: var(--muted); }
 
-/* ---------- 跨设备同步弹窗（数据码 / 分享链接） ---------- */
-.hero-toolbar { flex-wrap: wrap; gap: 8px; }
 .modal-overlay {
   position: fixed; inset: 0; z-index: 300; display: none;
   align-items: center; justify-content: center; padding: 20px;

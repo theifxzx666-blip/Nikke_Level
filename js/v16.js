@@ -1167,16 +1167,12 @@
   /* ---------------- 顶部入口（挂在既有 hero 工具条里） ---------------- */
   function buildEntry() {
     /* 只放「设置」：配置版本与控制台属开发者侧，不进入用户页面。
-       2026-11-19：文字按钮改成小图标（齿轮），省一行横向空间，鼠标悬停给 title。 */
+       2026-11-20：齿轮图标改回纯文本（用户要求），与「保存 / 账号同步」同形。 */
     var bar = document.querySelector('.hero-toolbar');
     if (!bar) return;
-    var gear = el('button', 'btn v3-gear');
+    var gear = el('button', 'btn');
     gear.type = 'button'; gear.id = 'v3Gear';
-    gear.title = '设置';
-    gear.setAttribute('aria-label', '设置');
-    gear.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
-      '<circle cx="12" cy="12" r="3.2"/>' +
-      '<path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.6 1.7 1.7 0 0 0 10 3.04V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 8.9c.13.6.64 1.03 1.25 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.07z"/></svg>';
+    gear.textContent = '设置';
     bar.appendChild(gear);
   }
 

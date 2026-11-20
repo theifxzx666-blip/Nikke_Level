@@ -1859,8 +1859,6 @@
     });
     // 数据日期变化 → 活动计入区间随之变化
     $("f_recorded").addEventListener("change", updateActivityTotals);
-    // 同一页面内改 #data= hash（如直接粘贴/扫码改链接）也即时恢复
-    window.addEventListener("hashchange", restoreFromShareHash);
     // 普通章节 -> 困难跟随 + 未来+2
     $("f_normal_chapter").addEventListener("change", function () {
       syncStageOptions("normal");
@@ -2032,8 +2030,6 @@
         var fbInit = $("f_future_base");
         if (fbInit) fbInit.dispatchEvent(new Event("change", { bubbles: true }));
         tip("就绪");
-        // 携带 #data= 分享链接进入：自动恢复表单并出结果
-        restoreFromShareHash();
       })
       .catch(function (e) {
         alert("数据加载失败：" + e.message);
