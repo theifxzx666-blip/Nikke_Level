@@ -146,6 +146,8 @@ input, select {
 }
 input:focus, select:focus { outline: 2px solid #9fe1cb; border-color: var(--primary); }
 .hint { font-size: 12px; color: var(--muted); margin: 4px 0; }
+/* 进度修正：单个窄输入，别跟着栅格撑满半屏（R107） */
+.prog-fix { max-width: 150px; }
 
 .fixed-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .fixed-table th, .fixed-table td { border: 1px solid var(--border); padding: 4px; text-align: center; }

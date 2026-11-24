@@ -37,7 +37,14 @@
     return null;
   }
 
-  function computeBaseLevel(normalStage, hardStage) {
+  /* 关卡进度明细（R107）：progressOf 是唯一实现，computeBaseLevel 只取 level。
+     参考站实地抓包对照（2026-11-24）：
+       nikkeoutpost : total = max(0, N-19) + max(0, H-1+1) + 1        → floor(total/5)+1
+       NikkeCalc    : total = max(0, N-19) + max(0, H-1+1) + 修正(默认3)
+     两站只差一个可调「国服等级修正」（NikkeCalc 默认 3 关），加数口径完全相同。
+     我们默认修正 0：国服拆包表 0~32 章与国际服逐章 0 差异，没有依据默认非 0；
+     需要时由界面「进度修正」传入（同口径的同一个加数）。correction 省略 = 0。 */
+  function progressOf(normalStage, hardStage, correction) {
     if (!STAGE_MAP) return null;
     /* 基地计数起点 ≠ 关卡下拉起点（R64 定案）：
        normal_start_id / hard_start_id 是**关卡列表**起点（都是 0-1，= 1）；
@@ -48,10 +55,24 @@
     var nId = normalStage ? stageId(normalStage) : null;
     var hId = hardStage ? stageId(hardStage) : null;
     if (nId === null && hId === null) return null;
+    var fix = Math.round(Number(correction) || 0);
+    if (fix > 20) fix = 20;
+    if (fix < -20) fix = -20;
     var a = Math.max(0, (nId || 0) - normalStart);
     var o = Math.max(0, (hId || 0) - hardStart + 1);
-    var n = a + o + 1;
-    return Math.floor(n / 5) + 1;
+    /* 至少 1 关：2-12 是前哨基地解锁的硬起点，负修不能把进度压到 0 关 */
+    var total = Math.max(1, a + o + 1 + fix);
+    return {
+      total: total,                       // 已计入基地进度的总关数
+      level: Math.floor(total / 5) + 1,   // 推算基地等级
+      inLevel: total % 5,                 // 本级已积累关数（0~4）
+      normal: a, hard: o, fix: fix,
+    };
+  }
+
+  function computeBaseLevel(normalStage, hardStage, correction) {
+    var p = progressOf(normalStage, hardStage, correction);
+    return p ? p.level : null;
   }
 
   function incomeForLevel(baseLevel, tacticsFull) {
@@ -101,6 +122,7 @@
     loadStageMap: loadStageMap,
     loadIncomeTable: loadIncomeTable,
     stageId: stageId,
+    progressOf: progressOf,
     computeBaseLevel: computeBaseLevel,
     incomeForLevel: incomeForLevel,
     allStages: allStages,

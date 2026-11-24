@@ -170,7 +170,7 @@
   function collectForm() {
     var f = state.form;
     f.recorded = val("f_recorded"); f.current = val("f_current"); f.target = val("f_target"); f.alternate = val("f_alternate");
-    f.normal_stage = val("f_normal_stage"); f.hard_stage = val("f_hard_stage"); f.base = val("f_base"); f.tactics = val("f_tactics");
+    f.normal_stage = val("f_normal_stage"); f.hard_stage = val("f_hard_stage"); f.progress_fix = val("f_progress_fix"); f.base = val("f_base"); f.tactics = val("f_tactics");
     f.credit_rate = val("f_credit_rate"); f.battle_rate = val("f_battle_rate"); f.dust_rate = val("f_dust_rate");
     f.wipeouts = val("f_wipeouts"); f.wipeout_hours = val("f_wipeout_hours"); f.completed = val("f_completed");
     f.daily_full = val("f_daily_full"); f.reset_time = val("f_reset_time");
@@ -350,7 +350,7 @@
     setVal("f_recorded", f.recorded); setVal("f_current", f.current); setVal("f_target", f.target); setVal("f_alternate", f.alternate);
     setVal("f_saved_at", f.saved_at || "");
     setVal("f_collected_before", f.collected_before || "是");
-    setVal("f_base", f.base); setVal("f_tactics", f.tactics);
+    setVal("f_base", f.base); setVal("f_tactics", f.tactics); setVal("f_progress_fix", f.progress_fix || "");
     setVal("f_credit_rate", f.credit_rate); setVal("f_battle_rate", f.battle_rate); setVal("f_dust_rate", f.dust_rate);
     setVal("f_wipeouts", f.wipeouts); setVal("f_wipeout_hours", f.wipeout_hours); setVal("f_completed", f.completed);
     setVal("f_daily_full", f.daily_full); setVal("f_reset_time", f.reset_time);
@@ -404,25 +404,49 @@
     var saved = state.form[kind === "normal" ? "normal_stage" : kind === "hard" ? "hard_stage" : kind === "future_normal" ? "future_normal_stage" : "future_hard_stage"];
     var cur = stSel.value;
     var selected = (cur && cur !== "") ? cur : (saved && opts.indexOf(saved) >= 0 ? saved : "未选择");
-    /* 每章最后一关标「末关」：章节里有 A/B 分叉关（41-17A-1 这类），编号不连续，
-       用户很容易把倒数第二关当成终点 —— 少选 1 关就差 1 级（2026-11-20 国服用户报障）。 */
-    var labels = ["未选择"].concat(opts.map(function (s, i) {
-      return i === opts.length - 1 ? s + "（末关）" : s;
-    }));
-    fillSelect(stSel, ["未选择"].concat(opts), selected, labels);
+    /* R107（2026-11-24）：撤掉「（末关）」后缀 —— 表里每章末关本身就叫 "50-36 BOSS"，
+       再加标记等于给同一关造第二种写法（用户要求去掉）；进度是否选全由下方读数自行核对。 */
+    fillSelect(stSel, ["未选择"].concat(opts), selected);
   }
 
   /* ---------- 联动 ---------- */
   /* 关卡进度 → 基地等级推算（国际服口径：每通关 5 关 +1） */
+  /* 进度修正（关）：对应参考站 NikkeCalc 的「国服等级修正」（默认 3 关）。
+     本页默认 0 —— 国服拆包 0~32 章与国际服逐章 0 差异，没有依据默认非 0；
+     需要时由用户在「关卡进度」里微调，加数口径与参考站完全一致。 */
+  function progressFix() {
+    var v = parseInt(val("f_progress_fix"), 10);
+    if (isNaN(v)) return 0;
+    return Math.max(-20, Math.min(20, v));
+  }
+
+  /* 进度读数（R107）：把两个关卡下拉换算成「已计入关数 / 本级进度 / 推算等级」，
+     与参考站逐一对照用（nikkeoutpost 的 P=1、NikkeCalc 的国服等级修正）。 */
+  function syncProgressHint() {
+    var box = $("progressHint");
+    if (!box) return;
+    var p = O.progressOf(val("f_normal_stage") || null, val("f_hard_stage") || null, progressFix());
+    if (!p) {
+      box.textContent = "选完普通 / 困难关卡后，这里显示已计入关数与推算等级。";
+      box.removeAttribute("title");
+      return;
+    }
+    box.textContent = "已计入 " + p.total + " 关（本级 " + p.inLevel + "/5）· 推算 Lv." + p.level;
+    var detail = "普通 " + p.normal + " 关 + 困难 " + p.hard + " 关 + 2-12 起算 1 关";
+    if (p.fix) detail += " + 修正 " + (p.fix > 0 ? "+" : "") + p.fix + " 关";
+    box.title = detail;
+  }
+
   function currentCalculatedBase() {
     var f = collectForm();
-    return O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null);
+    return O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null, progressFix());
   }
   /* 以手填前哨基地等级为准：仅关卡进度变更（autoFill=true）且基地为空时才自动填推算值；
      手填路径只提示推算参考，不覆盖、不打断输入。
      推算只作参考：国服/国际服拆包表在 0~32 章逐章一致，更高章节未逐一核对，
      所以与游戏内不一致时一律以手填为准，不解释差异来源 */
   function syncCurrentBase(autoFill) {
+    syncProgressHint();
     var level = currentCalculatedBase();
     var hint = $("baseHint");
     var btn = $("btnAdoptBase");
@@ -513,10 +537,12 @@
      2026-11-19 用户报障「手填 553、未来卡显示 535」，就是因为计算侧读的是隐藏输入框里
      上一次会话存下的旧值，而显示侧按新口径算。 */
   function resolveFutureBase(f) {
-    var derived = O.computeBaseLevel(f.future_normal_stage || null, f.future_hard_stage || null);
+    /* 修正值从表单读，不调 progressFix()：本函数会被 test_future_base 单独抽出来执行 */
+    var fix = Number(f.progress_fix) || 0;
+    var derived = O.computeBaseLevel(f.future_normal_stage || null, f.future_hard_stage || null, fix);
     if (!derived) return null;
     var curManual = parseInt(f.base, 10) || 0;
-    var curDerived = O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null);
+    var curDerived = O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null, fix);
     var offset = (curManual && curDerived) ? (curManual - curDerived) : 0;
     var level = Math.max(0, derived + offset);
     if (curManual) level = Math.max(level, curManual);
@@ -1949,6 +1975,8 @@
     $("f_future_hard_stage").addEventListener("change", function () { state.futureHardManual = true; syncFutureBase(); onFormChange(); });
 
     $("f_tactics").addEventListener("change", function () { syncCurrentBase(); syncIncomeFromBase(); syncFutureBase(); onFormChange(); });
+    /* 进度修正：只改推算值，绝不动手填基地（不传 autoFill） */
+    $("f_progress_fix").addEventListener("change", function () { syncCurrentBase(); syncFutureBase(); onFormChange(); });
     $("f_stage_mode").addEventListener("change", function () { updateStageClearUI(); onFormChange(); });
     $("f_future_open").addEventListener("change", onFormChange);
     $("f_base").addEventListener("change", function () {
@@ -1980,7 +2008,7 @@
     document.querySelectorAll("#formSection input, #formSection select").forEach(function (el) {
       if (["f_normal_chapter", "f_normal_stage", "f_hard_chapter", "f_hard_stage",
            "f_future_normal_chapter", "f_future_normal_stage", "f_future_hard_chapter", "f_future_hard_stage",
-           "f_tactics", "f_stage_mode"].indexOf(el.id) >= 0) return;
+           "f_tactics", "f_stage_mode", "f_progress_fix"].indexOf(el.id) >= 0) return;
       el.addEventListener("change", onFormChange);
       el.addEventListener("input", onFormChange);
     });

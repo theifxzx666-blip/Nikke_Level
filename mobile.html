@@ -12,7 +12,7 @@
 <link rel="icon" type="image/webp" href="assets/m/favicon.webp">
 <link rel="preload" href="assets/fonts/maiyuan-subset.woff2" as="font" type="font/woff2" crossorigin>
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
-<link rel="stylesheet" href="css/style.css?v=20261120o">
+<link rel="stylesheet" href="css/style.css?v=20261124a">
 <link rel="stylesheet" href="css/mobile.css?v=20261120f">
 </head>
 <body class="m-body">
@@ -77,7 +77,7 @@
 
     <fieldset class="grp-b">
       <legend>关卡进度（可选 · 用于推算基地等级）</legend>
-      <p class="hint">推算口径：每通关 5 关（普通+困难合计）基地等级 +1，基于国际服数据；国服统计进度约比国际服多 3 关，推算值可能偏高——建议以游戏内实际基地等级手填为准，选完进度后可点「采用推算值」。</p>
+      <p class="hint">推算口径：每通关 5 关（普通 + 困难合计）基地等级 +1。与游戏内不一致时以手填等级为准，也可用下方「进度修正」对齐。</p>
       <div class="grid g2">
         <div>
           <label>普通主线关卡</label>
@@ -89,6 +89,10 @@
           <select id="f_hard_chapter"></select>
           <select id="f_hard_stage"></select>
         </div>
+      </div>
+      <p class="hint" id="progressHint">选完普通 / 困难关卡后，这里显示已计入关数与推算等级。</p>
+      <div class="grid g2">
+        <label class="prog-fix" title="参考站 NikkeCalc 同名项叫「国服等级修正」，默认 3 关；本页默认 0，与游戏内差 1~2 关时再微调">进度修正（关）<input type="number" id="f_progress_fix" min="-20" max="20" step="1" placeholder="0"></label>
       </div>
       <button type="button" id="btnAdoptBase" class="btn" style="display:none;font-size:13px;padding:6px 12px;margin-top:4px;">采用推算值</button>
     </fieldset>
@@ -240,12 +244,12 @@
 
 <script src="js/core.js?v=20260917c"></script>
 <script src="js/events.js?v=20261117a"></script>
-<script src="js/outpost.js?v=20261118c"></script>
+<script src="js/outpost.js?v=20261124a"></script>
 <script src="js/boxes.js?v=20261118b"></script>
 <script src="js/scenarios.js?v=20261118b"></script>
 <script src="assets/js/vendor/lz-string.min.js?v=20260923b"></script>
 <script src="assets/js/vendor/qrcode.min.js?v=20260923b"></script>
-<script src="js/app.js?v=20261120o"></script>
+<script src="js/app.js?v=20261124a"></script>
 <!-- 顶层功能切换沿用桌面版外壳脚本（tools.json 驱动）；移动版只把导航用 CSS 固定到屏幕底部 -->
 <script src="js/shell.js?v=20261009b"></script>
 <script>

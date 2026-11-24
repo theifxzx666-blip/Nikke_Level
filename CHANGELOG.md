@@ -5,6 +5,47 @@
 
 ---
 
+## 2026-11-24（第三十八轮）
+
+**R107 · 关卡进度按参考站核对：撤「（末关）」标记 + 显示已计入关数 + 新增「进度修正」**
+
+### 一、用户需求
+
+> 当前基地（前哨站 · 以手填等级为准）：关卡以及关卡进度，根据之前给的参考网站进行核对，不要在关卡里加个（末关）
+>
+> 参考下他们设置为国服时的计算规则，我看有些是进度+1来着
+
+### 二、核对过程（2026-11-24 实地抓包，不是推测）
+
+| 站点 | 关卡表 | 公式 |
+| :--- | :--- | :--- |
+| nikkeoutpost（国际服） | 51 章 / 两难度各 1,875 关；`0-1`=id 1、`2-12 BOSS`=id 19、`50-36 BOSS`=id 1875 | `total = max(0, N-19) + max(0, H-1+1) + 1` → `floor(total/5)+1` |
+| NikkeCalc（可切国服） | 同上；`json/chapters.json` 与本站 `stage_map.json` 逐条相同（1,875 条、id 映射 0 差异） | `total = max(0, N-19) + max(0, H-1+1) + 修正`，修正是 UI 上的可调数字「国服等级修正」，**默认 3 关** |
+| pinkuro syncLevelCal | 当前不可达（历史结论：不推算，基地等级手填） | — |
+
+结论：三站加数口径是同一套（都含「选中的关卡算作已通关」这一关），差别只在 NikkeCalc 多一个**可调**的关数修正。所以本站不默认加数，而是把这一项暴露成输入框——国服玩家能自己把它调到与游戏内一致，国际服保持 0 不动。
+
+### 三、改动
+
+| # | 文件 | 改了什么 |
+| :-: | :--- | :--- |
+| 1 | `js/app.js` | 删掉关卡下拉的「（末关）」后缀，恢复 `fillSelect(stSel, opts, selected)`；新增 `progressFix()`（读 `f_progress_fix`，夹 ±20）与 `syncProgressHint()`（渲染「已计入 N 关（本级 x/5）· 推算 Lv.Y」）；`currentCalculatedBase` / `resolveFutureBase` 都带上修正；`collectForm` / `renderForm` 增加 `progress_fix`；新增该输入的 change 监听（只改推算，不动手填基地） |
+| 2 | `js/outpost.js` | 新增 `progressOf(normalStage, hardStage, correction)` → `{total, level, inLevel, normal, hard, fix}`；`computeBaseLevel` 改为取 `progressOf().level`，第三参省略即 0（向后兼容，`test_future_base` / `test_server_split` 不用改） |
+| 3 | `index.html` / `mobile.html` | 「关卡进度」加 `#progressHint` 读数行 + `进度修正（关）` 输入（默认空 = 0，范围 ±20）；`outpost.js`/`app.js`/`style.css` 版本号 → `20261124a`；mobile 删掉 R99 在桌面端已撤、移动端漏改的「国服统计进度约比国际服多 3 关」旧文案 |
+| 4 | `css/style.css` | `.prog-fix { max-width: 150px }`，单个输入不跟着栅格撑满半屏 |
+| 5 | `test_progress_fix.js` | 新增测试文件（第 16 个）：金标准回归 / 修正按 5 关 1 级生效 / `progressOf` 读数自洽 / ±20 夹紧与负修下限 / 全量 1,875 关 × 41 个修正值与参考站公式逐位一致 |
+
+### 四、验证
+
+- `node test_progress_fix.js` → **96 项通过，0 失败**；全站 16 个测试文件 0 失败
+- 真实页面（本地 8797 + 无头 Chrome）：`20-1` 双难度 → 「已计入 1038 关（本级 3/5）· 推算 Lv.208」；修正填 3 → 「已计入 1041 关（本级 1/5）· 推算 Lv.209」，与手算 `(509+528+1+3)=1041` 一致
+- 渲染后 DOM 里「末关」出现 **0** 次，末关 option 就是 `50-36 BOSS`
+- 桌面 1280 / 移动 430 两端截图核对：读数行、修正框（150px）、关卡下拉无错位
+
+### 五、留给下一轮
+
+「进度修正」默认 0 是**有据的**（国服拆包 0~32 章逐章 0 差异）；如果国服玩家实测固定差 1 关，把 `f_progress_fix` 的初始值改成 1 即可，不用动公式。
+
 ## 2026-11-20（第三十七轮）
 
 **R96.1 · 修「进页面就报错」+ 顶栏三按钮整理 + 日历与日期选择器重名冲突**
