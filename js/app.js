@@ -248,7 +248,7 @@
   /* ---------- 活动收益（可选）：模板由 data/event_templates.json 运行时加载 ---------- */
   function loadEventTemplates() {
     if (!EV) return Promise.resolve();
-    return fetch("data/event_templates.json?v=20261115a")
+    return fetch("data/event_templates.json?v=20261124a")
       .then(function (r) { return r.json(); })
       .then(function (d) { EV.setTemplates(d); })
       .catch(function () { EV.setTemplates(null); });

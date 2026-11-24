@@ -1586,6 +1586,611 @@
       },
       "_checkin_note": "官方 LoginEventTable EventId 10061（ABSOLUTE）：第3天 方舟 I×5、第6天 成长套组8h、第9天 方舟 I×10、第12天 成长套组12h。"
     },
+    "large14map": {
+      "event": "COINS IN RUSH（金币追逐战 · 14 天带地图，兔女郎期 CHEERBUNNY）：2 部 36 关 + 挑战 7 关 + 每日任务 + 商店 + 14 档签到 + 活动地图",
+      "type": "large14map",
+      "duration": 14,
+      "rush_buy": {
+        "S2H": 70
+      },
+      "stage_target": "S2H1-11",
+      "challenges": [
+        {
+          "id": "1-1",
+          "open_day": 0,
+          "first": {
+            "credit": 19320,
+            "battle": 456292,
+            "dust": 16,
+            "recruit_ticket": 1
+          },
+          "sweep": {
+            "credit": 9660,
+            "battle": 228146,
+            "dust": 8
+          }
+        },
+        {
+          "id": "1-2",
+          "open_day": 3,
+          "first": {
+            "credit": 58680,
+            "battle": 1634395,
+            "dust": 32,
+            "quality_invite": 5
+          },
+          "sweep": {
+            "credit": 29340,
+            "battle": 817197,
+            "dust": 16
+          }
+        },
+        {
+          "id": "1-3",
+          "open_day": 6,
+          "first": {
+            "credit": 97320,
+            "battle": 3169236,
+            "dust": 48,
+            "quality_invite": 5
+          },
+          "sweep": {
+            "credit": 48660,
+            "battle": 1584618,
+            "dust": 24
+          }
+        },
+        {
+          "id": "1-4",
+          "open_day": 9,
+          "first": {
+            "credit": 180240,
+            "quality_invite": 5,
+            "challenger_box": 40
+          },
+          "sweep": {
+            "credit": 90120,
+            "challenger_box": 20
+          }
+        },
+        {
+          "id": "1-5",
+          "open_day": 12,
+          "first": {
+            "credit": 207960,
+            "quality_invite": 5,
+            "challenger_box": 44
+          },
+          "sweep": {
+            "credit": 103980,
+            "challenger_box": 22
+          }
+        },
+        {
+          "id": "1-6",
+          "open_day": 15,
+          "first": {
+            "credit": 222360,
+            "quality_invite": 5,
+            "challenger_box": 46
+          },
+          "sweep": {
+            "credit": 111180,
+            "challenger_box": 23
+          }
+        },
+        {
+          "id": "1-7",
+          "open_day": 18,
+          "first": {
+            "credit": 243120,
+            "quality_invite": 5,
+            "challenger_box": 50
+          },
+          "sweep": {
+            "credit": 121560,
+            "challenger_box": 25
+          }
+        }
+      ],
+      "stages": [
+        {
+          "id": "S1N1-1",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "极乐净土碎片x10"
+        },
+        {
+          "id": "S1N1-2",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "credit_box_1h": 1
+          }
+        },
+        {
+          "id": "S1N1-3",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "支援型碎片x10"
+        },
+        {
+          "id": "S1N1-4",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "battle_box_1h": 1
+          }
+        },
+        {
+          "id": "S1N1-5",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "米西利斯碎片x10"
+        },
+        {
+          "id": "S1N1-6",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "攻击型碎片x10"
+        },
+        {
+          "id": "S1N1-7",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "credit_box_1h": 2
+          }
+        },
+        {
+          "id": "S1N1-8",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "泰特拉碎片x10"
+        },
+        {
+          "id": "S1N1-9",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "battle_box_1h": 2
+          }
+        },
+        {
+          "id": "S1N1-10",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "防御型碎片x10"
+        },
+        {
+          "id": "S1N1-11",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "dust_box_1h": 2
+          }
+        },
+        {
+          "id": "S1N1-12",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "朝圣者碎片x10"
+        },
+        {
+          "id": "S2N1-1",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "异常碎片x10"
+        },
+        {
+          "id": "S2N1-2",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "credit_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-3",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "支援型碎片x10"
+        },
+        {
+          "id": "S2N1-4",
+          "open_day": 0,
+          "tokens": 40,
+          "reward": {
+            "battle_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-5",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "米西利斯碎片x10"
+        },
+        {
+          "id": "S2N1-6",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "异常碎片x10"
+        },
+        {
+          "id": "S2N1-7",
+          "open_day": 0,
+          "tokens": 50,
+          "reward": {
+            "credit_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-8",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "泰特拉碎片x10"
+        },
+        {
+          "id": "S2N1-9",
+          "open_day": 0,
+          "tokens": 50,
+          "reward": {
+            "battle_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-10",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "极乐净土碎片x10"
+        },
+        {
+          "id": "S2N1-11",
+          "open_day": 0,
+          "tokens": 50,
+          "reward": {
+            "dust_box_1h": 2
+          }
+        },
+        {
+          "id": "S2N1-12",
+          "open_day": 0,
+          "tokens": 0,
+          "misc": "异常碎片x10"
+        },
+        {
+          "id": "S2H1-1",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "支援型碎片x10"
+        },
+        {
+          "id": "S2H1-2",
+          "open_day": 7,
+          "tokens": 50,
+          "reward": {
+            "credit_box_1h": 3
+          }
+        },
+        {
+          "id": "S2H1-3",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "极乐净土碎片x20"
+        },
+        {
+          "id": "S2H1-4",
+          "open_day": 7,
+          "tokens": 50,
+          "reward": {
+            "battle_box_1h": 3
+          }
+        },
+        {
+          "id": "S2H1-5",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "米西利斯碎片x20"
+        },
+        {
+          "id": "S2H1-6",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "攻击型碎片x20"
+        },
+        {
+          "id": "S2H1-7",
+          "open_day": 7,
+          "tokens": 50,
+          "reward": {
+            "credit_box_1h": 4
+          }
+        },
+        {
+          "id": "S2H1-8",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "泰特拉碎片x20"
+        },
+        {
+          "id": "S2H1-9",
+          "open_day": 7,
+          "tokens": 50,
+          "reward": {
+            "battle_box_1h": 4
+          }
+        },
+        {
+          "id": "S2H1-10",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "防御型碎片x20"
+        },
+        {
+          "id": "S2H1-11",
+          "open_day": 7,
+          "tokens": 50,
+          "reward": {
+            "dust_box_1h": 4
+          }
+        },
+        {
+          "id": "S2H1-12",
+          "open_day": 7,
+          "tokens": 0,
+          "misc": "朝圣者碎片x20"
+        }
+      ],
+      "tasks": {
+        "tokens": 7100,
+        "one_time": true,
+        "note": "一次性代币 7100 = Group 8803 逐关 36 条（4700，S1N/S2N 各 100、S2H 200 区间）+ Group 8803 点数里程碑 12/36 点各 450（900）+ 活动地图隐藏道具 30 件 ×50（1500）。24 点里程碑发的是 type10 档案物，不计代币。"
+      },
+      "shop": {
+        "items": [
+          {
+            "name": "狗牌x1",
+            "fixed": true,
+            "cost": 2000,
+            "count": 1,
+            "reward": {}
+          },
+          {
+            "name": "高级招募券x1",
+            "fixed": true,
+            "cost": 400,
+            "count": 10,
+            "reward": {}
+          },
+          {
+            "name": "招募券x1",
+            "fixed": true,
+            "cost": 400,
+            "count": 10,
+            "reward": {}
+          },
+          {
+            "name": "技能手册Ix32",
+            "fixed": true,
+            "cost": 80,
+            "count": 7,
+            "reward": {}
+          },
+          {
+            "name": "爆裂手册Ix16",
+            "fixed": true,
+            "cost": 80,
+            "count": 7,
+            "reward": {}
+          },
+          {
+            "name": "技能手册IIx24",
+            "fixed": true,
+            "cost": 100,
+            "count": 7,
+            "reward": {}
+          },
+          {
+            "name": "爆裂手册IIx12",
+            "fixed": true,
+            "cost": 100,
+            "count": 7,
+            "reward": {}
+          },
+          {
+            "name": "战斗数据辑盒(2h)x3",
+            "fixed": true,
+            "cost": 250,
+            "count": 5,
+            "reward": {
+              "battle_box_2h": 3
+            }
+          },
+          {
+            "name": "芯尘盒(2h)x3",
+            "fixed": true,
+            "cost": 250,
+            "count": 5,
+            "reward": {
+              "dust_box_2h": 3
+            }
+          },
+          {
+            "name": "攻击型碎片x30",
+            "fixed": true,
+            "cost": 60,
+            "count": 5,
+            "reward": {}
+          },
+          {
+            "name": "防御型碎片x30",
+            "fixed": true,
+            "cost": 60,
+            "count": 5,
+            "reward": {}
+          },
+          {
+            "name": "支援型碎片x30",
+            "fixed": true,
+            "cost": 60,
+            "count": 5,
+            "reward": {}
+          },
+          {
+            "name": "极乐净土碎片x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "米西利斯碎片x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "泰特拉碎片x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "朝圣者碎片x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "异常碎片x50",
+            "fixed": true,
+            "cost": 100,
+            "count": 3,
+            "reward": {}
+          },
+          {
+            "name": "循环能量x10",
+            "fixed": true,
+            "cost": 50,
+            "count": 10,
+            "reward": {}
+          },
+          {
+            "name": "芯尘x30",
+            "fixed": true,
+            "cost": 300,
+            "count": 50,
+            "reward": {
+              "dust": 30
+            }
+          },
+          {
+            "name": "信用点x2000",
+            "fixed": false,
+            "cost": 10,
+            "count": -1,
+            "reward": {
+              "credit": 2000
+            }
+          }
+        ]
+      },
+      "stage_blocks": [
+        {
+          "id": "S1N",
+          "open_day": 0,
+          "rush": false,
+          "chapters": [
+            "S1N1-1",
+            "S1N1-2",
+            "S1N1-3",
+            "S1N1-4",
+            "S1N1-5",
+            "S1N1-6",
+            "S1N1-7",
+            "S1N1-8",
+            "S1N1-9",
+            "S1N1-10",
+            "S1N1-11",
+            "S1N1-12"
+          ]
+        },
+        {
+          "id": "S2N",
+          "open_day": 7,
+          "rush": false,
+          "chapters": [
+            "S2N1-1",
+            "S2N1-2",
+            "S2N1-3",
+            "S2N1-4",
+            "S2N1-5",
+            "S2N1-6",
+            "S2N1-7",
+            "S2N1-8",
+            "S2N1-9",
+            "S2N1-10",
+            "S2N1-11",
+            "S2N1-12"
+          ]
+        },
+        {
+          "id": "S2H",
+          "open_day": 7,
+          "rush": true,
+          "chapters": [
+            "S2H1-1",
+            "S2H1-2",
+            "S2H1-3",
+            "S2H1-4",
+            "S2H1-5",
+            "S2H1-6",
+            "S2H1-7",
+            "S2H1-8",
+            "S2H1-9",
+            "S2H1-10",
+            "S2H1-11",
+            "S2H1-12"
+          ]
+        }
+      ],
+      "base_income": {
+        "credit": 59860,
+        "battle": 600440,
+        "dust": 91.95
+      },
+      "checkin": [
+        {
+          "offset_day": 5,
+          "reward": {
+            "growth_box_8h": 1
+          }
+        },
+        {
+          "offset_day": 11,
+          "reward": {
+            "growth_box_12h": 1
+          }
+        }
+      ],
+      "label": "14天大活动·地图",
+      "daily_task": {
+        "per_day": {
+          "credit_box_1h": 1,
+          "dust_box_1h": 1,
+          "growth_box_1h": 1,
+          "token": 120
+        }
+      },
+      "_daily_note": "Group 8801 每日 8 条 ×20 点；点数里程碑 20/40/60/80/100 分别给 信用点盒1h、芯尘盒1h、代币120、循环能量×5、成长套组1h —— 只有前两项与代币与成长套组入账。",
+      "_checkin_note": "LoginEvent 82503（14 档）。只有第 6 天 成长套组8H、第 12 天 成长套组12H 可入三资源/箱账；其余为招募券/资料卡箱/手册箱/称号，不入表。",
+      "_shop_note": "ContentsShop 9008801（BundleId 90088，25 项）。前 5 项用免费珠宝（PriceId 99）买剧情门票/档案券，不走活动代币，其中门票合计 70 张正是 rush_buy.S2H=70 的来源，故不入店；其余 20 项按代币结算，末项「信用点x2000」count=-1 作为余额出口。",
+      "_src_note": "数据源：母体 B 拆包静态表（EventStory 10088/10089 → EventManager 82500 → EventField febg_coinrush_002；EventDungeon 88/89 + DifficultGroup 1088/1089/2088；EventMissionList Group 8801/8803；ContentsShop 9008801；LoginEvent 82503；FieldItem ObtainLocation 10025）。提取脚本 临时车间/活动解包_R107/extract.py，明细 同目录 coinsinrush_extract.json。",
+      "_map_note": "地图 febg_coinrush_002（hud_event_field_coinsinrush）：42 件道具 = 30 件隐藏代币（50×30=1500，已并入 tasks.tokens）+ 6 件珠宝（50×6=300）+ 6 件 BGM/纪念物。"
+    },
     "large28map": {
       "event": "LIE CAUSE RECOIL（28 天大活动 · Map 带地图版，莉可丽丝联动 CE008）",
       "type": "large28map",

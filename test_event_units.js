@@ -195,11 +195,13 @@ const snapNoAct = { recorded_at: new Date("2026-10-09T00:00:00"), bare_resources
 check("inject 空 schedule 原样返回", EV.inject(snapNoAct, EV.EMPTY_SCHEDULE, null) === snapNoAct ? 1 : 0, 1, 0);
 
 /* ---------- 模板清单 ---------- */
-check("模板清单 4 档", EV.templateList().length, 4, 0);
+/* R107：新增 large14map（COINS IN RUSH 14 天带地图大活动）→ 清单 4 → 5 档 */
+check("模板清单 5 档", EV.templateList().length, 5, 0);
 check("small14 duration=14", TPL.templates.small14.duration, 14, 0);
 check("large21 duration=21", TPL.templates.large21.duration, 21, 0);
 check("large28 duration=28", TPL.templates.large28.duration, 28, 0);
 check("large28map duration=28", TPL.templates.large28map.duration, 28, 0);
+check("large14map duration=14", TPL.templates.large14map.duration, 14, 0);
 
 /* ---------- tasks.boxes：一次性任务箱类奖励归首日（缺省即无，老模板不受影响） ---------- */
 (function () {

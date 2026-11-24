@@ -284,6 +284,10 @@
   /* 用户给的配置：模板 + 起始日期（旧版显示效果里就是这 7 行）。
      活动名未匹配到（B 站官号/国际服时间表都与这 7 个日期不重合），先用模板名；
      想补名字直接往 EVENT_NAMES 里加 "模板id|起始日期": "活动名"。 */
+  /* 2026-11-24 R107：COINS IN RUSH 由 small14 改 large14map —— 拆包 EventManager 82500
+     挂了 EventField febg_coinrush_002（hud_event_field_coinsinrush），是 14 天带地图的大活动结构
+     （2 部 36 关 + 挑战 7 关 + 每日任务 + 商店 + 14 档签到 + 地图隐藏道具 1500 代币），
+     与 TRUE FLAVOR（40074，parent=0 无地图）不是一类。 */
   /* 国服（胜利女神：新的希望）官方活动名，按「模板id|起始日期」索引。
      来源：国服制作组笔记 + 11/4 更新公告 + 1.5 周年前瞻。
      2026-12-30 与 2027-01-13 两期官方还没公布，先用模板名。 */
@@ -291,14 +295,14 @@
     'large28map|2026-10-21': 'Lie cause Recoil',       /* 莉可丽丝联动 · 28 天带地图 */
     'small14|2026-11-04': 'TRUE FLAVOR 真味心意',
     'large21|2026-11-18': 'GODDESS FALL 女神陨落',
-    'small14|2026-12-02': 'COINS IN RUSH 金币追逐战',
+    'large14map|2026-12-02': 'COINS IN RUSH 金币追逐战',   /* R107：14 天带地图大活动（原填 small14 无地图，与拆包不符） */
     'large21|2026-12-16': 'ICE DRAGON SAGA 冰龙传奇'
   };
   var SEED_EVENTS = [
     { tpl: 'large28map', date: '2026-10-21' },   /* 联动大型活动，28 天带地图 */
     { tpl: 'small14', date: '2026-11-04' },
     { tpl: 'large21', date: '2026-11-18' },
-    { tpl: 'small14', date: '2026-12-02' },
+    { tpl: 'large14map', date: '2026-12-02' },   /* R107：拆包 EventField 82500 = febg_coinrush_002，带地图 */
     { tpl: 'large21', date: '2026-12-16' },
     { tpl: 'small14', date: '2026-12-30' },
     { tpl: 'large21', date: '2027-01-13' }
