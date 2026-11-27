@@ -14,6 +14,8 @@
 <!-- 复用桌面版样式（美术风格 / 变量 / 卡片 / 省流卡 / 结果表全部继承），再由 mobile.css 覆盖布局 -->
 <link rel="stylesheet" href="css/style.css?v=20261124a">
 <link rel="stylesheet" href="css/mobile.css?v=20261120f">
+<!-- 双线路访问：必须放在 head —— 首屏渲染前同步判定并跳转，用户只看到目标页一次加载 -->
+<script src="js/route.js?v=20261127c"></script>
 </head>
 <body class="m-body">
 
@@ -357,7 +359,5 @@ window.addEventListener("load", function () {
   setTimeout(syncMarks, 1200);
 })();
 </script>
-<!-- 双线路访问（自动 / 国内 / GitHub）：本地环境只显示入口，不跳转 -->
-<script src="js/route.js?v=20261127b"></script>
 </body>
 </html>

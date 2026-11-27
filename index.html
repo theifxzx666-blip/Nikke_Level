@@ -14,6 +14,8 @@
 <link rel="stylesheet" href="css/v16.css?v=20261120f">
 <!-- html2canvas（导出结果图用，gzip ≈46KB）改为「用到才加载」，
      由 js/app.js 的 ensureVendor() 在点击导出时注入，首屏不拖慢 -->
+<!-- 双线路访问：必须放在 head —— 首屏渲染前同步判定并跳转，用户只看到目标页一次加载 -->
+<script src="js/route.js?v=20261127c"></script>
 </head>
 <body>
 <section class="hero-banner" aria-label="NIKKE 主题 banner">
@@ -247,7 +249,5 @@
 <!-- 顶层功能切换由 js/shell.js 从 tools.json 动态接管（禁止在此硬编码工具清单） -->
 <script src="js/shell.js?v=20261009b"></script>
 <script src="js/v16.js?v=20261124a"></script>
-<!-- 双线路访问（自动 / 国内 / GitHub）：本地环境只显示入口，不跳转 -->
-<script src="js/route.js?v=20261127b"></script>
 </body>
 </html>
