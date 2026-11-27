@@ -43,11 +43,42 @@
 | 移动端 390×844（CDP 真实视口） | 按钮 **81×30**，`top=687 / bottom=717`；底部 Tab `top=729`，间距 **12px 无重叠**，距右 14px。窄屏隐藏「线路 · 」前缀，只显示「自动·国内」 |
 | 桌面 1280 截图 | 右下角胶囊「线路 · 自动（建议国内）」，不遮挡表单与顶部按钮 |
 
-### 五、留给下一轮
+### 五、补丁（当日 18:20）：镜像的探测地址缺 sharecode，线路判定会失效
+
+**症状**：镜像上线路按钮能显示，但从 GitHub 页向国内线路的判定不可靠。
+
+**根因**（实测，不是推测）：WorkBuddy app 对**所有请求**做 `sharecode` 鉴权——
+
+| 请求 | 结果 |
+| :--- | :--- |
+| `GET /js/app.js`（无 sharecode、无 cookie） | **403** |
+| `GET /js/route.js`（无 sharecode、无 cookie） | **403** |
+| `GET /css/style.css`（无 sharecode、无 cookie） | **403** |
+| `GET /js/zzz_not_exist.js`（不存在） | 403 → 说明 403 = 拒绝，不是「文件缺失」 |
+| `GET /?sharecode=...` | 200，并种 `__wb_rsc` cookie（30 天，HttpOnly） |
+| `GET /js/route.js` + 该 cookie | 200 |
+| `GET /js/route.js` 只带 Referer | 403 |
+
+而 `route.js` 的探测是 `new Image()` 跨域请求 favicon，**默认不带 cookie**，所以从 GitHub 探测国内线路必然 403。403 的耗时取决于链路：快则被当成「国内很快」，慢则被 `PROBE_FLOOR` 当成无效样本——两种都判错。
+
+**修复**：
+
+| 项 | 前 | 后 |
+| :--- | :--- | :--- |
+| 探测地址 | `.../assets/m/favicon.webp` | `.../assets/m/favicon.webp?sharecode=YHW5333IQR` |
+| 地址维护 | url 与 probe 各写一份 sharecode | 抽出 `CN_ORIGIN` / `CN_SHARE` 常量，两处共用 |
+| `PROBE_FLOOR` | 15ms | 8ms（腾讯云国内节点命中可能低于 15ms，会被误杀） |
+
+**验证**：两条探测地址 curl 均 **200**；本地 dry 跑出 `cn=1167ms / gh=313ms`（本机走 Clash 代理，GitHub 反而快，判定 `speed → GitHub`，符合预期）。国内直连的真实延迟待线上实测。
+
+**维护点**：镜像的 sharecode 若变更，只改 `CN_SHARE` 一处。
+
+### 六、留给下一轮
 
 1. **两端要同时发布才生效**：GitHub Pages（`git push`）+ WorkBuddy（`git archive` → `deploy_clean_1007` → sites deploy），只推一端会出现「新站有开关、老站没有」。
 2. **线上联调没做**：本地没有真实的 `sharecode` 与跨域跳转环境，首次上线后要在手机上实测一轮「GitHub → 国内 → 切回」。
 3. **自动跳转的取舍**：目前只在「无表单存档」时自动跳；如果实测觉得太保守，把 `init()` 里 `hasForm()` 那道闸去掉即可，但会承担跨域丢数据的风险。
+4. **镜像缓存**：WorkBuddy 的 HTML 响应不带 `Cache-Control`，浏览器会走启发式缓存。改版后用户若仍看到旧页，先强制刷新再判断是不是部署问题。
 
 ---
 

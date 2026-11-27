@@ -18,16 +18,21 @@
 
   var PROBE_TIMEOUT = 1400;   // 单条线路探测上限（ms）
   var PROBE_MARGIN = 400;     // 另一条线快这么多，才推翻地区判断
-  var PROBE_FLOOR = 15;       // 低于此值视为缓存/失败，不作有效样本
+  var PROBE_FLOOR = 8;        // 低于此值视为缓存/失败，不作有效样本
   var PROBE_TTL = 30 * 60 * 1000;
+
+  /* WorkBuddy 镜像带访问鉴权：不带 sharecode 的请求一律 403。
+     探测地址必须同带 sharecode，否则「403 快速失败」会被误判成「国内线路不可达」。 */
+  var CN_ORIGIN = "https://nikke-level-planner-07475.app.workbuddy.host";
+  var CN_SHARE = "?sharecode=YHW5333IQR";
 
   var LINES = {
     cn: {
       label: "国内线路",
       short: "国内",
       desc: "WorkBuddy 镜像",
-      url: "https://nikke-level-planner-07475.app.workbuddy.host/?sharecode=YHW5333IQR",
-      probe: "https://nikke-level-planner-07475.app.workbuddy.host/assets/m/favicon.webp"
+      url: CN_ORIGIN + "/" + CN_SHARE,
+      probe: CN_ORIGIN + "/assets/m/favicon.webp" + CN_SHARE
     },
     gh: {
       label: "GitHub 线路",
