@@ -16,7 +16,7 @@
   var PROBE_KEY = "nikke_route_probe_v1";
   var FORM_KEY = "nikke_planner_form_v1";
 
-  var PROBE_TIMEOUT = 1400;   // 单条线路探测上限（ms）
+  var PROBE_TIMEOUT = 2000;   // 单条线路探测上限（ms）；跨境慢链路 1.4s 会误伤
   var PROBE_MARGIN = 400;     // 另一条线快这么多，才推翻地区判断
   var PROBE_FLOOR = 8;        // 低于此值视为缓存/失败，不作有效样本
   var PROBE_TTL = 30 * 60 * 1000;
@@ -186,13 +186,22 @@
     if (opt.hop) qs.push("hop=1");
     if (qs.length) url += (url.indexOf("?") < 0 ? "?" : "&") + qs.join("&");
 
-    if (opt.carry && window.LZString) {
-      try {
-        var raw = localStorage.getItem(FORM_KEY);
-        if (raw) url += "#carry=" + window.LZString.compressToEncodedURIComponent(raw);
-      } catch (e) {}
-    }
+    // carry 传的是已压缩好的载荷（见 carryPayload），这里不再自己压缩
+    if (opt.carry) url += "#carry=" + opt.carry;
     return url;
+  }
+
+  /* 把表单存档压成可放进 URL 的串。超过 MAX_CARRY 返回 ""——
+     宁可不带，也不让跳转 URL 被浏览器截断成半截。 */
+  var MAX_CARRY = 1600;
+
+  function carryPayload() {
+    try {
+      var raw = localStorage.getItem(FORM_KEY);
+      if (!raw || !window.LZString) return "";
+      var z = window.LZString.compressToEncodedURIComponent(raw);
+      return z.length > MAX_CARRY ? "" : z;
+    } catch (e) { return ""; }
   }
 
   function go(line, opt) {
@@ -312,7 +321,7 @@
           paint(d);
           if (d.target !== state.cur) {
             toast("检测到更快的" + LINES[d.target].label, "切换", function () {
-              go(d.target, { hop: true, carry: hasForm() });
+              go(d.target, { hop: true, carry: hasForm() ? carryPayload() : "" });
             });
           }
         });
@@ -320,7 +329,7 @@
       }
       if (m !== state.cur) {
         // 手动切到另一条线：带上模式与当前存档，目标页读到后写入本域
-        go(m, { mode: m, hop: true, carry: hasForm() });
+        go(m, { mode: m, hop: true, carry: hasForm() ? carryPayload() : "" });
       } else {
         paint();
       }
@@ -399,6 +408,7 @@
         var txt;
         if (d.why === "fail") txt = "检测超时，已停留当前线路。可手动切换。";
         else if (d.why === "manual") txt = "已记住你的选择，下次打开自动走这条线。";
+        else if (d.why === "fallback") txt = "推荐线路不可达，已改走另一条。";
         else if (m && valid(m.cn) && valid(m.gh)) txt = "实测 国内 " + Math.round(m.cn) + "ms · GitHub " + Math.round(m.gh) + "ms";
         else txt = "当前线路可用。";
         foot.textContent = txt;
@@ -477,27 +487,35 @@
       state.detail = d;
       paint(d);
 
+      var need = d.target !== state.cur;
+
       if (dry) {
-        setFoot("预演：应走 " + (LINES[d.target] ? LINES[d.target].label : d.target) +
-          "（" + d.why + "）· 当前 " + (LINES[state.cur] ? LINES[state.cur].short : state.cur));
+        var extra = "（已在目标线路）";
+        if (need) {
+          var demo = buildUrl(d.target, { hop: true, carry: hasForm() ? carryPayload() : "" });
+          extra = " → " + demo.replace(/sharecode=[^&]*/, "sharecode=***").slice(0, 130);
+        }
+        setFoot("预演：" + d.why + " · 当前 " + (LINES[state.cur] ? LINES[state.cur].short : state.cur) + extra);
         return;
       }
 
-      if (d.target === state.cur) {
+      if (!need) {
         if (d.why === "fail") toast("线路检测超时，已使用当前线路", null, null);
         return;
       }
 
-      // 自动模式 + 已有存档：不擅自跳，避免跨域丢数据
-      if (state.mode === "auto" && hasForm()) {
-        toast("检测到更快的" + LINES[d.target].label, "切换", function () {
-          go(d.target, { hop: true, carry: true });
+      var carry = hasForm() ? carryPayload() : "";
+
+      // 存档大到 URL 装不下：跳过去必然丢数据，降级成「提示 + 用户确认」
+      if (state.mode === "auto" && hasForm() && !carry) {
+        toast("检测到更快的" + LINES[d.target].label + "，但当前存档较大，切换后需手动导入", "仍要切换", function () {
+          go(d.target, { hop: true });
         });
         return;
       }
 
-      // 手动模式（用户已明确选择）或自动模式首次访问：直接切
-      go(d.target, { hop: true, carry: state.mode !== "auto" && hasForm() });
+      // 自动模式一律真跳；存档用 #carry= 带过去，目标页解码写入后重载
+      go(d.target, { hop: true, carry: carry });
     });
   }
 
