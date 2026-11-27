@@ -4,6 +4,9 @@
   var C = window.NikkeCore, O = window.NikkeOutpost, S = window.NikkeScenarios, B = window.NikkeBoxes;
   var EV = window.NikkeEvents;   // 活动收益（events.js）
   var LS_KEY = "nikke_planner_form_v1";
+  /* 关卡下拉的「没选」哨兵值：与 <option> 的 value 完全一致（fillSelect 用 opt 当 value）。
+     R109（2026-11-28）：切章节时不再自动落章末关，一律回到这个值 —— 见 syncStageOptions 上头注释。 */
+  var UNSET_STAGE = "未选择";
   var DEFAULT_FIXED = {
     "芯尘盒": { 24: 30, 12: 26, 8: 7, 4: 1, 2: 315, 1: 1432 },
     "信用点盒": { 24: 9, 12: 5, 8: 11, 4: 0, 2: 149, 1: 1684 },
@@ -370,8 +373,12 @@
       inp.value = (f.fixed[label] && f.fixed[label][h] !== undefined) ? f.fixed[label][h] : 0;
     });
     // 章节/关卡下拉
-    fillSelect($("f_normal_chapter"), state.normalChapters, chapterOfSection(f.normal_stage) || state.normalChapters[state.normalChapters.length - 1]);
-    fillSelect($("f_hard_chapter"), state.hardChapters, chapterOfSection(f.hard_stage) || state.hardChapters[state.hardChapters.length - 1]);
+    /* 当前进度的章节默认取**第一关所在章**（Chapter 0），不取最末章。
+       R109（2026-11-28 用户报障「很多用户反馈关卡进度对不上」）：原先默认落在 Chapter 50，
+       用户只动「普通章节」时 enforceHardCap 会把困难章节夹到同一章并填成章末关 —— 凭空
+       多出一整条困难进度，推算等级直接翻倍（34 章会算成 Lv.465）。默认值必须是「什么都没选」。 */
+    fillSelect($("f_normal_chapter"), state.normalChapters, chapterOfSection(f.normal_stage) || state.normalChapters[0]);
+    fillSelect($("f_hard_chapter"), state.hardChapters, chapterOfSection(f.hard_stage) || state.hardChapters[0]);
     fillSelect($("f_future_normal_chapter"), state.normalChapters, chapterOfSection(f.future_normal_stage) || state.normalChapters[state.normalChapters.length - 1]);
     fillSelect($("f_future_hard_chapter"), state.hardChapters, chapterOfSection(f.future_hard_stage) || state.hardChapters[state.hardChapters.length - 1]);
     syncStageOptions("normal"); syncStageOptions("hard");
@@ -403,10 +410,14 @@
     // 回填已保存的关卡值（修复刷新后关卡下拉重置）：优先当前下拉值，其次已保存值
     var saved = state.form[kind === "normal" ? "normal_stage" : kind === "hard" ? "hard_stage" : kind === "future_normal" ? "future_normal_stage" : "future_hard_stage"];
     var cur = stSel.value;
-    var selected = (cur && cur !== "") ? cur : (saved && opts.indexOf(saved) >= 0 ? saved : "未选择");
+    /* R109：cur 可能属于上一章（切章后就不在新 opts 里）——只在**本章选项内**才保留，
+       否则必须退回「未选择」。旧写法只判空串，切章后 selected 落空，浏览器默认选第一项，
+       看着像「未选择」但 state 里并存着旧关卡，刷新/联动时又会冒出来。 */
+    var keep = (cur && opts.indexOf(cur) >= 0) ? cur
+             : (saved && opts.indexOf(saved) >= 0 ? saved : UNSET_STAGE);
     /* R107（2026-11-24）：撤掉「（末关）」后缀 —— 表里每章末关本身就叫 "50-36 BOSS"，
        再加标记等于给同一关造第二种写法（用户要求去掉）；进度是否选全由下方读数自行核对。 */
-    fillSelect(stSel, ["未选择"].concat(opts), selected);
+    fillSelect(stSel, [UNSET_STAGE].concat(opts), keep);
   }
 
   /* ---------- 联动 ---------- */
@@ -425,7 +436,14 @@
   function syncProgressHint() {
     var box = $("progressHint");
     if (!box) return;
-    var p = O.progressOf(val("f_normal_stage") || null, val("f_hard_stage") || null, progressFix());
+    var nStage = val("f_normal_stage"), hStage = val("f_hard_stage");
+    /* R109：普通关卡没选 → 不给读数。只选章节时不知道该章推到第几关，任何推算都是编的。 */
+    if (!nStage || nStage === UNSET_STAGE) {
+      box.textContent = "先选普通关卡（选到具体关卡才推算，只选章节不给等级）。";
+      box.removeAttribute("title");
+      return;
+    }
+    var p = O.progressOf(nStage, hStage === UNSET_STAGE ? null : hStage, progressFix());
     if (!p) {
       box.textContent = "选完普通 / 困难关卡后，这里显示已计入关数与推算等级。";
       box.removeAttribute("title");
@@ -439,7 +457,10 @@
 
   function currentCalculatedBase() {
     var f = collectForm();
-    return O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null, progressFix());
+    /* R109：普通关卡没选就不推算。困难进度单独算会把普通当 0 关，出来个明显偏低的假等级；
+       只选章节不选关卡更是把整章当全通。宁可不给数，也不给错数。 */
+    if (!f.normal_stage || f.normal_stage === UNSET_STAGE) return null;
+    return O.computeBaseLevel(f.normal_stage, f.hard_stage === UNSET_STAGE ? null : f.hard_stage, progressFix());
   }
   /* 以手填前哨基地等级为准：仅关卡进度变更（autoFill=true）且基地为空时才自动填推算值；
      手填路径只提示推算参考，不覆盖、不打断输入。
@@ -461,7 +482,8 @@
       hint.style.display = txt ? "" : "none";
     }
     if (!level) {
-      say("推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。");
+      /* R109：关卡没选全时不再强行推销「手填」，但基地已填就更不该多嘴 —— 收益本来就在按它算 */
+      say(cur ? "" : "推荐直接手填前哨基地等级（以游戏内显示为准，收益按此自动带出）；也可选下方关卡进度自动推算。");
       if (btn) btn.style.display = "none";
       return;
     }
@@ -495,14 +517,42 @@
     }
   }
 
+  /* 困难章节不能高于普通章节（困难第 N 章要普通第 N 章通关才开）。
+     夹下来之后**关卡必须一并清空**：R109 之前这里填的是「该章末关」，等于替玩家宣称
+     困难也全通了 —— 只改普通章节就会凭空多出一整条困难进度（34 章会算成 Lv.465，
+     而真实值 ~231），这正是「很多用户反馈关卡进度对不上」的主因。
+     返回 true 表示发生了夹取，调用方负责提示。 */
   function enforceHardCap() {
     var normalCh = val("f_normal_chapter"), hardCh = val("f_hard_chapter");
-    if (!normalCh || !hardCh) return;
-    if (chapterNum(hardCh) > chapterNum(normalCh)) {
-      setVal("f_hard_chapter", normalCh);
-      syncStageOptions("hard");
-      setVal("f_hard_stage", lastStage("hard", normalCh));
-    }
+    if (!normalCh || !hardCh) return false;
+    if (chapterNum(hardCh) <= chapterNum(normalCh)) return false;
+    setVal("f_hard_chapter", normalCh);
+    syncStageOptions("hard");
+    setVal("f_hard_stage", UNSET_STAGE);
+    return true;
+  }
+  function hintHardCap() {
+    var hint = $("baseHint");
+    if (!hint) return;
+    hint.textContent = "困难章节不能高于普通章节，已跟到 " + val("f_normal_chapter") + "；困难关卡请按实际进度重选。";
+    hint.style.display = "";
+  }
+  /* 反方向：玩家先填困难（困难 M 章 ⇒ 普通至少也到 M 章）。不许把困难弹回去 —— 那等于
+     「你填的我不认」，体验比数字错更糟；把普通章节抬上来、两边关卡都清空，等他自己选。 */
+  function followUpNormal() {
+    var normalCh = val("f_normal_chapter"), hardCh = val("f_hard_chapter");
+    if (!normalCh || !hardCh) return false;
+    if (chapterNum(hardCh) <= chapterNum(normalCh)) return false;
+    setVal("f_normal_chapter", hardCh);
+    syncStageOptions("normal");
+    setVal("f_normal_stage", UNSET_STAGE);
+    return true;
+  }
+  function hintNormalRaised() {
+    var hint = $("baseHint");
+    if (!hint) return;
+    hint.textContent = "困难第 " + chapterNum(val("f_hard_chapter")) + " 章要普通同章通关才开，普通章节已跟到 " + val("f_normal_chapter") + "；普通关卡请按实际进度重选。";
+    hint.style.display = "";
   }
   function lastStage(mode, chapter) {
     var map = mode === "hard" ? state.hardStages : state.normalStages;
@@ -537,12 +587,16 @@
      2026-11-19 用户报障「手填 553、未来卡显示 535」，就是因为计算侧读的是隐藏输入框里
      上一次会话存下的旧值，而显示侧按新口径算。 */
   function resolveFutureBase(f) {
-    /* 修正值从表单读，不调 progressFix()：本函数会被 test_future_base 单独抽出来执行 */
+    /* 修正值从表单读，不调 progressFix()：本函数会被 test_future_base 单独抽出来执行。
+       同理这里不引用 UNSET_STAGE 常量（抽出执行时取不到），直接比字面量。 */
     var fix = Number(f.progress_fix) || 0;
     var derived = O.computeBaseLevel(f.future_normal_stage || null, f.future_hard_stage || null, fix);
     if (!derived) return null;
     var curManual = parseInt(f.base, 10) || 0;
-    var curDerived = O.computeBaseLevel(f.normal_stage || null, f.hard_stage || null, fix);
+    /* R109：普通关卡没选就没有「手填 vs 推算」的差值可算，offset 记 0（未来卡直接显示推算值） */
+    var curDerived = (f.normal_stage && f.normal_stage !== "未选择")
+      ? O.computeBaseLevel(f.normal_stage, f.hard_stage === "未选择" ? null : (f.hard_stage || null), fix)
+      : null;
     var offset = (curManual && curDerived) ? (curManual - curDerived) : 0;
     var level = Math.max(0, derived + offset);
     if (curManual) level = Math.max(level, curManual);
@@ -1937,10 +1991,13 @@
     // 普通章节 -> 困难跟随 + 未来+2
     $("f_normal_chapter").addEventListener("change", function () {
       syncStageOptions("normal");
-      setVal("f_normal_stage", lastStage("normal", val("f_normal_chapter")));
+      /* R109：切章只清空关卡，不自动落章末关 —— 落章末关 = 宣称「这章全通了」，
+         玩家实际可能只在这章第 3 关，推算会高出一整章（40+ 关 ≈ 8 级）。 */
+      setVal("f_normal_stage", UNSET_STAGE);
       // 先让困难章节强制跟降（enforceHardCap 会改写困难章节/关卡），再做基地推算，避免推算用了旧的困难状态
-      enforceHardCap();
+      var capped = enforceHardCap();
       syncCurrentBase(true);
+      if (capped) hintHardCap();
       syncFutureNormal();
       onFormChange();
     });
@@ -1950,9 +2007,10 @@
     $("f_hard_chapter").addEventListener("change", function () {
       state.normalManual = true;
       syncStageOptions("hard");
-      setVal("f_hard_stage", lastStage("hard", val("f_hard_chapter")));
-      enforceHardCap();
+      setVal("f_hard_stage", UNSET_STAGE);   // R109：同理，不替玩家宣称整章困难全通
+      var raised = followUpNormal();          // 困难高于普通 → 抬普通，不把用户刚选的困难弹回去
       syncCurrentBase(true);
+      if (raised) hintNormalRaised();
       syncFutureHard();
       onFormChange();
     });
