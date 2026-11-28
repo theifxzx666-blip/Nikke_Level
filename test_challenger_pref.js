@@ -105,7 +105,7 @@ function chalPick(plan) {
   ] };
   const p = B.optimizeSelectableForTarget(s, s.bare_resources, 1, s.income_per_hour);
   eq(p.feasible, true, "E 可达");
-  eq(chalPick(p), "战斗数据辑", "E 芯尘已够 → 取战斗（本次报障）");
+  eq(chalPick(p), "(未选)", "E 芯尘已够 → 不为无关的挑战者箱强行开箱");
 }
 
 // C：手动芯尘优先
@@ -120,6 +120,48 @@ function chalPick(plan) {
   const s = snap({ bare_resources: { credit: 5000, battle_data: 5000, core_dust: 0 }, challenger_pref: "battle" });
   const p = B.optimizeSelectableForTarget(s, s.bare_resources, 1, s.income_per_hour);
   eq(chalPick(p), "战斗数据辑", "D 手动战斗优先");
+}
+
+/* F：智能配平不能把无关的挑战者箱全部开掉（用户报障复现）
+   只缺信用点时，战斗数据/芯尘都有余量；挑战者箱不提供信用点，必须保留，
+   不能因为“开箱顺序①全开”白白消耗掉 10 个二选一箱。 */
+{
+  const s = snap({
+    bare_resources: { credit: 0, battle_data: 5000, core_dust: 5000 },
+    selectable_boxes: [
+      { name: "挑战者成长宝箱", quantity: 10, options: [
+        { label: "战斗数据辑", rewards: { battle_data: 1000 }, mode: "units" },
+        { label: "芯尘", rewards: { core_dust: 1000 }, mode: "units" },
+      ] },
+      { name: "方舟官方补给物资Ⅰ", quantity: 10, options: [
+        { label: "信用点", rewards: { credit: 1000 }, mode: "hours" },
+        { label: "战斗数据辑", rewards: { battle_data: 1000 }, mode: "hours" },
+      ] },
+    ],
+  });
+  const p = B.optimizeSelectableForTarget(s, s.bare_resources, 1, s.income_per_hour);
+  eq(p.feasible, true, "F 只缺信用点仍可达");
+  const chal = (p.selectable || []).find((x) => x.name.indexOf("挑战") >= 0);
+  eq(chal && chal.used, 0, "F 只缺信用点 → 挑战者箱应全部保留");
+  eq(chal && chal.keep, 10, "F 挑战者箱保留 10 个");
+}
+
+/* G：挑战者箱只开够缺口的数量，多余箱保留 */
+{
+  const s = snap({
+    bare_resources: { credit: 5000, battle_data: 0, core_dust: 5000 },
+    selectable_boxes: [
+      { name: "挑战者成长宝箱", quantity: 10, options: [
+        { label: "战斗数据辑", rewards: { battle_data: 1000 }, mode: "units" },
+        { label: "芯尘", rewards: { core_dust: 1000 }, mode: "units" },
+      ] },
+    ],
+  });
+  const p = B.optimizeSelectableForTarget(s, s.bare_resources, 1, s.income_per_hour);
+  const chal = (p.selectable || []).find((x) => x.name.indexOf("挑战") >= 0);
+  eq(p.feasible, true, "G 只缺 1000 战斗数据仍可达");
+  eq(chal && chal.used, 1, "G 挑战者箱只开 1 个");
+  eq(chal && chal.keep, 9, "G 多余挑战者箱保留 9 个");
 }
 
 console.log("=== test_challenger_pref ===");

@@ -219,28 +219,61 @@
       }
     });
 
-    // 开箱顺序①：挑战者成长宝箱（units 固定数值二选一）优先全消耗（按 chalIdx 取项，无分配损耗）
+    // 开箱顺序①：挑战者成长宝箱（units 固定数值二选一）按当前缺口决定是否开启。
+    // remaining 先以目标缺口初始化，避免把已满足的资源箱也强制开掉。
+    var remaining = {};
+    RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, shortage[r]); });
     var challengerRes = C.zeroRes();
     boxes.forEach(function (item) {
       var opts = item.box.options || [];
       if (item.left > 0 && opts.length === 2 && opts.every(function (o) { return o.mode === "units"; })) {
         var o0 = opts[chalIdx] || opts[0];
-        item.left = 0;
-        item.choices[o0.label] = item.box.quantity;
+        /* 只在所选奖励能填补当前缺口时开挑战者箱；如果该资源已经够了，
+           这类二选一箱对本次目标没有贡献，必须原样保留，不能为了“顺序①”硬开。 */
+        var contributes = chalPref !== "auto" || (o0.rewards && RESOURCES.some(function (r) {
+          return (remaining[r] || 0) > 1e-6 && (o0.rewards[r] || 0) > 0;
+        }));
+        if (!contributes) {
+          item.locked = true;
+          return;
+        }
+        /* 只开够填当前缺口的数量，不能因为“挑战者箱优先”把整批多开的资源也算进方案。
+           这一步是本次报障的第二个边界：例如只缺 1 箱战斗数据、手里却有 10 个挑战者箱，
+           应开 1 个并保留 9 个，而不是整批消耗。 */
+        var useCount = item.box.quantity;
         if (o0.rewards) {
-          RESOURCES.forEach(function (r) { challengerRes[r] += (o0.rewards[r] || 0) * item.box.quantity; });
+          RESOURCES.forEach(function (r) {
+            var reward = Number(o0.rewards[r] || 0);
+            if (reward > 0 && (remaining[r] || 0) > 1e-6) {
+              useCount = Math.min(useCount, Math.ceil(remaining[r] / reward));
+            }
+          });
+        }
+        useCount = Math.max(0, Math.min(item.box.quantity, useCount));
+        if (!useCount) {
+          item.locked = true;
+          return;
+        }
+        item.left -= useCount;
+        item.choices[o0.label] = useCount;
+        if (o0.rewards) {
+          RESOURCES.forEach(function (r) {
+            challengerRes[r] += (o0.rewards[r] || 0) * useCount;
+          });
         }
       }
     });
-    var remaining = {};
-    RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, shortage[r] - challengerRes[r]); });
+    RESOURCES.forEach(function (r) { remaining[r] = Math.max(0.0, remaining[r] - challengerRes[r]); });
 
     // 开箱顺序②：固定小时箱按需开启（从大时长到小时长，成长套组收尾）
     var fixedFill = fixedFillGaps(snapshot, remaining, incomePerHour);
     RESOURCES.forEach(function (r) { remaining[r] = fixedFill.remaining_shortage[r]; });
 
     // 开箱顺序③：方舟/30天自选箱按需
-    var fast = fastThreeTwoFlexiblePlan(boxes, remaining, needed, fixedFill.used, incomePerHour, targetSteps);
+    /* 挑战者箱若所选资源已经够用，必须整箱保留；此时不能进入三类箱快速枚举，
+       否则快速枚举会把它当作二选一箱再次强制全开。 */
+    var fast = boxes.some(function (item) { return item.locked; }) ? null
+      : fastThreeTwoFlexiblePlan(boxes, remaining, needed, fixedFill.used, incomePerHour, targetSteps);
     if (fast) {
       fast.fixed = fixedBoxResources(snapshot, incomePerHour);
       fast.fixed_used = fixedFill.used;
@@ -259,7 +292,7 @@
     while (Object.keys(remaining).some(function (r) { return remaining[r] > 1e-6; })) {
       var candidates = [];
       boxes.forEach(function (item) {
-        if (item.left <= 0) return;
+        if (item.left <= 0 || item.locked) return;
         item.box.options.forEach(function (option) {
           var s = single(option);
           if (!s) return;
